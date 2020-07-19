@@ -1,5 +1,10 @@
 package model
 
+const (
+  PASSWORD_MAXIMUM_LENGTH = 64
+  PASSWORD_MINIMUM_LENGTH = 5
+)
+
 type Config struct {
   PasswordSettings PasswordSettings
 }

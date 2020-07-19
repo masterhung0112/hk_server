@@ -2,4 +2,9 @@ module github.com/masterhung0112/go_server
 
 go 1.14
 
-require github.com/gorilla/mux v1.7.4 // indirect
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gorilla/mux v1.7.4 // indirect
+	github.com/stretchr/testify v1.6.1
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+)
