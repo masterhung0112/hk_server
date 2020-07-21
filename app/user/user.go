@@ -6,9 +6,33 @@
 
 package app
 
+import (
+	"github.com/masterhung0112/go_server/model"
+)
+
 /****************
  * User Creation
  ****************/
+
+// Create new User from QR Code or something
+func (app *App) CreateUserWithToken(user *model.User, token *model.Token) (*model.User, *model.AppError) {
+  // Check if token is expired or not
+
+  // Create tokenData from Extra information
+
+  // Get team from token extra
+
+  // Get channel from token extra
+
+  // Get email from token extra
+
+  // Create New User
+
+  // Add User To Team
+
+  // Add
+}
+
 func (app *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *model.AppError) {
   // Define a list of default role
   user.Roles = model.SYSTEM_USER_ROLE_ID
