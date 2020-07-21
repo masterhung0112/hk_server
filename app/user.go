@@ -31,6 +31,7 @@ func (app *App) CreateUserWithToken(user *model.User, token *model.Token) (*mode
   // Add User To Team
 
   // Add
+  return nil, nil
 }
 
 func (app *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *model.AppError) {
@@ -46,7 +47,7 @@ func (app *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *m
 
   // Mark email as verified if necessary
 
-
+  return nil, nil
 }
 
 /*
@@ -55,7 +56,7 @@ func (app *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *m
 func (app *App) CreateUserFromSignup(user *model.User) (*model.User, *model.AppError){
   //TODO: if this user is the first account, create with admin role
 
-  ruser, err := app.createUserOrGuest(user)
+  ruser, err := app.createUserOrGuest(user, false)
   if err != nil {
     return nil, err
   }

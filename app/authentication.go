@@ -4,7 +4,7 @@
 package app
 
 import (
-  "github.com/masterhung0112/go_server/app"
+  "github.com/masterhung0112/go_server/utils"
   "github.com/masterhung0112/go_server/model"
 )
 
