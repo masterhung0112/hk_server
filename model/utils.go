@@ -1,6 +1,10 @@
 package model
 
 import (
+	"net/http"
+	"strings"
+	"io"
+	"io/ioutil"
   "time"
   "crypto/rand"
   "encoding/base32"
@@ -44,4 +48,23 @@ func GetMillis() int64 {
 func MapToJson(objmap map[string]string) string {
 	b, _ := json.Marshal(objmap)
 	return string(b)
+}
+
+func AppErrorFromJson(data io.Reader) *AppError {
+	str := ""
+	bytes, rerr := ioutil.ReadAll(data)
+	if rerr != nil {
+		str = rerr.Error()
+	} else {
+		str = string(bytes)
+	}
+
+	decoder := json.NewDecoder(strings.NewReader(str))
+	var er AppError
+	err := decoder.Decode(&er)
+	if err == nil {
+		return &er
+	} else {
+		return NewAppError("AppErrorFromJson", "model.utils.decode_json.app_error", nil, "body: "+str, http.StatusInternalServerError)
+	}
 }
