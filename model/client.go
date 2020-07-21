@@ -1,16 +1,16 @@
 package model
 
 import (
-	"strings"
-	"io/ioutil"
-	"io"
-	"net/http"
+  "strings"
+  "io/ioutil"
+  "io"
+  "net/http"
 
 )
 
 const (
   HEADER_REQUEST_ID         = "X-Request-ID"
-	HEADER_VERSION_ID         = "X-Version-ID"
+  HEADER_VERSION_ID         = "X-Version-ID"
   HEADER_CLUSTER_ID         = "X-Cluster-ID"
 
   HEADER_ETAG_SERVER        = "ETag"
@@ -72,13 +72,13 @@ func BuildErrorResponse(r *http.Response, err *AppError) *Response {
 }
 
 func BuildResponse(r *http.Response) *Response {
-	return &Response{
-		StatusCode:    r.StatusCode,
-		RequestId:     r.Header.Get(HEADER_REQUEST_ID),
-		Etag:          r.Header.Get(HEADER_ETAG_SERVER),
-		ServerVersion: r.Header.Get(HEADER_VERSION_ID),
-		Header:        r.Header,
-	}
+  return &Response{
+    StatusCode:    r.StatusCode,
+    RequestId:     r.Header.Get(HEADER_REQUEST_ID),
+    Etag:          r.Header.Get(HEADER_ETAG_SERVER),
+    ServerVersion: r.Header.Get(HEADER_VERSION_ID),
+    Header:        r.Header,
+  }
 }
 
 func closeBody(r *http.Response) {
@@ -89,52 +89,52 @@ func closeBody(r *http.Response) {
 }
 
 func (client *Client) GetUsersRoute() string {
-	return "/users"
+  return "/users"
 }
 
 func (client *Client) DoApiPost(url string, data string) (*http.Response, *AppError) {
-	return client.DoApiRequest(http.MethodPost, client.ApiUrl+url, data, "")
+  return client.DoApiRequest(http.MethodPost, client.ApiUrl+url, data, "")
 }
 
 func (client *Client) DoApiRequest(method, url, data, etag string) (*http.Response, *AppError) {
-	return client.doApiRequestReader(method, url, strings.NewReader(data), etag)
+  return client.doApiRequestReader(method, url, strings.NewReader(data), etag)
 }
 
 func (client *Client) doApiRequestReader(method, url string, data io.Reader, etag string) (*http.Response, *AppError) {
-	rq, err := http.NewRequest(method, url, data)
-	if err != nil {
-		return nil, NewAppError(url, "model.client.connecting.app_error", nil, err.Error(), http.StatusBadRequest)
-	}
+  rq, err := http.NewRequest(method, url, data)
+  if err != nil {
+    return nil, NewAppError(url, "model.client.connecting.app_error", nil, err.Error(), http.StatusBadRequest)
+  }
 
-	if len(etag) > 0 {
-		rq.Header.Set(HEADER_ETAG_CLIENT, etag)
-	}
+  if len(etag) > 0 {
+    rq.Header.Set(HEADER_ETAG_CLIENT, etag)
+  }
 
-	if len(client.AuthToken) > 0 {
-		rq.Header.Set(HEADER_AUTH, client.AuthType + " " + client.AuthToken)
-	}
+  if len(client.AuthToken) > 0 {
+    rq.Header.Set(HEADER_AUTH, client.AuthType + " " + client.AuthToken)
+  }
 
-	if client.HttpHeader != nil && len(client.HttpHeader) > 0 {
-		for k, v := range client.HttpHeader {
-			rq.Header.Set(k, v)
-		}
-	}
+  if client.HttpHeader != nil && len(client.HttpHeader) > 0 {
+    for k, v := range client.HttpHeader {
+      rq.Header.Set(k, v)
+    }
+  }
 
-	rp, err := client.HttpClient.Do(rq)
-	if err != nil || rp == nil {
-		return nil, NewAppError(url, "model.client.connecting.app_error", nil, err.Error(), 0)
-	}
+  rp, err := client.HttpClient.Do(rq)
+  if err != nil || rp == nil {
+    return nil, NewAppError(url, "model.client.connecting.app_error", nil, err.Error(), 0)
+  }
 
-	if rp.StatusCode == 304 {
-		return rp, nil
-	}
+  if rp.StatusCode == 304 {
+    return rp, nil
+  }
 
-	if rp.StatusCode >= 300 {
-		defer closeBody(rp)
-		return rp, AppErrorFromJson(rp.Body)
-	}
+  if rp.StatusCode >= 300 {
+    defer closeBody(rp)
+    return rp, AppErrorFromJson(rp.Body)
+  }
 
-	return rp, nil
+  return rp, nil
 }
 
 func (client *Client) CreateUser(user *User) (*User, *Response) {

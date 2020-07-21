@@ -13,6 +13,6 @@ type AppError struct {
 }
 
 func (er *AppError) ToJson() string {
-	b, _ := json.Marshal(er)
-	return string(b)
+  b, _ := json.Marshal(er)
+  return string(b)
 }

@@ -4,11 +4,11 @@ import "context"
 
 type App struct {
   srv     *Server
-	context context.Context
+  context context.Context
 }
 
 func (a *App) SetContext(c context.Context) {
-	a.context = c
+  a.context = c
 }
 
 func (a *App) Srv() *Server {

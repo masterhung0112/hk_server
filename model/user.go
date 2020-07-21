@@ -1,8 +1,8 @@
 package model
 
 import (
-	"encoding/json"
-	"io"
+  "encoding/json"
+  "io"
 )
 
 type User struct {
@@ -18,9 +18,9 @@ type User struct {
 
 // UserFromJson will decode the input and return a User
 func UserFromJson(data io.Reader) *User {
-	var user *User
-	json.NewDecoder(data).Decode(&user)
-	return user
+  var user *User
+  json.NewDecoder(data).Decode(&user)
+  return user
 }
 
 func (user *User) ToJson() string {
