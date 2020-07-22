@@ -77,3 +77,17 @@ func FindFile(path string) string {
     return !fileInfo.IsDir()
   })
 }
+
+// fileutils.FindDir looks for the given directory in nearby ancestors relative to the current working
+// directory as well as the directory of the executable, falling back to `./` if not found.
+func FindDir(dir string) (string, bool) {
+  found := FindPath(dir, commonBaseSearchPath, func(fileInfo os.FileInfo) bool {
+    return fileInfo.IsDir()
+  })
+
+  if found == "" {
+    return "./", false
+  }
+
+  return found, true
+}

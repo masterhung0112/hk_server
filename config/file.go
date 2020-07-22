@@ -1,7 +1,9 @@
 package config
 
 import (
+	"github.com/masterhung0112/go_server/mlog"
   "github.com/masterhung0112/go_server/model"
+  "github.com/masterhung0112/go_server/utils/fileutils"
   "bytes"
   "fmt"
   "io"
@@ -101,9 +103,10 @@ func (fs *FileStore) resolveFilePath(name string) string {
 // Set replaces the current configuration in its entirety and updates the backing store.
 func (fs *FileStore) Set(newCfg *model.Config) (*model.Config, error) {
   return fs.commonStore.set(newCfg, true, func(cfg *model.Config) error {
-    if *fs.config.ClusterSettings.Enable && *fs.config.ClusterSettings.ReadOnlyConfig {
-      return ErrReadOnlyConfiguration
-    }
+    //TODO: Uncomment
+    // if *fs.config.ClusterSettings.Enable && *fs.config.ClusterSettings.ReadOnlyConfig {
+    //   return ErrReadOnlyConfiguration
+    // }
 
     return fs.commonStore.validate(cfg)
   }, fs.persist)
