@@ -1,11 +1,11 @@
 package config
 
 import (
-	"github.com/masterhung0112/go_server/mlog"
   "path/filepath"
-  "github.com/pkg/errors"
-  "github.com/fsnotify/fsnotify"
 
+  "github.com/fsnotify/fsnotify"
+  "github.com/masterhung0112/go_server/mlog"
+  "github.com/pkg/errors"
 )
 
 type watcher struct {
@@ -34,9 +34,9 @@ func newWatcher(path string, callback func()) (*watcher, error) {
   }
 
   w := &watcher{
-    fsWatcher:  fsWatcher,
-    close:      make(chan struct{}),
-    closed:     make(chan struct{}),
+    fsWatcher: fsWatcher,
+    close:     make(chan struct{}),
+    closed:    make(chan struct{}),
   }
 
   go func() {
@@ -52,7 +52,7 @@ func newWatcher(path string, callback func()) (*watcher, error) {
       case event := <-fsWatcher.Events:
         // We only care about the given file.
         if filepath.Clean(event.Name) == path {
-          if event.Op & fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
+          if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
             mlog.Info("Config file watcher detected a change", mlog.String("path", path))
             go callback()
           }
