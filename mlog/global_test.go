@@ -45,6 +45,48 @@ func TestLoggingAfterInitialized(t *testing.T) {
         `{"level":"error","ts":0,"caller":"mlog/global_test.go:0","msg":"real critical log"}`,
       },
     },
+    {
+      "file logging, json, error",
+			&mlog.LoggerConfiguration{
+				EnableConsole: false,
+				EnableFile:    true,
+				FileJson:      true,
+				FileLevel:     mlog.LevelError,
+			},
+			[]string{
+				`{"level":"error","ts":0,"caller":"mlog/global_test.go:0","msg":"real error log"}`,
+				`{"level":"error","ts":0,"caller":"mlog/global_test.go:0","msg":"real critical log"}`,
+			},
+    },
+    {
+			"file logging, non-json, debug",
+			&mlog.LoggerConfiguration{
+				EnableConsole: false,
+				EnableFile:    true,
+				FileJson:      false,
+				FileLevel:     mlog.LevelDebug,
+			},
+			[]string{
+				`TIME	debug	mlog/global_test.go:0	real debug log`,
+				`TIME	info	mlog/global_test.go:0	real info log`,
+				`TIME	warn	mlog/global_test.go:0	real warning log`,
+				`TIME	error	mlog/global_test.go:0	real error log`,
+				`TIME	error	mlog/global_test.go:0	real critical log`,
+			},
+		},
+		{
+			"file logging, non-json, error",
+			&mlog.LoggerConfiguration{
+				EnableConsole: false,
+				EnableFile:    true,
+				FileJson:      false,
+				FileLevel:     mlog.LevelError,
+			},
+			[]string{
+				`TIME	error	mlog/global_test.go:0	real error log`,
+				`TIME	error	mlog/global_test.go:0	real critical log`,
+			},
+		},
   }
 
   for _, testCase := range testCases {
