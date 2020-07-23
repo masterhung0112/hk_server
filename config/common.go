@@ -113,8 +113,8 @@ func (cs *commonStore) load(f io.ReadCloser, needsSave bool, validate func(*mode
   //TODO: Uncomment out
   // SetDefaults generates various keys and salts if not previously configured. Determine if
   // such a change will be made before invoking.
-  needsSave = needsSave || true //loadedCfg.SqlSettings.AtRestEncryptKey == nil || len(*loadedCfg.SqlSettings.AtRestEncryptKey) == 0
-  needsSave = needsSave || true // loadedCfg.FileSettings.PublicLinkSalt == nil || len(*loadedCfg.FileSettings.PublicLinkSalt) == 0
+  needsSave = needsSave || false //loadedCfg.SqlSettings.AtRestEncryptKey == nil || len(*loadedCfg.SqlSettings.AtRestEncryptKey) == 0
+  needsSave = needsSave || false // loadedCfg.FileSettings.PublicLinkSalt == nil || len(*loadedCfg.FileSettings.PublicLinkSalt) == 0
 
   loadedCfg.SetDefaults()
   loadedCfgWithoutEnvOverrides.SetDefaults()
