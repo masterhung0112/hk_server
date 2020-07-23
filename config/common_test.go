@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"testing"
   "github.com/masterhung0112/go_server/model"
 )
 
@@ -61,4 +62,12 @@ func init() {
     //   SiteURL: sToP("http://TestStoreNew"),
     // },
   }
+}
+
+func prepareExpectedConfig(t *testing.T, expectedCfg *model.Config) *model.Config {
+  expectedCfg = expectedCfg.Clone()
+	// expectedCfg.MessageExportSettings.GlobalRelaySettings = &model.GlobalRelayMessageExportSettings{}
+	// expectedCfg.PluginSettings.Plugins = make(map[string]map[string]interface{})
+	// expectedCfg.PluginSettings.PluginStates = make(map[string]*model.PluginState)
+  return expectedCfg
 }

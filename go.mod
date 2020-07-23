@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
 	github.com/hashicorp/go-multierror v1.1.0
+	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattermost/logr v1.0.5
 	github.com/mattermost/viper v1.0.4
 	github.com/pborman/uuid v1.2.0
