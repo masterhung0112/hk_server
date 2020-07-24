@@ -5,17 +5,32 @@ import (
 )
 
 const (
+  CONN_SECURITY_TLS = "TLS"
+
   PASSWORD_MAXIMUM_LENGTH = 64
   PASSWORD_MINIMUM_LENGTH = 5
+  SERVICE_SETTINGS_DEFAULT_SITE_URL           = "http://localhost:8065"
+  SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS = ":8065"
+  DEFAULT_LOCALE = "en"
 )
 
 type Config struct {
+  ServiceSettings           ServiceSettings
   PasswordSettings PasswordSettings
+  LocalizationSettings LocalizationSettings
+}
+
+// isUpdate detects a pre-existing config based on whether SiteURL has been changed
+func (o *Config) isUpdate() bool {
+	return o.ServiceSettings.SiteURL != nil
 }
 
 func (o *Config) SetDefaults() {
+	isUpdate := o.isUpdate()
 
+  o.ServiceSettings.SetDefaults(isUpdate)
   o.PasswordSettings.SetDefaults()
+  o.LocalizationSettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
@@ -139,4 +154,53 @@ func (s *PasswordSettings) SetDefaults() {
   if s.Symbol == nil {
     s.Symbol = NewBool(true)
   }
+}
+
+type ServiceSettings struct {
+  ConnectionSecurity                                *string  `restricted:"true"`
+  SiteURL                                           *string  `restricted:"true"`
+  ListenAddress                                     *string  `restricted:"true"`
+  EnableDeveloper                                   *bool   `restricted:"true"`
+}
+
+func (s *ServiceSettings) SetDefaults(isUpdate bool) {
+  if s.ConnectionSecurity == nil {
+		s.ConnectionSecurity = NewString("")
+  }
+
+  if s.SiteURL == nil {
+		if s.EnableDeveloper != nil && *s.EnableDeveloper {
+			s.SiteURL = NewString(SERVICE_SETTINGS_DEFAULT_SITE_URL)
+		} else {
+			s.SiteURL = NewString("")
+		}
+  }
+
+  if s.EnableDeveloper == nil {
+		s.EnableDeveloper = NewBool(false)
+	}
+
+  if s.ListenAddress == nil {
+		s.ListenAddress = NewString(SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS)
+	}
+}
+
+type LocalizationSettings struct {
+  DefaultServerLocale *string
+  DefaultClientLocale *string
+  AvailableLocales    *string
+}
+
+func (s *LocalizationSettings) SetDefaults() {
+	if s.DefaultServerLocale == nil {
+		s.DefaultServerLocale = NewString(DEFAULT_LOCALE)
+	}
+
+	if s.DefaultClientLocale == nil {
+		s.DefaultClientLocale = NewString(DEFAULT_LOCALE)
+	}
+
+	if s.AvailableLocales == nil {
+		s.AvailableLocales = NewString("")
+	}
 }

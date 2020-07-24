@@ -5,7 +5,7 @@ import (
   "os"
 )
 
-var commonBaseSearchPath = []string {
+var commonBaseSearchPaths = []string {
   ".",
   "..",
   "../..",
@@ -73,7 +73,7 @@ func FindPath(path string, baseSearchPaths []string, filter func(os.FileInfo) bo
 }
 
 func FindFile(path string) string {
-  return FindPath(path, commonBaseSearchPath, func(fileInfo os.FileInfo) bool {
+  return FindPath(path, commonBaseSearchPaths, func(fileInfo os.FileInfo) bool {
     return !fileInfo.IsDir()
   })
 }
@@ -81,7 +81,7 @@ func FindFile(path string) string {
 // fileutils.FindDir looks for the given directory in nearby ancestors relative to the current working
 // directory as well as the directory of the executable, falling back to `./` if not found.
 func FindDir(dir string) (string, bool) {
-  found := FindPath(dir, commonBaseSearchPath, func(fileInfo os.FileInfo) bool {
+  found := FindPath(dir, commonBaseSearchPaths, func(fileInfo os.FileInfo) bool {
     return fileInfo.IsDir()
   })
 
@@ -90,4 +90,16 @@ func FindDir(dir string) (string, bool) {
   }
 
   return found, true
+}
+
+// FindDirRelBinary looks for the given directory in nearby ancestors relative to the
+// directory of the executable, then relative to the working directory, falling back to `./` if not found.
+func FindDirRelBinary(dir string) (string, bool) {
+	found := findPath(dir, commonBaseSearchPaths, false, func(fileInfo os.FileInfo) bool {
+		return fileInfo.IsDir()
+	})
+	if found == "" {
+		return "./", false
+	}
+	return found, true
 }

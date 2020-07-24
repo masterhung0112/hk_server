@@ -1,0 +1,20 @@
+{
+    "ServiceSettings": {
+        "ConnectionSecurity": "",
+        "SiteURL": "",
+        "ListenAddress": ":0",
+        "EnableDeveloper": false
+    },
+    "PasswordSettings": {
+        "MinimumLength": 10,
+        "Lowercase": true,
+        "Number": true,
+        "Uppercase": true,
+        "Symbol": true
+    },
+    "LocalizationSettings": {
+        "DefaultServerLocale": "en",
+        "DefaultClientLocale": "en",
+        "AvailableLocales": ""
+    }
+}

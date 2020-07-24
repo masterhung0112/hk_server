@@ -10,6 +10,9 @@ type Store interface {
   // Get fetches the current, cached configuration.
   Get() *model.Config
 
+  // Set replaces the current configuration in its entirety and updates the backing store
+  Set(*model.Config) (*model.Config, error)
+
   AddListener(listener Listener) string
   RemoveListener(id string)
 }
