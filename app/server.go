@@ -1,6 +1,8 @@
 package app
 
 import (
+	"time"
+	"context"
 	"github.com/masterhung0112/go_server/utils"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/mlog"
@@ -13,6 +15,8 @@ import (
 
 type Server struct {
   configStore             config.Store
+
+  didFinishListen chan struct{}
 
   // RootRouter is the starting point for all HTTP requests to the server.
   RootRouter *mux.Router
@@ -44,6 +48,7 @@ func NewServer(options ...Option) (*Server, error) {
     s.configStore = configStore
   }
 
+  // Prepare the translation file
   if err := utils.TranslationsPreInit(); err != nil {
     return nil, errors.Wrapf(err, "unable to load Mattermost translation files")
   }
@@ -62,6 +67,7 @@ func (s *Server) Start() error {
     Handler:      handler,
   }
 
+  // Get IP and port for listening
   addr := *s.Config().ServiceSettings.ListenAddress
 	if addr == "" {
 		if *s.Config().ServiceSettings.ConnectionSecurity == model.CONN_SECURITY_TLS {
@@ -78,15 +84,53 @@ func (s *Server) Start() error {
   }
   s.ListenAddr = listener.Addr().(*net.TCPAddr)
 
+  s.didFinishListen = make(chan struct{})
   go func() {
     err = s.Server.Serve(listener)
+
+    close(s.didFinishListen)
   }()
 
   return nil
 }
 
-func (server *Server) Shutdown() error {
+func (s *Server) Shutdown() error {
+  mlog.Info("Stopping Server...")
+
+  s.StopHttpServer()
+
+  // if s.Store != nil {
+  //   s.Store.Close()
+  // }
+
+  mlog.Info("Stopped Server...")
+
   return nil
+}
+
+const TIME_TO_WAIT_FOR_CONNECTIONS_TO_CLOSE_ON_SERVER_SHUTDOWN = time.Second
+
+func (s *Server) StopHttpServer() {
+  if s.Server != nil {
+    ctx, cancel := context.WithTimeout(context.Background(), TIME_TO_WAIT_FOR_CONNECTIONS_TO_CLOSE_ON_SERVER_SHUTDOWN)
+    defer cancel()
+
+    didShutdown := false
+    for s.didFinishListen != nil && !didShutdown {
+      if err := s.Server.Shutdown(ctx); err != nil {
+        mlog.Warn("Unable to shutdown server", mlog.Err(err))
+      }
+      timer := time.NewTimer(time.Millisecond * 50)
+      select {
+      case <-s.didFinishListen:
+        didShutdown = true
+      case <-timer.C:
+      }
+      timer.Stop()
+    }
+    s.Server.Close()
+    s.Server = nil
+  }
 }
 
 func (s *Server) UpdateConfig(f func(*model.Config)) {
