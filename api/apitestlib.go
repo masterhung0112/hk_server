@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/masterhung0112/go_server/config"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/app"
 
@@ -13,7 +14,7 @@ type TestHelper struct {
   Client      *model.Client
 }
 
-func setupTestHelper(dbStore store.Store) *TestHelper {
+func setupTestHelper() *TestHelper {
   var options []app.Option
 
   s, err := app.NewServer(options...)
@@ -25,6 +26,9 @@ func setupTestHelper(dbStore store.Store) *TestHelper {
     App:    app.New(app.ServerConnector(s)),
     Server: s,
   }
+
+  // Initialize the router URL
+  ApiInit(th.App.Srv().Router)
 
   // Start HTTP Server and other stuff
   if err := th.Server.Start(); err != nil {

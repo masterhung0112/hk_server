@@ -7,6 +7,16 @@ type App struct {
   context context.Context
 }
 
+func New(options ...AppOption) *App {
+  app := &App{}
+
+  for _, option := range options {
+		option(app)
+	}
+
+  return app
+}
+
 func (a *App) SetContext(c context.Context) {
   a.context = c
 }

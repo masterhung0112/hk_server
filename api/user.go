@@ -20,3 +20,16 @@ func CreateUser(c *web.Context, w http.ResponseWriter, r *http.Request) {
   w.WriteHeader(http.StatusCreated)
   w.Write([]byte(ruser.ToJson()))
 }
+
+func (api *API) InitUser() {
+  api.BaseRoutes.Users.Handle("", api.ApiHandler(createUser)).Methods("POST")
+  api.BaseRoutes.Users.Handle("", api.ApiHandler(getUsers)).Methods("GET")
+}
+
+func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
+
+}
+
+func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
+  w.Write([]byte("Hello World"))
+}
