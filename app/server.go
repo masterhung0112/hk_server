@@ -25,6 +25,10 @@ type Server struct {
   // requests to the server
   LocalRouter *mux.Router
 
+  // Router is the starting point for all web, api4 and ws requests to the server.
+  // It differs from RootRouter only if the SiteURL contains a /subpath
+  Router    *mux.Router
+
   Server      *http.Server
   ListenAddr  *net.TCPAddr
 }
@@ -52,6 +56,13 @@ func NewServer(options ...Option) (*Server, error) {
   if err := utils.TranslationsPreInit(); err != nil {
     return nil, errors.Wrapf(err, "unable to load Mattermost translation files")
   }
+
+  // Prepare Router for all Web, WS paths
+  subpath, err := utils.GetSubpathFromConfig(s.Config())
+  if err != nil {
+    return nil, errors.Wrap(err, "Failed to parse SiteURL subpath")
+  }
+  s.Router = s.RootRouter.PathPrefix(subpath).Subrouter()
 
   return s, nil
 }
@@ -87,6 +98,11 @@ func (s *Server) Start() error {
   s.didFinishListen = make(chan struct{})
   go func() {
     err = s.Server.Serve(listener)
+
+    if err != nil && err != http.ErrServerClosed {
+      mlog.Critical("Error starting server", mlog.Err(err))
+      time.Sleep(time.Second)
+    }
 
     close(s.didFinishListen)
   }()

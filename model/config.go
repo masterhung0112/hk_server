@@ -157,8 +157,8 @@ func (s *PasswordSettings) SetDefaults() {
 }
 
 type ServiceSettings struct {
-  ConnectionSecurity                                *string  `restricted:"true"`
   SiteURL                                           *string  `restricted:"true"`
+  ConnectionSecurity                                *string  `restricted:"true"`
   ListenAddress                                     *string  `restricted:"true"`
   EnableDeveloper                                   *bool   `restricted:"true"`
 }
