@@ -31,5 +31,6 @@ func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
-  w.Write([]byte("Hello World"))
+  w.WriteHeader(http.StatusOK)
+  w.Write([]byte(`{"name": "Hello World" }`))
 }

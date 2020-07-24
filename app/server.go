@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 	"context"
 	"github.com/masterhung0112/go_server/utils"
@@ -74,6 +75,7 @@ func (s *Server) Start() error {
 
   var handler http.Handler = s.RootRouter
 
+  // Set HTTP handler of gozilla
   s.Server = &http.Server{
     Handler:      handler,
   }
@@ -94,6 +96,9 @@ func (s *Server) Start() error {
     return err
   }
   s.ListenAddr = listener.Addr().(*net.TCPAddr)
+
+  logListeningPort := fmt.Sprintf("Server is listening on %v", listener.Addr().String())
+	mlog.Info(logListeningPort, mlog.String("address", listener.Addr().String()))
 
   s.didFinishListen = make(chan struct{})
   go func() {

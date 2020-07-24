@@ -92,6 +92,10 @@ func (client *Client) GetUsersRoute() string {
   return "/users"
 }
 
+func (c *Client) DoApiGet(url string, etag string) (*http.Response, *AppError) {
+	return c.DoApiRequest(http.MethodGet, c.ApiUrl+url, "", etag)
+}
+
 func (client *Client) DoApiPost(url string, data string) (*http.Response, *AppError) {
   return client.DoApiRequest(http.MethodPost, client.ApiUrl+url, data, "")
 }

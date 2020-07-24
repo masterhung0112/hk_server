@@ -14,7 +14,7 @@ type AppError struct {
 }
 
 func (err *AppError) Error() string {
-  return err.Where + ":" + err.Message
+  return err.Where + ":" + err.Message + " " + err.DetailedError
 }
 
 func (er *AppError) ToJson() string {

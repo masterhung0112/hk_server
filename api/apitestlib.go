@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	"testing"
 	"github.com/masterhung0112/go_server/config"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/app"
@@ -42,4 +44,8 @@ func setupTestHelper() *TestHelper {
 
 func (th *TestHelper) CreateClient() *model.Client {
   return model.NewApiClient(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
+}
+
+func Setup(tb testing.TB) *TestHelper {
+  return setupTestHelper()
 }
