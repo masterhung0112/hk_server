@@ -27,7 +27,18 @@ func (api *API) InitUser() {
 }
 
 func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
+  user := model.UserFromJson(r.Body)
 
+  var ruser *model.User
+  ruser, err := c.App.CreateUserFromSignup(user)
+
+  if err != nil {
+		c.Err = err
+		return
+  }
+
+  w.WriteHeader(http.StatusCreated)
+  w.Write([]byte(ruser.ToJson()))
 }
 
 func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
