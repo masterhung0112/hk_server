@@ -48,8 +48,6 @@ func runServer(configStore config.Store, interruptChan chan os.Signal) error {
     return serverErr
   }
 
-  // interruptChan := make(chan os.Signal, 1)
-
   // wait for kill signal before attempting to gracefully shutdown
 	// the running service
 	signal.Notify(interruptChan, syscall.SIGINT, syscall.SIGTERM)
