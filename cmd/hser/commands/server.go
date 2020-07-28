@@ -28,7 +28,7 @@ func serverCmdF(command *cobra.Command, args []string) error {
   return nil
 }
 
-func runServer(configStore config.Store) error {
+func runServer(configStore config.Store, interruptChan chan os.Signal) error {
   options := []app.Option{
     app.ConfigStore(configStore),
   }
@@ -48,7 +48,7 @@ func runServer(configStore config.Store) error {
     return serverErr
   }
 
-  interruptChan := make(chan os.Signal, 1)
+  // interruptChan := make(chan os.Signal, 1)
 
   // wait for kill signal before attempting to gracefully shutdown
 	// the running service
