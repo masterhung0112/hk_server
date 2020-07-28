@@ -17,7 +17,7 @@ type API struct {
   BaseRoutes    *ApiRoutes
 }
 
-func ApiInit(root *mux.Router) {
+func ApiInit(root *mux.Router) (*API) {
   api := &API {
     BaseRoutes: &ApiRoutes{},
   }
@@ -28,4 +28,6 @@ func ApiInit(root *mux.Router) {
   api.BaseRoutes.Users = api.BaseRoutes.ApiRoot.PathPrefix("/users").Subrouter()
   api.BaseRoutes.User = api.BaseRoutes.ApiRoot.PathPrefix("/users/{user_id:[A-za-z0-9]+}").Subrouter()
   api.InitUser()
+
+  return api
 }
