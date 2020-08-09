@@ -7,6 +7,7 @@ import (
 
 type Store interface {
   User() UserStore
+  Close()
 }
 
 type UserStore interface {

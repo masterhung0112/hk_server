@@ -15,7 +15,9 @@ const (
 
   DATABASE_DRIVER_SQLITE   = "sqlite3"
 	DATABASE_DRIVER_MYSQL    = "mysql"
-	DATABASE_DRIVER_POSTGRES = "postgres"
+  DATABASE_DRIVER_POSTGRES = "postgres"
+
+  SQL_SETTINGS_DEFAULT_DATA_SOURCE = "mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
 )
 
 type Config struct {
@@ -213,6 +215,7 @@ func (s *LocalizationSettings) SetDefaults() {
 
 type SqlSettings struct {
   DriverName *string
+  DataSource                  *string  `restricted:"true"`
   DataSourceReplicas          []string
 }
 
@@ -220,6 +223,10 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
   if s.DriverName == nil {
 		s.DriverName = NewString(DATABASE_DRIVER_MYSQL)
   }
+
+  if s.DataSource == nil {
+		s.DataSource = NewString(SQL_SETTINGS_DEFAULT_DATA_SOURCE)
+	}
 
   if s.DataSourceReplicas == nil {
 		s.DataSourceReplicas = []string{}
