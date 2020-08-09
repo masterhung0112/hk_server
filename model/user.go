@@ -10,7 +10,7 @@ type User struct {
   CreatedAt   int64       `json:"created_at,omitempty"`
   UpdatedAt   int64       `json:"updated_at,omitempty"`
   DeletedAt   int64       `json:"deleted_at"`
-  UserName    string      `json:"username"`
+  Username    string      `json:"username"`
   Password    string      `json:"password,omitempty"`
   Email       string      `json:"email"`
   Roles       string      `json:"roles"`

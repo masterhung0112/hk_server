@@ -8,4 +8,5 @@
     "editor.tabSize": 2,
     "editor.formatOnSave": false
   },
+  "go.lintOnSave": "off",
 }

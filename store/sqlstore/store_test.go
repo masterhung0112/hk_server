@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"github.com/masterhung0112/go_server/store/storetest"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store"
 	"testing"
@@ -18,11 +19,11 @@ var storeTypes []*storeType
 func StoreTestWithSqlSupplier(t *testing.T, f func(*testing.T, store.Store, storetest.SqlSupplier)) {
   for _, st := range storeTypes {
     st := st
-    t.Run(st.name, func(t *testing.T) {
+    t.Run(st.Name, func(t *testing.T) {
       if testing.Short() {
         t.SkipNow()
       }
-      f(t, st.store, st.SqlSupplier)
+      f(t, st.Store, st.SqlSupplier)
     })
   }
 }

@@ -213,10 +213,15 @@ func (s *LocalizationSettings) SetDefaults() {
 
 type SqlSettings struct {
   DriverName *string
+  DataSourceReplicas          []string
 }
 
 func (s *SqlSettings) SetDefaults(isUpdate bool) {
   if s.DriverName == nil {
 		s.DriverName = NewString(DATABASE_DRIVER_MYSQL)
+  }
+
+  if s.DataSourceReplicas == nil {
+		s.DataSourceReplicas = []string{}
 	}
 }
