@@ -12,12 +12,17 @@ const (
   SERVICE_SETTINGS_DEFAULT_SITE_URL           = "http://localhost:8065"
   SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS = ":8065"
   DEFAULT_LOCALE = "en"
+
+  DATABASE_DRIVER_SQLITE   = "sqlite3"
+	DATABASE_DRIVER_MYSQL    = "mysql"
+	DATABASE_DRIVER_POSTGRES = "postgres"
 )
 
 type Config struct {
   ServiceSettings           ServiceSettings
   PasswordSettings PasswordSettings
   LocalizationSettings LocalizationSettings
+  SqlSettings SqlSettings
 }
 
 // isUpdate detects a pre-existing config based on whether SiteURL has been changed
@@ -31,6 +36,7 @@ func (o *Config) SetDefaults() {
   o.ServiceSettings.SetDefaults(isUpdate)
   o.PasswordSettings.SetDefaults()
   o.LocalizationSettings.SetDefaults()
+  o.SqlSettings.SetDefaults(isUpdate)
 }
 
 func (o *Config) ToJson() string {
@@ -202,5 +208,15 @@ func (s *LocalizationSettings) SetDefaults() {
 
 	if s.AvailableLocales == nil {
 		s.AvailableLocales = NewString("")
+	}
+}
+
+type SqlSettings struct {
+  DriverName *string
+}
+
+func (s *SqlSettings) SetDefaults(isUpdate bool) {
+  if s.DriverName == nil {
+		s.DriverName = NewString(DATABASE_DRIVER_MYSQL)
 	}
 }
