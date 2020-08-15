@@ -1,52 +1,53 @@
 package sqlstore
 
 import (
+	dbsql "database/sql"
 	"encoding/json"
-	"github.com/dyatlov/go-opengraph/opengraph"
-	"github.com/mattermost/gorp"
-	"github.com/masterhung0112/go_server/utils"
-	"github.com/pkg/errors"
 	"fmt"
-	"time"
-  "os"
-  dbsql "database/sql"
-	"github.com/masterhung0112/go_server/mlog"
+	"os"
 	"sync/atomic"
+	"time"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store"
-
+	"github.com/masterhung0112/go_server/utils"
+	"github.com/mattermost/gorp"
+	"github.com/pkg/errors"
 )
 
 type SqlSupplierStores struct {
-  user                 store.UserStore
+	user store.UserStore
 }
 
 type SqlSupplier struct {
-  // rrCounter and srCounter should be kept first.
+	// rrCounter and srCounter should be kept first.
 	// See https://github.com/mattermost/mattermost-server/v5/pull/7281
-	rrCounter      int64
-  srCounter      int64
+	rrCounter int64
+	srCounter int64
 
-  master         *gorp.DbMap
-  replicas       []*gorp.DbMap
-  stores         SqlSupplierStores
-  settings       *model.SqlSettings
-  lockedToMaster bool
-  license        *model.License
+	master         *gorp.DbMap
+	replicas       []*gorp.DbMap
+	stores         SqlSupplierStores
+	settings       *model.SqlSettings
+	lockedToMaster bool
+	license        *model.License
 }
 
 const (
-  DB_PING_ATTEMPTS     = 18
-  DB_PING_TIMEOUT_SECS = 10
+	DB_PING_ATTEMPTS     = 18
+	DB_PING_TIMEOUT_SECS = 10
 )
 
 const (
-  EXIT_GENERIC_FAILURE             = 1
-	EXIT_CREATE_TABLE                = 100
-  EXIT_DB_OPEN                     = 101
-  EXIT_PING                        = 102
-	EXIT_NO_DRIVER                   = 103
-	EXIT_TABLE_EXISTS                = 104
+	EXIT_GENERIC_FAILURE = 1
+	EXIT_CREATE_TABLE    = 100
+	EXIT_DB_OPEN         = 101
+	EXIT_PING            = 102
+	EXIT_NO_DRIVER       = 103
+	EXIT_TABLE_EXISTS    = 104
 )
 
 type mattermConverter struct{}
@@ -156,22 +157,22 @@ func (ss *SqlSupplier) User() store.UserStore {
 }
 
 func setupConnection(con_type string, dataSource string, settings *model.SqlSettings) *gorp.DbMap {
-  db, err := dbsql.Open(*settings.DriverName, dataSource)
-  if err != nil {
+	db, err := dbsql.Open(*settings.DriverName, dataSource)
+	if err != nil {
 		mlog.Critical("Failed to open SQL connection to err.", mlog.Err(err))
 		time.Sleep(time.Second)
 		os.Exit(EXIT_DB_OPEN)
-  }
+	}
 
-  for i := 0; i < DB_PING_ATTEMPTS; i++ {
-    //TODO: Add ping attemp
-  }
+	for i := 0; i < DB_PING_ATTEMPTS; i++ {
+		//TODO: Add ping attemp
+	}
 
-  connectionTimeout := time.Duration(*settings.QueryTimeout) * time.Second
+	connectionTimeout := time.Duration(*settings.QueryTimeout) * time.Second
 
-  var dbmap *gorp.DbMap
+	var dbmap *gorp.DbMap
 
-  if *settings.DriverName == model.DATABASE_DRIVER_SQLITE {
+	if *settings.DriverName == model.DATABASE_DRIVER_SQLITE {
 		dbmap = &gorp.DbMap{Db: db, TypeConverter: mattermConverter{}, Dialect: gorp.SqliteDialect{}, QueryTimeout: connectionTimeout}
 	} else if *settings.DriverName == model.DATABASE_DRIVER_MYSQL {
 		dbmap = &gorp.DbMap{Db: db, TypeConverter: mattermConverter{}, Dialect: gorp.MySQLDialect{Engine: "InnoDB", Encoding: "UTF8MB4"}, QueryTimeout: connectionTimeout}
@@ -183,20 +184,20 @@ func setupConnection(con_type string, dataSource string, settings *model.SqlSett
 		os.Exit(EXIT_NO_DRIVER)
 	}
 
-  return dbmap
+	return dbmap
 }
 
 func (ss *SqlSupplier) initConnection() {
-  // Setup connection object for master
-  ss.master = setupConnection("master", *ss.settings.DataSource, ss.settings)
+	// Setup connection object for master
+	ss.master = setupConnection("master", *ss.settings.DataSource, ss.settings)
 
-  // Setup connection object to replicas
-  if len(ss.settings.DataSourceReplicas) > 0 {
-    ss.replicas = make([]*gorp.DbMap, len(ss.settings.DataSourceReplicas))
-    for i, replica := range ss.settings.DataSourceReplicas {
-      ss.replicas[i] = setupConnection(fmt.Sprintf("replica-%v", i), replica, ss.settings)
-    }
-  }
+	// Setup connection object to replicas
+	if len(ss.settings.DataSourceReplicas) > 0 {
+		ss.replicas = make([]*gorp.DbMap, len(ss.settings.DataSourceReplicas))
+		for i, replica := range ss.settings.DataSourceReplicas {
+			ss.replicas[i] = setupConnection(fmt.Sprintf("replica-%v", i), replica, ss.settings)
+		}
+	}
 }
 
 func (ss *SqlSupplier) Close() {
@@ -206,14 +207,50 @@ func (ss *SqlSupplier) Close() {
 	}
 }
 
+func (ss *SqlSupplier) DropAllTables() {
+	ss.master.TruncateTables()
+}
+
+func (ss *SqlSupplier) MarkSystemRanUnitTests() {
+	// props, err := ss.System().Get()
+	// if err != nil {
+	// 	return
+	// }
+
+	//TODO: Open this
+	// unitTests := props[model.SYSTEM_RAN_UNIT_TESTS]
+	// if len(unitTests) == 0 {
+	// 	systemTests := &model.System{Name: model.SYSTEM_RAN_UNIT_TESTS, Value: "1"}
+	// 	ss.System().Save(systemTests)
+	// }
+}
+
+func (ss *SqlSupplier) getQueryBuilder() sq.StatementBuilderType {
+	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
+	if ss.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		builder = builder.PlaceholderFormat(sq.Dollar)
+	}
+	return builder
+}
+
+
+func (ss *SqlSupplier) GetAllConns() []*gorp.DbMap {
+	all := make([]*gorp.DbMap, len(ss.replicas)+1)
+	copy(all, ss.replicas)
+	all[len(ss.replicas)] = ss.master
+	return all
+}
+
 func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
-  supplier := &SqlSupplier{
+	supplier := &SqlSupplier{
 		rrCounter: 0,
 		srCounter: 0,
 		settings:  &settings,
-  }
+	}
 
-  supplier.initConnection()
+	supplier.initConnection()
 
-  return supplier
+	supplier.stores.user = newSqlUserStore(supplier)
+
+	return supplier
 }

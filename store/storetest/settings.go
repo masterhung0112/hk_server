@@ -10,6 +10,7 @@ import (
 	"net/url"
   "github.com/masterhung0112/go_server/model"
   "github.com/go-sql-driver/mysql"
+  _ "github.com/lib/pq"
 )
 
 const (

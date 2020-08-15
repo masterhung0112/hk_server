@@ -8,6 +8,8 @@ import (
 type Store interface {
   User() UserStore
   Close()
+  DropAllTables()
+  MarkSystemRanUnitTests()
 }
 
 type UserStore interface {
