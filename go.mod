@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
 	github.com/Masterminds/squirrel v1.4.0
+	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-gorp/gorp v2.2.0+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
@@ -13,7 +14,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattermost/go-i18n v1.11.0
-	github.com/mattermost/gorp v2.0.0+incompatible
+	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible
 	github.com/mattermost/logr v1.0.5
 	github.com/mattermost/viper v1.0.4
 	github.com/pborman/uuid v1.2.0

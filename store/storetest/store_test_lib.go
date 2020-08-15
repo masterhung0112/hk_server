@@ -1,7 +1,7 @@
 package storetest
 
 import (
-  "github.com/go-gorp/gorp"
+  "github.com/mattermost/gorp"
 )
 
 type SqlSupplier interface {

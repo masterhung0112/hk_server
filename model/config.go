@@ -217,6 +217,7 @@ type SqlSettings struct {
   DriverName *string
   DataSource                  *string  `restricted:"true"`
   DataSourceReplicas          []string
+  QueryTimeout                *int     `restricted:"true"`
 }
 
 func (s *SqlSettings) SetDefaults(isUpdate bool) {
@@ -230,5 +231,9 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
 
   if s.DataSourceReplicas == nil {
 		s.DataSourceReplicas = []string{}
+  }
+
+  if s.QueryTimeout == nil {
+		s.QueryTimeout = NewInt(30)
 	}
 }

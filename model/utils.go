@@ -21,6 +21,26 @@ const (
   SYMBOLS           = " !\"\\#$%&'()*+,-./:;<=>?@[]^_`|~"
 )
 
+type StringInterface map[string]interface{}
+type StringMap map[string]string
+type StringArray []string
+
+func (sa StringArray) Equals(input StringArray) bool {
+
+	if len(sa) != len(input) {
+		return false
+	}
+
+	for index := range sa {
+
+		if sa[index] != input[index] {
+			return false
+		}
+	}
+
+	return true
+}
+
 var encoding = base32.NewEncoding("ybndrfg8ejkmcpqxot1uwisza345h769")
 
 // NewId is a globally unique identifier.  It is a [A-Z0-9] string 26
@@ -82,4 +102,69 @@ func AppErrorFromJson(data io.Reader) *AppError {
   } else {
     return NewAppError("AppErrorFromJson", "model.utils.decode_json.app_error", nil, "body: "+str, http.StatusInternalServerError)
   }
+}
+
+func ArrayToJson(objmap []string) string {
+	b, _ := json.Marshal(objmap)
+	return string(b)
+}
+
+func ArrayFromJson(data io.Reader) []string {
+	decoder := json.NewDecoder(data)
+
+	var objmap []string
+	if err := decoder.Decode(&objmap); err != nil {
+		return make([]string, 0)
+	} else {
+		return objmap
+	}
+}
+
+func ArrayFromInterface(data interface{}) []string {
+	stringArray := []string{}
+
+	dataArray, ok := data.([]interface{})
+	if !ok {
+		return stringArray
+	}
+
+	for _, v := range dataArray {
+		if str, ok := v.(string); ok {
+			stringArray = append(stringArray, str)
+		}
+	}
+
+	return stringArray
+}
+
+func StringInterfaceToJson(objmap map[string]interface{}) string {
+	b, _ := json.Marshal(objmap)
+	return string(b)
+}
+
+func StringInterfaceFromJson(data io.Reader) map[string]interface{} {
+	decoder := json.NewDecoder(data)
+
+	var objmap map[string]interface{}
+	if err := decoder.Decode(&objmap); err != nil {
+		return make(map[string]interface{})
+	} else {
+		return objmap
+	}
+}
+
+func StringToJson(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
+}
+
+func StringFromJson(data io.Reader) string {
+	decoder := json.NewDecoder(data)
+
+	var s string
+	if err := decoder.Decode(&s); err != nil {
+		return ""
+	} else {
+		return s
+	}
 }

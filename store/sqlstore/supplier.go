@@ -1,8 +1,17 @@
 package sqlstore
 
 import (
+	"encoding/json"
+	"github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/mattermost/gorp"
+	"github.com/masterhung0112/go_server/utils"
+	"github.com/pkg/errors"
+	"fmt"
+	"time"
+  "os"
+  dbsql "database/sql"
+	"github.com/masterhung0112/go_server/mlog"
 	"sync/atomic"
-	"github.com/go-gorp/gorp"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store"
 
@@ -26,6 +35,105 @@ type SqlSupplier struct {
   license        *model.License
 }
 
+const (
+  DB_PING_ATTEMPTS     = 18
+  DB_PING_TIMEOUT_SECS = 10
+)
+
+const (
+  EXIT_GENERIC_FAILURE             = 1
+	EXIT_CREATE_TABLE                = 100
+  EXIT_DB_OPEN                     = 101
+  EXIT_PING                        = 102
+	EXIT_NO_DRIVER                   = 103
+	EXIT_TABLE_EXISTS                = 104
+)
+
+type mattermConverter struct{}
+
+type JSONSerializable interface {
+	ToJson() string
+}
+
+func (me mattermConverter) ToDb(val interface{}) (interface{}, error) {
+
+	switch t := val.(type) {
+	case model.StringMap:
+		return model.MapToJson(t), nil
+	case map[string]string:
+		return model.MapToJson(model.StringMap(t)), nil
+	case model.StringArray:
+		return model.ArrayToJson(t), nil
+	case model.StringInterface:
+		return model.StringInterfaceToJson(t), nil
+	case map[string]interface{}:
+		return model.StringInterfaceToJson(model.StringInterface(t)), nil
+	case JSONSerializable:
+		return t.ToJson(), nil
+	case *opengraph.OpenGraph:
+		return json.Marshal(t)
+	}
+
+	return val, nil
+}
+
+func (me mattermConverter) FromDb(target interface{}) (gorp.CustomScanner, bool) {
+	switch target.(type) {
+	case *model.StringMap:
+		binder := func(holder, target interface{}) error {
+			s, ok := holder.(*string)
+			if !ok {
+				return errors.New(utils.T("store.sql.convert_string_map"))
+			}
+			b := []byte(*s)
+			return json.Unmarshal(b, target)
+		}
+		return gorp.CustomScanner{Holder: new(string), Target: target, Binder: binder}, true
+	case *map[string]string:
+		binder := func(holder, target interface{}) error {
+			s, ok := holder.(*string)
+			if !ok {
+				return errors.New(utils.T("store.sql.convert_string_map"))
+			}
+			b := []byte(*s)
+			return json.Unmarshal(b, target)
+		}
+		return gorp.CustomScanner{Holder: new(string), Target: target, Binder: binder}, true
+	case *model.StringArray:
+		binder := func(holder, target interface{}) error {
+			s, ok := holder.(*string)
+			if !ok {
+				return errors.New(utils.T("store.sql.convert_string_array"))
+			}
+			b := []byte(*s)
+			return json.Unmarshal(b, target)
+		}
+		return gorp.CustomScanner{Holder: new(string), Target: target, Binder: binder}, true
+	case *model.StringInterface:
+		binder := func(holder, target interface{}) error {
+			s, ok := holder.(*string)
+			if !ok {
+				return errors.New(utils.T("store.sql.convert_string_interface"))
+			}
+			b := []byte(*s)
+			return json.Unmarshal(b, target)
+		}
+		return gorp.CustomScanner{Holder: new(string), Target: target, Binder: binder}, true
+	case *map[string]interface{}:
+		binder := func(holder, target interface{}) error {
+			s, ok := holder.(*string)
+			if !ok {
+				return errors.New(utils.T("store.sql.convert_string_interface"))
+			}
+			b := []byte(*s)
+			return json.Unmarshal(b, target)
+		}
+		return gorp.CustomScanner{Holder: new(string), Target: target, Binder: binder}, true
+	}
+
+	return gorp.CustomScanner{}, false
+}
+
 func (ss *SqlSupplier) DriverName() string {
 	return *ss.settings.DriverName
 }
@@ -45,4 +153,67 @@ func (ss *SqlSupplier) GetReplica() *gorp.DbMap {
 
 func (ss *SqlSupplier) User() store.UserStore {
 	return ss.stores.user
+}
+
+func setupConnection(con_type string, dataSource string, settings *model.SqlSettings) *gorp.DbMap {
+  db, err := dbsql.Open(*settings.DriverName, dataSource)
+  if err != nil {
+		mlog.Critical("Failed to open SQL connection to err.", mlog.Err(err))
+		time.Sleep(time.Second)
+		os.Exit(EXIT_DB_OPEN)
+  }
+
+  for i := 0; i < DB_PING_ATTEMPTS; i++ {
+    //TODO: Add ping attemp
+  }
+
+  connectionTimeout := time.Duration(*settings.QueryTimeout) * time.Second
+
+  var dbmap *gorp.DbMap
+
+  if *settings.DriverName == model.DATABASE_DRIVER_SQLITE {
+		dbmap = &gorp.DbMap{Db: db, TypeConverter: mattermConverter{}, Dialect: gorp.SqliteDialect{}, QueryTimeout: connectionTimeout}
+	} else if *settings.DriverName == model.DATABASE_DRIVER_MYSQL {
+		dbmap = &gorp.DbMap{Db: db, TypeConverter: mattermConverter{}, Dialect: gorp.MySQLDialect{Engine: "InnoDB", Encoding: "UTF8MB4"}, QueryTimeout: connectionTimeout}
+	} else if *settings.DriverName == model.DATABASE_DRIVER_POSTGRES {
+		dbmap = &gorp.DbMap{Db: db, TypeConverter: mattermConverter{}, Dialect: gorp.PostgresDialect{}, QueryTimeout: connectionTimeout}
+	} else {
+		mlog.Critical("Failed to create dialect specific driver")
+		time.Sleep(time.Second)
+		os.Exit(EXIT_NO_DRIVER)
+	}
+
+  return dbmap
+}
+
+func (ss *SqlSupplier) initConnection() {
+  // Setup connection object for master
+  ss.master = setupConnection("master", *ss.settings.DataSource, ss.settings)
+
+  // Setup connection object to replicas
+  if len(ss.settings.DataSourceReplicas) > 0 {
+    ss.replicas = make([]*gorp.DbMap, len(ss.settings.DataSourceReplicas))
+    for i, replica := range ss.settings.DataSourceReplicas {
+      ss.replicas[i] = setupConnection(fmt.Sprintf("replica-%v", i), replica, ss.settings)
+    }
+  }
+}
+
+func (ss *SqlSupplier) Close() {
+	ss.master.Db.Close()
+	for _, replica := range ss.replicas {
+		replica.Db.Close()
+	}
+}
+
+func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
+  supplier := &SqlSupplier{
+		rrCounter: 0,
+		srCounter: 0,
+		settings:  &settings,
+  }
+
+  supplier.initConnection()
+
+  return supplier
 }

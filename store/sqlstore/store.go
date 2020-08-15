@@ -1,7 +1,7 @@
 package sqlstore
 
 import (
-	"github.com/go-gorp/gorp"
+	"github.com/mattermost/gorp"
 	"github.com/masterhung0112/go_server/store"
 )
 

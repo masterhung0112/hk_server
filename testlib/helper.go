@@ -43,19 +43,27 @@ func NewMainHelperWithOptions(options *HelperOptions) *MainHelper {
 func (h *MainHelper) setupStore() {
   driverName := os.Getenv("MM_SQLSETTINGS_DRIVERNAME")
 	if driverName == "" {
+    // Use MySQL my default for database
 		driverName = model.DATABASE_DRIVER_MYSQL
   }
 
+  // Setup the SQL setting
   h.Settings = storetest.MakeSqlSettings(driverName)
 
+  // Get the default config
   config := &model.Config{}
   config.SetDefaults()
 
-  h.SQLSupplier = sqlstore.NewSqlSupplier(*h.Settings, nil)
+  // Create SQL Store
+  h.SQLSupplier = sqlstore.NewSqlSupplier(*h.Settings)
   h.Store = &TestStore{
 		h.SQLSupplier,
 	}
   // searchlayer.NewSearchLayer(&TestStore{
 	// 	h.SQLSupplier,
 	// }, h.SearchEngine, config)
+}
+
+func (h *MainHelper) Main(m *testing.M) {
+  h.status = m.Run()
 }

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	gorp "github.com/go-gorp/gorp"
+	gorp "github.com/mattermost/gorp"
 	mock "github.com/stretchr/testify/mock"
 )
 
