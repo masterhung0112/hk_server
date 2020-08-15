@@ -1,6 +1,8 @@
 package app
 
 import (
+	"github.com/masterhung0112/go_server/store/sqlstore"
+	"github.com/masterhung0112/go_server/store"
 	"fmt"
 	"time"
 	"context"
@@ -15,7 +17,10 @@ import (
 )
 
 type Server struct {
-  configStore             config.Store
+  newStore            func() store.Store
+  sqlStore           *sqlstore.SqlSupplier
+  Store              store.Store
+  configStore        config.Store
 
   didFinishListen chan struct{}
 
@@ -57,6 +62,15 @@ func NewServer(options ...Option) (*Server, error) {
   if err := utils.TranslationsPreInit(); err != nil {
     return nil, errors.Wrapf(err, "unable to load Mattermost translation files")
   }
+
+  if s.newStore == nil {
+    s.newStore = func() store.Store {
+      s.sqlStore = sqlstore.NewSqlSupplier(s.Config().SqlSettings)
+      return s.sqlStore
+    }
+  }
+
+  s.Store = s.newStore()
 
   // Prepare Router for all Web, WS paths
   subpath, err := utils.GetSubpathFromConfig(s.Config())
@@ -120,9 +134,9 @@ func (s *Server) Shutdown() error {
 
   s.StopHttpServer()
 
-  // if s.Store != nil {
-  //   s.Store.Close()
-  // }
+  if s.Store != nil {
+    s.Store.Close()
+  }
 
   mlog.Info("Stopped Server...")
 

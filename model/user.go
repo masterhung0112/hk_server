@@ -1,6 +1,8 @@
 package model
 
 import (
+	"crypto/sha256"
+	"sort"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +26,44 @@ type User struct {
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
 	Roles         string `json:"roles"`
+}
+
+// Options for counting users
+type UserCountOptions struct {
+	// Should include users that are bots
+	IncludeBotAccounts bool
+	// Should include deleted users (of any type)
+	IncludeDeleted bool
+	// Exclude regular users
+	ExcludeRegularUsers bool
+	// Only include users on a specific team. "" for any team.
+	TeamId string
+	// Only include users on a specific channel. "" for any channel.
+	ChannelId string
+	// Restrict to search in a list of teams and channels
+	ViewRestrictions *ViewUsersRestrictions
+	// Only include users matching any of the given system wide roles.
+	Roles []string
+	// Only include users matching any of the given channel roles, must be used with ChannelId.
+	ChannelRoles []string
+	// Only include users matching any of the given team roles, must be used with TeamId.
+	TeamRoles []string
+}
+
+type ViewUsersRestrictions struct {
+	Teams    []string
+	Channels []string
+}
+
+func (r *ViewUsersRestrictions) Hash() string {
+	if r == nil {
+		return ""
+	}
+	ids := append(r.Teams, r.Channels...)
+	sort.Strings(ids)
+	hash := sha256.New()
+	hash.Write([]byte(strings.Join(ids, "")))
+	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
 const (

@@ -7,6 +7,7 @@ import (
 )
 
 type SqlStore interface {
+  DriverName() string
   GetMaster() *gorp.DbMap
   GetReplica() *gorp.DbMap
 

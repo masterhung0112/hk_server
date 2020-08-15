@@ -144,3 +144,49 @@ func (us SqlUserStore) Get(id string) (*model.User, *model.AppError) {
 
 	return &user, nil
 }
+
+func (us SqlUserStore) Count(options model.UserCountOptions) (int64, *model.AppError) {
+  isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
+	query := us.getQueryBuilder().Select("COUNT(DISTINCT u.Id)").From("Users AS u")
+
+	if !options.IncludeDeleted {
+		query = query.Where("u.DeleteAt = 0")
+  }
+
+  if options.IncludeBotAccounts {
+		if options.ExcludeRegularUsers {
+			query = query.Join("Bots ON u.Id = Bots.UserId")
+		}
+	} else {
+    //TODO: Open
+		// query = query.LeftJoin("Bots ON u.Id = Bots.UserId").Where("Bots.UserId IS NULL")
+		if options.ExcludeRegularUsers {
+			// Currently this doesn't make sense because it will always return 0
+			return int64(0), model.NewAppError("SqlUserStore.Count", "store.sql_user.count.app_error", nil, "", http.StatusInternalServerError)
+		}
+  }
+
+  if options.TeamId != "" {
+		query = query.LeftJoin("TeamMembers AS tm ON u.Id = tm.UserId").Where("tm.TeamId = ? AND tm.DeleteAt = 0", options.TeamId)
+	} else if options.ChannelId != "" {
+		query = query.LeftJoin("ChannelMembers AS cm ON u.Id = cm.UserId").Where("cm.ChannelId = ?", options.ChannelId)
+  }
+  // query = applyViewRestrictionsFilter(query, options.ViewRestrictions, false)
+  // query = applyMultiRoleFilters(query, options.Roles, options.TeamRoles, options.ChannelRoles)
+
+  if isPostgreSQL {
+		query = query.PlaceholderFormat(sq.Dollar)
+	}
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return int64(0), model.NewAppError("SqlUserStore.Get", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	count, err := us.GetReplica().SelectInt(queryString, args...)
+	if err != nil {
+		return int64(0), model.NewAppError("SqlUserStore.Count", "store.sql_user.get_total_users_count.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	return count, nil
+
+}
