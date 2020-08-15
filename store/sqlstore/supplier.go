@@ -1,6 +1,9 @@
 package sqlstore
 
 import (
+	"github.com/go-sql-driver/mysql"
+	"strings"
+	"github.com/lib/pq"
 	dbsql "database/sql"
 	"encoding/json"
 	"fmt"
@@ -261,4 +264,26 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
   }
 
 	return supplier
+}
+
+// Check if the error is belong to MySQL or Postgres DB
+func IsUniqueConstraintError(err error, indexName []string) bool {
+	unique := false
+	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		unique = true
+	}
+
+	if mysqlErr, ok := err.(*mysql.MySQLError); ok && mysqlErr.Number == 1062 {
+		unique = true
+	}
+
+	field := false
+	for _, contain := range indexName {
+		if strings.Contains(err.Error(), contain) {
+			field = true
+			break
+		}
+	}
+
+	return unique && field
 }

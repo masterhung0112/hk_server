@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
@@ -22,40 +23,59 @@ func newSqlUserStore(sqlStore SqlStore) store.UserStore {
 
 	// note: we are providing field names explicitly here to maintain order of columns (needed when using raw queries)
 	us.usersQuery = us.getQueryBuilder().
-    // Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.AuthData", "u.AuthService", "u.Email", "u.EmailVerified", "u.Nickname", "u.FirstName", "u.LastName", "u.Position", "u.Roles", "u.AllowMarketing", "u.Props", "u.NotifyProps", "u.LastPasswordUpdate", "u.LastPictureUpdate", "u.FailedAttempts", "u.Locale", "u.Timezone", "u.MfaActive", "u.MfaSecret",
-    Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password","u.Email", "u.EmailVerified","u.FirstName", "u.LastName", "u.Roles",
-      // "b.UserId IS NOT NULL AS IsBot", "COALESCE(b.Description, '') AS BotDescription", "COALESCE(b.LastIconUpdate, 0) AS BotLastIconUpdate"
-    ).
+		// Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.AuthData", "u.AuthService", "u.Email", "u.EmailVerified", "u.Nickname", "u.FirstName", "u.LastName", "u.Position", "u.Roles", "u.AllowMarketing", "u.Props", "u.NotifyProps", "u.LastPasswordUpdate", "u.LastPictureUpdate", "u.FailedAttempts", "u.Locale", "u.Timezone", "u.MfaActive", "u.MfaSecret",
+		Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.Email", "u.EmailVerified", "u.FirstName", "u.LastName", "u.Roles"). // "b.UserId IS NOT NULL AS IsBot", "COALESCE(b.Description, '') AS BotDescription", "COALESCE(b.LastIconUpdate, 0) AS BotLastIconUpdate"
+
 		From("Users u")
-		// LeftJoin("Bots b ON ( b.UserId = u.Id )")
+	// LeftJoin("Bots b ON ( b.UserId = u.Id )")
 
-  for _, db := range sqlStore.GetAllConns() {
-    // Create table users
-    table := db.AddTableWithName(model.User{}, "Users").SetKeys(false, "Id")
+	for _, db := range sqlStore.GetAllConns() {
+		// Create table users
+		table := db.AddTableWithName(model.User{}, "Users").SetKeys(false, "Id")
 
-    // Set constraints for all columns
-    table.ColMap("Id").SetMaxSize(26)
-    table.ColMap("Username").SetMaxSize(64).SetUnique(true)
-    table.ColMap("Password").SetMaxSize(128)
-    // table.ColMap("AuthData").SetMaxSize(128).SetUnique(true)
+		// Set constraints for all columns
+		table.ColMap("Id").SetMaxSize(26)
+		table.ColMap("Username").SetMaxSize(64).SetUnique(true)
+		table.ColMap("Password").SetMaxSize(128)
+		// table.ColMap("AuthData").SetMaxSize(128).SetUnique(true)
 		// table.ColMap("AuthService").SetMaxSize(32)
-    table.ColMap("Email").SetMaxSize(128).SetUnique(true)
-    // table.ColMap("Nickname").SetMaxSize(64)
-    table.ColMap("FirstName").SetMaxSize(64)
-    table.ColMap("LastName").SetMaxSize(64)
-    table.ColMap("Roles").SetMaxSize(256)
-    // table.ColMap("Props").SetMaxSize(4000)
+		table.ColMap("Email").SetMaxSize(128).SetUnique(true)
+		// table.ColMap("Nickname").SetMaxSize(64)
+		table.ColMap("FirstName").SetMaxSize(64)
+		table.ColMap("LastName").SetMaxSize(64)
+		table.ColMap("Roles").SetMaxSize(256)
+		// table.ColMap("Props").SetMaxSize(4000)
 		// table.ColMap("NotifyProps").SetMaxSize(2000)
 		// table.ColMap("Locale").SetMaxSize(5)
 		// table.ColMap("MfaSecret").SetMaxSize(128)
 		// table.ColMap("Position").SetMaxSize(128)
 		// table.ColMap("Timezone").SetMaxSize(256)
-  }
+	}
 
 	return us
 }
 
 func (us SqlUserStore) Save(user *model.User) (*model.User, *model.AppError) {
+	if len(user.Id) > 0 {
+		return nil, model.NewAppError("SqlUserStore.Save", "store.sql_user.save.existing.app_error", nil, "user_id="+user.Id, http.StatusBadRequest)
+	}
+
+	// Fill up, Transform data before save
+	user.PreSave()
+	if err := user.IsValid(); err != nil {
+		return nil, err
+	}
+
+	// Save user to master database
+	if err := us.GetMaster().Insert(user); err != nil {
+		if IsUniqueConstraintError(err, []string{"Email", "users_email_key", "idx_users_email_unique"}) {
+			return nil, model.NewAppError("SqlUserStore.Save", "store.sql_user.save.email_exists.app_error", nil, "user_id="+user.Id+", "+err.Error(), http.StatusBadRequest)
+		}
+		if IsUniqueConstraintError(err, []string{"Username", "users_username_key", "idx_users_username_unique"}) {
+			return nil, model.NewAppError("SqlUserStore.Save", "store.sql_user.save.username_exists.app_error", nil, "user_id="+user.Id+", "+err.Error(), http.StatusBadRequest)
+		}
+		return nil, model.NewAppError("SqlUserStore.Save", "store.sql_user.save.app_error", nil, "user_id="+user.Id+", "+err.Error(), http.StatusInternalServerError)
+	}
 
 	return user, nil
 }
@@ -81,4 +101,46 @@ func (us SqlUserStore) PermanentDelete(userId string) *model.AppError {
 		return model.NewAppError("SqlUserStore.PermanentDelete", "store.sql_user.permanent_delete.app_error", nil, "userId="+userId+", "+err.Error(), http.StatusInternalServerError)
 	}
 	return nil
+}
+
+func (us SqlUserStore) Get(id string) (*model.User, *model.AppError) {
+	failure := func(err error, id string, statusCode int) *model.AppError {
+		details := "user_id=" + id + ", " + err.Error()
+		return model.NewAppError("SqlUserStore.Get", id, nil, details, statusCode)
+	}
+
+	query := us.usersQuery.Where("Id = ?", id)
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	}
+	row := us.GetReplica().Db.QueryRow(queryString, args...)
+
+	var user model.User
+	// var props, notifyProps, timezone []byte
+	err = row.Scan(&user.Id, &user.CreateAt, &user.UpdateAt, &user.DeleteAt, &user.Username,
+		// &user.Password, &user.AuthData, &user.AuthService, &user.Email, &user.EmailVerified,
+		// &user.Nickname, &user.FirstName, &user.LastName, &user.Position, &user.Roles,
+		// &user.AllowMarketing, &props, &notifyProps, &user.LastPasswordUpdate, &user.LastPictureUpdate,
+		// &user.FailedAttempts, &user.Locale, &timezone, &user.MfaActive, &user.MfaSecret,
+		&user.Password, &user.Email, &user.EmailVerified,
+		&user.FirstName, &user.LastName, &user.Roles)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, failure(err, store.MISSING_ACCOUNT_ERROR, http.StatusNotFound)
+		}
+		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	}
+	//TODO: open
+	// if err = json.Unmarshal(props, &user.Props); err != nil {
+	// 	return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	// }
+	// if err = json.Unmarshal(notifyProps, &user.NotifyProps); err != nil {
+	// 	return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	// }
+	// if err = json.Unmarshal(timezone, &user.Timezone); err != nil {
+	// 	return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	// }
+
+	return &user, nil
 }

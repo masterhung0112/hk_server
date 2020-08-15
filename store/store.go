@@ -14,6 +14,7 @@ type Store interface {
 
 type UserStore interface {
   Save(user *model.User) (*model.User, *model.AppError)
+  Get(id string) (*model.User, *model.AppError)
   GetAll() ([]*model.User, *model.AppError)
   PermanentDelete(userId string) *model.AppError
 }
