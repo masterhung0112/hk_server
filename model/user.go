@@ -6,16 +6,17 @@ import (
 )
 
 type User struct {
-  Id          string      `json:"id"`
-  CreatedAt   int64       `json:"created_at,omitempty"`
-  UpdatedAt   int64       `json:"updated_at,omitempty"`
-  DeletedAt   int64       `json:"deleted_at"`
-  Username    string      `json:"username"`
-  Password    string      `json:"password,omitempty"`
-  Email       string      `json:"email"`
-  FirstName   string      `json:"first_name"`
-	LastName    string      `json:"last_name"`
-  Roles       string      `json:"roles"`
+  Id                    string      `json:"id"`
+  CreateAt              int64       `json:"create_at,omitempty"`
+  UpdateAt              int64       `json:"update_at,omitempty"`
+  DeleteAt              int64       `json:"delete_at"`
+  Username              string      `json:"username"`
+  Password              string      `json:"password,omitempty"`
+  Email                 string      `json:"email"`
+  EmailVerified         bool      `json:"email_verified,omitempty"`
+  FirstName             string      `json:"first_name"`
+	LastName              string      `json:"last_name"`
+  Roles                 string      `json:"roles"`
 }
 
 // UserFromJson will decode the input and return a User

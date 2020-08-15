@@ -159,7 +159,7 @@ func MySQLSettings() *model.SqlSettings {
 		panic("failed to parse dsn " + dsn + ": " + err.Error())
   }
 
-  cfg.DBName = "hk_db" + model.NewId()
+  cfg.DBName = "hk_test_db" + model.NewId()
 
   return databaseSettings("mysql", cfg.FormatDSN())
 }
@@ -174,7 +174,7 @@ func PostgreSQLSettings() *model.SqlSettings {
 	}
 
 	// Generate a random database name
-	dsnUrl.Path = "hk_db" + model.NewId()
+	dsnUrl.Path = "hk_test_db" + model.NewId()
 
 	return databaseSettings("postgres", dsnUrl.String())
 }

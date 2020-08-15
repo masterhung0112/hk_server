@@ -19,6 +19,16 @@ func (_m *Store) Close() {
 	_m.Called()
 }
 
+// DropAllTables provides a mock function with given fields:
+func (_m *Store) DropAllTables() {
+	_m.Called()
+}
+
+// MarkSystemRanUnitTests provides a mock function with given fields:
+func (_m *Store) MarkSystemRanUnitTests() {
+	_m.Called()
+}
+
 // User provides a mock function with given fields:
 func (_m *Store) User() store.UserStore {
 	ret := _m.Called()

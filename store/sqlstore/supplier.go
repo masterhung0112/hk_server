@@ -250,7 +250,15 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 
 	supplier.initConnection()
 
+  // Create tables if necessary
 	supplier.stores.user = newSqlUserStore(supplier)
+
+  err := supplier.GetMaster().CreateTablesIfNotExists()
+	if err != nil {
+		mlog.Critical("Error creating database tables.", mlog.Err(err))
+		time.Sleep(time.Second)
+		os.Exit(EXIT_CREATE_TABLE)
+  }
 
 	return supplier
 }
