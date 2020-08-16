@@ -149,3 +149,24 @@ func (client *Client) CreateUser(user *User) (*User, *Response) {
   defer closeBody(r)
   return UserFromJson(r.Body), BuildResponse(r)
 }
+
+// Login authenticates a user by login id, which can be username, email or some sort
+// of SSO identifier based on server configuration, and a password.
+func (c *Client) Login(loginId string, password string) (*User, *Response) {
+	m := make(map[string]string)
+	m["login_id"] = loginId
+	m["password"] = password
+	return c.login(m)
+}
+
+
+func (c *Client) login(m map[string]string) (*User, *Response) {
+	r, err := c.DoApiPost("/users/login", MapToJson(m))
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	c.AuthToken = r.Header.Get(HEADER_TOKEN)
+	c.AuthType = HEADER_BEARER
+	return UserFromJson(r.Body), BuildResponse(r)
+}

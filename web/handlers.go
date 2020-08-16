@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/masterhung0112/go_server/app"
   "net/http"
   "reflect"
   "runtime"
@@ -8,6 +9,7 @@ import (
 )
 
 type Handler struct {
+  GetGlobalAppOptions app.AppOptionCreator
   HandleFunc  func(*Context, http.ResponseWriter, *http.Request)
   HandlerName string
 }
@@ -26,6 +28,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
   // Create new context
   c := &Context{}
+  c.App = app.New(
+		h.GetGlobalAppOptions()...,
+	)
+	c.App.InitServer()
 
   // call the real handler
   h.HandleFunc(c, w, r)

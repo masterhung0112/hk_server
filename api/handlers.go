@@ -9,7 +9,9 @@ type Context = web.Context
 
 func (api *API) ApiHandler(h func(*Context, http.ResponseWriter, *http.Request)) http.Handler {
   handler := &web.Handler{
-      HandleFunc: h,
+    GetGlobalAppOptions: api.GetGlobalAppOptions,
+    HandleFunc: h,
+    HandlerName: web.GetHandlerName(h),
   }
   return handler
 }

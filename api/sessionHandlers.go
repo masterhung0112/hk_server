@@ -10,6 +10,7 @@ import (
 // be granted.
 func (api *API) ApiSessionRequired(h func(*web.Context, http.ResponseWriter, *http.Request)) http.Handler {
   handler := &web.Handler{
+    GetGlobalAppOptions: api.GetGlobalAppOptions,
     HandleFunc:  h,
     HandlerName: web.GetHandlerName(h),
   }

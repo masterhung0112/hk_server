@@ -40,6 +40,13 @@ type Server struct {
 	ListenAddr *net.TCPAddr
 }
 
+// Global app options that should be applied to apps created by this server
+func (s *Server) AppOptions() []AppOption {
+	return []AppOption{
+		ServerConnector(s),
+	}
+}
+
 func NewServer(options ...Option) (*Server, error) {
 	rootRouter := mux.NewRouter()
 
@@ -47,6 +54,12 @@ func NewServer(options ...Option) (*Server, error) {
 	// Create Server instance
 	s := &Server{
 		RootRouter: rootRouter,
+  }
+
+  for _, option := range options {
+		if err := option(s); err != nil {
+			return nil, errors.Wrap(err, "failed to apply option")
+		}
 	}
 
 	// Read config from config.json file

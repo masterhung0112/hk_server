@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/masterhung0112/go_server/app"
 	"github.com/masterhung0112/go_server/config"
@@ -20,7 +21,24 @@ type TestHelper struct {
 }
 
 func setupTestHelper() *TestHelper {
-	var options []app.Option
+  var options []app.Option
+
+  memoryStore, err := config.NewMemoryStoreWithOptions(&config.MemoryStoreOptions{IgnoreEnvironmentOverrides: true})
+	if err != nil {
+		panic("failed to initialize memory store: " + err.Error())
+	}
+
+	config := memoryStore.Get()
+	// *config.PluginSettings.Directory = filepath.Join(tempWorkspace, "plugins")
+	// *config.PluginSettings.ClientDirectory = filepath.Join(tempWorkspace, "webapp")
+	// config.ServiceSettings.EnableLocalMode = model.NewBool(true)
+	// *config.ServiceSettings.LocalModeSocketLocation = filepath.Join(tempWorkspace, "mattermost_local.sock")
+	// if updateConfig != nil {
+	// 	updateConfig(config)
+	// }
+	memoryStore.Set(config)
+
+	options = append(options, app.ConfigStore(memoryStore))
 
 	s, err := app.NewServer(options...)
 	if err != nil {
@@ -33,12 +51,21 @@ func setupTestHelper() *TestHelper {
 	}
 
 	// Initialize the router URL
-	ApiInit(th.App.Srv().Router)
+	ApiInit(th.Server.AppOptions, th.App.Srv().Router)
 
 	// Start HTTP Server and other stuff
 	if err := th.Server.Start(); err != nil {
 		panic(err)
 	}
+
+	// Disable strict password requirements for test
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.PasswordSettings.MinimumLength = 5
+		*cfg.PasswordSettings.Lowercase = false
+		*cfg.PasswordSettings.Uppercase = false
+		*cfg.PasswordSettings.Symbol = false
+		*cfg.PasswordSettings.Number = false
+	})
 
 	th.Client = th.CreateClient()
 
@@ -53,6 +80,34 @@ func (th *TestHelper) CreateClient() *model.Client {
 
 func Setup(tb testing.TB) *TestHelper {
 	return setupTestHelper()
+}
+
+func (me *TestHelper) TearDown() {
+	// utils.DisableDebugLogForTest()
+	// if me.IncludeCacheLayer {
+	// 	// Clean all the caches
+	// 	me.App.Srv().InvalidateAllCaches()
+	// }
+
+	me.ShutdownApp()
+
+	// utils.EnableDebugLogForTest()
+}
+
+func (me *TestHelper) ShutdownApp() {
+	done := make(chan bool)
+	go func() {
+		me.Server.Shutdown()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(30 * time.Second):
+		// panic instead of fatal to terminate all tests in this package, otherwise the
+		// still running App could spuriously fail subsequent tests.
+		panic("failed to shutdown App within 30 seconds")
+	}
 }
 
 func (th *TestHelper) GenerateTestEmail() string {
@@ -84,4 +139,13 @@ func CheckNoError(t *testing.T, resp *model.Response) {
 func CheckCreatedStatus(t *testing.T, resp *model.Response) {
 	t.Helper()
 	checkHTTPStatus(t, resp, http.StatusCreated, false)
+}
+
+func CheckUserSanitization(t *testing.T, user *model.User) {
+	t.Helper()
+
+	require.Equal(t, "", user.Password, "password wasn't blank")
+	//TODO: Open
+	// require.Empty(t, user.AuthData, "auth data wasn't blank")
+	// require.Equal(t, "", user.MfaSecret, "mfa secret wasn't blank")
 }

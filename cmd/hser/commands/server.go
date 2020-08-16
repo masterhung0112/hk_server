@@ -40,7 +40,7 @@ func runServer(configStore config.Store, interruptChan chan os.Signal) error {
   defer server.Shutdown()
 
   // server, server.AppOptions,
-  api.ApiInit(server.Router)
+  api.ApiInit(server.AppOptions, server.Router)
 
   serverErr := server.Start()
   if serverErr != nil {

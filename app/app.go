@@ -28,3 +28,7 @@ func (a *App) Srv() *Server {
 func (a *App) InitServer() {
   //TODO: Add implementation
 }
+
+func (a *App) SetServer(srv *Server) {
+	a.srv = srv
+}

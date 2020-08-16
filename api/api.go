@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/masterhung0112/go_server/app"
 	"github.com/masterhung0112/go_server/model"
   "github.com/gorilla/mux"
 )
@@ -15,11 +16,13 @@ type ApiRoutes struct {
 
 type API struct {
   BaseRoutes    *ApiRoutes
+  GetGlobalAppOptions app.AppOptionCreator
 }
 
-func ApiInit(root *mux.Router) (*API) {
+func ApiInit(globalOptionsFunc app.AppOptionCreator, root *mux.Router) (*API) {
   api := &API {
     BaseRoutes: &ApiRoutes{},
+    GetGlobalAppOptions: globalOptionsFunc,
   }
 
   api.BaseRoutes.Root = root
