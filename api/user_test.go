@@ -38,4 +38,7 @@ func TestCreateUser(t *testing.T) {
 	require.Equal(t, model.SYSTEM_USER_ROLE_ID, ruser.Roles, "did not clear roles")
 
   CheckUserSanitization(t, ruser)
+
+  _, resp = th.Client.CreateUser(ruser)
+	CheckBadRequestStatus(t, resp)
 }

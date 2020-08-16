@@ -123,7 +123,7 @@ func checkHTTPStatus(t *testing.T, resp *model.Response, expectedStatus int, exp
 
 	require.NotNilf(t, resp, "Unexpected nil response, expected http:%v, expectError:%v", expectedStatus, expectError)
 	if expectError {
-		require.NotNil(t, resp.Error, "Expected a non-nil error and http status:%v, got nil, %v", expectedStatus, resp.StatusCode)
+		require.NotNil(t, resp.Error, "Expected a non-nil error and http status:%v, got nil, %v, error: %v", expectedStatus, resp.StatusCode)
 	} else {
 		require.Nil(t, resp.Error, "Expected no error and http status:%v, got %q, http:%v", expectedStatus, resp.Error, resp.StatusCode)
 	}
@@ -139,6 +139,11 @@ func CheckNoError(t *testing.T, resp *model.Response) {
 func CheckCreatedStatus(t *testing.T, resp *model.Response) {
 	t.Helper()
 	checkHTTPStatus(t, resp, http.StatusCreated, false)
+}
+
+func CheckBadRequestStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusBadRequest, true)
 }
 
 func CheckUserSanitization(t *testing.T, user *model.User) {
