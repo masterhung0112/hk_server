@@ -1,60 +1,62 @@
 package api
 
 import (
-	"net/http"
-	"github.com/stretchr/testify/require"
-	"strings"
 	"fmt"
+	"net/http"
+	"strings"
 	"testing"
+
+	"github.com/masterhung0112/go_server/app"
 	"github.com/masterhung0112/go_server/config"
 	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/app"
-
+	"github.com/stretchr/testify/require"
 )
 
 type TestHelper struct {
-  App         *app.App
-  Server      *app.Server
-  ConfigStore config.Store
-  Client      *model.Client
+	App         *app.App
+	Server      *app.Server
+	ConfigStore config.Store
+	Client      *model.Client
 }
 
 func setupTestHelper() *TestHelper {
-  var options []app.Option
+	var options []app.Option
 
-  s, err := app.NewServer(options...)
-  if err != nil {
-    panic(err)
-  }
+	s, err := app.NewServer(options...)
+	if err != nil {
+		panic(err)
+	}
 
-  th := &TestHelper {
-    App:    app.New(app.ServerConnector(s)),
-    Server: s,
-  }
+	th := &TestHelper{
+		App:    app.New(app.ServerConnector(s)),
+		Server: s,
+	}
 
-  // Initialize the router URL
-  ApiInit(th.App.Srv().Router)
+	// Initialize the router URL
+	ApiInit(th.App.Srv().Router)
 
-  // Start HTTP Server and other stuff
-  if err := th.Server.Start(); err != nil {
-    panic(err)
-  }
+	// Start HTTP Server and other stuff
+	if err := th.Server.Start(); err != nil {
+		panic(err)
+	}
 
-  th.Client = th.CreateClient()
+	th.Client = th.CreateClient()
 
-  return th
+	th.App.InitServer()
+
+	return th
 }
 
 func (th *TestHelper) CreateClient() *model.Client {
-  return model.NewApiClient(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
+	return model.NewApiClient(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
 }
 
 func Setup(tb testing.TB) *TestHelper {
-  return setupTestHelper()
+	return setupTestHelper()
 }
 
 func (th *TestHelper) GenerateTestEmail() string {
-  return strings.ToLower(model.NewId() + "@localhost")
+	return strings.ToLower(model.NewId() + "@localhost")
 }
 
 func (th *TestHelper) GenerateTestUsername() string {
@@ -74,9 +76,9 @@ func checkHTTPStatus(t *testing.T, resp *model.Response, expectedStatus int, exp
 }
 
 func CheckNoError(t *testing.T, resp *model.Response) {
-  t.Helper()
+	t.Helper()
 
-  require.Nil(t, resp.Error, "expected no error")
+	require.Nil(t, resp.Error, "expected no error")
 }
 
 func CheckCreatedStatus(t *testing.T, resp *model.Response) {

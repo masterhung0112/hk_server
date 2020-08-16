@@ -1,15 +1,16 @@
 package sqlstore
 
 import (
-	"github.com/go-sql-driver/mysql"
-	"strings"
-	"github.com/lib/pq"
 	dbsql "database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/dyatlov/go-opengraph/opengraph"
@@ -236,7 +237,6 @@ func (ss *SqlSupplier) getQueryBuilder() sq.StatementBuilderType {
 	return builder
 }
 
-
 func (ss *SqlSupplier) GetAllConns() []*gorp.DbMap {
 	all := make([]*gorp.DbMap, len(ss.replicas)+1)
 	copy(all, ss.replicas)
@@ -253,15 +253,15 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 
 	supplier.initConnection()
 
-  // Create tables if necessary
+	// Create tables if necessary
 	supplier.stores.user = newSqlUserStore(supplier)
 
-  err := supplier.GetMaster().CreateTablesIfNotExists()
+	err := supplier.GetMaster().CreateTablesIfNotExists()
 	if err != nil {
 		mlog.Critical("Error creating database tables.", mlog.Err(err))
 		time.Sleep(time.Second)
 		os.Exit(EXIT_CREATE_TABLE)
-  }
+	}
 
 	return supplier
 }

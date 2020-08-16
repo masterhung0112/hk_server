@@ -24,3 +24,7 @@ func (a *App) SetContext(c context.Context) {
 func (a *App) Srv() *Server {
   return a.srv
 }
+
+func (a *App) InitServer() {
+  //TODO: Add implementation
+}

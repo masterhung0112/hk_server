@@ -2,12 +2,12 @@ package model
 
 import (
 	"crypto/sha256"
-	"sort"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -259,4 +259,39 @@ func (u *User) IsValid() *AppError {
 	// }
 
 	return nil
+}
+
+
+func (u *User) MakeNonNil() {
+  //TODO: Open
+	// if u.Props == nil {
+	// 	u.Props = make(map[string]string)
+	// }
+
+	// if u.NotifyProps == nil {
+	// 	u.NotifyProps = make(map[string]string)
+	// }
+}
+
+// Remove any private data from the user object
+func (u *User) Sanitize(options map[string]bool) {
+  u.Password = ""
+  //TODO: Open
+	// u.AuthData = NewString("")
+	// u.MfaSecret = ""
+
+	if len(options) != 0 && !options["email"] {
+		u.Email = ""
+	}
+	if len(options) != 0 && !options["fullname"] {
+		u.FirstName = ""
+		u.LastName = ""
+  }
+  //TODO: Open
+	if len(options) != 0 && !options["passwordupdate"] {
+		// u.LastPasswordUpdate = 0
+	}
+	if len(options) != 0 && !options["authservice"] {
+		// u.AuthService = ""
+	}
 }

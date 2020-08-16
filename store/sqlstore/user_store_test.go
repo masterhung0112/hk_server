@@ -1,10 +1,11 @@
 package sqlstore
 
 import (
-	"github.com/masterhung0112/go_server/store/storetest"
 	"testing"
+
+	"github.com/masterhung0112/go_server/store/storetest"
 )
 
 func TestUserStore(t *testing.T) {
-  StoreTestWithSqlSupplier(t, storetest.TestUserStore)
+	StoreTestWithSqlSupplier(t, storetest.TestUserStore)
 }

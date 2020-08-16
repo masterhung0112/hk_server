@@ -5,10 +5,12 @@ import (
 )
 
 type AppIface interface {
+  InitServer()
   // CreateUser creates a user and sets several fields of the returned User struct to
 	// their zero values.
   CreateUser(user *model.User) (*model.User, *model.AppError)
   CreateUserWithToken(user *model.User, token *model.Token) (*model.User, *model.AppError)
   CreateUserFromSignup(user *model.User) (*model.User, *model.AppError)
+  VerifyUserEmail(userId, email string) *model.AppError
 
 }
