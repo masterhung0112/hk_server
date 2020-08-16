@@ -154,3 +154,14 @@ func CheckUserSanitization(t *testing.T, user *model.User) {
 	// require.Empty(t, user.AuthData, "auth data wasn't blank")
 	// require.Equal(t, "", user.MfaSecret, "mfa secret wasn't blank")
 }
+
+func CheckErrorMessage(t *testing.T, resp *model.Response, errorId string) {
+	t.Helper()
+
+	require.NotNilf(t, resp.Error, "should have errored with message: %s", errorId)
+	require.Equalf(t, resp.Error.Id, errorId, "incorrect error message, actual: %s, expected: %s", resp.Error.Id, errorId)
+}
+
+func GenerateTestUsername() string {
+	return "fakeuser" + model.NewRandomString(10)
+}
