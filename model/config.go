@@ -17,6 +17,11 @@ const (
 	DATABASE_DRIVER_MYSQL    = "mysql"
   DATABASE_DRIVER_POSTGRES = "postgres"
 
+  IMAGE_DRIVER_LOCAL = "local"
+  IMAGE_DRIVER_S3    = "s3"
+
+  FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
+
   SQL_SETTINGS_DEFAULT_DATA_SOURCE = "mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
 )
 
@@ -235,5 +240,72 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
 
   if s.QueryTimeout == nil {
 		s.QueryTimeout = NewInt(30)
+	}
+}
+
+type FileSettings struct {
+  Directory         *string `restricted:"true"`
+  DriverName        *string `restricted:"true"`
+  S3AccessKeyId     *string `restricted:"true"`
+	S3SecretAccessKey *string `restricted:"true"`
+	S3Bucket          *string `restricted:"true"`
+	S3PathPrefix      *string `restricted:"true"`
+	S3Region          *string `restricted:"true"`
+	S3Endpoint        *string `restricted:"true"`
+	S3SSL             *bool   `restricted:"true"`
+	S3SignV2          *bool   `restricted:"true"`
+	S3SSE             *bool   `restricted:"true"`
+	S3Trace           *bool   `restricted:"true"`
+}
+
+func (s *FileSettings) SetDefaults(isUpdate bool) {
+  if s.DriverName == nil {
+		s.DriverName = NewString(IMAGE_DRIVER_LOCAL)
+  }
+
+  if s.Directory == nil || *s.Directory == "" {
+		s.Directory = NewString(FILE_SETTINGS_DEFAULT_DIRECTORY)
+	}
+
+  if s.S3AccessKeyId == nil {
+		s.S3AccessKeyId = NewString("")
+	}
+
+	if s.S3SecretAccessKey == nil {
+		s.S3SecretAccessKey = NewString("")
+	}
+
+	if s.S3Bucket == nil {
+		s.S3Bucket = NewString("")
+	}
+
+	if s.S3PathPrefix == nil {
+		s.S3PathPrefix = NewString("")
+	}
+
+	if s.S3Region == nil {
+		s.S3Region = NewString("")
+	}
+
+	if s.S3Endpoint == nil || len(*s.S3Endpoint) == 0 {
+		// Defaults to "s3.amazonaws.com"
+		s.S3Endpoint = NewString("s3.amazonaws.com")
+	}
+
+	if s.S3SSL == nil {
+		s.S3SSL = NewBool(true) // Secure by default.
+	}
+
+	if s.S3SignV2 == nil {
+		s.S3SignV2 = new(bool)
+		// Signature v2 is not enabled by default.
+	}
+
+	if s.S3SSE == nil {
+		s.S3SSE = NewBool(false) // Not Encrypted by default.
+	}
+
+	if s.S3Trace == nil {
+		s.S3Trace = NewBool(false)
 	}
 }

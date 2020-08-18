@@ -18,6 +18,7 @@ require (
 	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible
 	github.com/mattermost/logr v1.0.5
 	github.com/mattermost/viper v1.0.4
+	github.com/minio/minio-go/v7 v7.0.4
 	github.com/pborman/uuid v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.0
