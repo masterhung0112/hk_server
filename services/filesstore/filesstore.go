@@ -1,15 +1,25 @@
 package filesstore
 
 import (
+	"io"
 	"net/http"
 	"github.com/masterhung0112/go_server/model"
 )
 
-type FileBackend interface {
-  TestConnection() *model.AppError
+type ReadCloseSeeker interface {
+	io.ReadCloser
+	io.Seeker
 }
 
-func NewFileBackend(settings *model.FileSettings, enableCompilanceFeatures bool) (FileBackend, *model.AppError) {
+type FileBackend interface {
+  TestConnection() *model.AppError
+  WriteFile(fr io.Reader, path string) (int64, *model.AppError)
+  RemoveFile(path string) *model.AppError
+  Reader(path string) (ReadCloseSeeker, *model.AppError)
+  ReadFile(path string) ([]byte, *model.AppError)
+}
+
+func NewFileBackend(settings *model.FileSettings, enableComplianceFeatures bool) (FileBackend, *model.AppError) {
 	switch *settings.DriverName {
 	case model.IMAGE_DRIVER_S3:
 		return &S3FileBackend{
@@ -21,7 +31,8 @@ func NewFileBackend(settings *model.FileSettings, enableCompilanceFeatures bool)
       region: *settings.S3Region,
       trace: settings.S3Trace != nil && *settings.S3Trace,
       bucket:     *settings.S3Bucket,
-			pathPrefix: *settings.S3PathPrefix,
+      pathPrefix: *settings.S3PathPrefix,
+      encrypt:    settings.S3SSE != nil && *settings.S3SSE && enableComplianceFeatures,
     }, nil
 	case model.IMAGE_DRIVER_LOCAL:
 		return &LocalFileBackend{

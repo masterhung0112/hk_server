@@ -247,3 +247,22 @@ func filterBlocklist(r rune) rune {
 
 	return r
 }
+
+func IsFileExtImage(ext string) bool {
+	ext = strings.ToLower(ext)
+	for _, imgExt := range IMAGE_EXTENSIONS {
+		if ext == imgExt {
+			return true
+		}
+	}
+	return false
+}
+
+func GetImageMimeType(ext string) string {
+	ext = strings.ToLower(ext)
+	if len(IMAGE_MIME_TYPES[ext]) == 0 {
+		return "image"
+	} else {
+		return IMAGE_MIME_TYPES[ext]
+	}
+}

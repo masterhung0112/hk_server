@@ -1,6 +1,7 @@
 package filesstore
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 	"os"
@@ -83,4 +84,20 @@ func runBackendTest(t *testing.T, encrypt bool) {
 			S3SSE:             model.NewBool(encrypt),
 		},
 	})
+}
+
+func (s *FileBackendTestSuite) TestReadWriteFile() {
+  b := []byte("test")
+  path := "tests/" + model.NewId()
+
+  written, err := s.backend.WriteFile(bytes.NewReader(b), path)
+	s.Nil(err)
+	s.EqualValues(len(b), written, "expected given number of bytes to have been written")
+	defer s.backend.RemoveFile(path)
+
+	read, err := s.backend.ReadFile(path)
+	s.Nil(err)
+
+	readString := string(read)
+	s.EqualValues(readString, "test")
 }
