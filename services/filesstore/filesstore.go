@@ -19,7 +19,9 @@ func NewFileBackend(settings *model.FileSettings, enableCompilanceFeatures bool)
       secure: settings.S3SSL == nil || *settings.S3SSL,
       signV2: settings.S3SignV2 != nil && *settings.S3SignV2,
       region: *settings.S3Region,
-      trace: *settings.S3Trace,
+      trace: settings.S3Trace != nil && *settings.S3Trace,
+      bucket:     *settings.S3Bucket,
+			pathPrefix: *settings.S3PathPrefix,
     }, nil
 	case model.IMAGE_DRIVER_LOCAL:
 		return &LocalFileBackend{

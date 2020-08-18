@@ -20,6 +20,10 @@ const (
   IMAGE_DRIVER_LOCAL = "local"
   IMAGE_DRIVER_S3    = "s3"
 
+  MINIO_ACCESS_KEY = "minioadmin"
+	MINIO_SECRET_KEY = "minioadmin"
+	MINIO_BUCKET     = "hungknow-test"
+
   FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
 
   SQL_SETTINGS_DEFAULT_DATA_SOURCE = "mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
