@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strconv"
 	"crypto/ecdsa"
 	"github.com/masterhung0112/go_server/model"
 )
@@ -45,4 +46,49 @@ func (s *Server) AsymmetricSigningKey() *ecdsa.PrivateKey {
 
 func (a *App) AsymmetricSigningKey() *ecdsa.PrivateKey {
 	return a.Srv().AsymmetricSigningKey()
+}
+
+// ClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
+func (s *Server) ClientConfigWithComputed() map[string]string {
+	respCfg := map[string]string{}
+	for k, v := range s.clientConfig.Load().(map[string]string) {
+		respCfg[k] = v
+	}
+
+	// These properties are not configurable, but nevertheless represent configuration expected
+	// by the client.
+  respCfg["NoAccounts"] = strconv.FormatBool(s.IsFirstUserAccount())
+
+  //TODO: Open this code
+	// respCfg["MaxPostSize"] = strconv.Itoa(s.MaxPostSize())
+	// respCfg["UpgradedFromTE"] = strconv.FormatBool(s.isUpgradedFromTE())
+	// respCfg["InstallationDate"] = ""
+	// if installationDate, err := s.getSystemInstallDate(); err == nil {
+	// 	respCfg["InstallationDate"] = strconv.FormatInt(installationDate, 10)
+	// }
+
+	return respCfg
+}
+
+func (a *App) LimitedClientConfig() map[string]string {
+	return a.Srv().limitedClientConfig.Load().(map[string]string)
+}
+
+// ClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
+func (a *App) ClientConfigWithComputed() map[string]string {
+	return a.Srv().ClientConfigWithComputed()
+}
+
+// LimitedClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
+func (a *App) LimitedClientConfigWithComputed() map[string]string {
+	respCfg := map[string]string{}
+	for k, v := range a.LimitedClientConfig() {
+		respCfg[k] = v
+	}
+
+	// These properties are not configurable, but nevertheless represent configuration expected
+	// by the client.
+	respCfg["NoAccounts"] = strconv.FormatBool(a.IsFirstUserAccount())
+
+	return respCfg
 }

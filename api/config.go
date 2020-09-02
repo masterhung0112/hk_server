@@ -11,26 +11,6 @@ func (api *API) InitConfig() {
 
 }
 
-// ClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
-func (s *Server) ClientConfigWithComputed() map[string]string {
-	respCfg := map[string]string{}
-	for k, v := range s.clientConfig.Load().(map[string]string) {
-		respCfg[k] = v
-	}
-
-	// These properties are not configurable, but nevertheless represent configuration expected
-	// by the client.
-	respCfg["NoAccounts"] = strconv.FormatBool(s.IsFirstUserAccount())
-	respCfg["MaxPostSize"] = strconv.Itoa(s.MaxPostSize())
-	respCfg["UpgradedFromTE"] = strconv.FormatBool(s.isUpgradedFromTE())
-	respCfg["InstallationDate"] = ""
-	if installationDate, err := s.getSystemInstallDate(); err == nil {
-		respCfg["InstallationDate"] = strconv.FormatInt(installationDate, 10)
-	}
-
-	return respCfg
-}
-
 func getClientConfig(c *Context, w http.ResponseWriter, r *http.Request) {
 	format := r.URL.Query().Get("format")
 
@@ -52,24 +32,4 @@ func getClientConfig(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(model.MapToJson(config)))
-}
-
-// ClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
-func (a *App) ClientConfigWithComputed() map[string]string {
-	return a.Srv().ClientConfigWithComputed()
-}
-
-
-// LimitedClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
-func (a *App) LimitedClientConfigWithComputed() map[string]string {
-	respCfg := map[string]string{}
-	for k, v := range a.LimitedClientConfig() {
-		respCfg[k] = v
-	}
-
-	// These properties are not configurable, but nevertheless represent configuration expected
-	// by the client.
-	respCfg["NoAccounts"] = strconv.FormatBool(a.IsFirstUserAccount())
-
-	return respCfg
 }

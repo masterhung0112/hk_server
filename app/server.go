@@ -1,6 +1,7 @@
 package app
 
 import (
+	"sync/atomic"
 	"context"
 	"fmt"
 	"net"
@@ -37,7 +38,11 @@ type Server struct {
 	Router *mux.Router
 
 	Server     *http.Server
-	ListenAddr *net.TCPAddr
+  ListenAddr *net.TCPAddr
+
+  clientConfig        atomic.Value
+  clientConfigHash    atomic.Value
+	limitedClientConfig atomic.Value
 }
 
 // Global app options that should be applied to apps created by this server

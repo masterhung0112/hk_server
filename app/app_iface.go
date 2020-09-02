@@ -15,4 +15,7 @@ type AppIface interface {
   CreateUserFromSignup(user *model.User) (*model.User, *model.AppError)
   VerifyUserEmail(userId, email string) *model.AppError
 
+  IsFirstUserAccount() bool
+  LimitedClientConfig() map[string]string
+
 }

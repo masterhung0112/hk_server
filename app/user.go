@@ -11,6 +11,25 @@ import (
 	"github.com/masterhung0112/go_server/model"
 )
 
+func (s *Server) IsFirstUserAccount() bool {
+	// cachedSessions, err := s.sessionCache.Len()
+	// if err != nil {
+	// 	return false
+	// }
+	// if cachedSessions == 0 {
+		count, err := s.Store.User().Count(model.UserCountOptions{IncludeDeleted: true})
+		if err != nil {
+			mlog.Error("There was a error fetching if first user account", mlog.Err(err))
+			return false
+		}
+		if count <= 0 {
+			return true
+		}
+	// }
+
+	return false
+}
+
 /****************
  * User Creation
  ****************/
@@ -160,3 +179,11 @@ func (a *App) VerifyUserEmail(userId, email string) *model.AppError {
 // func (app *App) Login(login_id string, password string) {
 //
 // }
+
+/****************
+ * User status
+ ****************/
+
+func (a *App) IsFirstUserAccount() bool {
+	return a.Srv().IsFirstUserAccount()
+}
