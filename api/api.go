@@ -31,6 +31,7 @@ func ApiInit(globalOptionsFunc app.AppOptionCreator, root *mux.Router) (*API) {
   api.BaseRoutes.Users = api.BaseRoutes.ApiRoot.PathPrefix("/users").Subrouter()
   api.BaseRoutes.User = api.BaseRoutes.ApiRoot.PathPrefix("/users/{user_id:[A-za-z0-9]+}").Subrouter()
   api.InitUser()
+  api.InitConfig()
 
   return api
 }
