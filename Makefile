@@ -1,6 +1,6 @@
 # We need to export GOBIN to allow it to be set
 # for processes spawned from the Makefile
-export GOBIN ?= $(PWD)/bin
+export GOBIN ?= $(GOPATH)/bin
 GO=go
 
 store-mocks: ## Creates mock files.
