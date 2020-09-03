@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/masterhung0112/go_server/store/sqlstore"
 	"time"
 	"sync"
 	"bytes"
@@ -127,4 +128,54 @@ func (me *TestHelper) TearDown() {
 	// if me.tempWorkspace != "" {
 	// 	os.RemoveAll(me.tempWorkspace)
 	// }
+}
+
+func SetupWithStoreMock(tb testing.TB) *TestHelper {
+	mockStore := testlib.GetMockStoreForSetupFunctions()
+	th := setupTestHelper(mockStore, false, false, tb, nil)
+	emptyMockStore := mocks.Store{}
+	emptyMockStore.On("Close").Return(nil)
+	th.App.Srv().Store = &emptyMockStore
+	return th
+}
+
+func (me *TestHelper) GetSqlSupplier() *sqlstore.SqlSupplier {
+	return mainHelper.GetSQLSupplier()
+}
+
+
+func (me *TestHelper) CreateUser() *model.User {
+	return me.CreateUserOrGuest(false)
+}
+
+func (me *TestHelper) CreateUserOrGuest(guest bool) *model.User {
+	id := model.NewId()
+
+	user := &model.User{
+		Email:         "success+" + id + "@simulator.amazonses.com",
+		Username:      "un_" + id,
+		Nickname:      "nn_" + id,
+		Password:      "Password1",
+		EmailVerified: true,
+	}
+
+	utils.DisableDebugLogForTest()
+	var err *model.AppError
+	if guest {
+		if user, err = me.App.CreateGuest(user); err != nil {
+			mlog.Error(err.Error())
+
+			time.Sleep(time.Second)
+			panic(err)
+		}
+	} else {
+		if user, err = me.App.CreateUser(user); err != nil {
+			mlog.Error(err.Error())
+
+			time.Sleep(time.Second)
+			panic(err)
+		}
+	}
+	utils.EnableDebugLogForTest()
+	return user
 }

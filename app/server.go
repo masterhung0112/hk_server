@@ -42,7 +42,9 @@ type Server struct {
 
   clientConfig        atomic.Value
   clientConfigHash    atomic.Value
-	limitedClientConfig atomic.Value
+  limitedClientConfig atomic.Value
+
+  postActionCookieSecret         []byte
 }
 
 // Global app options that should be applied to apps created by this server

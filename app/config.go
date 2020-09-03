@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/masterhung0112/go_server/utils"
 	"strconv"
 	"crypto/ecdsa"
 	"github.com/masterhung0112/go_server/model"
@@ -17,6 +18,11 @@ func (a *App) Config() *model.Config {
 func (a *App) UpdateConfig(f func(*model.Config)) {
 	a.Srv().UpdateConfig(f)
 }
+
+func (a *App) ClientConfig() map[string]string {
+	return a.Srv().clientConfig.Load().(map[string]string)
+}
+
 
 // Registers a function with a given listener to be called when the config is reloaded and may have changed. The function
 // will be called with two arguments: the old config and the new config. AddConfigListener returns a unique ID
@@ -46,6 +52,14 @@ func (s *Server) AsymmetricSigningKey() *ecdsa.PrivateKey {
 
 func (a *App) AsymmetricSigningKey() *ecdsa.PrivateKey {
 	return a.Srv().AsymmetricSigningKey()
+}
+
+func (s *Server) PostActionCookieSecret() []byte {
+	return s.postActionCookieSecret
+}
+
+func (a *App) PostActionCookieSecret() []byte {
+	return a.Srv().PostActionCookieSecret()
 }
 
 // ClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
@@ -91,4 +105,28 @@ func (a *App) LimitedClientConfigWithComputed() map[string]string {
 	respCfg["NoAccounts"] = strconv.FormatBool(a.IsFirstUserAccount())
 
 	return respCfg
+}
+
+
+func (s *Server) ensureInstallationDate() error {
+	_, appErr := s.getSystemInstallDate()
+	if appErr == nil {
+		return nil
+	}
+
+	installDate, appErr := s.Store.User().InferSystemInstallDate()
+	var installationDate int64
+	if appErr == nil && installDate > 0 {
+		installationDate = installDate
+	} else {
+		installationDate = utils.MillisFromTime(time.Now())
+	}
+
+	if err := s.Store.System().SaveOrUpdate(&model.System{
+		Name:  model.SYSTEM_INSTALLATION_DATE_KEY,
+		Value: strconv.FormatInt(installationDate, 10),
+	}); err != nil {
+		return err
+	}
+	return nil
 }
