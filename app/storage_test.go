@@ -1,5 +1,9 @@
 package app
 
+import (
+  "testing"
+)
+
 func TestCreateMinioClient(t *testing.T) {
   th := Setup(t)
   defer th.TearDown()

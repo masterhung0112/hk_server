@@ -27,10 +27,20 @@ const (
   FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
 
   SQL_SETTINGS_DEFAULT_DATA_SOURCE = "mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
+
+  TEAM_SETTINGS_DEFAULT_SITE_NAME                = "HungKnow"
+  TEAM_SETTINGS_DEFAULT_MAX_USERS_PER_TEAM       = 50
+	TEAM_SETTINGS_DEFAULT_CUSTOM_BRAND_TEXT        = ""
+	TEAM_SETTINGS_DEFAULT_CUSTOM_DESCRIPTION_TEXT  = ""
+  TEAM_SETTINGS_DEFAULT_USER_STATUS_AWAY_TIMEOUT = 300
+
+  DIRECT_MESSAGE_ANY  = "any"
+	DIRECT_MESSAGE_TEAM = "team"
 )
 
 type Config struct {
   ServiceSettings           ServiceSettings
+  TeamSettings              TeamSettings
   PasswordSettings PasswordSettings
   LocalizationSettings LocalizationSettings
   SqlSettings SqlSettings
@@ -48,6 +58,7 @@ func (o *Config) SetDefaults() {
   o.PasswordSettings.SetDefaults()
   o.LocalizationSettings.SetDefaults()
   o.SqlSettings.SetDefaults(isUpdate)
+  o.TeamSettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
@@ -311,5 +322,127 @@ func (s *FileSettings) SetDefaults(isUpdate bool) {
 
 	if s.S3Trace == nil {
 		s.S3Trace = NewBool(false)
+	}
+}
+
+type TeamSettings struct {
+	SiteName                                                  *string  `access:"site"`
+	MaxUsersPerTeam                                           *int     `access:"site"`
+	DEPRECATED_DO_NOT_USE_EnableTeamCreation                  *bool    `json:"EnableTeamCreation" mapstructure:"EnableTeamCreation"` // This field is deprecated and must not be used.
+	EnableUserCreation                                        *bool    `access:"authentication"`
+	EnableOpenServer                                          *bool    `access:"authentication"`
+	EnableUserDeactivation                                    *bool    `access:"experimental"`
+	RestrictCreationToDomains                                 *string  `access:"authentication"`
+	EnableCustomBrand                                         *bool    `access:"site"`
+	CustomBrandText                                           *string  `access:"site"`
+	CustomDescriptionText                                     *string  `access:"site"`
+	RestrictDirectMessage                                     *string  `access:"site"`
+	EnableXToLeaveChannelsFromLHS                             *bool    `access:"experimental"`
+	UserStatusAwayTimeout                                     *int64   `access:"experimental"`
+	MaxChannelsPerTeam                                        *int64   `access:"site"`
+	MaxNotificationsPerChannel                                *int64   `access:"environment"`
+	EnableConfirmNotificationsToChannel                       *bool    `access:"site"`
+	TeammateNameDisplay                                       *string  `access:"site"`
+	ExperimentalViewArchivedChannels                          *bool    `access:"experimental,site"`
+	ExperimentalEnableAutomaticReplies                        *bool    `access:"experimental"`
+	ExperimentalHideTownSquareinLHS                           *bool    `access:"experimental"`
+	ExperimentalTownSquareIsReadOnly                          *bool    `access:"experimental"`
+	LockTeammateNameDisplay                                   *bool    `access:"site"`
+	ExperimentalPrimaryTeam                                   *string  `access:"experimental"`
+	ExperimentalDefaultChannels                               []string `access:"experimental"`
+}
+
+func (s *TeamSettings) SetDefaults() {
+
+	if s.SiteName == nil || *s.SiteName == "" {
+		s.SiteName = NewString(TEAM_SETTINGS_DEFAULT_SITE_NAME)
+	}
+
+	if s.MaxUsersPerTeam == nil {
+		s.MaxUsersPerTeam = NewInt(TEAM_SETTINGS_DEFAULT_MAX_USERS_PER_TEAM)
+	}
+
+	if s.EnableUserCreation == nil {
+		s.EnableUserCreation = NewBool(true)
+	}
+
+	if s.EnableOpenServer == nil {
+		s.EnableOpenServer = NewBool(false)
+	}
+
+	if s.RestrictCreationToDomains == nil {
+		s.RestrictCreationToDomains = NewString("")
+	}
+
+	if s.EnableCustomBrand == nil {
+		s.EnableCustomBrand = NewBool(false)
+	}
+
+	if s.EnableUserDeactivation == nil {
+		s.EnableUserDeactivation = NewBool(false)
+	}
+
+	if s.CustomBrandText == nil {
+		s.CustomBrandText = NewString(TEAM_SETTINGS_DEFAULT_CUSTOM_BRAND_TEXT)
+	}
+
+	if s.CustomDescriptionText == nil {
+		s.CustomDescriptionText = NewString(TEAM_SETTINGS_DEFAULT_CUSTOM_DESCRIPTION_TEXT)
+	}
+
+	if s.RestrictDirectMessage == nil {
+		s.RestrictDirectMessage = NewString(DIRECT_MESSAGE_ANY)
+  }
+
+	if s.EnableXToLeaveChannelsFromLHS == nil {
+		s.EnableXToLeaveChannelsFromLHS = NewBool(false)
+	}
+
+	if s.UserStatusAwayTimeout == nil {
+		s.UserStatusAwayTimeout = NewInt64(TEAM_SETTINGS_DEFAULT_USER_STATUS_AWAY_TIMEOUT)
+	}
+
+	if s.MaxChannelsPerTeam == nil {
+		s.MaxChannelsPerTeam = NewInt64(2000)
+	}
+
+	if s.MaxNotificationsPerChannel == nil {
+		s.MaxNotificationsPerChannel = NewInt64(1000)
+	}
+
+	if s.EnableConfirmNotificationsToChannel == nil {
+		s.EnableConfirmNotificationsToChannel = NewBool(true)
+	}
+
+	if s.ExperimentalEnableAutomaticReplies == nil {
+		s.ExperimentalEnableAutomaticReplies = NewBool(false)
+	}
+
+	if s.ExperimentalHideTownSquareinLHS == nil {
+		s.ExperimentalHideTownSquareinLHS = NewBool(false)
+	}
+
+	if s.ExperimentalTownSquareIsReadOnly == nil {
+		s.ExperimentalTownSquareIsReadOnly = NewBool(false)
+	}
+
+	if s.ExperimentalPrimaryTeam == nil {
+		s.ExperimentalPrimaryTeam = NewString("")
+	}
+
+	if s.ExperimentalDefaultChannels == nil {
+		s.ExperimentalDefaultChannels = []string{}
+	}
+
+	if s.EnableUserCreation == nil {
+		s.EnableUserCreation = NewBool(true)
+	}
+
+	if s.ExperimentalViewArchivedChannels == nil {
+		s.ExperimentalViewArchivedChannels = NewBool(false)
+	}
+
+	if s.LockTeammateNameDisplay == nil {
+		s.LockTeammateNameDisplay = NewBool(false)
 	}
 }
