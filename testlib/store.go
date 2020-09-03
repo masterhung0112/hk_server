@@ -1,6 +1,7 @@
 package testlib
 
 import (
+	"strconv"
 	"github.com/stretchr/testify/mock"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store/storetest/mocks"
@@ -21,7 +22,7 @@ func GetMockStoreForSetupFunctions() *mocks.Store {
 	// systemStore.On("GetByName", "UpgradedFromTE").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
 	// systemStore.On("GetByName", "AsymmetricSigningKey").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
 	// systemStore.On("GetByName", "PostActionCookieSecret").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
-	// systemStore.On("GetByName", "InstallationDate").Return(&model.System{Name: "InstallationDate", Value: strconv.FormatInt(model.GetMillis(), 10)}, nil)
+	systemStore.On("GetByName", "InstallationDate").Return(&model.System{Name: "InstallationDate", Value: strconv.FormatInt(model.GetMillis(), 10)}, nil)
 	// systemStore.On("GetByName", "FirstServerRunTimestamp").Return(&model.System{Name: "FirstServerRunTimestamp", Value: "10"}, nil)
 	// systemStore.On("GetByName", "AdvancedPermissionsMigrationComplete").Return(&model.System{Name: "AdvancedPermissionsMigrationComplete", Value: "true"}, nil)
 	// systemStore.On("GetByName", "EmojisPermissionsMigrationComplete").Return(&model.System{Name: "EmojisPermissionsMigrationComplete", Value: "true"}, nil)
