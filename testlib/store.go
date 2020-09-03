@@ -1,6 +1,8 @@
 package testlib
 
 import (
+	"github.com/stretchr/testify/mock"
+	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store/storetest/mocks"
 	"github.com/masterhung0112/go_server/store"
 )
