@@ -82,7 +82,7 @@
     } ],
     "client" : {
       "security-admin-console" : [ ],
-      "http://localhost:8065/login/sso/saml" : [ ],
+      "http://localhost:9065/login/sso/saml" : [ ],
       "admin-cli" : [ ],
       "account-console" : [ ],
       "broker" : [ {
@@ -524,14 +524,14 @@
     "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   }, {
     "id" : "52fef9a5-b43a-496d-be1d-024522142740",
-    "clientId" : "http://localhost:8065/login/sso/saml",
-    "adminUrl" : "http://localhost:8065/login/sso/saml",
+    "clientId" : "http://localhost:9065/login/sso/saml",
+    "adminUrl" : "http://localhost:9065/login/sso/saml",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "9c2edd74-9e20-454d-8cc2-0714e43f5f7e",
-    "redirectUris" : [ "http://localhost:8065/login/sso/saml" ],
+    "redirectUris" : [ "http://localhost:9065/login/sso/saml" ],
     "webOrigins" : [ ],
     "notBefore" : 0,
     "bearerOnly" : false,
