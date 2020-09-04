@@ -26,7 +26,7 @@ const (
 
   FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
 
-  SQL_SETTINGS_DEFAULT_DATA_SOURCE = "mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
+  SQL_SETTINGS_DEFAULT_DATA_SOURCE = "hkuser:mostest@tcp(localhost:3306)/hungknow_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
 
   TEAM_SETTINGS_DEFAULT_SITE_NAME                = "HungKnow"
   TEAM_SETTINGS_DEFAULT_MAX_USERS_PER_TEAM       = 50
