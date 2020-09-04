@@ -2,23 +2,23 @@ version: '2.4'
 services:
   mysql:
     restart: 'no'
-    container_name: mattermost-mysql
+    container_name: hungknow-mysql
     ports:
-      - "3306:3306"
+      - "7306:3306"
     extends:
         file: build/docker-compose.common.yml
         service: mysql
   postgres:
     restart: 'no'
-    container_name: mattermost-postgres
+    container_name: hungknow-postgres
     ports:
-      - "5432:5432"
+      - "7432:5432"
     extends:
         file: build/docker-compose.common.yml
         service: postgres
   minio:
     restart: 'no'
-    container_name: mattermost-minio
+    container_name: hungknow-minio
     ports:
       - "9000:9000"
     extends:
@@ -26,7 +26,7 @@ services:
         service: minio
   inbucket:
     restart: 'no'
-    container_name: mattermost-inbucket
+    container_name: hungknow-inbucket
     ports:
       - "10025:10025"
       - "10080:10080"
@@ -36,7 +36,7 @@ services:
         service: inbucket
   openldap:
     restart: 'no'
-    container_name: mattermost-openldap
+    container_name: hungknow-openldap
     ports:
       - "389:389"
       - "636:636"
@@ -45,7 +45,7 @@ services:
         service: openldap
   elasticsearch:
     restart: 'no'
-    container_name: mattermost-elasticsearch
+    container_name: hungknow-elasticsearch
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -54,7 +54,7 @@ services:
         service: elasticsearch
   dejavu:
     restart: 'no'
-    container_name: mattermost-dejavu
+    container_name: hungknow-dejavu
     ports:
       - "1358:1358"
     extends:
@@ -62,17 +62,17 @@ services:
         service: dejavu
   keycloak:
     restart: 'no'
-    container_name: mattermost-saml
+    container_name: hungknow-saml
     ports:
       - "8484:8080"
     extends:
         file: build/docker-compose.common.yml
         service: keycloak
   start_dependencies:
-    command: mysql:3306 postgres:5432 inbucket:10080 minio:9000
+    command: mysql:7306 postgres:7432 inbucket:10080 minio:9000
     image: mattermost/mattermost-wait-for-dep:latest
     networks:
-      - mm-test
+      - hk-test
     depends_on:
       - mysql
       - postgres
@@ -80,7 +80,7 @@ services:
       - minio
 
 networks:
-  mm-test:
+  hk-test:
     driver: bridge
     ipam:
       driver: default

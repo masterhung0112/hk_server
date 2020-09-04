@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	defaultMysqlDSN      = "mmuser:mostest@tcp(localhost:3306)/mattermost_test?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s"
-	defaultPostgresqlDSN = "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+	defaultMysqlDSN      = "hkuser:mostest@tcp(localhost:7306)/hungknow_test?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s"
+	defaultPostgresqlDSN = "postgres://hkuser:mostest@localhost:7432/hungknow_test?sslmode=disable&connect_timeout=10"
 	defaultMysqlRootPWD  = "mostest"
 )
 
@@ -203,12 +203,12 @@ func MakeSqlSettings(driver string) *model.SqlSettings {
   // Grand permission
   switch driver {
 	case model.DATABASE_DRIVER_MYSQL:
-		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON "+dbName+".* TO 'mmuser'"); err != nil {
-			panic("failed to grant mmuser permission to " + dbName + ":" + err.Error())
+		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON "+dbName+".* TO 'hkuser'"); err != nil {
+			panic("failed to grant hkuser permission to " + dbName + ":" + err.Error())
 		}
 	case model.DATABASE_DRIVER_POSTGRES:
-		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON DATABASE \""+dbName+"\" TO mmuser"); err != nil {
-			panic("failed to grant mmuser permission to " + dbName + ":" + err.Error())
+		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON DATABASE \""+dbName+"\" TO hkuser"); err != nil {
+			panic("failed to grant hkuser permission to " + dbName + ":" + err.Error())
 		}
 	default:
 		panic("unsupported driver " + driver)
