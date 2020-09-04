@@ -23,7 +23,8 @@ import (
 )
 
 type SqlSupplierStores struct {
-	user store.UserStore
+  user                store.UserStore
+  system              store.SystemStore
 }
 
 type SqlSupplier struct {
@@ -254,7 +255,8 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.initConnection()
 
 	// Create tables if necessary
-	supplier.stores.user = newSqlUserStore(supplier)
+  supplier.stores.user = newSqlUserStore(supplier)
+  supplier.stores.system = newSqlSystemStore(supplier)
 
 	err := supplier.GetMaster().CreateTablesIfNotExists()
 	if err != nil {
@@ -286,4 +288,8 @@ func IsUniqueConstraintError(err error, indexName []string) bool {
 	}
 
 	return unique && field
+}
+
+func (ss *SqlSupplier) System() store.SystemStore {
+	return ss.stores.system
 }

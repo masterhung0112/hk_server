@@ -102,3 +102,11 @@ func (h *MainHelper) GetStore() store.Store {
 
 	return h.Store
 }
+
+func (h *MainHelper) GetSQLSupplier() *sqlstore.SqlSupplier {
+	if h.SQLSupplier == nil {
+		panic("MainHelper not initialized with sql supplier.")
+	}
+
+	return h.SQLSupplier
+}

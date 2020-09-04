@@ -54,3 +54,13 @@ var Flush FlushFunc = defaultFlush
 var ConfigAdvancedLogging ConfigFunc = defaultAdvancedConfig
 var ShutdownAdvancedLogging ShutdownFunc = defaultAdvancedShutdown
 var AddTarget AddTargetFunc = defaultAddTarget
+
+// DON'T USE THIS Modify the level on the app logger
+func GloballyDisableDebugLogForTest() {
+	globalLogger.consoleLevel.SetLevel(zapcore.ErrorLevel)
+}
+
+// DON'T USE THIS Modify the level on the app logger
+func GloballyEnableDebugLogForTest() {
+	globalLogger.consoleLevel.SetLevel(zapcore.DebugLevel)
+}

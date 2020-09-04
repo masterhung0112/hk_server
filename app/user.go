@@ -34,6 +34,12 @@ func (s *Server) IsFirstUserAccount() bool {
  * User Creation
  ****************/
 
+// CreateGuest creates a guest and sets several fields of the returned User struct to
+// their zero values.
+func (a *App) CreateGuest(user *model.User) (*model.User, *model.AppError) {
+	return a.createUserOrGuest(user, true)
+}
+
 // CreateUser creates a user and sets several fields of the returned User struct to
 // their zero values.
 func (app *App) CreateUser(user *model.User) (*model.User, *model.AppError) {

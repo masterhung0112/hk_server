@@ -5,7 +5,8 @@ import (
 )
 
 type Store interface {
-	User() UserStore
+  User() UserStore
+  System() SystemStore
 	Close()
 	DropAllTables()
 	MarkSystemRanUnitTests()
@@ -16,5 +17,16 @@ type UserStore interface {
 	Get(id string) (*model.User, *model.AppError)
 	GetAll() ([]*model.User, *model.AppError)
 	Count(options model.UserCountOptions) (int64, *model.AppError)
-	PermanentDelete(userId string) *model.AppError
+  PermanentDelete(userId string) *model.AppError
+  InferSystemInstallDate() (int64, *model.AppError)
+}
+
+type SystemStore interface {
+	Save(system *model.System) error
+	SaveOrUpdate(system *model.System) error
+	Update(system *model.System) error
+	Get() (model.StringMap, error)
+	GetByName(name string) (*model.System, error)
+	PermanentDeleteByName(name string) (*model.System, error)
+	InsertIfExists(system *model.System) (*model.System, error)
 }

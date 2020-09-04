@@ -1,7 +1,9 @@
 package app
 
 import (
-	"context"
+	"strconv"
+  "context"
+  "net/http"
 
 	"github.com/masterhung0112/go_server/model"
 )
@@ -41,4 +43,16 @@ func (a *App) SetServer(srv *Server) {
 
 func (a *App) Session() *model.Session {
 	return &a.session
+}
+
+func (s *Server) getSystemInstallDate() (int64, *model.AppError) {
+	systemData, err := s.Store.System().GetByName(model.SYSTEM_INSTALLATION_DATE_KEY)
+	if err != nil {
+		return 0, model.NewAppError("getSystemInstallDate", "app.system.get_by_name.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	value, err := strconv.ParseInt(systemData.Value, 10, 64)
+	if err != nil {
+		return 0, model.NewAppError("getSystemInstallDate", "app.system_install_date.parse_int.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	return value, nil
 }

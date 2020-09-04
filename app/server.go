@@ -42,7 +42,9 @@ type Server struct {
 
   clientConfig        atomic.Value
   clientConfigHash    atomic.Value
-	limitedClientConfig atomic.Value
+  limitedClientConfig atomic.Value
+
+  postActionCookieSecret         []byte
 }
 
 // Global app options that should be applied to apps created by this server
@@ -89,14 +91,21 @@ func NewServer(options ...Option) (*Server, error) {
 		}
 	}
 
-	s.Store = s.newStore()
+  s.Store = s.newStore()
+
+  if err := s.ensureInstallationDate(); err != nil {
+		return nil, errors.Wrapf(err, "unable to ensure installation date")
+  }
+
+  s.regenerateClientConfig()
 
 	// Prepare Router for all Web, WS paths
 	subpath, err := utils.GetSubpathFromConfig(s.Config())
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to parse SiteURL subpath")
 	}
-	s.Router = s.RootRouter.PathPrefix(subpath).Subrouter()
+  s.Router = s.RootRouter.PathPrefix(subpath).Subrouter()
+
 
 	return s, nil
 }
