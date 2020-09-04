@@ -19,7 +19,7 @@
     },
     "SqlSettings": {
         "DriverName": "mysql",
-        "DataSource": "hkuser:mostest@tcp(localhost:3306)/hungknow_test?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s",
+        "DataSource": "hkuser:mostest@tcp(localhost:7306)/hungknow_test?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s",
         "DataSourceReplicas": [],
         "QueryTimeout": 30
     }

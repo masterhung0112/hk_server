@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultMysqlDSN      = "hkuser:mostest@tcp(localhost:3306)/hungknow_test?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s"
+	defaultMysqlDSN      = "hkuser:mostest@tcp(localhost:7306)/hungknow_test?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s"
 	defaultPostgresqlDSN = "postgres://hkuser:mostest@localhost:7432/hungknow_test?sslmode=disable&connect_timeout=10"
 	defaultMysqlRootPWD  = "mostest"
 )
