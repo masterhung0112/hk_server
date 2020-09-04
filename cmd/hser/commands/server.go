@@ -30,8 +30,9 @@ func init() {
 func serverCmdF(command *cobra.Command, args []string) error {
   configDSN := viper.GetString("config")
 
-	disableConfigWatch, _ := command.Flags().GetBool("disableconfigwatch")
-	usedPlatform, _ := command.Flags().GetBool("platform")
+  disableConfigWatch, _ := command.Flags().GetBool("disableconfigwatch")
+  //TODO: open this
+	// usedPlatform, _ := command.Flags().GetBool("platform")
 
   interruptChan := make(chan os.Signal, 1)
   if err := utils.TranslationsPreInit(); err != nil {
