@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/mattermost/viper"
   "github.com/spf13/cobra"
 )
 
@@ -18,4 +19,8 @@ var RootCmd = &cobra.Command{
 
 func init() {
   RootCmd.PersistentFlags().StringP("config", "c", "config.json", "Configuration file to use.")
+
+  viper.SetEnvPrefix("hk")
+	viper.BindEnv("config")
+	viper.BindPFlag("config", RootCmd.PersistentFlags().Lookup("config"))
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
   "github.com/masterhung0112/go_server/model"
 )
 // Listener is a callback function invoked when the configuration changes
@@ -15,4 +16,13 @@ type Store interface {
 
   AddListener(listener Listener) string
   RemoveListener(id string)
+}
+
+// NewStore creates a database or file store given a data source name by which to connect.
+func NewStore(dsn string, watch bool) (Store, error) {
+	if strings.HasPrefix(dsn, "mysql://") || strings.HasPrefix(dsn, "postgres://") {
+		return NewDatabaseStore(dsn)
+	}
+
+	return NewFileStore(dsn, watch)
 }

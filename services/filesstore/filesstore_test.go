@@ -66,7 +66,7 @@ func runBackendTest(t *testing.T, encrypt bool) {
 
 	s3Port := os.Getenv("CI_MINIO_PORT")
 	if s3Port == "" {
-		s3Port = "9000"
+		s3Port = "9001"
 	}
 
 	s3Endpoint := fmt.Sprintf("%s:%s", s3Host, s3Port)
