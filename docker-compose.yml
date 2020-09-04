@@ -12,7 +12,7 @@ services:
     restart: 'no'
     container_name: hungknow-postgres
     ports:
-      - "5432:5432"
+      - "7432:5432"
     extends:
         file: build/docker-compose.common.yml
         service: postgres
