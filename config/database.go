@@ -1,13 +1,14 @@
 package config
 
 import (
-	"github.com/masterhung0112/go_server/mlog"
 	"bytes"
-	"io/ioutil"
-	"github.com/masterhung0112/go_server/model"
 	"database/sql"
+	"io/ioutil"
 	"strings"
+
 	"github.com/jmoiron/sqlx"
+	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/go_server/model"
 	"github.com/pkg/errors"
 )
 
@@ -147,7 +148,6 @@ func initializeConfigurationsTable(db *sqlx.DB) error {
 
 	return nil
 }
-
 
 // persist writes the configuration to the configured database.
 func (ds *DatabaseStore) persist(cfg *model.Config) error {
