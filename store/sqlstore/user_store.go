@@ -198,3 +198,19 @@ func (us SqlUserStore) InferSystemInstallDate() (int64, *model.AppError) {
 
 	return createAt, nil
 }
+
+func (us SqlUserStore) GetByEmail(email string) (*model.User, *model.AppError) {
+	query := us.usersQuery.Where("Email = lower(?)", email)
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetByEmail", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	user := model.User{}
+	if err := us.GetReplica().SelectOne(&user, queryString, args...); err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetByEmail", store.MISSING_ACCOUNT_ERROR, nil, "email="+email+", "+err.Error(), http.StatusInternalServerError)
+	}
+
+	return &user, nil
+}

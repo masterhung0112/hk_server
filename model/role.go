@@ -14,7 +14,11 @@ const (
 
   ROLE_NAME_MAX_LENGTH         = 64
 	ROLE_DISPLAY_NAME_MAX_LENGTH = 128
-	ROLE_DESCRIPTION_MAX_LENGTH  = 1024
+  ROLE_DESCRIPTION_MAX_LENGTH  = 1024
+
+  CHANNEL_GUEST_ROLE_ID = "channel_guest"
+	CHANNEL_USER_ROLE_ID  = "channel_user"
+	CHANNEL_ADMIN_ROLE_ID = "channel_admin"
 )
 
 type Role struct {
@@ -105,4 +109,34 @@ func (r *Role) MergeChannelHigherScopedPermissions(higherScopedPermissions *Role
 	}
 
 	r.Permissions = mergedPermissions
+}
+
+func (r *Role) IsValidWithoutId() bool {
+	if !IsValidRoleName(r.Name) {
+		return false
+	}
+
+	if len(r.DisplayName) == 0 || len(r.DisplayName) > ROLE_DISPLAY_NAME_MAX_LENGTH {
+		return false
+	}
+
+	if len(r.Description) > ROLE_DESCRIPTION_MAX_LENGTH {
+		return false
+	}
+
+	for _, permission := range r.Permissions {
+		permissionValidated := false
+		for _, p := range append(AllPermissions) {
+			if permission == p.Id {
+				permissionValidated = true
+				break
+			}
+		}
+
+		if !permissionValidated {
+			return false
+		}
+	}
+
+	return true
 }

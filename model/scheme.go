@@ -1,0 +1,9 @@
+package model
+
+const (
+	SCHEME_DISPLAY_NAME_MAX_LENGTH = 128
+	SCHEME_NAME_MAX_LENGTH         = 64
+	SCHEME_DESCRIPTION_MAX_LENGTH  = 1024
+	SCHEME_SCOPE_TEAM              = "team"
+	SCHEME_SCOPE_CHANNEL           = "channel"
+)

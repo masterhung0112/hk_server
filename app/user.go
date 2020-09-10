@@ -7,9 +7,36 @@
 package app
 
 import (
+	"net/http"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 )
+
+func (a *App) GetUser(userId string) (*model.User, *model.AppError) {
+	return a.Srv().Store.User().Get(userId)
+}
+
+func (a *App) GetUserByUsername(username string) (*model.User, *model.AppError) {
+	result, err := a.Srv().Store.User().GetByUsername(username)
+	if err != nil && err.Id == "store.sql_user.get_by_username.app_error" {
+		err.StatusCode = http.StatusNotFound
+		return nil, err
+	}
+	return result, nil
+}
+
+func (a *App) GetUserByEmail(email string) (*model.User, *model.AppError) {
+	user, err := a.Srv().Store.User().GetByEmail(email)
+	if err != nil {
+		if err.Id == "store.sql_user.missing_account.const" {
+			err.StatusCode = http.StatusNotFound
+			return nil, err
+		}
+		err.StatusCode = http.StatusBadRequest
+		return nil, err
+	}
+	return user, nil
+}
 
 func (s *Server) IsFirstUserAccount() bool {
 	// cachedSessions, err := s.sessionCache.Len()
