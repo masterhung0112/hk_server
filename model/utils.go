@@ -266,3 +266,11 @@ func GetImageMimeType(ext string) string {
 		return IMAGE_MIME_TYPES[ext]
 	}
 }
+
+func AsStringBoolMap(list []string) map[string]bool {
+	listMap := map[string]bool{}
+	for _, p := range list {
+		listMap[p] = true
+	}
+	return listMap
+}

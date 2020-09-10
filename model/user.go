@@ -14,6 +14,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+  ME                                 = "me"
+
+  DEFAULT_LOCALE          = "en"
+	USER_AUTH_SERVICE_EMAIL = "email"
+)
+
 type User struct {
 	Id            string `json:"id"`
 	CreateAt      int64  `json:"create_at,omitempty"`

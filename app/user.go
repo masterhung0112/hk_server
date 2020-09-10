@@ -193,3 +193,47 @@ func (a *App) VerifyUserEmail(userId, email string) *model.AppError {
 func (a *App) IsFirstUserAccount() bool {
 	return a.Srv().IsFirstUserAccount()
 }
+
+
+func (a *App) GetViewUsersRestrictions(userId string) (*model.ViewUsersRestrictions, *model.AppError) {
+	if a.HasPermissionTo(userId, model.PERMISSION_VIEW_MEMBERS) {
+		return nil, nil
+	}
+
+	teamIds, getTeamErr := a.Srv().Store.Team().GetUserTeamIds(userId, true)
+	if getTeamErr != nil {
+		return nil, getTeamErr
+	}
+
+	teamIdsWithPermission := []string{}
+	for _, teamId := range teamIds {
+		if a.HasPermissionToTeam(userId, teamId, model.PERMISSION_VIEW_MEMBERS) {
+			teamIdsWithPermission = append(teamIdsWithPermission, teamId)
+		}
+	}
+
+	userChannelMembers, err := a.Srv().Store.Channel().GetAllChannelMembersForUser(userId, true, true)
+	if err != nil {
+		return nil, err
+	}
+
+	channelIds := []string{}
+	for channelId := range userChannelMembers {
+		channelIds = append(channelIds, channelId)
+	}
+
+	return &model.ViewUsersRestrictions{Teams: teamIdsWithPermission, Channels: channelIds}, nil
+}
+
+func (a *App) GetUsersWithoutTeamPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError) {
+	users, err := a.GetUsersWithoutTeam(options)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.sanitizeProfiles(users, asAdmin), nil
+}
+
+func (a *App) GetUsersWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
+	return a.Srv().Store.User().GetProfilesWithoutTeam(options)
+}

@@ -10,6 +10,7 @@ import (
 type Context struct {
   App           *app.App
   Err           *model.AppError
+  Params        *Params
 }
 
 func NewInvalidParamError(parameter string) *model.AppError {
@@ -19,4 +20,28 @@ func NewInvalidParamError(parameter string) *model.AppError {
 
 func (c *Context) SetInvalidParam(parameter string) {
 	c.Err = NewInvalidParamError(parameter)
+}
+
+func (c *Context) RequireUserId() *Context {
+  if c.Err != nil {
+		return c
+	}
+
+	if c.Params.UserId == model.ME {
+		c.Params.UserId = c.App.Session().UserId
+	}
+
+	if !model.IsValidId(c.Params.UserId) {
+		c.SetInvalidUrlParam("user_id")
+	}
+	return c
+}
+
+func (c *Context) SetInvalidUrlParam(parameter string) {
+	c.Err = NewInvalidUrlParamError(parameter)
+}
+
+func NewInvalidUrlParamError(parameter string) *model.AppError {
+	err := model.NewAppError("Context", "api.context.invalid_url_param.app_error", map[string]interface{}{"Name": parameter}, "", http.StatusBadRequest)
+	return err
 }
