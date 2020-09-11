@@ -8,8 +8,6 @@ import (
 
 
 	sq "github.com/Masterminds/squirrel"
-
-	"github.com/mattermost/gorp"
 )
 
 const (

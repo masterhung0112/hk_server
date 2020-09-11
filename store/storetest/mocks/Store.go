@@ -29,6 +29,22 @@ func (_m *Store) MarkSystemRanUnitTests() {
 	_m.Called()
 }
 
+// Role provides a mock function with given fields:
+func (_m *Store) Role() store.RoleStore {
+	ret := _m.Called()
+
+	var r0 store.RoleStore
+	if rf, ok := ret.Get(0).(func() store.RoleStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.RoleStore)
+		}
+	}
+
+	return r0
+}
+
 // System provides a mock function with given fields:
 func (_m *Store) System() store.SystemStore {
 	ret := _m.Called()
@@ -39,6 +55,22 @@ func (_m *Store) System() store.SystemStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.SystemStore)
+		}
+	}
+
+	return r0
+}
+
+// Team provides a mock function with given fields:
+func (_m *Store) Team() store.TeamStore {
+	ret := _m.Called()
+
+	var r0 store.TeamStore
+	if rf, ok := ret.Get(0).(func() store.TeamStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.TeamStore)
 		}
 	}
 
