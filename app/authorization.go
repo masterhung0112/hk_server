@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 )
@@ -34,7 +35,7 @@ func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool
 	if err != nil {
 		// This should only happen if something is very broken. We can't realistically
 		// recover the situation, so deny permission and log an error.
-		mlog.Error("Failed to get roles from database with role names: "+strings.Join(roleNames, ",")+" ", mlog.Err(err))
+		mlog.Error("Failed to get roles from database with role names: " + strings.Join(roleNames, ",")+" ", mlog.Err(err))
 		return false
 	}
 

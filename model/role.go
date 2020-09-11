@@ -18,7 +18,13 @@ const (
 
   CHANNEL_GUEST_ROLE_ID = "channel_guest"
 	CHANNEL_USER_ROLE_ID  = "channel_user"
-	CHANNEL_ADMIN_ROLE_ID = "channel_admin"
+  CHANNEL_ADMIN_ROLE_ID = "channel_admin"
+
+  TEAM_GUEST_ROLE_ID           = "team_guest"
+	TEAM_USER_ROLE_ID            = "team_user"
+	TEAM_ADMIN_ROLE_ID           = "team_admin"
+	TEAM_POST_ALL_ROLE_ID        = "team_post_all"
+	TEAM_POST_ALL_PUBLIC_ROLE_ID = "team_post_all_public"
 )
 
 type Role struct {

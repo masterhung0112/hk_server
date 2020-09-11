@@ -78,3 +78,36 @@ func TestCreateUser(t *testing.T) {
 	// 	assert.Equal(t, http.StatusBadRequest, r.StatusCode)
 	// })
 }
+
+func TestGetUsers(t *testing.T) {
+	th := Setup(t)
+	defer th.TearDown()
+
+	th.TestForAllClients(t, func(t *testing.T, client *model.Client4) {
+		rusers, resp := client.GetUsers(0, 60, "")
+		CheckNoError(t, resp)
+		for _, u := range rusers {
+			CheckUserSanitization(t, u)
+		}
+
+		rusers, resp = client.GetUsers(0, 1, "")
+		CheckNoError(t, resp)
+		require.Len(t, rusers, 1, "should be 1 per page")
+
+		rusers, resp = client.GetUsers(1, 1, "")
+		CheckNoError(t, resp)
+		require.Len(t, rusers, 1, "should be 1 per page")
+
+		rusers, resp = client.GetUsers(10000, 100, "")
+		CheckNoError(t, resp)
+		require.Empty(t, rusers, "should be no users")
+
+		// Check default params for page and per_page
+		_, err := client.DoApiGet("/users", "")
+		require.Nil(t, err)
+	})
+
+	th.Client.Logout()
+	_, resp := th.Client.GetUsers(0, 60, "")
+	CheckUnauthorizedStatus(t, resp)
+}

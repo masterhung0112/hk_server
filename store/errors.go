@@ -39,3 +39,50 @@ func NewErrNotFound(resource, id string) *ErrNotFound {
 func (e *ErrNotFound) Error() string {
 	return "resource: " + e.resource + " id: " + e.Id
 }
+
+// ErrLimitExceeded indicates an error that has occured because some value exceeded a limit.
+type ErrLimitExceeded struct {
+	What  string // What was the object that exceeded.
+	Count int    // The value of the object.
+	meta  string // Any additional metadata.
+}
+
+func NewErrLimitExceeded(what string, count int, meta string) *ErrLimitExceeded {
+	return &ErrLimitExceeded{
+		What:  what,
+		Count: count,
+		meta:  meta,
+	}
+}
+
+func (e *ErrLimitExceeded) Error() string {
+	return fmt.Sprintf("limit exceeded: what: %s count: %d metadata: %s", e.What, e.Count, e.meta)
+}
+
+
+// ErrConflict indicates a conflict that occured.
+type ErrConflict struct {
+	Resource string // The resource which created the conflict.
+	err      error  // Internal error.
+	meta     string // Any additional metadata.
+}
+
+func NewErrConflict(resource string, err error, meta string) *ErrConflict {
+	return &ErrConflict{
+		Resource: resource,
+		err:      err,
+		meta:     meta,
+	}
+}
+
+func (e *ErrConflict) Error() string {
+	msg := e.Resource + "exists " + e.meta
+	if e.err != nil {
+		msg += " " + e.err.Error()
+	}
+	return msg
+}
+
+func (e *ErrConflict) Unwrap() error {
+	return e.err
+}

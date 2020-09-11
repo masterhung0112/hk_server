@@ -302,3 +302,7 @@ func (u *User) Sanitize(options map[string]bool) {
 		// u.AuthService = ""
 	}
 }
+
+func (u *User) GetRoles() []string {
+	return strings.Fields(u.Roles)
+}
