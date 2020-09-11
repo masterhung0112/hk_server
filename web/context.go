@@ -53,3 +53,25 @@ func (c *Context) SetPermissionError(permissions ...*model.Permission) {
 func (c *Context) IsSystemAdmin() bool {
 	return c.App.SessionHasPermissionTo(*c.App.Session(), model.PERMISSION_MANAGE_SYSTEM)
 }
+
+func (c *Context) HandleEtag(etag string, routeName string, w http.ResponseWriter, r *http.Request) bool {
+	// metrics := c.App.Metrics()
+	if et := r.Header.Get(model.HEADER_ETAG_CLIENT); len(etag) > 0 {
+		if et == etag {
+			w.Header().Set(model.HEADER_ETAG_SERVER, etag)
+      w.WriteHeader(http.StatusNotModified)
+      //TODO: Open
+			// if metrics != nil {
+			// 	metrics.IncrementEtagHitCounter(routeName)
+			// }
+			return true
+		}
+	}
+
+  //TODO: Open this
+	// if metrics != nil {
+	// 	metrics.IncrementEtagMissCounter(routeName)
+	// }
+
+	return false
+}
