@@ -1,5 +1,9 @@
 package model
 
+import (
+	"strings"
+)
+
 
 const (
 	CHANNEL_NOTIFY_DEFAULT              = "default"
@@ -53,4 +57,8 @@ type ChannelMemberForExport struct {
 	ChannelMember
 	ChannelName string
 	Username    string
+}
+
+func (o *ChannelMember) GetRoles() []string {
+	return strings.Fields(o.Roles)
 }

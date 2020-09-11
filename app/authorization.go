@@ -1,10 +1,147 @@
 package app
 
 import (
+	"net/http"
 	"strings"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 )
+
+func (a *App) MakePermissionError(permissions []*model.Permission) *model.AppError {
+	permissionsStr := "permission="
+	for _, permission := range permissions {
+		permissionsStr += permission.Id
+		permissionsStr += ","
+	}
+	return model.NewAppError("Permissions", "api.context.permissions.app_error", nil, "userId="+a.Session().UserId+", "+permissionsStr, http.StatusForbidden)
+}
+
+func (a *App) SessionHasPermissionTo(session model.Session, permission *model.Permission) bool {
+	if session.IsUnrestricted() {
+		return true
+	}
+	return a.RolesGrantPermission(session.GetUserRoles(), permission.Id)
+}
+
+func (a *App) SessionHasPermissionToAny(session model.Session, permissions []*model.Permission) bool {
+	for _, perm := range permissions {
+		if a.SessionHasPermissionTo(session, perm) {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *App) SessionHasPermissionToTeam(session model.Session, teamId string, permission *model.Permission) bool {
+	if teamId == "" {
+		return false
+	}
+	if session.IsUnrestricted() {
+		return true
+	}
+
+	teamMember := session.GetTeamByTeamId(teamId)
+	if teamMember != nil {
+		if a.RolesGrantPermission(teamMember.GetRoles(), permission.Id) {
+			return true
+		}
+	}
+
+	return a.RolesGrantPermission(session.GetUserRoles(), permission.Id)
+}
+
+func (a *App) SessionHasPermissionToChannel(session model.Session, channelId string, permission *model.Permission) bool {
+	if channelId == "" {
+		return false
+	}
+
+	ids, err := a.Srv().Store.Channel().GetAllChannelMembersForUser(session.UserId, true, true)
+
+	var channelRoles []string
+	if err == nil {
+		if roles, ok := ids[channelId]; ok {
+			channelRoles = strings.Fields(roles)
+			if a.RolesGrantPermission(channelRoles, permission.Id) {
+				return true
+			}
+		}
+	}
+
+	channel, err := a.GetChannel(channelId)
+	if err != nil && err.StatusCode == http.StatusNotFound {
+		return false
+	}
+
+	if session.IsUnrestricted() {
+		return true
+	}
+
+	if channel.TeamId != "" {
+		return a.SessionHasPermissionToTeam(session, channel.TeamId, permission)
+	}
+
+	return a.SessionHasPermissionTo(session, permission)
+}
+
+func (a *App) SessionHasPermissionToChannelByPost(session model.Session, postId string, permission *model.Permission) bool {
+	if channelMember, err := a.Srv().Store.Channel().GetMemberForPost(postId, session.UserId); err == nil {
+
+		if a.RolesGrantPermission(channelMember.GetRoles(), permission.Id) {
+			return true
+		}
+	}
+
+	if channel, err := a.Srv().Store.Channel().GetForPost(postId); err == nil {
+		if channel.TeamId != "" {
+			return a.SessionHasPermissionToTeam(session, channel.TeamId, permission)
+		}
+	}
+
+	return a.SessionHasPermissionTo(session, permission)
+}
+
+func (a *App) SessionHasPermissionToCategory(session model.Session, userId, teamId, categoryId string) bool {
+	if a.SessionHasPermissionTo(session, model.PERMISSION_EDIT_OTHER_USERS) {
+		return true
+	}
+	category, err := a.GetSidebarCategory(categoryId)
+	return err == nil && category != nil && category.UserId == session.UserId && category.UserId == userId && category.TeamId == teamId
+}
+
+func (a *App) SessionHasPermissionToUser(session model.Session, userId string) bool {
+	if userId == "" {
+		return false
+	}
+	if session.IsUnrestricted() {
+		return true
+	}
+
+	if session.UserId == userId {
+		return true
+	}
+
+	if a.SessionHasPermissionTo(session, model.PERMISSION_EDIT_OTHER_USERS) {
+		return true
+	}
+
+	return false
+}
+
+func (a *App) SessionHasPermissionToUserOrBot(session model.Session, userId string) bool {
+	if session.IsUnrestricted() {
+		return true
+	}
+	if a.SessionHasPermissionToUser(session, userId) {
+		return true
+	}
+
+  //TODO: Open this
+	// if err := a.SessionHasPermissionToManageBot(session, userId); err == nil {
+	// 	return true
+	// }
+
+	return false
+}
 
 func (a *App) HasPermissionTo(askingUserId string, permission *model.Permission) bool {
 	user, err := a.GetUser(askingUserId)

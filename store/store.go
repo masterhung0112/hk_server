@@ -128,7 +128,7 @@ type ChannelStore interface {
 	// Update(channel *model.Channel) (*model.Channel, error)
 	// UpdateSidebarChannelCategoryOnMove(channel *model.Channel, newTeamId string) error
 	// ClearSidebarOnTeamLeave(userId, teamId string) error
-	// Get(id string, allowFromCache bool) (*model.Channel, error)
+	Get(id string, allowFromCache bool) (*model.Channel, error)
 	// InvalidateChannel(id string)
 	// InvalidateChannelByName(teamId, name string)
 	// GetFromMaster(id string) (*model.Channel, error)
@@ -153,7 +153,7 @@ type ChannelStore interface {
 	// GetTeamChannels(teamId string) (*model.ChannelList, error)
 	// GetAll(teamId string) ([]*model.Channel, error)
 	// GetChannelsByIds(channelIds []string, includeDeleted bool) ([]*model.Channel, error)
-	// GetForPost(postId string) (*model.Channel, error)
+	GetForPost(postId string) (*model.Channel, error)
 	// SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError)
 	// SaveMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
 	// UpdateMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
@@ -166,7 +166,7 @@ type ChannelStore interface {
 	// IsUserInChannelUseCache(userId string, channelId string) bool
 	// GetAllChannelMembersNotifyPropsForChannel(channelId string, allowFromCache bool) (map[string]model.StringMap, *model.AppError)
 	// InvalidateCacheForChannelMembersNotifyProps(channelId string)
-	// GetMemberForPost(postId string, userId string) (*model.ChannelMember, *model.AppError)
+	GetMemberForPost(postId string, userId string) (*model.ChannelMember, *model.AppError)
 	// InvalidateMemberCount(channelId string)
 	// GetMemberCountFromCache(channelId string) int64
 	// GetMemberCount(channelId string, allowFromCache bool) (int64, *model.AppError)
@@ -206,7 +206,7 @@ type ChannelStore interface {
 	// MigratePublicChannels() error
 	// CreateInitialSidebarCategories(userId, teamId string) error
 	// GetSidebarCategories(userId, teamId string) (*model.OrderedSidebarCategories, *model.AppError)
-	// GetSidebarCategory(categoryId string) (*model.SidebarCategoryWithChannels, *model.AppError)
+	GetSidebarCategory(categoryId string) (*model.SidebarCategoryWithChannels, *model.AppError)
 	// GetSidebarCategoryOrder(userId, teamId string) ([]string, *model.AppError)
 	// CreateSidebarCategory(userId, teamId string, newCategory *model.SidebarCategoryWithChannels) (*model.SidebarCategoryWithChannels, *model.AppError)
 	// UpdateSidebarCategoryOrder(userId, teamId string, categoryOrder []string) *model.AppError

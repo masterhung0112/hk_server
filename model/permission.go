@@ -24,13 +24,21 @@ var PERMISSION_CREATE_PUBLIC_CHANNEL *Permission
 
 var PERMISSION_DELETE_PUBLIC_CHANNEL *Permission
 
-
 var PERMISSION_CREATE_POST *Permission
 var PERMISSION_LIST_USERS_WITHOUT_TEAM *Permission
 var PERMISSION_USE_CHANNEL_MENTIONS *Permission
 var PERMISSION_MANAGE_PUBLIC_CHANNEL_MEMBERS *Permission
 var PERMISSION_MANAGE_PRIVATE_CHANNEL_MEMBERS *Permission
 var PERMISSION_VIEW_MEMBERS *Permission
+var PERMISSION_EDIT_OTHER_USERS *Permission
+var PERMISSION_READ_CHANNEL *Permission
+
+var PERMISSION_VIEW_TEAM *Permission
+
+// General permission that encompasses all system admin functions
+// in the future this could be broken up to allow access to some
+// admin functions but not others
+var PERMISSION_MANAGE_SYSTEM *Permission
 
 func initializePermissions() {
   PERMISSION_INVITE_USER = &Permission{
@@ -92,22 +100,49 @@ func initializePermissions() {
 		"authentication.permisssions.view_members.name",
 		"authentication.permisssions.view_members.description",
 		PermissionScopeTeam,
+  }
+  PERMISSION_EDIT_OTHER_USERS = &Permission{
+		"edit_other_users",
+		"authentication.permissions.edit_other_users.name",
+		"authentication.permissions.edit_other_users.description",
+		PermissionScopeSystem,
+  }
+  PERMISSION_READ_CHANNEL = &Permission{
+		"read_channel",
+		"authentication.permissions.read_channel.name",
+		"authentication.permissions.read_channel.description",
+		PermissionScopeChannel,
+	}
+  PERMISSION_MANAGE_SYSTEM = &Permission{
+		"manage_system",
+		"authentication.permissions.manage_system.name",
+		"authentication.permissions.manage_system.description",
+		PermissionScopeSystem,
+  }
+  PERMISSION_VIEW_TEAM = &Permission{
+		"view_team",
+		"authentication.permissions.view_team.name",
+		"authentication.permissions.view_team.description",
+		PermissionScopeTeam,
 	}
 
   SystemScopedPermissionsMinusSysconsole := []*Permission{
+    PERMISSION_MANAGE_SYSTEM,
     PERMISSION_LIST_USERS_WITHOUT_TEAM,
+    PERMISSION_EDIT_OTHER_USERS,
   }
 
   TeamScopedPermissions := []*Permission{
     PERMISSION_INVITE_USER,
     PERMISSION_ADD_USER_TO_TEAM,
     PERMISSION_CREATE_PUBLIC_CHANNEL,
-		PERMISSION_VIEW_MEMBERS,
+    PERMISSION_VIEW_MEMBERS,
+    PERMISSION_VIEW_TEAM,
   }
 
   ChannelScopedPermissions := []*Permission{
 		PERMISSION_DELETE_PUBLIC_CHANNEL,
-
+    PERMISSION_READ_CHANNEL,
   }
 
   AllPermissions = []*Permission{}
