@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"fmt"
 	"database/sql"
 	"net/http"
 
@@ -213,4 +214,110 @@ func (us SqlUserStore) GetByEmail(email string) (*model.User, *model.AppError) {
 	}
 
 	return &user, nil
+}
+
+func (us SqlUserStore) GetByUsername(username string) (*model.User, *model.AppError) {
+	query := us.usersQuery.Where("u.Username = lower(?)", username)
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetByUsername", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	var user *model.User
+	if err := us.GetReplica().SelectOne(&user, queryString, args...); err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetByUsername", "store.sql_user.get_by_username.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return user, nil
+}
+
+func applyViewRestrictionsFilter(query sq.SelectBuilder, restrictions *model.ViewUsersRestrictions, distinct bool) sq.SelectBuilder {
+	if restrictions == nil {
+		return query
+	}
+
+	// If you have no access to teams or channels, return and empty result.
+	if restrictions.Teams != nil && len(restrictions.Teams) == 0 && restrictions.Channels != nil && len(restrictions.Channels) == 0 {
+		return query.Where("1 = 0")
+	}
+
+	teams := make([]interface{}, len(restrictions.Teams))
+	for i, v := range restrictions.Teams {
+		teams[i] = v
+	}
+	channels := make([]interface{}, len(restrictions.Channels))
+	for i, v := range restrictions.Channels {
+		channels[i] = v
+	}
+	resultQuery := query
+	if restrictions.Teams != nil && len(restrictions.Teams) > 0 {
+		resultQuery = resultQuery.Join(fmt.Sprintf("TeamMembers rtm ON ( rtm.UserId = u.Id AND rtm.DeleteAt = 0 AND rtm.TeamId IN (%s))", sq.Placeholders(len(teams))), teams...)
+	}
+	if restrictions.Channels != nil && len(restrictions.Channels) > 0 {
+		resultQuery = resultQuery.Join(fmt.Sprintf("ChannelMembers rcm ON ( rcm.UserId = u.Id AND rcm.ChannelId IN (%s))", sq.Placeholders(len(channels))), channels...)
+	}
+
+	if distinct {
+		return resultQuery.Distinct()
+	}
+
+	return resultQuery
+}
+
+func applyRoleFilter(query sq.SelectBuilder, role string, isPostgreSQL bool) sq.SelectBuilder {
+	if role == "" {
+		return query
+	}
+
+	if isPostgreSQL {
+		roleParam := fmt.Sprintf("%%%s%%", sanitizeSearchTerm(role, "\\"))
+		return query.Where("u.Roles LIKE LOWER(?)", roleParam)
+	}
+
+	roleParam := fmt.Sprintf("%%%s%%", sanitizeSearchTerm(role, "*"))
+
+	return query.Where("u.Roles LIKE ? ESCAPE '*'", roleParam)
+}
+
+func (us SqlUserStore) GetProfilesWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
+	isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
+	query := us.usersQuery.
+		Where(`(
+			SELECT
+				COUNT(0)
+			FROM
+				TeamMembers
+			WHERE
+				TeamMembers.UserId = u.Id
+				AND TeamMembers.DeleteAt = 0
+		) = 0`).
+		OrderBy("u.Username ASC").
+		Offset(uint64(options.Page * options.PerPage)).Limit(uint64(options.PerPage))
+
+	query = applyViewRestrictionsFilter(query, options.ViewRestrictions, true)
+
+	query = applyRoleFilter(query, options.Role, isPostgreSQL)
+
+	if options.Inactive {
+		query = query.Where("u.DeleteAt != 0")
+	} else if options.Active {
+		query = query.Where("u.DeleteAt = 0")
+	}
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetProfilesWithoutTeam", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	var users []*model.User
+	if _, err := us.GetReplica().Select(&users, queryString, args...); err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetProfilesWithoutTeam", "store.sql_user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	for _, u := range users {
+		u.Sanitize(map[string]bool{})
+	}
+
+	return users, nil
 }

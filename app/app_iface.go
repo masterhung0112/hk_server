@@ -18,4 +18,5 @@ type AppIface interface {
   IsFirstUserAccount() bool
   LimitedClientConfig() map[string]string
 
+  GetSanitizeOptions(asAdmin bool) map[string]bool
 }

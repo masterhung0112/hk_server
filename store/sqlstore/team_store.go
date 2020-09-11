@@ -507,3 +507,23 @@ func (s SqlTeamStore) SaveMember(member *model.TeamMember, maxUsersPerTeam int) 
 }
 
 func (s SqlTeamStore) InvalidateAllTeamIdsForUser(userId string) {}
+
+// GetUserTeamIds get the team ids to which the user belongs to. allowFromCache parameter does not have any effect in this Store
+func (s SqlTeamStore) GetUserTeamIds(userID string, allowFromCache bool) ([]string, *model.AppError) {
+	var teamIds []string
+	query, args, err := s.getQueryBuilder().
+		Select("TeamId").
+		From("TeamMembers").
+		Join("Teams ON TeamMembers.TeamId = Teams.Id").
+		Where(sq.Eq{"TeamMembers.UserId": userID, "TeamMembers.DeleteAt": 0, "Teams.DeleteAt": 0}).ToSql()
+
+	if err != nil {
+		return []string{}, model.NewAppError("SqlTeamStore.GetUserTeamIds", "store.sql.build_query.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	_, err = s.GetReplica().Select(&teamIds, query, args...)
+	if err != nil {
+		return []string{}, model.NewAppError("SqlTeamStore.GetUserTeamIds", "store.sql_team.get_user_team_ids.app_error", nil, "userID="+userID+" "+err.Error(), http.StatusInternalServerError)
+	}
+
+	return teamIds, nil
+}

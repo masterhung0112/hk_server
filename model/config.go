@@ -43,6 +43,7 @@ type Config struct {
   PasswordSettings PasswordSettings
   LocalizationSettings LocalizationSettings
   SqlSettings SqlSettings
+  PrivacySettings PrivacySettings
 }
 
 // isUpdate detects a pre-existing config based on whether SiteURL has been changed
@@ -58,6 +59,7 @@ func (o *Config) SetDefaults() {
   o.LocalizationSettings.SetDefaults()
   o.SqlSettings.SetDefaults(isUpdate)
   o.TeamSettings.SetDefaults()
+  o.PrivacySettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
@@ -443,5 +445,28 @@ func (s *TeamSettings) SetDefaults() {
 
 	if s.LockTeammateNameDisplay == nil {
 		s.LockTeammateNameDisplay = NewBool(false)
+	}
+}
+
+func (o *Config) GetSanitizeOptions() map[string]bool {
+	options := map[string]bool{}
+	options["fullname"] = *o.PrivacySettings.ShowFullName
+	options["email"] = *o.PrivacySettings.ShowEmailAddress
+
+	return options
+}
+
+type PrivacySettings struct {
+	ShowEmailAddress *bool `access:"site"`
+	ShowFullName     *bool `access:"site"`
+}
+
+func (s *PrivacySettings) SetDefaults() {
+	if s.ShowEmailAddress == nil {
+		s.ShowEmailAddress = NewBool(true)
+	}
+
+	if s.ShowFullName == nil {
+		s.ShowFullName = NewBool(true)
 	}
 }

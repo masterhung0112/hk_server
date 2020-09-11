@@ -306,3 +306,21 @@ func (u *User) Sanitize(options map[string]bool) {
 func (u *User) GetRoles() []string {
 	return strings.Fields(u.Roles)
 }
+
+func (u *User) ClearNonProfileFields() {
+  u.Password = ""
+  //TODO: Open this
+	// u.AuthData = NewString("")
+	// u.MfaSecret = ""
+	u.EmailVerified = false
+	// u.AllowMarketing = false
+	// u.NotifyProps = StringMap{}
+	// u.LastPasswordUpdate = 0
+	// u.FailedAttempts = 0
+}
+
+func (u *User) SanitizeProfile(options map[string]bool) {
+	u.ClearNonProfileFields()
+
+	u.Sanitize(options)
+}

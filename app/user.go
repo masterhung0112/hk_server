@@ -221,7 +221,6 @@ func (a *App) IsFirstUserAccount() bool {
 	return a.Srv().IsFirstUserAccount()
 }
 
-
 func (a *App) GetViewUsersRestrictions(userId string) (*model.ViewUsersRestrictions, *model.AppError) {
 	if a.HasPermissionTo(userId, model.PERMISSION_VIEW_MEMBERS) {
 		return nil, nil
@@ -263,4 +262,29 @@ func (a *App) GetUsersWithoutTeamPage(options *model.UserGetOptions, asAdmin boo
 
 func (a *App) GetUsersWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
 	return a.Srv().Store.User().GetProfilesWithoutTeam(options)
+}
+
+
+func (a *App) sanitizeProfiles(users []*model.User, asAdmin bool) []*model.User {
+	for _, u := range users {
+		a.SanitizeProfile(u, asAdmin)
+	}
+
+	return users
+}
+
+func (a *App) GetSanitizeOptions(asAdmin bool) map[string]bool {
+	options := a.Config().GetSanitizeOptions()
+	if asAdmin {
+		options["email"] = true
+		options["fullname"] = true
+		options["authservice"] = true
+	}
+	return options
+}
+
+func (a *App) SanitizeProfile(user *model.User, asAdmin bool) {
+	options := a.GetSanitizeOptions(asAdmin)
+
+	user.SanitizeProfile(options)
 }

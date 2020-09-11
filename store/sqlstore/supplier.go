@@ -28,6 +28,7 @@ type SqlSupplierStores struct {
   system               store.SystemStore
   role                 store.RoleStore
   scheme               store.SchemeStore
+  channel              store.ChannelStore
 }
 
 type SqlSupplier struct {
@@ -263,6 +264,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
   supplier.stores.system = newSqlSystemStore(supplier)
   supplier.stores.role = newSqlRoleStore(supplier)
   supplier.stores.scheme = newSqlSchemeStore(supplier)
+  supplier.stores.channel = newSqlChannelStore(supplier)
 
 
 	err := supplier.GetMaster().CreateTablesIfNotExists()
@@ -311,4 +313,8 @@ func (ss *SqlSupplier) Role() store.RoleStore {
 
 func (ss *SqlSupplier) Scheme() store.SchemeStore {
 	return ss.stores.scheme
+}
+
+func (ss *SqlSupplier) Channel() store.ChannelStore {
+	return ss.stores.channel
 }

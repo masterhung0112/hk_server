@@ -14,7 +14,8 @@ type SqlStore interface {
   User() store.UserStore
   Team() store.TeamStore
   Role() store.RoleStore
-	Scheme() store.SchemeStore
+  Scheme() store.SchemeStore
+  Channel() store.ChannelStore
 
   GetAllConns() []*gorp.DbMap
   getQueryBuilder() sq.StatementBuilderType

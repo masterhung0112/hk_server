@@ -36,6 +36,13 @@ func (s *Server) mergeChannelHigherScopedPermissions(roles []*model.Role) *model
 	return nil
 }
 
+
+// mergeChannelHigherScopedPermissions updates the permissions based on the role type, whether the permission is
+// moderated, and the value of the permission on the higher-scoped scheme.
+func (a *App) mergeChannelHigherScopedPermissions(roles []*model.Role) *model.AppError {
+	return a.Srv().mergeChannelHigherScopedPermissions(roles)
+}
+
 func (a *App) GetRolesByNames(names []string) ([]*model.Role, *model.AppError) {
 	roles, nErr := a.Srv().Store.Role().GetByNames(names)
 	if nErr != nil {

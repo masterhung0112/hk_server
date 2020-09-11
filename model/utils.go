@@ -1,6 +1,7 @@
 package model
 
 import (
+	"regexp"
 	"bytes"
 	"crypto/rand"
 	"encoding/base32"
@@ -273,4 +274,27 @@ func AsStringBoolMap(list []string) map[string]bool {
 		listMap[p] = true
 	}
 	return listMap
+}
+
+func IsValidChannelIdentifier(s string) bool {
+
+	if !IsValidAlphaNumHyphenUnderscore(s, true) {
+		return false
+	}
+
+	if len(s) < CHANNEL_NAME_MIN_LENGTH {
+		return false
+	}
+
+	return true
+}
+
+func IsValidAlphaNumHyphenUnderscore(s string, withFormat bool) bool {
+	if withFormat {
+		validAlphaNumHyphenUnderscore := regexp.MustCompile(`^[a-z0-9]+([a-z\-\_0-9]+|(__)?)[a-z0-9]+$`)
+		return validAlphaNumHyphenUnderscore.MatchString(s)
+	}
+
+	validSimpleAlphaNumHyphenUnderscore := regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`)
+	return validSimpleAlphaNumHyphenUnderscore.MatchString(s)
 }
