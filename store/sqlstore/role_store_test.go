@@ -12,7 +12,7 @@ type RoleStoreTestSuite struct {
 }
 
 func (s *RoleStoreTestSuite) SetupTest() {
-  s.InitInitializeStore()
+  // s.InitInitializeStore()
 // 	// utils.TranslationsPreInit()
 
 // 	// backend, err := NewFileBackend(&s.settings, true)
@@ -20,16 +20,8 @@ func (s *RoleStoreTestSuite) SetupTest() {
 // 	// s.backend = backend
 }
 
-func TestLocalRoleStoreTestSuite(t *testing.T) {
-  // &RoleStoreTestSuite{
-	// 	settings: model.FileSettings{
-	// 		DriverName: model.NewString(model.IMAGE_DRIVER_LOCAL),
-	// 		Directory:  &dir,
-	// 	},
-  // }
-  suiteV := RoleStoreTestSuite{}
-  // StoreTestSuiteWithSqlSupplier(t, &RoleStoreTestSuite{})
-  suite.Run(t, &suiteV)
+func TestRoleStoreTestSuite(t *testing.T) {
+  StoreTestSuiteWithSqlSupplier(t, &RoleStoreTestSuite{})
 }
 
 // func TestRoleStore(t *testing.T) {

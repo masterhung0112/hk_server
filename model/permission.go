@@ -18,6 +18,10 @@ var AllPermissions []*Permission
 var ChannelModeratedPermissions []string
 var ChannelModeratedPermissionsMap map[string]string
 
+var PERMISSION_INVITE_USER *Permission
+var PERMISSION_ADD_USER_TO_TEAM *Permission
+var PERMISSION_CREATE_PUBLIC_CHANNEL *Permission
+
 var PERMISSION_CREATE_POST *Permission
 var PERMISSION_LIST_USERS_WITHOUT_TEAM *Permission
 var PERMISSION_USE_CHANNEL_MENTIONS *Permission
@@ -26,12 +30,30 @@ var PERMISSION_MANAGE_PRIVATE_CHANNEL_MEMBERS *Permission
 var PERMISSION_VIEW_MEMBERS *Permission
 
 func initializePermissions() {
+  PERMISSION_INVITE_USER = &Permission{
+		"invite_user",
+		"authentication.permissions.team_invite_user.name",
+		"authentication.permissions.team_invite_user.description",
+		PermissionScopeTeam,
+  }
+  PERMISSION_ADD_USER_TO_TEAM = &Permission{
+		"add_user_to_team",
+		"authentication.permissions.add_user_to_team.name",
+		"authentication.permissions.add_user_to_team.description",
+		PermissionScopeTeam,
+	}
   PERMISSION_CREATE_POST = &Permission{
 		"create_post",
 		"authentication.permissions.create_post.name",
 		"authentication.permissions.create_post.description",
 		PermissionScopeChannel,
   }
+  PERMISSION_CREATE_PUBLIC_CHANNEL = &Permission{
+		"create_public_channel",
+		"authentication.permissions.create_public_channel.name",
+		"authentication.permissions.create_public_channel.description",
+		PermissionScopeTeam,
+	}
   PERMISSION_MANAGE_PUBLIC_CHANNEL_MEMBERS = &Permission{
 		"manage_public_channel_members",
 		"authentication.permissions.manage_public_channel_members.name",
@@ -68,6 +90,9 @@ func initializePermissions() {
   }
 
   TeamScopedPermissions := []*Permission{
+    PERMISSION_INVITE_USER,
+    PERMISSION_ADD_USER_TO_TEAM,
+    PERMISSION_CREATE_PUBLIC_CHANNEL,
 		PERMISSION_VIEW_MEMBERS,
   }
 
