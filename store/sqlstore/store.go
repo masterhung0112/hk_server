@@ -12,6 +12,9 @@ type SqlStore interface {
   GetReplica() *gorp.DbMap
 
   User() store.UserStore
+  Team() store.TeamStore
+  Role() store.RoleStore
+	Scheme() store.SchemeStore
 
   GetAllConns() []*gorp.DbMap
   getQueryBuilder() sq.StatementBuilderType

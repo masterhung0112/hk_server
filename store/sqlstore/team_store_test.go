@@ -41,6 +41,7 @@ func (s *TeamStoreTestSuite) TestGetMembersOrderByUserId() {
 	s.Equal("44444444444444444444444444", ms[3].UserId)
 	s.Equal("55555555555555555555555555", ms[4].UserId)
 }
+
 func (s *TeamStoreTestSuite) TestGetMembersOrderByUsernameAndExcludeDeletedMembers() {
 	teamId1 := model.NewId()
 	teamId2 := model.NewId()

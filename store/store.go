@@ -9,6 +9,7 @@ type Store interface {
   User() UserStore
   System() SystemStore
   Role() RoleStore
+  Scheme() SchemeStore
 	Close()
 	DropAllTables()
 	MarkSystemRanUnitTests()
@@ -113,4 +114,15 @@ type TeamStore interface {
 
 	// // GroupSyncedTeamCount returns the count of non-deleted group-constrained teams.
 	// GroupSyncedTeamCount() (int64, *model.AppError)
+}
+
+type SchemeStore interface {
+	Save(scheme *model.Scheme) (*model.Scheme, error)
+	// Get(schemeId string) (*model.Scheme, error)
+	// GetByName(schemeName string) (*model.Scheme, error)
+	// GetAllPage(scope string, offset int, limit int) ([]*model.Scheme, error)
+	// Delete(schemeId string) (*model.Scheme, error)
+	// PermanentDeleteAll() error
+	// CountByScope(scope string) (int64, error)
+	// CountWithoutPermission(scope, permissionID string, roleScope model.RoleScope, roleType model.RoleType) (int64, error)
 }
