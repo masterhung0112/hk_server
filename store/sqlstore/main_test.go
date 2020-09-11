@@ -10,6 +10,7 @@ var mainHelper *testlib.MainHelper
 
 func TestMain(m *testing.M) {
   mainHelper = testlib.NewMainHelperWithOptions(nil)
+  defer mainHelper.Close()
   sqlstore.InitTest()
 
   mainHelper.Main(m)
