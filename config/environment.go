@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/masterhung0112/go_server/model"
-  "reflect"
+	"reflect"
 )
 
 // removeEnvOverrides returns a new config without the given environment overrides.

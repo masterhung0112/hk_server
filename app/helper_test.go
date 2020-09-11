@@ -1,15 +1,15 @@
 package app
 
 import (
-	"github.com/masterhung0112/go_server/utils"
+	"bytes"
 	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/go_server/store/sqlstore"
 	"github.com/masterhung0112/go_server/store/storetest/mocks"
 	"github.com/masterhung0112/go_server/testlib"
-	"github.com/masterhung0112/go_server/store/sqlstore"
-	"time"
+	"github.com/masterhung0112/go_server/utils"
 	"sync"
-	"bytes"
 	"testing"
+	"time"
 
 	"github.com/masterhung0112/go_server/config"
 	"github.com/masterhung0112/go_server/model"
@@ -24,8 +24,7 @@ type TestHelper struct {
 	tempWorkspace string
 }
 
-func
-setupTestHelper(dbStore store.Store, tb testing.TB, configSet func(*model.Config)) *TestHelper {
+func setupTestHelper(dbStore store.Store, tb testing.TB, configSet func(*model.Config)) *TestHelper {
 
 	memoryStore, err := config.NewMemoryStoreWithOptions(&config.MemoryStoreOptions{IgnoreEnvironmentOverrides: true})
 	if err != nil {
@@ -101,11 +100,12 @@ func Setup(tb testing.TB) *TestHelper {
 }
 
 var initBasicOnce sync.Once
+
 func (me *TestHelper) InitBasic() *TestHelper {
-  // create users once and cache them because password hashing is slow
-  initBasicOnce.Do(func() {
-  })
-  return me
+	// create users once and cache them because password hashing is slow
+	initBasicOnce.Do(func() {
+	})
+	return me
 }
 
 func (me *TestHelper) ShutdownApp() {
@@ -148,7 +148,6 @@ func (me *TestHelper) GetSqlSupplier() *sqlstore.SqlSupplier {
 	return mainHelper.GetSQLSupplier()
 }
 
-
 func (me *TestHelper) CreateUser() *model.User {
 	return me.CreateUserOrGuest(false)
 }
@@ -157,9 +156,9 @@ func (me *TestHelper) CreateUserOrGuest(guest bool) *model.User {
 	id := model.NewId()
 
 	user := &model.User{
-		Email:         "success+" + id + "@simulator.amazonses.com",
-    Username:      "un_" + id,
-    //TODO: Open this
+		Email:    "success+" + id + "@simulator.amazonses.com",
+		Username: "un_" + id,
+		//TODO: Open this
 		// Nickname:      "nn_" + id,
 		Password:      "Password1",
 		EmailVerified: true,

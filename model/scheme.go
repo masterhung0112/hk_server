@@ -1,10 +1,10 @@
 package model
 
 import (
-	"fmt"
-	"regexp"
-	"io"
 	"encoding/json"
+	"fmt"
+	"io"
+	"regexp"
 )
 
 const (

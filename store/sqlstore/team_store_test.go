@@ -1,24 +1,24 @@
 package sqlstore
 
 import (
+	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store/storetest"
 	"github.com/stretchr/testify/suite"
-	"github.com/masterhung0112/go_server/model"
-  "testing"
+	"testing"
 )
 
 type TeamStoreTestSuite struct {
-  suite.Suite
-  StoreTestSuite
+	suite.Suite
+	StoreTestSuite
 }
 
 func TestTeamStoreTestSuite(t *testing.T) {
-  StoreTestSuiteWithSqlSupplier(t, &TeamStoreTestSuite{})
+	StoreTestSuiteWithSqlSupplier(t, &TeamStoreTestSuite{})
 }
 
 // Each user should have a mention count of exactly 1 in the DB at this point.
 func (s *TeamStoreTestSuite) TestGetMembersOrderByUserId() {
-  teamId1 := model.NewId()
+	teamId1 := model.NewId()
 	teamId2 := model.NewId()
 
 	m1 := &model.TeamMember{TeamId: teamId1, UserId: "55555555555555555555555555"}
@@ -89,52 +89,52 @@ func (s *TeamStoreTestSuite) TestGetMembersOrderByUsernameAndExcludeDeletedMembe
 }
 
 func (s *TeamStoreTestSuite) TestGetMembersExcludedDeletedUsers() {
-		teamId1 := model.NewId()
-		teamId2 := model.NewId()
+	teamId1 := model.NewId()
+	teamId2 := model.NewId()
 
-		u1 := &model.User{Email: storetest.MakeEmail()}
-		u2 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(1)}
-		u3 := &model.User{Email: storetest.MakeEmail()}
-		u4 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(3)}
-		u5 := &model.User{Email: storetest.MakeEmail()}
-		u6 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(5)}
+	u1 := &model.User{Email: storetest.MakeEmail()}
+	u2 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(1)}
+	u3 := &model.User{Email: storetest.MakeEmail()}
+	u4 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(3)}
+	u5 := &model.User{Email: storetest.MakeEmail()}
+	u6 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(5)}
 
-		u1, err := s.Store().User().Save(u1)
-		s.Require().Nil(err)
-		u2, err = s.Store().User().Save(u2)
-		s.Require().Nil(err)
-		u3, err = s.Store().User().Save(u3)
-		s.Require().Nil(err)
-		u4, err = s.Store().User().Save(u4)
-		s.Require().Nil(err)
-		u5, err = s.Store().User().Save(u5)
-		s.Require().Nil(err)
-		u6, err = s.Store().User().Save(u6)
-		s.Require().Nil(err)
+	u1, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	u2, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	u3, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	u4, err = s.Store().User().Save(u4)
+	s.Require().Nil(err)
+	u5, err = s.Store().User().Save(u5)
+	s.Require().Nil(err)
+	u6, err = s.Store().User().Save(u6)
+	s.Require().Nil(err)
 
-		m1 := &model.TeamMember{TeamId: teamId1, UserId: u1.Id}
-		m2 := &model.TeamMember{TeamId: teamId1, UserId: u2.Id}
-		m3 := &model.TeamMember{TeamId: teamId1, UserId: u3.Id}
-		m4 := &model.TeamMember{TeamId: teamId1, UserId: u4.Id}
-		m5 := &model.TeamMember{TeamId: teamId1, UserId: u5.Id}
-		m6 := &model.TeamMember{TeamId: teamId2, UserId: u6.Id}
+	m1 := &model.TeamMember{TeamId: teamId1, UserId: u1.Id}
+	m2 := &model.TeamMember{TeamId: teamId1, UserId: u2.Id}
+	m3 := &model.TeamMember{TeamId: teamId1, UserId: u3.Id}
+	m4 := &model.TeamMember{TeamId: teamId1, UserId: u4.Id}
+	m5 := &model.TeamMember{TeamId: teamId1, UserId: u5.Id}
+	m6 := &model.TeamMember{TeamId: teamId2, UserId: u6.Id}
 
-		t1, nErr := s.Store().Team().SaveMember(m1, -1)
-		s.Require().Nil(nErr)
-		_, nErr = s.Store().Team().SaveMember(m2, -1)
-		s.Require().Nil(nErr)
-		t3, nErr := s.Store().Team().SaveMember(m3, -1)
-		s.Require().Nil(nErr)
-		_, nErr = s.Store().Team().SaveMember(m4, -1)
-		s.Require().Nil(nErr)
-		t5, nErr := s.Store().Team().SaveMember(m5, -1)
-		s.Require().Nil(nErr)
-		_, nErr = s.Store().Team().SaveMember(m6, -1)
-		s.Require().Nil(nErr)
+	t1, nErr := s.Store().Team().SaveMember(m1, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(m2, -1)
+	s.Require().Nil(nErr)
+	t3, nErr := s.Store().Team().SaveMember(m3, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(m4, -1)
+	s.Require().Nil(nErr)
+	t5, nErr := s.Store().Team().SaveMember(m5, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(m6, -1)
+	s.Require().Nil(nErr)
 
-		// Gets users ordered by UserName
-		ms, err := s.Store().Team().GetMembers(teamId1, 0, 100, &model.TeamMembersGetOptions{ExcludeDeletedUsers: true})
-		s.Require().Nil(err)
-		s.Len(ms, 3)
-		s.Require().ElementsMatch(ms, [3]*model.TeamMember{t1, t3, t5})
+	// Gets users ordered by UserName
+	ms, err := s.Store().Team().GetMembers(teamId1, 0, 100, &model.TeamMembersGetOptions{ExcludeDeletedUsers: true})
+	s.Require().Nil(err)
+	s.Len(ms, 3)
+	s.Require().ElementsMatch(ms, [3]*model.TeamMember{t1, t3, t5})
 }

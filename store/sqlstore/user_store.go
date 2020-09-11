@@ -1,8 +1,8 @@
 package sqlstore
 
 import (
-	"fmt"
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
@@ -146,35 +146,35 @@ func (us SqlUserStore) Get(id string) (*model.User, *model.AppError) {
 }
 
 func (us SqlUserStore) Count(options model.UserCountOptions) (int64, *model.AppError) {
-  isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
+	isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	query := us.getQueryBuilder().Select("COUNT(DISTINCT u.Id)").From("Users AS u")
 
 	if !options.IncludeDeleted {
 		query = query.Where("u.DeleteAt = 0")
-  }
+	}
 
-  if options.IncludeBotAccounts {
+	if options.IncludeBotAccounts {
 		if options.ExcludeRegularUsers {
 			query = query.Join("Bots ON u.Id = Bots.UserId")
 		}
 	} else {
-    //TODO: Open
+		//TODO: Open
 		// query = query.LeftJoin("Bots ON u.Id = Bots.UserId").Where("Bots.UserId IS NULL")
 		if options.ExcludeRegularUsers {
 			// Currently this doesn't make sense because it will always return 0
 			return int64(0), model.NewAppError("SqlUserStore.Count", "store.sql_user.count.app_error", nil, "", http.StatusInternalServerError)
 		}
-  }
+	}
 
-  if options.TeamId != "" {
+	if options.TeamId != "" {
 		query = query.LeftJoin("TeamMembers AS tm ON u.Id = tm.UserId").Where("tm.TeamId = ? AND tm.DeleteAt = 0", options.TeamId)
 	} else if options.ChannelId != "" {
 		query = query.LeftJoin("ChannelMembers AS cm ON u.Id = cm.UserId").Where("cm.ChannelId = ?", options.ChannelId)
-  }
-  // query = applyViewRestrictionsFilter(query, options.ViewRestrictions, false)
-  // query = applyMultiRoleFilters(query, options.Roles, options.TeamRoles, options.ChannelRoles)
+	}
+	// query = applyViewRestrictionsFilter(query, options.ViewRestrictions, false)
+	// query = applyMultiRoleFilters(query, options.Roles, options.TeamRoles, options.ChannelRoles)
 
-  if isPostgreSQL {
+	if isPostgreSQL {
 		query = query.PlaceholderFormat(sq.Dollar)
 	}
 
@@ -322,7 +322,6 @@ func (us SqlUserStore) GetProfilesWithoutTeam(options *model.UserGetOptions) ([]
 	return users, nil
 }
 
-
 func applyChannelGroupConstrainedFilter(query sq.SelectBuilder, channelId string) sq.SelectBuilder {
 	if channelId == "" {
 		return query
@@ -459,7 +458,6 @@ func (us SqlUserStore) GetEtagForProfiles(teamId string) string {
 	}
 	return fmt.Sprintf("%v.%v", model.CurrentVersion, updateAt)
 }
-
 
 func applyMultiRoleFilters(query sq.SelectBuilder, roles []string, teamRoles []string, channelRoles []string) sq.SelectBuilder {
 	queryString := ""

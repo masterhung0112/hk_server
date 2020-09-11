@@ -1,9 +1,9 @@
 package gcp_functions
 
 func SetupHelper() {
-  // Set the store for config
+	// Set the store for config
 
-  // Start the Server
+	// Start the Server
 
-  // Assign the
+	// Assign the
 }

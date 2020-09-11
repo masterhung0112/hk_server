@@ -1,10 +1,10 @@
 package app
 
 import (
-	"net/http"
-	"strings"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
+	"net/http"
+	"strings"
 )
 
 func (a *App) MakePermissionError(permissions []*model.Permission) *model.AppError {
@@ -135,7 +135,7 @@ func (a *App) SessionHasPermissionToUserOrBot(session model.Session, userId stri
 		return true
 	}
 
-  //TODO: Open this
+	//TODO: Open this
 	// if err := a.SessionHasPermissionToManageBot(session, userId); err == nil {
 	// 	return true
 	// }
@@ -172,7 +172,7 @@ func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool
 	if err != nil {
 		// This should only happen if something is very broken. We can't realistically
 		// recover the situation, so deny permission and log an error.
-		mlog.Error("Failed to get roles from database with role names: " + strings.Join(roleNames, ",")+" ", mlog.Err(err))
+		mlog.Error("Failed to get roles from database with role names: "+strings.Join(roleNames, ",")+" ", mlog.Err(err))
 		return false
 	}
 

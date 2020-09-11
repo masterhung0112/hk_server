@@ -1,9 +1,9 @@
 package config
 
 import (
-  "io"
+	"io"
 
-  "github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/model"
 	// "github.com/jmoiron/sqlx"
 )
 

@@ -1,14 +1,14 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/masterhung0112/go_server/mlog"
-	"github.com/masterhung0112/go_server/utils/fileutils"
 	"github.com/masterhung0112/go_server/model"
-  "fmt"
+	"github.com/masterhung0112/go_server/utils/fileutils"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
-  "strings"
+	"strings"
 
 	"github.com/mattermost/go-i18n/i18n"
 )

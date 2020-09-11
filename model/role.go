@@ -5,22 +5,22 @@ import (
 )
 
 const (
-  SYSTEM_GUEST_ROLE_ID             = "system_guest"
+	SYSTEM_GUEST_ROLE_ID             = "system_guest"
 	SYSTEM_USER_ROLE_ID              = "system_user"
 	SYSTEM_ADMIN_ROLE_ID             = "system_admin"
 	SYSTEM_POST_ALL_ROLE_ID          = "system_post_all"
 	SYSTEM_POST_ALL_PUBLIC_ROLE_ID   = "system_post_all_public"
-  SYSTEM_USER_ACCESS_TOKEN_ROLE_ID = "system_user_access_token"
+	SYSTEM_USER_ACCESS_TOKEN_ROLE_ID = "system_user_access_token"
 
-  ROLE_NAME_MAX_LENGTH         = 64
+	ROLE_NAME_MAX_LENGTH         = 64
 	ROLE_DISPLAY_NAME_MAX_LENGTH = 128
-  ROLE_DESCRIPTION_MAX_LENGTH  = 1024
+	ROLE_DESCRIPTION_MAX_LENGTH  = 1024
 
-  CHANNEL_GUEST_ROLE_ID = "channel_guest"
+	CHANNEL_GUEST_ROLE_ID = "channel_guest"
 	CHANNEL_USER_ROLE_ID  = "channel_user"
-  CHANNEL_ADMIN_ROLE_ID = "channel_admin"
+	CHANNEL_ADMIN_ROLE_ID = "channel_admin"
 
-  TEAM_GUEST_ROLE_ID           = "team_guest"
+	TEAM_GUEST_ROLE_ID           = "team_guest"
 	TEAM_USER_ROLE_ID            = "team_user"
 	TEAM_ADMIN_ROLE_ID           = "team_admin"
 	TEAM_POST_ALL_ROLE_ID        = "team_post_all"

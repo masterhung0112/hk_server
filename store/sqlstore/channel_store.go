@@ -1,17 +1,16 @@
 package sqlstore
 
 import (
-	"net/http"
+	"database/sql"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/store"
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
-	"github.com/masterhung0112/go_server/store"
+	"net/http"
 	"strings"
 	"time"
-	"database/sql"
-  "github.com/masterhung0112/go_server/model"
-  sq "github.com/Masterminds/squirrel"
 )
-
 
 const (
 	ALL_CHANNEL_MEMBERS_FOR_USER_CACHE_SIZE     = model.SESSION_CACHE_SIZE
@@ -389,7 +388,6 @@ func newSqlChannelStore(sqlStore SqlStore) store.ChannelStore {
 	return s
 }
 
-
 // Save writes the (non-direct) channel channel to the database.
 func (s SqlChannelStore) Save(channel *model.Channel, maxChannelsPerTeam int64) (*model.Channel, error) {
 	if channel.DeleteAt != 0 {
@@ -521,11 +519,11 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 	cache_key := userId
 	if includeDeleted {
 		cache_key += "_deleted"
-  }
+	}
 
-  //TODO: Open this
+	//TODO: Open this
 	// if allowFromCache {
-  //   var ids map[string]string
+	//   var ids map[string]string
 
 	// 	if err := allChannelMembersForUserCache.Get(cache_key, &ids); err == nil {
 	// 		// if s.metrics != nil {
@@ -535,7 +533,7 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 	// 	}
 	// }
 
-  //TODO: Open this
+	//TODO: Open this
 	// if s.metrics != nil {
 	// 	s.metrics.IncrementMemCacheMissCounter("All Channel Members for User")
 	// }
@@ -601,13 +599,12 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 	}
 	ids := data.ToMapStringString()
 
-  //TODO: Open this
+	//TODO: Open this
 	// if allowFromCache {
 	// 	allChannelMembersForUserCache.SetWithExpiry(cache_key, ids, ALL_CHANNEL_MEMBERS_FOR_USER_CACHE_DURATION)
 	// }
 	return ids, nil
 }
-
 
 func (s SqlChannelStore) get(id string, master bool, allowFromCache bool) (*model.Channel, error) {
 	var db *gorp.DbMap

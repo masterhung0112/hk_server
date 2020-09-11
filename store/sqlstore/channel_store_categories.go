@@ -1,10 +1,10 @@
 package sqlstore
 
 import (
-	"net/http"
-	"github.com/mattermost/gorp"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/masterhung0112/go_server/model"
-  sq "github.com/Masterminds/squirrel"
+	"github.com/mattermost/gorp"
+	"net/http"
 )
 
 type sidebarCategoryForJoin struct {

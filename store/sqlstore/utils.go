@@ -1,12 +1,11 @@
 package sqlstore
 
 import (
-	"strings"
 	"database/sql"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/mattermost/gorp"
+	"strings"
 )
-
 
 var escapeLikeSearchChar = []string{
 	"%",

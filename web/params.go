@@ -1,7 +1,7 @@
 package web
 
 type Params struct {
-  UserId                    string
-  Page                      int
-	PerPage                   int
+	UserId  string
+	Page    int
+	PerPage int
 }

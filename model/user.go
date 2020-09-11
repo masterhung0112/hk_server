@@ -15,9 +15,9 @@ import (
 )
 
 const (
-  ME                                 = "me"
+	ME = "me"
 
-  DEFAULT_LOCALE          = "en"
+	DEFAULT_LOCALE          = "en"
 	USER_AUTH_SERVICE_EMAIL = "email"
 )
 
@@ -268,9 +268,8 @@ func (u *User) IsValid() *AppError {
 	return nil
 }
 
-
 func (u *User) MakeNonNil() {
-  //TODO: Open
+	//TODO: Open
 	// if u.Props == nil {
 	// 	u.Props = make(map[string]string)
 	// }
@@ -282,8 +281,8 @@ func (u *User) MakeNonNil() {
 
 // Remove any private data from the user object
 func (u *User) Sanitize(options map[string]bool) {
-  u.Password = ""
-  //TODO: Open
+	u.Password = ""
+	//TODO: Open
 	// u.AuthData = NewString("")
 	// u.MfaSecret = ""
 
@@ -293,8 +292,8 @@ func (u *User) Sanitize(options map[string]bool) {
 	if len(options) != 0 && !options["fullname"] {
 		u.FirstName = ""
 		u.LastName = ""
-  }
-  //TODO: Open
+	}
+	//TODO: Open
 	if len(options) != 0 && !options["passwordupdate"] {
 		// u.LastPasswordUpdate = 0
 	}
@@ -308,8 +307,8 @@ func (u *User) GetRoles() []string {
 }
 
 func (u *User) ClearNonProfileFields() {
-  u.Password = ""
-  //TODO: Open this
+	u.Password = ""
+	//TODO: Open this
 	// u.AuthData = NewString("")
 	// u.MfaSecret = ""
 	u.EmailVerified = false

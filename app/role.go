@@ -1,8 +1,8 @@
 package app
 
 import (
-	"net/http"
 	"github.com/masterhung0112/go_server/model"
+	"net/http"
 )
 
 // mergeChannelHigherScopedPermissions updates the permissions based on the role type, whether the permission is
@@ -35,7 +35,6 @@ func (s *Server) mergeChannelHigherScopedPermissions(roles []*model.Role) *model
 
 	return nil
 }
-
 
 // mergeChannelHigherScopedPermissions updates the permissions based on the role type, whether the permission is
 // moderated, and the value of the permission on the higher-scoped scheme.

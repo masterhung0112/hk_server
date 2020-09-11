@@ -4,7 +4,6 @@ import (
 	"strings"
 )
 
-
 const (
 	CHANNEL_NOTIFY_DEFAULT              = "default"
 	CHANNEL_NOTIFY_ALL                  = "all"

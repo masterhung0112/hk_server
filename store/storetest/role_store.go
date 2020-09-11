@@ -2,8 +2,8 @@ package storetest
 
 import (
 	"github.com/masterhung0112/go_server/store"
+	"github.com/stretchr/testify/suite"
 	"testing"
-  "github.com/stretchr/testify/suite"
 )
 
 type RoleStoreTestSuite struct {
@@ -16,6 +16,7 @@ func (s *RoleStoreTestSuite) SetupTest() {
 func TestRoleStore(t *testing.T, ss store.Store, s SqlSupplier) {
 
 }
+
 // func testRoleStoreSave(t *testing.T) {
 //   // Save a new role.
 // 	r1 := &model.Role{

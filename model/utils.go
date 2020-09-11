@@ -1,7 +1,6 @@
 package model
 
 import (
-	"regexp"
 	"bytes"
 	"crypto/rand"
 	"encoding/base32"
@@ -10,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"

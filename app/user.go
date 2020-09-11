@@ -8,9 +8,9 @@ package app
 
 import (
 	"fmt"
-	"net/http"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
+	"net/http"
 )
 
 func (a *App) GetUser(userId string) (*model.User, *model.AppError) {
@@ -45,14 +45,14 @@ func (s *Server) IsFirstUserAccount() bool {
 	// 	return false
 	// }
 	// if cachedSessions == 0 {
-		count, err := s.Store.User().Count(model.UserCountOptions{IncludeDeleted: true})
-		if err != nil {
-			mlog.Error("There was a error fetching if first user account", mlog.Err(err))
-			return false
-		}
-		if count <= 0 {
-			return true
-		}
+	count, err := s.Store.User().Count(model.UserCountOptions{IncludeDeleted: true})
+	if err != nil {
+		mlog.Error("There was a error fetching if first user account", mlog.Err(err))
+		return false
+	}
+	if count <= 0 {
+		return true
+	}
 	// }
 
 	return false
@@ -113,12 +113,12 @@ func (app *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *m
 	count, err := app.Srv().Store.User().Count(model.UserCountOptions{IncludeDeleted: true})
 	if err != nil {
 		return nil, err
-  }
-  if count <= 0 {
+	}
+	if count <= 0 {
 		user.Roles = model.SYSTEM_ADMIN_ROLE_ID + " " + model.SYSTEM_USER_ROLE_ID
-  }
+	}
 
-  // if _, ok := utils.GetSupportedLocales()[user.Locale]; !ok {
+	// if _, ok := utils.GetSupportedLocales()[user.Locale]; !ok {
 	// 	user.Locale = *a.Config().LocalizationSettings.DefaultClientLocale
 	// }
 
@@ -137,20 +137,20 @@ func (app *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *m
 }
 
 func (a *App) createUser(user *model.User) (*model.User, *model.AppError) {
-  user.MakeNonNil()
+	user.MakeNonNil()
 
-  // if err := a.IsPasswordValid(user.Password); user.AuthService == "" && err != nil {
-  if err := a.IsPasswordValid(user.Password); err != nil {
+	// if err := a.IsPasswordValid(user.Password); user.AuthService == "" && err != nil {
+	if err := a.IsPasswordValid(user.Password); err != nil {
 		return nil, err
-  }
+	}
 
-  ruser, err := a.Srv().Store.User().Save(user)
+	ruser, err := a.Srv().Store.User().Save(user)
 	if err != nil {
 		mlog.Error("Couldn't save the user", mlog.Err(err))
 		return nil, err
-  }
+	}
 
-  if user.EmailVerified {
+	if user.EmailVerified {
 		if err := a.VerifyUserEmail(ruser.Id, user.Email); err != nil {
 			mlog.Error("Failed to set email verified", mlog.Err(err))
 		}
@@ -189,7 +189,7 @@ func (app *App) CreateUserFromSignup(user *model.User) (*model.User, *model.AppE
 }
 
 func (a *App) VerifyUserEmail(userId, email string) *model.AppError {
-  //TODO: Open
+	//TODO: Open
 	// if _, err := a.Srv().Store.User().VerifyEmail(userId, email); err != nil {
 	// 	return err
 	// }
@@ -264,7 +264,6 @@ func (a *App) GetUsersWithoutTeamPage(options *model.UserGetOptions, asAdmin boo
 func (a *App) GetUsersWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
 	return a.Srv().Store.User().GetProfilesWithoutTeam(options)
 }
-
 
 func (a *App) sanitizeProfiles(users []*model.User, asAdmin bool) []*model.User {
 	for _, u := range users {

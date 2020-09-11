@@ -122,7 +122,7 @@ func (s *Server) Start() error {
 	}
 
 	// Get IP and port for listening
-  addr := *s.Config().ServiceSettings.ListenAddress
+	addr := *s.Config().ServiceSettings.ListenAddress
 	if addr == "" {
 		if *s.Config().ServiceSettings.ConnectionSecurity == model.CONN_SECURITY_TLS {
 			addr = ":https"

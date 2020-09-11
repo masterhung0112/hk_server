@@ -23,12 +23,12 @@ import (
 )
 
 type SqlSupplierStores struct {
-  team                 store.TeamStore
-  user                 store.UserStore
-  system               store.SystemStore
-  role                 store.RoleStore
-  scheme               store.SchemeStore
-  channel              store.ChannelStore
+	team    store.TeamStore
+	user    store.UserStore
+	system  store.SystemStore
+	role    store.RoleStore
+	scheme  store.SchemeStore
+	channel store.ChannelStore
 }
 
 type SqlSupplier struct {
@@ -258,14 +258,13 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 
 	supplier.initConnection()
 
-  // Create tables if necessary
-  supplier.stores.team = newSqlTeamStore(supplier)
-  supplier.stores.user = newSqlUserStore(supplier)
-  supplier.stores.system = newSqlSystemStore(supplier)
-  supplier.stores.role = newSqlRoleStore(supplier)
-  supplier.stores.scheme = newSqlSchemeStore(supplier)
-  supplier.stores.channel = newSqlChannelStore(supplier)
-
+	// Create tables if necessary
+	supplier.stores.team = newSqlTeamStore(supplier)
+	supplier.stores.user = newSqlUserStore(supplier)
+	supplier.stores.system = newSqlSystemStore(supplier)
+	supplier.stores.role = newSqlRoleStore(supplier)
+	supplier.stores.scheme = newSqlSchemeStore(supplier)
+	supplier.stores.channel = newSqlChannelStore(supplier)
 
 	err := supplier.GetMaster().CreateTablesIfNotExists()
 	if err != nil {

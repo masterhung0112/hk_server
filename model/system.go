@@ -1,7 +1,7 @@
 package model
 
 const (
-  SYSTEM_INSTALLATION_DATE_KEY                  = "InstallationDate"
+	SYSTEM_INSTALLATION_DATE_KEY = "InstallationDate"
 )
 
 type System struct {

@@ -21,9 +21,9 @@ type TestHelper struct {
 }
 
 func setupTestHelper() *TestHelper {
-  var options []app.Option
+	var options []app.Option
 
-  memoryStore, err := config.NewMemoryStoreWithOptions(&config.MemoryStoreOptions{IgnoreEnvironmentOverrides: true})
+	memoryStore, err := config.NewMemoryStoreWithOptions(&config.MemoryStoreOptions{IgnoreEnvironmentOverrides: true})
 	if err != nil {
 		panic("failed to initialize memory store: " + err.Error())
 	}

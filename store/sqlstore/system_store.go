@@ -1,11 +1,11 @@
 package sqlstore
 
 import (
-	"database/sql"
 	"context"
-	"github.com/pkg/errors"
+	"database/sql"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store"
+	"github.com/pkg/errors"
 )
 
 type SqlSystemStore struct {
@@ -23,7 +23,6 @@ func newSqlSystemStore(sqlStore SqlStore) store.SystemStore {
 
 	return s
 }
-
 
 func (s SqlSystemStore) Save(system *model.System) error {
 	if err := s.GetMaster().Insert(system); err != nil {
@@ -64,7 +63,6 @@ func (s SqlSystemStore) Get() (model.StringMap, error) {
 
 	return props, nil
 }
-
 
 func (s SqlSystemStore) GetByName(name string) (*model.System, error) {
 	var system model.System

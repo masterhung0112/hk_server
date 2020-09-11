@@ -1,14 +1,14 @@
 package app
 
 import (
-  "testing"
+	"testing"
 )
 
 func TestCreateMinioClient(t *testing.T) {
-  th := Setup(t)
-  defer th.TearDown()
+	th := Setup(t)
+	defer th.TearDown()
 
-  // t.Run("create client success", func (t *testing.T) {
-  //   // Do nothing
-  // }
+	// t.Run("create client success", func (t *testing.T) {
+	//   // Do nothing
+	// }
 }

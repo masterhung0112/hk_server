@@ -1,16 +1,16 @@
 package web
 
 import (
-  "net/http"
+	"net/http"
 
+	"github.com/masterhung0112/go_server/app"
 	"github.com/masterhung0112/go_server/model"
-  "github.com/masterhung0112/go_server/app"
 )
 
 type Context struct {
-  App           *app.App
-  Err           *model.AppError
-  Params        *Params
+	App    *app.App
+	Err    *model.AppError
+	Params *Params
 }
 
 func NewInvalidParamError(parameter string) *model.AppError {
@@ -23,7 +23,7 @@ func (c *Context) SetInvalidParam(parameter string) {
 }
 
 func (c *Context) RequireUserId() *Context {
-  if c.Err != nil {
+	if c.Err != nil {
 		return c
 	}
 
@@ -59,8 +59,8 @@ func (c *Context) HandleEtag(etag string, routeName string, w http.ResponseWrite
 	if et := r.Header.Get(model.HEADER_ETAG_CLIENT); len(etag) > 0 {
 		if et == etag {
 			w.Header().Set(model.HEADER_ETAG_SERVER, etag)
-      w.WriteHeader(http.StatusNotModified)
-      //TODO: Open
+			w.WriteHeader(http.StatusNotModified)
+			//TODO: Open
 			// if metrics != nil {
 			// 	metrics.IncrementEtagHitCounter(routeName)
 			// }
@@ -68,7 +68,7 @@ func (c *Context) HandleEtag(etag string, routeName string, w http.ResponseWrite
 		}
 	}
 
-  //TODO: Open this
+	//TODO: Open this
 	// if metrics != nil {
 	// 	metrics.IncrementEtagMissCounter(routeName)
 	// }

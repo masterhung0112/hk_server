@@ -1,14 +1,13 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"fmt"
+	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/store"
 	"github.com/pkg/errors"
 	"net/http"
-	"github.com/masterhung0112/go_server/store"
-	"github.com/masterhung0112/go_server/model"
-	"database/sql"
 	"strings"
-
 
 	sq "github.com/Masterminds/squirrel"
 )

@@ -59,7 +59,6 @@ func (e *ErrLimitExceeded) Error() string {
 	return fmt.Sprintf("limit exceeded: what: %s count: %d metadata: %s", e.What, e.Count, e.meta)
 }
 
-
 // ErrConflict indicates a conflict that occured.
 type ErrConflict struct {
 	Resource string // The resource which created the conflict.

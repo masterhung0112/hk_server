@@ -2,12 +2,11 @@ package config
 
 import (
 	"github.com/masterhung0112/go_server/model"
-
 )
 
 // desanitize replaces fake settings with their actual values.
 func desanitize(actual, target *model.Config) {
-    //TODO: Uncomment out
+	//TODO: Uncomment out
 
 	// if target.LdapSettings.BindPassword != nil && *target.LdapSettings.BindPassword == model.FAKE_SETTING {
 	// 	*target.LdapSettings.BindPassword = *actual.LdapSettings.BindPassword
@@ -52,9 +51,9 @@ func desanitize(actual, target *model.Config) {
 
 // fixConfig patches invalid or missing data in the configuration, returning true if changed.
 func fixConfig(cfg *model.Config) bool {
-  changed := false
+	changed := false
 
-  //TODO: Uncomment out
+	//TODO: Uncomment out
 
 	// Ensure SiteURL has no trailing slash.
 	// if strings.HasSuffix(*cfg.ServiceSettings.SiteURL, "/") {

@@ -1,8 +1,6 @@
 package jobs
 
-import (
-
-)
+import ()
 
 // Default polling interval for jobs termination.
 // (Defining as `var` rather than `const` allows tests to lower the interval.)

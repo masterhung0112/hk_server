@@ -5,12 +5,12 @@ import (
 )
 
 type Store interface {
-  Team() TeamStore
-  Channel() ChannelStore
-  User() UserStore
-  System() SystemStore
-  Role() RoleStore
-  Scheme() SchemeStore
+	Team() TeamStore
+	Channel() ChannelStore
+	User() UserStore
+	System() SystemStore
+	Role() RoleStore
+	Scheme() SchemeStore
 	Close()
 	DropAllTables()
 	MarkSystemRanUnitTests()
@@ -21,18 +21,18 @@ type UserStore interface {
 	Get(id string) (*model.User, *model.AppError)
 	GetAll() ([]*model.User, *model.AppError)
 	Count(options model.UserCountOptions) (int64, *model.AppError)
-  PermanentDelete(userId string) *model.AppError
-  InferSystemInstallDate() (int64, *model.AppError)
+	PermanentDelete(userId string) *model.AppError
+	InferSystemInstallDate() (int64, *model.AppError)
 
-  GetByUsername(username string) (*model.User, *model.AppError)
-  GetByEmail(email string) (*model.User, *model.AppError)
-  GetProfilesWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError)
-  GetProfilesNotInChannel(teamId string, channelId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
-  GetEtagForProfilesNotInTeam(teamId string) string
-  GetProfilesNotInTeam(teamId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
-  GetEtagForProfiles(teamId string) string
-  GetProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
-  GetProfilesInChannelByStatus(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
+	GetByUsername(username string) (*model.User, *model.AppError)
+	GetByEmail(email string) (*model.User, *model.AppError)
+	GetProfilesWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError)
+	GetProfilesNotInChannel(teamId string, channelId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	GetEtagForProfilesNotInTeam(teamId string) string
+	GetProfilesNotInTeam(teamId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	GetEtagForProfiles(teamId string) string
+	GetProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
+	GetProfilesInChannelByStatus(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 }
 
 type SystemStore interface {

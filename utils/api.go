@@ -1,15 +1,15 @@
 package utils
 
 import (
-	"net/url"
-	"html/template"
-	"fmt"
+	"crypto"
 	"crypto/rand"
 	"encoding/base64"
-	"path"
-	"crypto"
-	"net/http"
+	"fmt"
 	"github.com/masterhung0112/go_server/model"
+	"html/template"
+	"net/http"
+	"net/url"
+	"path"
 )
 
 func RenderWebAppError(config *model.Config, w http.ResponseWriter, r *http.Request, err *model.AppError, s crypto.Signer) {

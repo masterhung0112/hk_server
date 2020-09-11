@@ -1,51 +1,50 @@
 package api
 
 import (
-	"strings"
+	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/web"
+	"net/http"
 	"strconv"
-  "net/http"
-  "github.com/masterhung0112/go_server/model"
-  "github.com/masterhung0112/go_server/web"
+	"strings"
 )
 
 func (api *API) InitUser() {
-  api.BaseRoutes.Users.Handle("", api.ApiHandler(createUser)).Methods("POST")
-  api.BaseRoutes.Users.Handle("", api.ApiHandler(getUsers)).Methods("GET")
+	api.BaseRoutes.Users.Handle("", api.ApiHandler(createUser)).Methods("POST")
+	api.BaseRoutes.Users.Handle("", api.ApiHandler(getUsers)).Methods("GET")
 }
 
-
 func CreateUser(c *web.Context, w http.ResponseWriter, r *http.Request) {
-  // Convert Json to User model
-  user := model.UserFromJson(r.Body)
+	// Convert Json to User model
+	user := model.UserFromJson(r.Body)
 
-  ruser, err := c.App.CreateUserFromSignup(user)
+	ruser, err := c.App.CreateUserFromSignup(user)
 
-  if err != nil {
-    return
-  }
+	if err != nil {
+		return
+	}
 
-  // Successfully created new user
-  w.WriteHeader(http.StatusCreated)
-  w.Write([]byte(ruser.ToJson()))
+	// Successfully created new user
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(ruser.ToJson()))
 }
 
 func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
-  user := model.UserFromJson(r.Body)
+	user := model.UserFromJson(r.Body)
 
-  var ruser *model.User
-  ruser, err := c.App.CreateUserFromSignup(user)
+	var ruser *model.User
+	ruser, err := c.App.CreateUserFromSignup(user)
 
-  if err != nil {
+	if err != nil {
 		c.Err = err
 		return
-  }
+	}
 
-  w.WriteHeader(http.StatusCreated)
-  w.Write([]byte(ruser.ToJson()))
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(ruser.ToJson()))
 }
 
 func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
-  inTeamId := r.URL.Query().Get("in_team")
+	inTeamId := r.URL.Query().Get("in_team")
 	notInTeamId := r.URL.Query().Get("not_in_team")
 	inChannelId := r.URL.Query().Get("in_channel")
 	inGroupId := r.URL.Query().Get("in_group")
@@ -68,9 +67,9 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	if sort != "" && sort != "last_activity_at" && sort != "create_at" && sort != "status" {
 		c.SetInvalidUrlParam("sort")
 		return
-  }
+	}
 
-  // Currently only supports sorting on a team
+	// Currently only supports sorting on a team
 	// or sort="status" on inChannelId
 	if (sort == "last_activity_at" || sort == "create_at") && (inTeamId == "" || notInTeamId != "" || inChannelId != "" || notInChannelId != "" || withoutTeam != "" || inGroupId != "") {
 		c.SetInvalidUrlParam("sort")
@@ -179,10 +178,10 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		if sort == "last_activity_at" {
-      //TODO: Open this
+			//TODO: Open this
 			// profiles, err = c.App.GetRecentlyActiveUsersForTeamPage(inTeamId, c.Params.Page, c.Params.PerPage, c.IsSystemAdmin(), restrictions)
 		} else if sort == "create_at" {
-      //TODO: Open this
+			//TODO: Open this
 			// profiles, err = c.App.GetNewUsersForTeamPage(inTeamId, c.Params.Page, c.Params.PerPage, c.IsSystemAdmin(), restrictions)
 		} else {
 			etag = c.App.GetUsersInTeamEtag(inTeamId, restrictions.Hash())

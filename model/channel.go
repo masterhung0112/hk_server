@@ -1,8 +1,8 @@
 package model
 
 import (
-	"strings"
 	"net/http"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -53,7 +53,7 @@ type ChannelWithTeamData struct {
 }
 
 type ChannelsWithCount struct {
-  Channels   *ChannelListWithTeamData `json:"channels"`
+	Channels   *ChannelListWithTeamData `json:"channels"`
 	TotalCount int64                    `json:"total_count"`
 }
 
@@ -131,7 +131,6 @@ type ChannelMemberCountByGroup struct {
 	ChannelMemberCount          int64  `db:"-" json:"channel_member_count"`
 	ChannelMemberTimezonesCount int64  `db:"-" json:"channel_member_timezones_count"`
 }
-
 
 func (o *Channel) IsValid() *AppError {
 	if !IsValidId(o.Id) {

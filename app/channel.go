@@ -1,12 +1,11 @@
 package app
 
 import (
-	"net/http"
-	"github.com/pkg/errors"
-	"github.com/masterhung0112/go_server/store"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/store"
+	"github.com/pkg/errors"
+	"net/http"
 )
-
 
 func (a *App) GetChannel(channelId string) (*model.Channel, *model.AppError) {
 	channel, err := a.Srv().Store.Channel().Get(channelId, true)

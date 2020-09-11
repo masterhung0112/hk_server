@@ -1,8 +1,6 @@
 package model
 
-import (
-
-)
+import ()
 
 const (
 	TEAM_OPEN                       = "O"
