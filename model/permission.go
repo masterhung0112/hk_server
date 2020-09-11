@@ -22,6 +22,9 @@ var PERMISSION_INVITE_USER *Permission
 var PERMISSION_ADD_USER_TO_TEAM *Permission
 var PERMISSION_CREATE_PUBLIC_CHANNEL *Permission
 
+var PERMISSION_DELETE_PUBLIC_CHANNEL *Permission
+
+
 var PERMISSION_CREATE_POST *Permission
 var PERMISSION_LIST_USERS_WITHOUT_TEAM *Permission
 var PERMISSION_USE_CHANNEL_MENTIONS *Permission
@@ -53,6 +56,12 @@ func initializePermissions() {
 		"authentication.permissions.create_public_channel.name",
 		"authentication.permissions.create_public_channel.description",
 		PermissionScopeTeam,
+  }
+  PERMISSION_DELETE_PUBLIC_CHANNEL = &Permission{
+		"delete_public_channel",
+		"authentication.permissions.delete_public_channel.name",
+		"authentication.permissions.delete_public_channel.description",
+		PermissionScopeChannel,
 	}
   PERMISSION_MANAGE_PUBLIC_CHANNEL_MEMBERS = &Permission{
 		"manage_public_channel_members",
@@ -96,9 +105,15 @@ func initializePermissions() {
 		PERMISSION_VIEW_MEMBERS,
   }
 
+  ChannelScopedPermissions := []*Permission{
+		PERMISSION_DELETE_PUBLIC_CHANNEL,
+
+  }
+
   AllPermissions = []*Permission{}
   AllPermissions = append(AllPermissions, SystemScopedPermissionsMinusSysconsole...)
-	AllPermissions = append(AllPermissions, TeamScopedPermissions...)
+  AllPermissions = append(AllPermissions, TeamScopedPermissions...)
+  AllPermissions = append(AllPermissions, ChannelScopedPermissions...)
 
   ChannelModeratedPermissions = []string{
 		PERMISSION_CREATE_POST.Id,
