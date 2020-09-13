@@ -211,11 +211,12 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		profiles, _, err = c.App.GetGroupMemberUsersPage(inGroupId, c.Params.Page, c.Params.PerPage)
-		if err != nil {
-			c.Err = err
-			return
-		}
+		//TODO: Open this
+		// profiles, _, err = c.App.GetGroupMemberUsersPage(inGroupId, c.Params.Page, c.Params.PerPage)
+		// if err != nil {
+		// 	c.Err = err
+		// 	return
+		// }
 	} else {
 		userGetOptions, err = c.App.RestrictUsersGetByPermissions(c.App.Session().UserId, userGetOptions)
 		if err != nil {
@@ -233,6 +234,8 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	if len(etag) > 0 {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}
+
+	//TODO: Open this
 	c.App.UpdateLastActivityAtIfNeeded(*c.App.Session())
 	w.Write([]byte(model.UserListToJson(profiles)))
 }

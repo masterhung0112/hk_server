@@ -347,3 +347,38 @@ func (a *App) GetUsersInChannelPageByStatus(channelId string, page int, perPage 
 	}
 	return a.sanitizeProfiles(users, asAdmin), nil
 }
+
+func (a *App) GetUsersInChannel(channelId string, offset int, limit int) ([]*model.User, *model.AppError) {
+	return a.Srv().Store.User().GetProfilesInChannel(channelId, offset, limit)
+}
+
+func (a *App) GetUsersInChannelPage(channelId string, page int, perPage int, asAdmin bool) ([]*model.User, *model.AppError) {
+	users, err := a.GetUsersInChannel(channelId, page*perPage, perPage)
+	if err != nil {
+		return nil, err
+	}
+	return a.sanitizeProfiles(users, asAdmin), nil
+}
+
+func (a *App) GetUsersPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError) {
+	users, err := a.GetUsers(options)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.sanitizeProfiles(users, asAdmin), nil
+}
+
+func (a *App) GetUsers(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
+	return a.Srv().Store.User().GetAllProfiles(options)
+}
+
+func (a *App) RestrictUsersGetByPermissions(userId string, options *model.UserGetOptions) (*model.UserGetOptions, *model.AppError) {
+	restrictions, err := a.GetViewUsersRestrictions(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	options.ViewRestrictions = restrictions
+	return options, nil
+}

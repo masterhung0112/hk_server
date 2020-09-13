@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"testing"
@@ -18,6 +19,9 @@ type TestHelper struct {
 	Server      *app.Server
 	ConfigStore config.Store
 	Client      *model.Client
+
+	SystemAdminClient *model.Client
+	LocalClient       *model.Client
 }
 
 func setupTestHelper() *TestHelper {
@@ -68,6 +72,8 @@ func setupTestHelper() *TestHelper {
 	})
 
 	th.Client = th.CreateClient()
+	th.SystemAdminClient = th.CreateClient()
+	th.LocalClient = th.CreateLocalClient(*config.ServiceSettings.LocalModeSocketLocation)
 
 	th.App.InitServer()
 
@@ -107,6 +113,22 @@ func (me *TestHelper) ShutdownApp() {
 		// panic instead of fatal to terminate all tests in this package, otherwise the
 		// still running App could spuriously fail subsequent tests.
 		panic("failed to shutdown App within 30 seconds")
+	}
+}
+
+// ToDo: maybe move this to NewAPIv4SocketClient and reuse it in mmctl
+func (me *TestHelper) CreateLocalClient(socketPath string) *model.Client {
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				return net.Dial("unix", socketPath)
+			},
+		},
+	}
+
+	return &model.Client{
+		ApiUrl:     "http://_" + model.API_URL_SUFFIX,
+		HttpClient: httpClient,
 	}
 }
 
@@ -164,4 +186,25 @@ func CheckErrorMessage(t *testing.T, resp *model.Response, errorId string) {
 
 func GenerateTestUsername() string {
 	return "fakeuser" + model.NewRandomString(10)
+}
+
+// TestForAllClients runs a test function for all the clients
+// registered in the TestHelper
+func (me *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.Client), name ...string) {
+	var testName string
+	if len(name) > 0 {
+		testName = name[0] + "/"
+	}
+
+	t.Run(testName+"Client", func(t *testing.T) {
+		f(t, me.Client)
+	})
+
+	t.Run(testName+"SystemAdminClient", func(t *testing.T) {
+		f(t, me.SystemAdminClient)
+	})
+
+	t.Run(testName+"LocalClient", func(t *testing.T) {
+		f(t, me.LocalClient)
+	})
 }

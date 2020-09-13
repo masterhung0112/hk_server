@@ -35,10 +35,16 @@ var PERMISSION_READ_CHANNEL *Permission
 
 var PERMISSION_VIEW_TEAM *Permission
 
+var PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS *Permission
+var PERMISSION_SYSCONSOLE_WRITE_USERMANAGEMENT_GROUPS *Permission
+
 // General permission that encompasses all system admin functions
 // in the future this could be broken up to allow access to some
 // admin functions but not others
 var PERMISSION_MANAGE_SYSTEM *Permission
+
+var SysconsoleReadPermissions []*Permission
+var SysconsoleWritePermissions []*Permission
 
 func initializePermissions() {
 	PERMISSION_INVITE_USER = &Permission{
@@ -126,6 +132,19 @@ func initializePermissions() {
 		PermissionScopeTeam,
 	}
 
+	PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS = &Permission{
+		"sysconsole_read_user_management_groups",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_USERMANAGEMENT_GROUPS = &Permission{
+		"sysconsole_write_user_management_groups",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+
 	SystemScopedPermissionsMinusSysconsole := []*Permission{
 		PERMISSION_MANAGE_SYSTEM,
 		PERMISSION_LIST_USERS_WITHOUT_TEAM,
@@ -145,10 +164,19 @@ func initializePermissions() {
 		PERMISSION_READ_CHANNEL,
 	}
 
+	SysconsoleReadPermissions = []*Permission{
+		PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS,
+	}
+	SysconsoleWritePermissions = []*Permission{
+		PERMISSION_SYSCONSOLE_WRITE_USERMANAGEMENT_GROUPS,
+	}
+
 	AllPermissions = []*Permission{}
 	AllPermissions = append(AllPermissions, SystemScopedPermissionsMinusSysconsole...)
 	AllPermissions = append(AllPermissions, TeamScopedPermissions...)
 	AllPermissions = append(AllPermissions, ChannelScopedPermissions...)
+	AllPermissions = append(AllPermissions, SysconsoleReadPermissions...)
+	AllPermissions = append(AllPermissions, SysconsoleWritePermissions...)
 
 	ChannelModeratedPermissions = []string{
 		PERMISSION_CREATE_POST.Id,

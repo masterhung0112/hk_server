@@ -9,4 +9,8 @@
     "editor.formatOnSave": false
   },
   "go.lintOnSave": "off",
+  "go.lintTool":"golangci-lint",
+  "go.lintFlags": [
+    "--fast"
+  ]
 }

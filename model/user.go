@@ -323,3 +323,8 @@ func (u *User) SanitizeProfile(options map[string]bool) {
 
 	u.Sanitize(options)
 }
+
+func UserListToJson(u []*User) string {
+	b, _ := json.Marshal(u)
+	return string(b)
+}

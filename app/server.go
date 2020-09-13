@@ -24,6 +24,8 @@ type Server struct {
 	Store       store.Store
 	configStore config.Store
 
+	licenseValue atomic.Value
+
 	didFinishListen chan struct{}
 
 	// RootRouter is the starting point for all HTTP requests to the server.

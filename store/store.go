@@ -32,7 +32,9 @@ type UserStore interface {
 	GetProfilesNotInTeam(teamId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
 	GetEtagForProfiles(teamId string) string
 	GetProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
+	GetProfilesInChannel(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 	GetProfilesInChannelByStatus(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
+	GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
 }
 
 type SystemStore interface {
