@@ -1,14 +1,14 @@
 package api
 
 import (
-	"github.com/masterhung0112/go_server/utils"
-	"sync"
+	"fmt"
 	"github.com/masterhung0112/go_server/store"
 	"github.com/masterhung0112/go_server/testlib"
-	"fmt"
+	"github.com/masterhung0112/go_server/utils"
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,18 +19,18 @@ import (
 )
 
 type TestHelper struct {
-	App         *app.App
-	Server      *app.Server
-	ConfigStore config.Store
-  Client      *model.Client
-  BasicUser            *model.User
-  BasicUser2           *model.User
-  TeamAdminUser        *model.User
-  BasicTeam            *model.Team
-	BasicChannel         *model.Channel
+	App           *app.App
+	Server        *app.Server
+	ConfigStore   config.Store
+	Client        *model.Client
+	BasicUser     *model.User
+	BasicUser2    *model.User
+	TeamAdminUser *model.User
+	BasicTeam     *model.Team
+	BasicChannel  *model.Channel
 
-  SystemAdminClient *model.Client
-  SystemAdminUser   *model.User
+	SystemAdminClient *model.Client
+	SystemAdminUser   *model.User
 	LocalClient       *model.Client
 }
 
@@ -58,7 +58,7 @@ func setupTestHelper(dbStore store.Store) *TestHelper {
 	// }
 	memoryStore.Set(config)
 
-  options = append(options, app.ConfigStore(memoryStore))
+	options = append(options, app.ConfigStore(memoryStore))
 	options = append(options, app.StoreOverride(dbStore))
 
 	s, err := app.NewServer(options...)
@@ -89,8 +89,8 @@ func setupTestHelper(dbStore store.Store) *TestHelper {
 	})
 
 	th.Client = th.CreateClient()
-  th.SystemAdminClient = th.CreateClient()
-  //TODO: Open this
+	th.SystemAdminClient = th.CreateClient()
+	//TODO: Open this
 	// th.LocalClient = th.CreateLocalClient(*config.ServiceSettings.LocalModeSocketLocation)
 
 	th.App.InitServer()
@@ -105,16 +105,16 @@ func (th *TestHelper) CreateClient() *model.Client {
 func Setup(tb testing.TB) *TestHelper {
 	if testing.Short() {
 		tb.SkipNow()
-  }
+	}
 
-  if mainHelper == nil {
+	if mainHelper == nil {
 		tb.SkipNow()
 	}
-  dbStore := mainHelper.GetStore()
+	dbStore := mainHelper.GetStore()
 	dbStore.DropAllTables()
-  dbStore.MarkSystemRanUnitTests()
-  th := setupTestHelper(dbStore)
-  th.InitLogin()
+	dbStore.MarkSystemRanUnitTests()
+	th := setupTestHelper(dbStore)
+	th.InitLogin()
 	return th
 }
 
@@ -250,7 +250,7 @@ func (me *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.
 		f(t, me.SystemAdminClient)
 	})
 
-  //TODO: Open this
+	//TODO: Open this
 	// t.Run(testName+"LocalClient", func(t *testing.T) {
 	// 	f(t, me.LocalClient)
 	// })
@@ -294,8 +294,8 @@ func (me *TestHelper) CreateUserWithClient(client *model.Client) *model.User {
 	id := model.NewId()
 
 	user := &model.User{
-		Email:     me.GenerateTestEmail(),
-		Username:  GenerateTestUsername(),
+		Email:    me.GenerateTestEmail(),
+		Username: GenerateTestUsername(),
 		// Nickname:  "nn_" + id,
 		FirstName: "f_" + id,
 		LastName:  "l_" + id,
@@ -308,8 +308,8 @@ func (me *TestHelper) CreateUserWithClient(client *model.Client) *model.User {
 		panic(response.Error)
 	}
 
-  ruser.Password = "Pa$$word11"
-  //TODO: Open
+	ruser.Password = "Pa$$word11"
+	//TODO: Open
 	// _, err := me.App.Srv().Store.User().VerifyEmail(ruser.Id, ruser.Email)
 	// if err != nil {
 	// 	return nil
@@ -325,7 +325,7 @@ func (me *TestHelper) InitLogin() *TestHelper {
 	initBasicOnce.Do(func() {
 		me.SystemAdminUser = me.CreateUser()
 		me.App.UpdateUserRoles(me.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
-    me.SystemAdminUser, _ = me.App.GetUser(me.SystemAdminUser.Id)
+		me.SystemAdminUser, _ = me.App.GetUser(me.SystemAdminUser.Id)
 		userCache.SystemAdminUser = me.SystemAdminUser.DeepCopy()
 
 		me.TeamAdminUser = me.CreateUser()

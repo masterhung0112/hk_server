@@ -344,8 +344,8 @@ func UserListFromJson(data io.Reader) []*User {
 func (u *User) PreUpdate() {
 	u.Username = SanitizeUnicode(u.Username)
 	u.FirstName = SanitizeUnicode(u.FirstName)
-  u.LastName = SanitizeUnicode(u.LastName)
-  //TODO: Open this
+	u.LastName = SanitizeUnicode(u.LastName)
+	//TODO: Open this
 	// u.Nickname = SanitizeUnicode(u.Nickname)
 	// u.BotDescription = SanitizeUnicode(u.BotDescription)
 
@@ -378,8 +378,8 @@ func (u *User) PreUpdate() {
 }
 
 func (u *User) DeepCopy() *User {
-  copyUser := *u
-  //TODO: Open
+	copyUser := *u
+	//TODO: Open
 	// if u.AuthData != nil {
 	// 	copyUser.AuthData = NewString(*u.AuthData)
 	// }

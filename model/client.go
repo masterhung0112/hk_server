@@ -18,13 +18,13 @@ const (
 
 	HEADER_TOKEN  = "token"
 	HEADER_BEARER = "BEARER"
-  HEADER_AUTH   = "Authorization"
+	HEADER_AUTH   = "Authorization"
 
-  STATUS                    = "status"
-	STATUS_OK                 = "OK"
-	STATUS_FAIL               = "FAIL"
-	STATUS_UNHEALTHY          = "UNHEALTHY"
-	STATUS_REMOVE             = "REMOVE"
+	STATUS           = "status"
+	STATUS_OK        = "OK"
+	STATUS_FAIL      = "FAIL"
+	STATUS_UNHEALTHY = "UNHEALTHY"
+	STATUS_REMOVE    = "REMOVE"
 
 	API_URL_SUFFIX = "/api/v1"
 )

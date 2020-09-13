@@ -717,8 +717,8 @@ func (us SqlUserStore) Update(user *model.User, trustedUpdateData bool) (*model.
 	}
 
 	oldUser := oldUserResult.(*model.User)
-  user.CreateAt = oldUser.CreateAt
-  //TODO: Open this
+	user.CreateAt = oldUser.CreateAt
+	//TODO: Open this
 	// user.AuthData = oldUser.AuthData
 	// user.AuthService = oldUser.AuthService
 	user.Password = oldUser.Password
@@ -734,7 +734,7 @@ func (us SqlUserStore) Update(user *model.User, trustedUpdateData bool) (*model.
 		user.DeleteAt = oldUser.DeleteAt
 	}
 
-  //TODO: Open this
+	//TODO: Open this
 	// if user.IsOAuthUser() {
 	// 	if !trustedUpdateData {
 	// 		user.Email = oldUser.Email
@@ -743,12 +743,12 @@ func (us SqlUserStore) Update(user *model.User, trustedUpdateData bool) (*model.
 	// 	if user.Username != oldUser.Username || user.Email != oldUser.Email {
 	// 		return nil, model.NewAppError("SqlUserStore.Update", "store.sql_user.update.can_not_change_ldap.app_error", nil, "user_id="+user.Id, http.StatusBadRequest)
 	// 	}
-  // } else
-  if user.Email != oldUser.Email {
+	// } else
+	if user.Email != oldUser.Email {
 		user.EmailVerified = false
 	}
 
-  //TODO: Open
+	//TODO: Open
 	// if user.Username != oldUser.Username {
 	// 	user.UpdateMentionKeysFromUsername(oldUser.Username)
 	// }

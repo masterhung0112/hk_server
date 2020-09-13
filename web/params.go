@@ -1,10 +1,10 @@
 package web
 
 import (
+	"github.com/gorilla/mux"
+	"net/http"
 	"strconv"
 	"strings"
-	"net/http"
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -18,20 +18,20 @@ const (
 )
 
 type Params struct {
-  UserId                    string
-  TeamId                    string
-  ChannelId                 string
-  TokenId                   string
-  Email                     string
-	Username                  string
-	TeamName                  string
-  ChannelName               string
-  RoleId                    string
-	RoleName                  string
-	SchemeId                  string
-	Page                      int
-  PerPage                   int
-  Paginate                  *bool
+	UserId      string
+	TeamId      string
+	ChannelId   string
+	TokenId     string
+	Email       string
+	Username    string
+	TeamName    string
+	ChannelName string
+	RoleId      string
+	RoleName    string
+	SchemeId    string
+	Page        int
+	PerPage     int
+	Paginate    *bool
 }
 
 func ParamsFromRequest(r *http.Request) *Params {

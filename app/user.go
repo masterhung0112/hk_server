@@ -7,12 +7,12 @@
 package app
 
 import (
-	"github.com/masterhung0112/go_server/store"
-	"strings"
 	"fmt"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/store"
 	"net/http"
+	"strings"
 )
 
 func (a *App) GetUser(userId string) (*model.User, *model.AppError) {
@@ -404,8 +404,8 @@ func (a *App) UpdateUserRoles(userId string, newRoles string, sendWebSocketEvent
 		close(uchan)
 	}()
 
-  schan := make(chan store.StoreResult, 1)
-  //TODO: Open
+	schan := make(chan store.StoreResult, 1)
+	//TODO: Open
 	// go func() {
 	// 	id, err := a.Srv().Store.Session().UpdateRoles(user.Id, newRoles)
 	// 	schan <- store.StoreResult{Data: id, NErr: err}
@@ -423,11 +423,11 @@ func (a *App) UpdateUserRoles(userId string, newRoles string, sendWebSocketEvent
 		mlog.Error("Failed during updating user roles", mlog.Err(result.NErr))
 	}
 
-  //TODO: Open this
+	//TODO: Open this
 	// a.InvalidateCacheForUser(userId)
 	// a.ClearSessionCacheForUser(user.Id)
 
-  //TODO: Open this
+	//TODO: Open this
 	// if sendWebSocketEvent {
 	// 	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_USER_ROLE_UPDATED, "", "", user.Id, nil)
 	// 	message.Add("user_id", user.Id)

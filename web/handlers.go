@@ -32,9 +32,9 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.App = app.New(
 		h.GetGlobalAppOptions()...,
 	)
-  c.App.InitServer()
+	c.App.InitServer()
 
-  c.Params = ParamsFromRequest(r)
+	c.Params = ParamsFromRequest(r)
 
 	// call the real handler
 	h.HandleFunc(c, w, r)

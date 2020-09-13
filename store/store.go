@@ -25,8 +25,8 @@ type Store interface {
 }
 
 type UserStore interface {
-  Save(user *model.User) (*model.User, *model.AppError)
-  Update(user *model.User, allowRoleUpdate bool) (*model.UserUpdate, *model.AppError)
+	Save(user *model.User) (*model.User, *model.AppError)
+	Update(user *model.User, allowRoleUpdate bool) (*model.UserUpdate, *model.AppError)
 	Get(id string) (*model.User, *model.AppError)
 	GetAll() ([]*model.User, *model.AppError)
 	Count(options model.UserCountOptions) (int64, *model.AppError)
