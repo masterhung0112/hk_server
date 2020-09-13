@@ -90,6 +90,21 @@ func (s *RoleStoreTestSuite) TestRoleStoreSave() {
 
 	_, err = s.Store().Role().Save(r4)
 	s.NotNil(err)
+
+	r5 := &model.Role{
+		Name:        model.NewId(),
+		DisplayName: model.NewId(),
+		Description: model.NewId(),
+		Permissions: []string{
+			"invalid_permission",
+		},
+		SchemeManaged: false,
+	}
+
+	_, err = s.Store().Role().Save(r5)
+	if s.NotNil(err) {
+		s.Contains(err.Error(), "invalid_permission")
+	}
 }
 
 func (s *RoleStoreTestSuite) TestRoleStoreGetAll() {
