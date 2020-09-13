@@ -125,6 +125,22 @@ func (_m *Store) Team() store.TeamStore {
 	return r0
 }
 
+// Token provides a mock function with given fields:
+func (_m *Store) Token() store.TokenStore {
+	ret := _m.Called()
+
+	var r0 store.TokenStore
+	if rf, ok := ret.Get(0).(func() store.TokenStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.TokenStore)
+		}
+	}
+
+	return r0
+}
+
 // User provides a mock function with given fields:
 func (_m *Store) User() store.UserStore {
 	ret := _m.Called()

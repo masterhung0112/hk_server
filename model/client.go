@@ -26,7 +26,12 @@ const (
 	STATUS_UNHEALTHY = "UNHEALTHY"
 	STATUS_REMOVE    = "REMOVE"
 
-	API_URL_SUFFIX = "/api/v1"
+  API_URL_SUFFIX = "/api/v1"
+
+  HEADER_REQUESTED_WITH     = "X-Requested-With"
+  HEADER_REQUESTED_WITH_XML = "XMLHttpRequest"
+
+  HEADER_FORWARDED_PROTO    = "X-Forwarded-Proto"
 )
 
 type Response struct {

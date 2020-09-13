@@ -30,7 +30,8 @@ type SqlSupplierStores struct {
 	scheme          store.SchemeStore
 	channel         store.ChannelStore
 	session         store.SessionStore
-	userAccessToken store.UserAccessTokenStore
+  userAccessToken store.UserAccessTokenStore
+  token                store.TokenStore
 }
 
 type SqlSupplier struct {
@@ -268,7 +269,8 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.stores.scheme = newSqlSchemeStore(supplier)
 	supplier.stores.channel = newSqlChannelStore(supplier)
 	supplier.stores.session = newSqlSessionStore(supplier)
-	supplier.stores.userAccessToken = newSqlUserAccessTokenStore(supplier)
+  supplier.stores.userAccessToken = newSqlUserAccessTokenStore(supplier)
+  supplier.stores.token = newSqlTokenStore(supplier)
 
 	err := supplier.GetMaster().CreateTablesIfNotExists()
 	if err != nil {
@@ -328,4 +330,8 @@ func (ss *SqlSupplier) Session() store.SessionStore {
 
 func (ss *SqlSupplier) UserAccessToken() store.UserAccessTokenStore {
 	return ss.stores.userAccessToken
+}
+
+func (ss *SqlSupplier) Token() store.TokenStore {
+	return ss.stores.token
 }

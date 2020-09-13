@@ -121,3 +121,17 @@ func (me *Session) IsMobile() bool {
 func (me *Session) IsMobileApp() bool {
 	return len(me.DeviceId) > 0 || me.IsMobile()
 }
+
+func (me *Session) GetCSRF() string {
+	if me.Props == nil {
+		return ""
+	}
+
+	return me.Props["csrf"]
+}
+
+func (me *Session) GenerateCSRF() string {
+	token := NewId()
+	me.AddProp("csrf", token)
+	return token
+}

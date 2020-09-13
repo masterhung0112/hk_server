@@ -81,6 +81,11 @@ func GetMillis() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
+// GetMillisForTime is a convenience method to get milliseconds since epoch for provided Time.
+func GetMillisForTime(thisTime time.Time) int64 {
+	return thisTime.UnixNano() / int64(time.Millisecond)
+}
+
 // MapToJson converts a map to a json string
 func MapToJson(objmap map[string]string) string {
 	b, _ := json.Marshal(objmap)

@@ -22,17 +22,21 @@ const (
 )
 
 type User struct {
-	Id            string `json:"id"`
-	CreateAt      int64  `json:"create_at,omitempty"`
-	UpdateAt      int64  `json:"update_at,omitempty"`
-	DeleteAt      int64  `json:"delete_at"`
-	Username      string `json:"username"`
-	Password      string `json:"password,omitempty"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified,omitempty"`
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
-	Roles         string `json:"roles"`
+	Id             string  `json:"id"`
+	CreateAt       int64   `json:"create_at,omitempty"`
+	UpdateAt       int64   `json:"update_at,omitempty"`
+	DeleteAt       int64   `json:"delete_at"`
+	Username       string  `json:"username"`
+	Password       string  `json:"password,omitempty"`
+	Email          string  `json:"email"`
+	EmailVerified  bool    `json:"email_verified,omitempty"`
+	FirstName      string  `json:"first_name"`
+	LastName       string  `json:"last_name"`
+	Roles          string  `json:"roles"`
+	IsBot          bool    `db:"-" json:"is_bot,omitempty"`
+	AuthData       *string `json:"auth_data,omitempty"`
+	AuthService    string  `json:"auth_service"`
+	FailedAttempts int     `json:"failed_attempts,omitempty"`
 }
 
 type UserUpdate struct {
@@ -250,13 +254,13 @@ func (u *User) IsValid() *AppError {
 		return InvalidUserError("last_name", u.Id)
 	}
 
-	// if u.AuthData != nil && len(*u.AuthData) > USER_AUTH_DATA_MAX_LENGTH {
-	// 	return InvalidUserError("auth_data", u.Id)
-	// }
+	if u.AuthData != nil && len(*u.AuthData) > USER_AUTH_DATA_MAX_LENGTH {
+		return InvalidUserError("auth_data", u.Id)
+	}
 
-	// if u.AuthData != nil && len(*u.AuthData) > 0 && len(u.AuthService) == 0 {
-	// 	return InvalidUserError("auth_data_type", u.Id)
-	// }
+	if u.AuthData != nil && len(*u.AuthData) > 0 && len(u.AuthService) == 0 {
+		return InvalidUserError("auth_data_type", u.Id)
+	}
 
 	// if len(u.Password) > 0 && u.AuthData != nil && len(*u.AuthData) > 0 {
 	// 	return InvalidUserError("auth_data_pwd", u.Id)
@@ -303,7 +307,7 @@ func (u *User) Sanitize(options map[string]bool) {
 		// u.LastPasswordUpdate = 0
 	}
 	if len(options) != 0 && !options["authservice"] {
-		// u.AuthService = ""
+		u.AuthService = ""
 	}
 }
 
@@ -314,13 +318,13 @@ func (u *User) GetRoles() []string {
 func (u *User) ClearNonProfileFields() {
 	u.Password = ""
 	//TODO: Open this
-	// u.AuthData = NewString("")
+	u.AuthData = NewString("")
 	// u.MfaSecret = ""
 	u.EmailVerified = false
 	// u.AllowMarketing = false
 	// u.NotifyProps = StringMap{}
 	// u.LastPasswordUpdate = 0
-	// u.FailedAttempts = 0
+	u.FailedAttempts = 0
 }
 
 func (u *User) SanitizeProfile(options map[string]bool) {
@@ -423,4 +427,14 @@ func (u *User) IsGuest() bool {
 
 func (u *User) GetRawRoles() string {
 	return u.Roles
+}
+
+// ComparePassword compares the hash
+func ComparePassword(hash string, password string) bool {
+	if len(password) == 0 || len(hash) == 0 {
+		return false
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }

@@ -20,7 +20,8 @@ type Store interface {
 	Role() RoleStore
 	Scheme() SchemeStore
 	Session() SessionStore
-	UserAccessToken() UserAccessTokenStore
+  UserAccessToken() UserAccessTokenStore
+  Token() TokenStore
 	Close()
 	DropAllTables()
 	MarkSystemRanUnitTests()
@@ -46,6 +47,8 @@ type UserStore interface {
 	GetProfilesInChannel(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 	GetProfilesInChannelByStatus(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 	GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
+  UpdateFailedPasswordAttempts(userId string, attempts int) *model.AppError
+  GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, *model.AppError)
 }
 
 type SystemStore interface {
@@ -262,7 +265,7 @@ type SchemeStore interface {
 type SessionStore interface {
 	Get(sessionIdOrToken string) (*model.Session, error)
 	Save(session *model.Session) (*model.Session, error)
-	// GetSessions(userId string) ([]*model.Session, error)
+	GetSessions(userId string) ([]*model.Session, error)
 	// GetSessionsWithActiveDeviceIds(userId string) ([]*model.Session, error)
 	// GetSessionsExpired(thresholdMillis int64, mobileOnly bool, unnotifiedOnly bool) ([]*model.Session, error)
 	// UpdateExpiredNotify(sessionid string, notified bool) error
@@ -289,4 +292,12 @@ type UserAccessTokenStore interface {
 	// Search(term string) ([]*model.UserAccessToken, error)
 	// UpdateTokenEnable(tokenId string) error
 	// UpdateTokenDisable(tokenId string) error
+}
+
+type TokenStore interface {
+	Save(recovery *model.Token) error
+	Delete(token string) error
+	GetByToken(token string) (*model.Token, error)
+	Cleanup()
+	RemoveAllTokensByType(tokenType string) error
 }

@@ -8,6 +8,26 @@ import (
 	"net/http"
 )
 
+func (a *App) CreateSession(session *model.Session) (*model.Session, *model.AppError) {
+	session.Token = ""
+
+	session, err := a.Srv().Store.Session().Save(session)
+	if err != nil {
+		var invErr *store.ErrInvalidInput
+		switch {
+		case errors.As(err, &invErr):
+			return nil, model.NewAppError("CreateSession", "app.session.save.existing.app_error", nil, invErr.Error(), http.StatusBadRequest)
+		default:
+			return nil, model.NewAppError("CreateSession", "app.session.save.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+  //TODO: Open
+	// a.AddSessionToCache(session)
+
+	return session, nil
+}
+
 func (a *App) RevokeSessionById(sessionId string) *model.AppError {
 	session, err := a.Srv().Store.Session().Get(sessionId)
 	if err != nil {
@@ -188,4 +208,22 @@ func (a *App) SetSessionExpireInDays(session *model.Session, days int) {
 func (a *App) AddSessionToCache(session *model.Session) {
 	//TODO: Open
 	// a.Srv().sessionCache.SetWithExpiry(session.Token, session, time.Duration(int64(*a.Config().ServiceSettings.SessionCacheInMinutes))*time.Minute)
+}
+
+func (a *App) RevokeSessionsForDeviceId(userId string, deviceId string, currentSessionId string) *model.AppError {
+	sessions, err := a.Srv().Store.Session().GetSessions(userId)
+	if err != nil {
+		return model.NewAppError("RevokeSessionsForDeviceId", "app.session.get_sessions.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	for _, session := range sessions {
+		if session.DeviceId == deviceId && session.Id != currentSessionId {
+			mlog.Debug("Revoking sessionId for userId. Re-login with the same device Id", mlog.String("session_id", session.Id), mlog.String("user_id", userId))
+			if err := a.RevokeSession(session); err != nil {
+				// Soft error so we still remove the other sessions
+				mlog.Error(err.Error())
+			}
+		}
+	}
+
+	return nil
 }

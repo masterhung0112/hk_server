@@ -1,6 +1,7 @@
 package app
 
 import (
+	"net/url"
 	"crypto/ecdsa"
 	"crypto/md5"
 	"encoding/json"
@@ -160,4 +161,13 @@ func (s *Server) regenerateClientConfig() {
 	s.clientConfig.Store(clientConfig)
 	s.limitedClientConfig.Store(limitedClientConfig)
 	s.clientConfigHash.Store(fmt.Sprintf("%x", md5.Sum(clientConfigJSON)))
+}
+
+func (a *App) GetCookieDomain() string {
+	if *a.Config().ServiceSettings.AllowCookiesForSubdomains {
+		if siteURL, err := url.Parse(*a.Config().ServiceSettings.SiteURL); err == nil {
+			return siteURL.Hostname()
+		}
+	}
+	return ""
 }

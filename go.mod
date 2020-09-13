@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
 	github.com/Masterminds/squirrel v1.4.0
+	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
 	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-gorp/gorp v2.2.0+incompatible

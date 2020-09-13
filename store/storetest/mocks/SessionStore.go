@@ -37,6 +37,29 @@ func (_m *SessionStore) Get(sessionIdOrToken string) (*model.Session, error) {
 	return r0, r1
 }
 
+// GetSessions provides a mock function with given fields: userId
+func (_m *SessionStore) GetSessions(userId string) ([]*model.Session, error) {
+	ret := _m.Called(userId)
+
+	var r0 []*model.Session
+	if rf, ok := ret.Get(0).(func(string) []*model.Session); ok {
+		r0 = rf(userId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Session)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(userId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Remove provides a mock function with given fields: sessionIdOrToken
 func (_m *SessionStore) Remove(sessionIdOrToken string) error {
 	ret := _m.Called(sessionIdOrToken)
