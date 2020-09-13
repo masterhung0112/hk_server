@@ -72,8 +72,9 @@ func setupTestHelper() *TestHelper {
 	})
 
 	th.Client = th.CreateClient()
-	th.SystemAdminClient = th.CreateClient()
-	th.LocalClient = th.CreateLocalClient(*config.ServiceSettings.LocalModeSocketLocation)
+  th.SystemAdminClient = th.CreateClient()
+  //TODO: Open this
+	// th.LocalClient = th.CreateLocalClient(*config.ServiceSettings.LocalModeSocketLocation)
 
 	th.App.InitServer()
 
@@ -204,9 +205,10 @@ func (me *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.
 		f(t, me.SystemAdminClient)
 	})
 
-	t.Run(testName+"LocalClient", func(t *testing.T) {
-		f(t, me.LocalClient)
-	})
+  //TODO: Open this
+	// t.Run(testName+"LocalClient", func(t *testing.T) {
+	// 	f(t, me.LocalClient)
+	// })
 }
 
 func CheckUnauthorizedStatus(t *testing.T, resp *model.Response) {
