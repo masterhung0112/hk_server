@@ -526,3 +526,21 @@ func (s SqlTeamStore) GetUserTeamIds(userID string, allowFromCache bool) ([]stri
 
 	return teamIds, nil
 }
+
+func (s SqlTeamStore) GetTeamsForUser(userId string) ([]*model.TeamMember, *model.AppError) {
+	query := s.getTeamMembersWithSchemeSelectQuery().
+		Where(sq.Eq{"TeamMembers.UserId": userId})
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlTeamStore.GetMembers", "store.sql.build_query.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	var dbMembers teamMemberWithSchemeRolesList
+	_, err = s.GetReplica().Select(&dbMembers, queryString, args...)
+	if err != nil {
+		return nil, model.NewAppError("SqlTeamStore.GetMembers", "store.sql_team.get_members.app_error", nil, "userId="+userId+" "+err.Error(), http.StatusInternalServerError)
+	}
+
+	return dbMembers.ToModel(), nil
+}

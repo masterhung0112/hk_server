@@ -47,6 +47,9 @@ type Server struct {
 	limitedClientConfig atomic.Value
 
 	postActionCookieSecret []byte
+
+	goroutineCount      int32
+	goroutineExitSignal chan struct{}
 }
 
 // Global app options that should be applied to apps created by this server
@@ -204,4 +207,20 @@ func (s *Server) UpdateConfig(f func(*model.Config)) {
 	if _, err := s.configStore.Set(updated); err != nil {
 		mlog.Error("Failed to update config", mlog.Err(err))
 	}
+}
+
+// Go creates a goroutine, but maintains a record of it to ensure that execution completes before
+// the server is shutdown.
+func (s *Server) Go(f func()) {
+	atomic.AddInt32(&s.goroutineCount, 1)
+
+	go func() {
+		f()
+
+		atomic.AddInt32(&s.goroutineCount, -1)
+		select {
+		case s.goroutineExitSignal <- struct{}{}:
+		default:
+		}
+	}()
 }

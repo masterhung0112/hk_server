@@ -45,6 +45,10 @@ func (a *App) Session() *model.Session {
 	return &a.session
 }
 
+func (a *App) SetSession(s *model.Session) {
+	a.session = *s
+}
+
 func (s *Server) getSystemInstallDate() (int64, *model.AppError) {
 	systemData, err := s.Store.System().GetByName(model.SYSTEM_INSTALLATION_DATE_KEY)
 	if err != nil {

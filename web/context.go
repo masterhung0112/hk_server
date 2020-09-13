@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/masterhung0112/go_server/utils"
 	"net/http"
 
 	"github.com/masterhung0112/go_server/app"
@@ -74,4 +75,33 @@ func (c *Context) HandleEtag(etag string, routeName string, w http.ResponseWrite
 	// }
 
 	return false
+}
+
+func (c *Context) RemoveSessionCookie(w http.ResponseWriter, r *http.Request) {
+	subpath, _ := utils.GetSubpathFromConfig(c.App.Config())
+
+	cookie := &http.Cookie{
+		Name:     model.SESSION_COOKIE_TOKEN,
+		Value:    "",
+		Path:     subpath,
+		MaxAge:   -1,
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, cookie)
+}
+
+func (c *Context) SessionRequired() {
+	if !*c.App.Config().ServiceSettings.EnableUserAccessTokens &&
+		c.App.Session().Props[model.SESSION_PROP_TYPE] == model.SESSION_TYPE_USER_ACCESS_TOKEN &&
+		c.App.Session().Props[model.SESSION_PROP_IS_BOT] != model.SESSION_PROP_IS_BOT_VALUE {
+
+		c.Err = model.NewAppError("", "api.context.session_expired.app_error", nil, "UserAccessToken", http.StatusUnauthorized)
+		return
+	}
+
+	if len(c.App.Session().UserId) == 0 {
+		c.Err = model.NewAppError("", "api.context.session_expired.app_error", nil, "UserRequired", http.StatusUnauthorized)
+		return
+	}
 }

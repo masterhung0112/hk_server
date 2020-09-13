@@ -18,6 +18,22 @@ type SqlStore struct {
 	mock.Mock
 }
 
+// Channel provides a mock function with given fields:
+func (_m *SqlStore) Channel() store.ChannelStore {
+	ret := _m.Called()
+
+	var r0 store.ChannelStore
+	if rf, ok := ret.Get(0).(func() store.ChannelStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.ChannelStore)
+		}
+	}
+
+	return r0
+}
+
 // DriverName provides a mock function with given fields:
 func (_m *SqlStore) DriverName() string {
 	ret := _m.Called()
@@ -74,6 +90,54 @@ func (_m *SqlStore) GetReplica() *gorp.DbMap {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*gorp.DbMap)
+		}
+	}
+
+	return r0
+}
+
+// Role provides a mock function with given fields:
+func (_m *SqlStore) Role() store.RoleStore {
+	ret := _m.Called()
+
+	var r0 store.RoleStore
+	if rf, ok := ret.Get(0).(func() store.RoleStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.RoleStore)
+		}
+	}
+
+	return r0
+}
+
+// Scheme provides a mock function with given fields:
+func (_m *SqlStore) Scheme() store.SchemeStore {
+	ret := _m.Called()
+
+	var r0 store.SchemeStore
+	if rf, ok := ret.Get(0).(func() store.SchemeStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.SchemeStore)
+		}
+	}
+
+	return r0
+}
+
+// Team provides a mock function with given fields:
+func (_m *SqlStore) Team() store.TeamStore {
+	ret := _m.Called()
+
+	var r0 store.TeamStore
+	if rf, ok := ret.Get(0).(func() store.TeamStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.TeamStore)
 		}
 	}
 

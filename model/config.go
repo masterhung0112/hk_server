@@ -5,7 +5,10 @@ import (
 )
 
 const (
-	CONN_SECURITY_TLS = "TLS"
+	CONN_SECURITY_NONE     = ""
+	CONN_SECURITY_PLAIN    = "PLAIN"
+	CONN_SECURITY_TLS      = "TLS"
+	CONN_SECURITY_STARTTLS = "STARTTLS"
 
 	PASSWORD_MAXIMUM_LENGTH                     = 64
 	PASSWORD_MINIMUM_LENGTH                     = 5
@@ -37,15 +40,34 @@ const (
 	DIRECT_MESSAGE_TEAM = "team"
 
 	LOCAL_MODE_SOCKET_PATH = "/var/tmp/hungknow_local.socket"
+
+	EMAIL_SETTINGS_DEFAULT_FEEDBACK_ORGANIZATION = ""
+
+	GENERIC_NO_CHANNEL_NOTIFICATION = "generic_no_channel"
+	GENERIC_NOTIFICATION            = "generic"
+	GENERIC_NOTIFICATION_SERVER     = "https://push-test.mattermost.com"
+	MM_SUPPORT_ADDRESS              = "support@hungknow.com"
+	FULL_NOTIFICATION               = "full"
+	ID_LOADED_NOTIFICATION          = "id_loaded"
+
+	EMAIL_BATCHING_BUFFER_SIZE = 256
+	EMAIL_BATCHING_INTERVAL    = 30
+
+	EMAIL_NOTIFICATION_CONTENTS_FULL    = "full"
+	EMAIL_NOTIFICATION_CONTENTS_GENERIC = "generic"
+
+	SERVICE_SETTINGS_DEFAULT_MAX_LOGIN_ATTEMPTS = 10
 )
 
 type Config struct {
-	ServiceSettings      ServiceSettings
-	TeamSettings         TeamSettings
-	PasswordSettings     PasswordSettings
-	LocalizationSettings LocalizationSettings
-	SqlSettings          SqlSettings
-	PrivacySettings      PrivacySettings
+	ServiceSettings       ServiceSettings
+	TeamSettings          TeamSettings
+	PasswordSettings      PasswordSettings
+	LocalizationSettings  LocalizationSettings
+	SqlSettings           SqlSettings
+	PrivacySettings       PrivacySettings
+	EmailSettings         EmailSettings
+	GuestAccountsSettings GuestAccountsSettings
 }
 
 // isUpdate detects a pre-existing config based on whether SiteURL has been changed
@@ -56,12 +78,14 @@ func (o *Config) isUpdate() bool {
 func (o *Config) SetDefaults() {
 	isUpdate := o.isUpdate()
 
+	o.TeamSettings.SetDefaults()
 	o.ServiceSettings.SetDefaults(isUpdate)
 	o.PasswordSettings.SetDefaults()
 	o.LocalizationSettings.SetDefaults()
 	o.SqlSettings.SetDefaults(isUpdate)
-	o.TeamSettings.SetDefaults()
 	o.PrivacySettings.SetDefaults()
+	o.EmailSettings.SetDefaults(isUpdate)
+	o.GuestAccountsSettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
@@ -188,11 +212,19 @@ func (s *PasswordSettings) SetDefaults() {
 }
 
 type ServiceSettings struct {
-	SiteURL                 *string `restricted:"true"`
-	ConnectionSecurity      *string `restricted:"true"`
-	ListenAddress           *string `restricted:"true"`
-	EnableDeveloper         *bool   `restricted:"true"`
-	LocalModeSocketLocation *string
+	SiteURL                         *string `restricted:"true"`
+	ConnectionSecurity              *string `restricted:"true"`
+	ListenAddress                   *string `restricted:"true"`
+	EnableDeveloper                 *bool   `restricted:"true"`
+	LocalModeSocketLocation         *string
+	ExtendSessionLengthWithActivity *bool `access:"environment,write_restrictable"`
+	SessionIdleTimeoutInMinutes     *int  `access:"environment,write_restrictable"`
+	EnableUserAccessTokens          *bool `access:"integrations"`
+	MaximumLoginAttempts            *int  `access:"authentication,write_restrictable"`
+	SessionLengthWebInDays          *int  `access:"environment,write_restrictable"`
+	AllowCookiesForSubdomains       *bool `access:"write_restrictable"`
+	SessionLengthMobileInDays       *int  `access:"environment,write_restrictable"`
+	SessionLengthSSOInDays          *int  `access:"environment,write_restrictable"`
 }
 
 func (s *ServiceSettings) SetDefaults(isUpdate bool) {
@@ -218,6 +250,47 @@ func (s *ServiceSettings) SetDefaults(isUpdate bool) {
 
 	if s.LocalModeSocketLocation == nil {
 		s.LocalModeSocketLocation = NewString(LOCAL_MODE_SOCKET_PATH)
+	}
+
+	// Must be manually enabled for existing installations.
+	if s.ExtendSessionLengthWithActivity == nil {
+		s.ExtendSessionLengthWithActivity = NewBool(!isUpdate)
+	}
+
+	if s.SessionIdleTimeoutInMinutes == nil {
+		s.SessionIdleTimeoutInMinutes = NewInt(43200)
+	}
+
+	if s.EnableUserAccessTokens == nil {
+		s.EnableUserAccessTokens = NewBool(false)
+	}
+
+	if s.MaximumLoginAttempts == nil {
+		s.MaximumLoginAttempts = NewInt(SERVICE_SETTINGS_DEFAULT_MAX_LOGIN_ATTEMPTS)
+	}
+
+	if s.SessionLengthWebInDays == nil {
+		if isUpdate {
+			s.SessionLengthWebInDays = NewInt(180)
+		} else {
+			s.SessionLengthWebInDays = NewInt(30)
+		}
+	}
+
+	if s.SessionLengthMobileInDays == nil {
+		if isUpdate {
+			s.SessionLengthMobileInDays = NewInt(180)
+		} else {
+			s.SessionLengthMobileInDays = NewInt(30)
+		}
+	}
+
+	if s.SessionLengthSSOInDays == nil {
+		s.SessionLengthSSOInDays = NewInt(30)
+	}
+
+	if s.AllowCookiesForSubdomains == nil {
+		s.AllowCookiesForSubdomains = NewBool(false)
 	}
 }
 
@@ -475,5 +548,205 @@ func (s *PrivacySettings) SetDefaults() {
 
 	if s.ShowFullName == nil {
 		s.ShowFullName = NewBool(true)
+	}
+}
+
+type EmailSettings struct {
+	EnableSignUpWithEmail             *bool   `access:"authentication"`
+	EnableSignInWithEmail             *bool   `access:"authentication"`
+	EnableSignInWithUsername          *bool   `access:"authentication"`
+	SendEmailNotifications            *bool   `access:"site"`
+	UseChannelInEmailNotifications    *bool   `access:"experimental"`
+	RequireEmailVerification          *bool   `access:"authentication"`
+	FeedbackName                      *string `access:"site"`
+	FeedbackEmail                     *string `access:"site"`
+	ReplyToAddress                    *string `access:"site"`
+	FeedbackOrganization              *string `access:"site"`
+	EnableSMTPAuth                    *bool   `access:"environment,write_restrictable"`
+	SMTPUsername                      *string `access:"environment,write_restrictable"`
+	SMTPPassword                      *string `access:"environment,write_restrictable"`
+	SMTPServer                        *string `access:"environment,write_restrictable"`
+	SMTPPort                          *string `access:"environment,write_restrictable"`
+	SMTPServerTimeout                 *int
+	ConnectionSecurity                *string `access:"environment,write_restrictable"`
+	SendPushNotifications             *bool   `access:"environment"`
+	PushNotificationServer            *string `access:"environment"`
+	PushNotificationContents          *string `access:"site"`
+	PushNotificationBuffer            *int
+	EnableEmailBatching               *bool   `access:"site"`
+	EmailBatchingBufferSize           *int    `access:"experimental"`
+	EmailBatchingInterval             *int    `access:"experimental"`
+	EnablePreviewModeBanner           *bool   `access:"site"`
+	SkipServerCertificateVerification *bool   `access:"environment,write_restrictable"`
+	EmailNotificationContentsType     *string `access:"site"`
+	LoginButtonColor                  *string `access:"experimental"`
+	LoginButtonBorderColor            *string `access:"experimental"`
+	LoginButtonTextColor              *string `access:"experimental"`
+}
+
+func (s *EmailSettings) SetDefaults(isUpdate bool) {
+	if s.EnableSignUpWithEmail == nil {
+		s.EnableSignUpWithEmail = NewBool(true)
+	}
+
+	if s.EnableSignInWithEmail == nil {
+		s.EnableSignInWithEmail = NewBool(*s.EnableSignUpWithEmail)
+	}
+
+	if s.EnableSignInWithUsername == nil {
+		s.EnableSignInWithUsername = NewBool(true)
+	}
+
+	if s.SendEmailNotifications == nil {
+		s.SendEmailNotifications = NewBool(true)
+	}
+
+	if s.UseChannelInEmailNotifications == nil {
+		s.UseChannelInEmailNotifications = NewBool(false)
+	}
+
+	if s.RequireEmailVerification == nil {
+		s.RequireEmailVerification = NewBool(false)
+	}
+
+	if s.FeedbackName == nil {
+		s.FeedbackName = NewString("")
+	}
+
+	if s.FeedbackEmail == nil {
+		s.FeedbackEmail = NewString("test@example.com")
+	}
+
+	if s.ReplyToAddress == nil {
+		s.ReplyToAddress = NewString("test@example.com")
+	}
+
+	if s.FeedbackOrganization == nil {
+		s.FeedbackOrganization = NewString(EMAIL_SETTINGS_DEFAULT_FEEDBACK_ORGANIZATION)
+	}
+
+	if s.EnableSMTPAuth == nil {
+		if s.ConnectionSecurity == nil || *s.ConnectionSecurity == CONN_SECURITY_NONE {
+			s.EnableSMTPAuth = NewBool(false)
+		} else {
+			s.EnableSMTPAuth = NewBool(true)
+		}
+	}
+
+	if s.SMTPUsername == nil {
+		s.SMTPUsername = NewString("")
+	}
+
+	if s.SMTPPassword == nil {
+		s.SMTPPassword = NewString("")
+	}
+
+	if s.SMTPServer == nil || len(*s.SMTPServer) == 0 {
+		s.SMTPServer = NewString("localhost")
+	}
+
+	if s.SMTPPort == nil || len(*s.SMTPPort) == 0 {
+		s.SMTPPort = NewString("10025")
+	}
+
+	if s.SMTPServerTimeout == nil || *s.SMTPServerTimeout == 0 {
+		s.SMTPServerTimeout = NewInt(10)
+	}
+
+	if s.ConnectionSecurity == nil || *s.ConnectionSecurity == CONN_SECURITY_PLAIN {
+		s.ConnectionSecurity = NewString(CONN_SECURITY_NONE)
+	}
+
+	if s.SendPushNotifications == nil {
+		s.SendPushNotifications = NewBool(!isUpdate)
+	}
+
+	if s.PushNotificationServer == nil {
+		if isUpdate {
+			s.PushNotificationServer = NewString("")
+		} else {
+			s.PushNotificationServer = NewString(GENERIC_NOTIFICATION_SERVER)
+		}
+	}
+
+	if s.PushNotificationContents == nil {
+		s.PushNotificationContents = NewString(FULL_NOTIFICATION)
+	}
+
+	if s.PushNotificationBuffer == nil {
+		s.PushNotificationBuffer = NewInt(1000)
+	}
+
+	if s.EnableEmailBatching == nil {
+		s.EnableEmailBatching = NewBool(false)
+	}
+
+	if s.EmailBatchingBufferSize == nil {
+		s.EmailBatchingBufferSize = NewInt(EMAIL_BATCHING_BUFFER_SIZE)
+	}
+
+	if s.EmailBatchingInterval == nil {
+		s.EmailBatchingInterval = NewInt(EMAIL_BATCHING_INTERVAL)
+	}
+
+	if s.EnablePreviewModeBanner == nil {
+		s.EnablePreviewModeBanner = NewBool(true)
+	}
+
+	if s.EnableSMTPAuth == nil {
+		if *s.ConnectionSecurity == CONN_SECURITY_NONE {
+			s.EnableSMTPAuth = NewBool(false)
+		} else {
+			s.EnableSMTPAuth = NewBool(true)
+		}
+	}
+
+	if *s.ConnectionSecurity == CONN_SECURITY_PLAIN {
+		*s.ConnectionSecurity = CONN_SECURITY_NONE
+	}
+
+	if s.SkipServerCertificateVerification == nil {
+		s.SkipServerCertificateVerification = NewBool(false)
+	}
+
+	if s.EmailNotificationContentsType == nil {
+		s.EmailNotificationContentsType = NewString(EMAIL_NOTIFICATION_CONTENTS_FULL)
+	}
+
+	if s.LoginButtonColor == nil {
+		s.LoginButtonColor = NewString("#0000")
+	}
+
+	if s.LoginButtonBorderColor == nil {
+		s.LoginButtonBorderColor = NewString("#2389D7")
+	}
+
+	if s.LoginButtonTextColor == nil {
+		s.LoginButtonTextColor = NewString("#2389D7")
+	}
+}
+
+type GuestAccountsSettings struct {
+	Enable                           *bool   `access:"authentication"`
+	AllowEmailAccounts               *bool   `access:"authentication"`
+	EnforceMultifactorAuthentication *bool   `access:"authentication"`
+	RestrictCreationToDomains        *string `access:"authentication"`
+}
+
+func (s *GuestAccountsSettings) SetDefaults() {
+	if s.Enable == nil {
+		s.Enable = NewBool(false)
+	}
+
+	if s.AllowEmailAccounts == nil {
+		s.AllowEmailAccounts = NewBool(true)
+	}
+
+	if s.EnforceMultifactorAuthentication == nil {
+		s.EnforceMultifactorAuthentication = NewBool(false)
+	}
+
+	if s.RestrictCreationToDomains == nil {
+		s.RestrictCreationToDomains = NewString("")
 	}
 }

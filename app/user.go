@@ -15,6 +15,17 @@ import (
 	"strings"
 )
 
+const (
+	TOKEN_TYPE_PASSWORD_RECOVERY  = "password_recovery"
+	TOKEN_TYPE_VERIFY_EMAIL       = "verify_email"
+	TOKEN_TYPE_TEAM_INVITATION    = "team_invitation"
+	TOKEN_TYPE_GUEST_INVITATION   = "guest_invitation"
+	TOKEN_TYPE_CWS_ACCESS         = "cws_access_token"
+	PASSWORD_RECOVER_EXPIRY_TIME  = 1000 * 60 * 60      // 1 hour
+	INVITATION_EXPIRY_TIME        = 1000 * 60 * 60 * 48 // 48 hours
+	IMAGE_PROFILE_PIXEL_DIMENSION = 128
+)
+
 func (a *App) GetUser(userId string) (*model.User, *model.AppError) {
 	return a.Srv().Store.User().Get(userId)
 }

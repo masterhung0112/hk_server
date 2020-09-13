@@ -19,6 +19,9 @@ type Store interface {
 	System() SystemStore
 	Role() RoleStore
 	Scheme() SchemeStore
+	Session() SessionStore
+	UserAccessToken() UserAccessTokenStore
+	Token() TokenStore
 	Close()
 	DropAllTables()
 	MarkSystemRanUnitTests()
@@ -44,6 +47,8 @@ type UserStore interface {
 	GetProfilesInChannel(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 	GetProfilesInChannelByStatus(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 	GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
+	UpdateFailedPasswordAttempts(userId string, attempts int) *model.AppError
+	GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, *model.AppError)
 }
 
 type SystemStore interface {
@@ -109,7 +114,7 @@ type TeamStore interface {
 	// GetMembersByIds(teamId string, userIds []string, restrictions *model.ViewUsersRestrictions) ([]*model.TeamMember, *model.AppError)
 	// GetTotalMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError)
 	// GetActiveMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError)
-	// GetTeamsForUser(userId string) ([]*model.TeamMember, *model.AppError)
+	GetTeamsForUser(userId string) ([]*model.TeamMember, *model.AppError)
 	// GetTeamsForUserWithPagination(userId string, page, perPage int) ([]*model.TeamMember, *model.AppError)
 	// GetChannelUnreadsForAllTeams(excludeTeamId, userId string) ([]*model.ChannelUnread, *model.AppError)
 	// GetChannelUnreadsForTeam(teamId, userId string) ([]*model.ChannelUnread, *model.AppError)
@@ -255,4 +260,44 @@ type SchemeStore interface {
 	// PermanentDeleteAll() error
 	// CountByScope(scope string) (int64, error)
 	// CountWithoutPermission(scope, permissionID string, roleScope model.RoleScope, roleType model.RoleType) (int64, error)
+}
+
+type SessionStore interface {
+	Get(sessionIdOrToken string) (*model.Session, error)
+	Save(session *model.Session) (*model.Session, error)
+	GetSessions(userId string) ([]*model.Session, error)
+	// GetSessionsWithActiveDeviceIds(userId string) ([]*model.Session, error)
+	// GetSessionsExpired(thresholdMillis int64, mobileOnly bool, unnotifiedOnly bool) ([]*model.Session, error)
+	// UpdateExpiredNotify(sessionid string, notified bool) error
+	Remove(sessionIdOrToken string) error
+	// RemoveAllSessions() error
+	// PermanentDeleteSessionsByUser(teamId string) error
+	// UpdateExpiresAt(sessionId string, time int64) error
+	// UpdateLastActivityAt(sessionId string, time int64) error
+	// UpdateRoles(userId string, roles string) (string, error)
+	// UpdateDeviceId(id string, deviceId string, expiresAt int64) (string, error)
+	// UpdateProps(session *model.Session) error
+	// AnalyticsSessionCount() (int64, error)
+	// Cleanup(expiryTime int64, batchSize int64)
+}
+
+type UserAccessTokenStore interface {
+	// Save(token *model.UserAccessToken) (*model.UserAccessToken, error)
+	// DeleteAllForUser(userId string) error
+	// Delete(tokenId string) error
+	// Get(tokenId string) (*model.UserAccessToken, error)
+	// GetAll(offset int, limit int) ([]*model.UserAccessToken, error)
+	GetByToken(tokenString string) (*model.UserAccessToken, error)
+	// GetByUser(userId string, page, perPage int) ([]*model.UserAccessToken, error)
+	// Search(term string) ([]*model.UserAccessToken, error)
+	// UpdateTokenEnable(tokenId string) error
+	// UpdateTokenDisable(tokenId string) error
+}
+
+type TokenStore interface {
+	Save(recovery *model.Token) error
+	Delete(token string) error
+	GetByToken(token string) (*model.Token, error)
+	Cleanup()
+	RemoveAllTokensByType(tokenType string) error
 }

@@ -668,14 +668,14 @@ func (us SqlUserStore) GetProfilesInChannel(channelId string, offset int, limit 
 }
 
 func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
-	isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
+	// isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	query := us.usersQuery.
 		OrderBy("u.Username ASC").
 		Offset(uint64(options.Page * options.PerPage)).Limit(uint64(options.PerPage))
 
-	query = applyViewRestrictionsFilter(query, options.ViewRestrictions, true)
+	// query = applyViewRestrictionsFilter(query, options.ViewRestrictions, true)
 
-	query = applyRoleFilter(query, options.Role, isPostgreSQL)
+	// query = applyRoleFilter(query, options.Role, isPostgreSQL)
 
 	if options.Inactive {
 		query = query.Where("u.DeleteAt != 0")
@@ -771,4 +771,45 @@ func (us SqlUserStore) Update(user *model.User, trustedUpdateData bool) (*model.
 	user.Sanitize(map[string]bool{})
 	oldUser.Sanitize(map[string]bool{})
 	return &model.UserUpdate{New: user, Old: oldUser}, nil
+}
+
+func (us SqlUserStore) UpdateFailedPasswordAttempts(userId string, attempts int) *model.AppError {
+	if _, err := us.GetMaster().Exec("UPDATE Users SET FailedAttempts = :FailedAttempts WHERE Id = :UserId", map[string]interface{}{"FailedAttempts": attempts, "UserId": userId}); err != nil {
+		return model.NewAppError("SqlUserStore.UpdateFailedPasswordAttempts", "store.sql_user.update_failed_pwd_attempts.app_error", nil, "user_id="+userId, http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+func (us SqlUserStore) GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, *model.AppError) {
+	query := us.usersQuery
+	if allowSignInWithUsername && allowSignInWithEmail {
+		query = query.Where("Username = lower(?) OR Email = lower(?)", loginId, loginId)
+	} else if allowSignInWithUsername {
+		query = query.Where("Username = lower(?)", loginId)
+	} else if allowSignInWithEmail {
+		query = query.Where("Email = lower(?)", loginId)
+	} else {
+		return nil, model.NewAppError("SqlUserStore.GetForLogin", "store.sql_user.get_for_login.app_error", nil, "", http.StatusInternalServerError)
+	}
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetForLogin", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	users := []*model.User{}
+	if _, err := us.GetReplica().Select(&users, queryString, args...); err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetForLogin", "store.sql_user.get_for_login.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	if len(users) == 0 {
+		return nil, model.NewAppError("SqlUserStore.GetForLogin", "store.sql_user.get_for_login.app_error", nil, "", http.StatusInternalServerError)
+	}
+
+	if len(users) > 1 {
+		return nil, model.NewAppError("SqlUserStore.GetForLogin", "store.sql_user.get_for_login.multiple_users", nil, "", http.StatusInternalServerError)
+	}
+
+	return users[0], nil
 }

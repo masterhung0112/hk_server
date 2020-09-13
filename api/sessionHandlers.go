@@ -13,6 +13,7 @@ func (api *API) ApiSessionRequired(h func(*web.Context, http.ResponseWriter, *ht
 		GetGlobalAppOptions: api.GetGlobalAppOptions,
 		HandleFunc:          h,
 		HandlerName:         web.GetHandlerName(h),
+		RequireSession:      true,
 	}
 
 	return handler

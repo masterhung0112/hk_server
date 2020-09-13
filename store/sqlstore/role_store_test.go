@@ -12,7 +12,9 @@ type RoleStoreTestSuite struct {
 }
 
 func TestRoleStoreTestSuite(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &RoleStoreTestSuite{})
+	StoreTestSuiteWithSqlSupplier(t, &RoleStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
 }
 
 func (s *RoleStoreTestSuite) TestRoleStoreSave() {

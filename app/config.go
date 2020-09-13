@@ -8,6 +8,7 @@ import (
 	"github.com/masterhung0112/go_server/config"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/utils"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -160,4 +161,13 @@ func (s *Server) regenerateClientConfig() {
 	s.clientConfig.Store(clientConfig)
 	s.limitedClientConfig.Store(limitedClientConfig)
 	s.clientConfigHash.Store(fmt.Sprintf("%x", md5.Sum(clientConfigJSON)))
+}
+
+func (a *App) GetCookieDomain() string {
+	if *a.Config().ServiceSettings.AllowCookiesForSubdomains {
+		if siteURL, err := url.Parse(*a.Config().ServiceSettings.SiteURL); err == nil {
+			return siteURL.Hostname()
+		}
+	}
+	return ""
 }

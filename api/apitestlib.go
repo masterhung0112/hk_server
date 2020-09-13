@@ -110,9 +110,11 @@ func Setup(tb testing.TB) *TestHelper {
 	if mainHelper == nil {
 		tb.SkipNow()
 	}
+
 	dbStore := mainHelper.GetStore()
 	dbStore.DropAllTables()
 	dbStore.MarkSystemRanUnitTests()
+
 	th := setupTestHelper(dbStore)
 	th.InitLogin()
 	return th
@@ -353,6 +355,7 @@ func (me *TestHelper) InitLogin() *TestHelper {
 	me.BasicUser.Password = "Pa$$word11"
 	me.BasicUser2.Password = "Pa$$word11"
 
+	//TODO: Open
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
