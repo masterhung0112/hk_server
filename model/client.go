@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,7 +18,13 @@ const (
 
 	HEADER_TOKEN  = "token"
 	HEADER_BEARER = "BEARER"
-	HEADER_AUTH   = "Authorization"
+  HEADER_AUTH   = "Authorization"
+
+  STATUS                    = "status"
+	STATUS_OK                 = "OK"
+	STATUS_FAIL               = "FAIL"
+	STATUS_UNHEALTHY          = "UNHEALTHY"
+	STATUS_REMOVE             = "REMOVE"
 
 	API_URL_SUFFIX = "/api/v1"
 )
@@ -167,4 +174,40 @@ func (c *Client) login(m map[string]string) (*User, *Response) {
 	c.AuthToken = r.Header.Get(HEADER_TOKEN)
 	c.AuthType = HEADER_BEARER
 	return UserFromJson(r.Body), BuildResponse(r)
+}
+
+// GetUsers returns a page of users on the system. Page counting starts at 0.
+func (c *Client) GetUsers(page int, perPage int, etag string) ([]*User, *Response) {
+	query := fmt.Sprintf("?page=%v&per_page=%v", page, perPage)
+	r, err := c.DoApiGet(c.GetUsersRoute()+query, etag)
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	return UserListFromJson(r.Body), BuildResponse(r)
+}
+
+// Logout terminates the current user's session.
+func (c *Client) Logout() (bool, *Response) {
+	r, err := c.DoApiPost("/users/logout", "")
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	c.AuthToken = ""
+	c.AuthType = HEADER_BEARER
+	return CheckStatusOK(r), BuildResponse(r)
+}
+
+// CheckStatusOK is a convenience function for checking the standard OK response
+// from the web service.
+func CheckStatusOK(r *http.Response) bool {
+	m := MapFromJson(r.Body)
+	defer closeBody(r)
+
+	if m != nil && m[STATUS] == STATUS_OK {
+		return true
+	}
+
+	return false
 }

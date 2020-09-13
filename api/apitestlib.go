@@ -208,3 +208,8 @@ func (me *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.
 		f(t, me.LocalClient)
 	})
 }
+
+func CheckUnauthorizedStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusUnauthorized, true)
+}

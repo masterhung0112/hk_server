@@ -201,10 +201,11 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 			profiles, err = c.App.GetUsersInChannelPage(inChannelId, c.Params.Page, c.Params.PerPage, c.IsSystemAdmin())
 		}
 	} else if len(inGroupId) > 0 {
-		if c.App.Srv().License() == nil || !*c.App.Srv().License().Features.LDAPGroups {
-			c.Err = model.NewAppError("Api4.getUsersInGroup", "api.ldap_groups.license_error", nil, "", http.StatusNotImplemented)
-			return
-		}
+    //TODO: Open this
+		// if c.App.Srv().License() == nil || !*c.App.Srv().License().Features.LDAPGroups {
+		// 	c.Err = model.NewAppError("Api4.getUsersInGroup", "api.ldap_groups.license_error", nil, "", http.StatusNotImplemented)
+		// 	return
+		// }
 
 		if !c.App.SessionHasPermissionTo(*c.App.Session(), model.PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS) {
 			c.SetPermissionError(model.PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS)
@@ -236,6 +237,6 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO: Open this
-	c.App.UpdateLastActivityAtIfNeeded(*c.App.Session())
+	// c.App.UpdateLastActivityAtIfNeeded(*c.App.Session())
 	w.Write([]byte(model.UserListToJson(profiles)))
 }

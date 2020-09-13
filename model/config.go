@@ -34,7 +34,9 @@ const (
 	TEAM_SETTINGS_DEFAULT_USER_STATUS_AWAY_TIMEOUT = 300
 
 	DIRECT_MESSAGE_ANY  = "any"
-	DIRECT_MESSAGE_TEAM = "team"
+  DIRECT_MESSAGE_TEAM = "team"
+
+  LOCAL_MODE_SOCKET_PATH = "/var/tmp/hungknow_local.socket"
 )
 
 type Config struct {
@@ -189,7 +191,8 @@ type ServiceSettings struct {
 	SiteURL            *string `restricted:"true"`
 	ConnectionSecurity *string `restricted:"true"`
 	ListenAddress      *string `restricted:"true"`
-	EnableDeveloper    *bool   `restricted:"true"`
+  EnableDeveloper    *bool   `restricted:"true"`
+  LocalModeSocketLocation                           *string
 }
 
 func (s *ServiceSettings) SetDefaults(isUpdate bool) {
@@ -211,6 +214,10 @@ func (s *ServiceSettings) SetDefaults(isUpdate bool) {
 
 	if s.ListenAddress == nil {
 		s.ListenAddress = NewString(SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS)
+  }
+
+  if s.LocalModeSocketLocation == nil {
+		s.LocalModeSocketLocation = NewString(LOCAL_MODE_SOCKET_PATH)
 	}
 }
 

@@ -328,3 +328,9 @@ func UserListToJson(u []*User) string {
 	b, _ := json.Marshal(u)
 	return string(b)
 }
+
+func UserListFromJson(data io.Reader) []*User {
+	var users []*User
+	json.NewDecoder(data).Decode(&users)
+	return users
+}
