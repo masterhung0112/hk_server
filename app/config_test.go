@@ -71,12 +71,12 @@ func TestClientConfigWithComputed(t *testing.T) {
 	//TODO: Open this
 	// mockPostStore := mocks.PostStore{}
 	// mockPostStore.On("GetMaxPostSize").Return(65535, nil)
-	// mockSystemStore := mocks.SystemStore{}
-	// mockSystemStore.On("GetByName", "UpgradedFromTE").Return(&model.System{Name: "UpgradedFromTE", Value: "false"}, nil)
-	// mockSystemStore.On("GetByName", "InstallationDate").Return(&model.System{Name: "InstallationDate", Value: "10"}, nil)
+	mockSystemStore := mocks.SystemStore{}
+	mockSystemStore.On("GetByName", "UpgradedFromTE").Return(&model.System{Name: "UpgradedFromTE", Value: "false"}, nil)
+	mockSystemStore.On("GetByName", "InstallationDate").Return(&model.System{Name: "InstallationDate", Value: "10"}, nil)
 	mockStore.On("User").Return(&mockUserStore)
 	// mockStore.On("Post").Return(&mockPostStore)
-	// mockStore.On("System").Return(&mockSystemStore)
+	mockStore.On("System").Return(&mockSystemStore)
 
 	config := th.App.ClientConfigWithComputed()
 	_, ok := config["NoAccounts"]
