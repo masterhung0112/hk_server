@@ -80,10 +80,10 @@ func initStores() {
 			Name:        "MySQL",
 			SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_MYSQL),
 		})
-		// StoreTypes = append(StoreTypes, &storeType{
-		// 	Name:        "PostgreSQL",
-		// 	SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_POSTGRES),
-		// })
+		StoreTypes = append(StoreTypes, &storeType{
+			Name:        "PostgreSQL",
+			SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_POSTGRES),
+		})
 	}
 
 	defer func() {
@@ -143,7 +143,7 @@ func StoreTestWithSqlSupplier(t *testing.T, f func(*testing.T, store.Store, stor
 	}
 }
 
-func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite) {
+func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, executeFunc func(t *testing.T, testSuite StoreTestBaseSuite)) {
 	for _, st := range StoreTypes {
 		st := st
 		t.Run(st.Name, func(t *testing.T) {
@@ -152,7 +152,8 @@ func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite) {
 			}
 			testSuite.SetStore(st.Store)
 			testSuite.SetSqlSupplier(st.SqlSupplier)
-			suite.Run(t, testSuite)
+			// suite.Run(t, testSuite)
+			executeFunc(t, testSuite)
 		})
 	}
 }

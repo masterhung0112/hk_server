@@ -42,7 +42,9 @@ type UserStoreGetAllProfilesTS struct {
 }
 
 func TestUserStoreGetAllProfilesTS(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetAllProfilesTS{})
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetAllProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
 }
 
 func (s *UserStoreGetAllProfilesTS) SetupSuite() {
@@ -239,7 +241,7 @@ func (s *UserStoreGetAllProfilesTS) TestFilterToActive() {
 	}, actual)
 }
 
-func (s *UserStoreGetAllProfilesTS) TryToFilterToActiveAndInactive() {
+func (s *UserStoreGetAllProfilesTS) TestTryToFilterToActiveAndInactive() {
 	actual, err := s.Store().User().GetAllProfiles(&model.UserGetOptions{
 		Page:     0,
 		PerPage:  10,

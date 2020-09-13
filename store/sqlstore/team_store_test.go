@@ -13,7 +13,9 @@ type TeamStoreTestSuite struct {
 }
 
 func TestTeamStoreTestSuite(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &TeamStoreTestSuite{})
+	StoreTestSuiteWithSqlSupplier(t, &TeamStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
 }
 
 // Each user should have a mention count of exactly 1 in the DB at this point.
