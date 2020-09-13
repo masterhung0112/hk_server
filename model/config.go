@@ -188,11 +188,14 @@ func (s *PasswordSettings) SetDefaults() {
 }
 
 type ServiceSettings struct {
-	SiteURL                 *string `restricted:"true"`
-	ConnectionSecurity      *string `restricted:"true"`
-	ListenAddress           *string `restricted:"true"`
-	EnableDeveloper         *bool   `restricted:"true"`
-	LocalModeSocketLocation *string
+	SiteURL                         *string `restricted:"true"`
+	ConnectionSecurity              *string `restricted:"true"`
+	ListenAddress                   *string `restricted:"true"`
+	EnableDeveloper                 *bool   `restricted:"true"`
+	LocalModeSocketLocation         *string
+	ExtendSessionLengthWithActivity *bool `access:"environment,write_restrictable"`
+	SessionIdleTimeoutInMinutes     *int  `access:"environment,write_restrictable"`
+	EnableUserAccessTokens          *bool `access:"integrations"`
 }
 
 func (s *ServiceSettings) SetDefaults(isUpdate bool) {
@@ -218,6 +221,19 @@ func (s *ServiceSettings) SetDefaults(isUpdate bool) {
 
 	if s.LocalModeSocketLocation == nil {
 		s.LocalModeSocketLocation = NewString(LOCAL_MODE_SOCKET_PATH)
+	}
+
+	// Must be manually enabled for existing installations.
+	if s.ExtendSessionLengthWithActivity == nil {
+		s.ExtendSessionLengthWithActivity = NewBool(!isUpdate)
+	}
+
+	if s.SessionIdleTimeoutInMinutes == nil {
+		s.SessionIdleTimeoutInMinutes = NewInt(43200)
+	}
+
+	if s.EnableUserAccessTokens == nil {
+		s.EnableUserAccessTokens = NewBool(false)
 	}
 }
 

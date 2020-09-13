@@ -12,6 +12,7 @@ func (api *API) ApiHandler(h func(*Context, http.ResponseWriter, *http.Request))
 		GetGlobalAppOptions: api.GetGlobalAppOptions,
 		HandleFunc:          h,
 		HandlerName:         web.GetHandlerName(h),
+		RequireSession:      false,
 	}
 	return handler
 }

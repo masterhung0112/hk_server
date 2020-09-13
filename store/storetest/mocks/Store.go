@@ -14,6 +14,22 @@ type Store struct {
 	mock.Mock
 }
 
+// Channel provides a mock function with given fields:
+func (_m *Store) Channel() store.ChannelStore {
+	ret := _m.Called()
+
+	var r0 store.ChannelStore
+	if rf, ok := ret.Get(0).(func() store.ChannelStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.ChannelStore)
+		}
+	}
+
+	return r0
+}
+
 // Close provides a mock function with given fields:
 func (_m *Store) Close() {
 	_m.Called()
@@ -39,6 +55,38 @@ func (_m *Store) Role() store.RoleStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.RoleStore)
+		}
+	}
+
+	return r0
+}
+
+// Scheme provides a mock function with given fields:
+func (_m *Store) Scheme() store.SchemeStore {
+	ret := _m.Called()
+
+	var r0 store.SchemeStore
+	if rf, ok := ret.Get(0).(func() store.SchemeStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.SchemeStore)
+		}
+	}
+
+	return r0
+}
+
+// Session provides a mock function with given fields:
+func (_m *Store) Session() store.SessionStore {
+	ret := _m.Called()
+
+	var r0 store.SessionStore
+	if rf, ok := ret.Get(0).(func() store.SessionStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.SessionStore)
 		}
 	}
 
@@ -87,6 +135,22 @@ func (_m *Store) User() store.UserStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.UserStore)
+		}
+	}
+
+	return r0
+}
+
+// UserAccessToken provides a mock function with given fields:
+func (_m *Store) UserAccessToken() store.UserAccessTokenStore {
+	ret := _m.Called()
+
+	var r0 store.UserAccessTokenStore
+	if rf, ok := ret.Get(0).(func() store.UserAccessTokenStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.UserAccessTokenStore)
 		}
 	}
 

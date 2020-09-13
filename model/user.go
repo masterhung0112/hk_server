@@ -394,3 +394,33 @@ func (u *User) DeepCopy() *User {
 	// }
 	return &copyUser
 }
+
+// Make sure you acually want to use this function. In context.go there are functions to check permissions
+// This function should not be used to check permissions.
+func IsInRole(userRoles string, inRole string) bool {
+	roles := strings.Split(userRoles, " ")
+
+	for _, r := range roles {
+		if r == inRole {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Make sure you acually want to use this function. In context.go there are functions to check permissions
+// This function should not be used to check permissions.
+func (u *User) IsInRole(inRole string) bool {
+	return IsInRole(u.Roles, inRole)
+}
+
+// Make sure you acually want to use this function. In context.go there are functions to check permissions
+// This function should not be used to check permissions.
+func (u *User) IsGuest() bool {
+	return IsInRole(u.Roles, SYSTEM_GUEST_ROLE_ID)
+}
+
+func (u *User) GetRawRoles() string {
+	return u.Roles
+}

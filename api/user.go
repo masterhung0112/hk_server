@@ -10,7 +10,8 @@ import (
 
 func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("", api.ApiHandler(createUser)).Methods("POST")
-	api.BaseRoutes.Users.Handle("", api.ApiHandler(getUsers)).Methods("GET")
+	api.BaseRoutes.Users.Handle("", api.ApiSessionRequired(getUsers)).Methods("GET")
+	api.BaseRoutes.Users.Handle("/logout", api.ApiHandler(logout)).Methods("POST")
 }
 
 func CreateUser(c *web.Context, w http.ResponseWriter, r *http.Request) {
@@ -239,4 +240,27 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	//TODO: Open this
 	// c.App.UpdateLastActivityAtIfNeeded(*c.App.Session())
 	w.Write([]byte(model.UserListToJson(profiles)))
+}
+
+func logout(c *Context, w http.ResponseWriter, r *http.Request) {
+	Logout(c, w, r)
+}
+
+func Logout(c *Context, w http.ResponseWriter, r *http.Request) {
+	//TODO: Open
+	// auditRec := c.MakeAuditRecord("Logout", audit.Fail)
+	// defer c.LogAuditRec(auditRec)
+	// c.LogAudit("")
+
+	c.RemoveSessionCookie(w, r)
+	if c.App.Session().Id != "" {
+		if err := c.App.RevokeSessionById(c.App.Session().Id); err != nil {
+			c.Err = err
+			return
+		}
+	}
+
+	//TODO: Open
+	// auditRec.Success()
+	ReturnStatusOK(w)
 }

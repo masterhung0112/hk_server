@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/masterhung0112/go_server/app"
+	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/utils"
 	"net/http"
 	"reflect"
@@ -13,6 +14,7 @@ type Handler struct {
 	GetGlobalAppOptions app.AppOptionCreator
 	HandleFunc          func(*Context, http.ResponseWriter, *http.Request)
 	HandlerName         string
+	RequireSession      bool
 }
 
 func GetHandlerName(h func(*Context, http.ResponseWriter, *http.Request)) string {
@@ -36,8 +38,42 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	c.Params = ParamsFromRequest(r)
 
-	// call the real handler
-	h.HandleFunc(c, w, r)
+	token, tokenLocation := app.ParseAuthTokenFromRequest(r)
+
+	if len(token) != 0 {
+		session, err := c.App.GetSession(token)
+		if err != nil {
+			// c.Log.Info("Invalid session", mlog.Err(err))
+			if err.StatusCode == http.StatusInternalServerError {
+				c.Err = err
+			} else if h.RequireSession {
+				c.RemoveSessionCookie(w, r)
+				c.Err = model.NewAppError("ServeHTTP", "api.context.session_expired.app_error", nil, "token="+token, http.StatusUnauthorized)
+			}
+		} else if !session.IsOAuth && tokenLocation == app.TokenLocationQueryString {
+			c.Err = model.NewAppError("ServeHTTP", "api.context.token_provided.app_error", nil, "token="+token, http.StatusUnauthorized)
+		} else {
+			c.App.SetSession(session)
+		}
+
+		// Rate limit by UserID
+		//TODO: Open
+		// if c.App.Srv().RateLimiter != nil && c.App.Srv().RateLimiter.UserIdRateLimit(c.App.Session().UserId, w) {
+		// 	return
+		// }
+
+		//TODO: Check
+		// h.checkCSRFToken(c, r, token, tokenLocation, session)
+	}
+
+	if c.Err == nil && h.RequireSession {
+		c.SessionRequired()
+	}
+
+	if c.Err == nil {
+		// call the real handler
+		h.HandleFunc(c, w, r)
+	}
 
 	// Handle errors that have occurred
 	if c.Err != nil {

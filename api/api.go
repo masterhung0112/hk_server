@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/masterhung0112/go_server/app"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/web"
 )
 
 type ApiRoutes struct {
@@ -35,3 +36,5 @@ func ApiInit(globalOptionsFunc app.AppOptionCreator, root *mux.Router) *API {
 
 	return api
 }
+
+var ReturnStatusOK = web.ReturnStatusOK
