@@ -1,3 +1,4 @@
 bin/
 .idea
 main.exe
+coverage_result

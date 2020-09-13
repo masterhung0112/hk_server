@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
+	"sync/atomic"
 
 	"github.com/mattermost/logr"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -19,6 +20,15 @@ const (
 	LevelWarn = "warn"
 	// Errors are messages about things we know are problems
 	LevelError = "error"
+)
+
+var (
+	// disableZap is set when Zap should be disabled and Logr used instead.
+	// This is needed for unit testing as Zap has no shutdown capabilities
+	// and holds file handles until process exit. Currently unit test create
+	// many server instances, and thus many Zap log files.
+	// This flag will be removed when Zap is permanently replaced.
+	disableZap int32
 )
 
 type Field = zapcore.Field
@@ -203,4 +213,22 @@ func NewLogger(config *LoggerConfiguration) *Logger {
 		zap.AddCaller(),
 	)
 	return logger
+}
+
+// DisableZap is called to disable Zap, and Logr will be used instead. Any Logger
+// instances created after this call will only use Logr.
+//
+// This is needed for unit testing as Zap has no shutdown capabilities
+// and holds file handles until process exit. Currently unit tests create
+// many server instances, and thus many Zap log file handles.
+//
+// This method will be removed when Zap is permanently replaced.
+func DisableZap() {
+	atomic.StoreInt32(&disableZap, 1)
+}
+
+// EnableZap re-enables Zap such that any Logger instances created after this
+// call will allow Zap targets.
+func EnableZap() {
+	atomic.StoreInt32(&disableZap, 0)
 }

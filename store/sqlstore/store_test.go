@@ -80,10 +80,10 @@ func initStores() {
 			Name:        "MySQL",
 			SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_MYSQL),
 		})
-		StoreTypes = append(StoreTypes, &storeType{
-			Name:        "PostgreSQL",
-			SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_POSTGRES),
-		})
+		// StoreTypes = append(StoreTypes, &storeType{
+		// 	Name:        "PostgreSQL",
+		// 	SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_POSTGRES),
+		// })
 	}
 
 	defer func() {
