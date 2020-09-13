@@ -3,6 +3,7 @@ package filesstore
 import (
 	"bytes"
 	"fmt"
+	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/utils"
 	"github.com/stretchr/testify/require"
@@ -33,12 +34,12 @@ func (s *FileBackendTestSuite) TestConnection() {
 func TestLocalFileBackendTestSuite(t *testing.T) {
 	// Setup a global logger to catch tests logging outside of app context
 	// The global logger will be stomped by apps initializing but that's fine for testing. Ideally this won't happen.
-	// mlog.InitGlobalLogger(mlog.NewLogger(&mlog.LoggerConfiguration{
-	// 	EnableConsole: true,
-	// 	ConsoleJson:   true,
-	// 	ConsoleLevel:  "error",
-	// 	EnableFile:    false,
-	// }))
+	mlog.InitGlobalLogger(mlog.NewLogger(&mlog.LoggerConfiguration{
+		EnableConsole: true,
+		ConsoleJson:   true,
+		ConsoleLevel:  "error",
+		EnableFile:    false,
+	}))
 
 	dir, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
@@ -89,7 +90,7 @@ func (s *FileBackendTestSuite) TestReadWriteFile() {
 	path := "tests/" + model.NewId()
 
 	written, err := s.backend.WriteFile(bytes.NewReader(b), path)
-	s.NotNil(err)
+	s.Require().Nil(err)
 	s.EqualValues(len(b), written, "expected given number of bytes to have been written")
 	defer s.backend.RemoveFile(path)
 

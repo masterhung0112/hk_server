@@ -12,7 +12,7 @@ import (
 )
 
 func setupConfigFile(t *testing.T, cfg *model.Config) (string, func()) {
-	os.Clearenv()
+	// os.Clearenv()
 	t.Helper()
 
 	tempDir, err := ioutil.TempDir("", "setupConfigFile")

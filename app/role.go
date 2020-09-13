@@ -77,3 +77,12 @@ func (a *App) CheckRolesExist(roleNames []string) *model.AppError {
 
 	return nil
 }
+
+func (a *App) GetAllRoles() ([]*model.Role, *model.AppError) {
+	roles, err := a.Srv().Store.Role().GetAll()
+	if err != nil {
+		return nil, model.NewAppError("GetAllRoles", "app.role.get_all.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return roles, nil
+}

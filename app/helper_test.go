@@ -57,16 +57,16 @@ func setupTestHelper(dbStore store.Store, tb testing.TB, configSet func(*model.C
 		LogBuffer: buffer,
 	}
 
-	// th.App.UpdateConfig(func(cfg *model.Config) { *cfg.TeamSettings.MaxUsersPerTeam = 50 })
+	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.TeamSettings.MaxUsersPerTeam = 50 })
 	// th.App.UpdateConfig(func(cfg *model.Config) { *cfg.RateLimitSettings.Enable = false })
-	// prevListenAddress := *th.App.Config().ServiceSettings.ListenAddress
-	// th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = ":0" })
+	prevListenAddress := *th.App.Config().ServiceSettings.ListenAddress
+	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = ":0" })
 	// Start HTTP Server and other stuff
 	if err := th.Server.Start(); err != nil {
 		panic(err)
 	}
 
-	// th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = prevListenAddress })
+	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = prevListenAddress })
 
 	// th.App.Srv().SearchEngine = mainHelper.SearchEngine
 

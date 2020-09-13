@@ -255,7 +255,7 @@ type SchemeStore interface {
 	Save(scheme *model.Scheme) (*model.Scheme, error)
 	// Get(schemeId string) (*model.Scheme, error)
 	// GetByName(schemeName string) (*model.Scheme, error)
-	// GetAllPage(scope string, offset int, limit int) ([]*model.Scheme, error)
+	GetAllPage(scope string, offset int, limit int) ([]*model.Scheme, error)
 	// Delete(schemeId string) (*model.Scheme, error)
 	// PermanentDeleteAll() error
 	// CountByScope(scope string) (int64, error)
@@ -274,7 +274,7 @@ type SessionStore interface {
 	// PermanentDeleteSessionsByUser(teamId string) error
 	// UpdateExpiresAt(sessionId string, time int64) error
 	// UpdateLastActivityAt(sessionId string, time int64) error
-	// UpdateRoles(userId string, roles string) (string, error)
+	UpdateRoles(userId string, roles string) (string, error)
 	// UpdateDeviceId(id string, deviceId string, expiresAt int64) (string, error)
 	// UpdateProps(session *model.Session) error
 	// AnalyticsSessionCount() (int64, error)

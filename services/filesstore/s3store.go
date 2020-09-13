@@ -87,11 +87,13 @@ func (b *S3FileBackend) TestConnection() *model.AppError {
 func (b *S3FileBackend) WriteFile(fr io.Reader, path string) (int64, *model.AppError) {
 	s3Client, err := b.s3New()
 	if err != nil {
-		return 0, model.NewAppError("WriteFile", "api.file.write_file.s3.app_error", nil, err.Error(), http.StatusInternalServerError)
+		return 0, model.NewAppError("WriteFile", "api.file.write_file.s3.connection_fail", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	var contentType string
 	path = filepath.Join(b.pathPrefix, path)
+	// On Windows, filepath.join return "\", we must replace "\" to "/"
+	path = filepath.ToSlash(path)
 	if ext := filepath.Ext(path); model.IsFileExtImage(ext) {
 		contentType = model.GetImageMimeType(ext)
 	} else {
@@ -102,7 +104,7 @@ func (b *S3FileBackend) WriteFile(fr io.Reader, path string) (int64, *model.AppE
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(fr)
 	if err != nil {
-		return 0, model.NewAppError("WriteFile", "api.file.write_file.s3.app_error", nil, err.Error(), http.StatusInternalServerError)
+		return 0, model.NewAppError("WriteFile", "api.file.write_file.s3.read_buf_fail", nil, err.Error(), http.StatusInternalServerError)
 	}
 	info, err := s3Client.PutObject(context.Background(), b.bucket, path, &buf, int64(buf.Len()), options)
 	if err != nil {
@@ -129,6 +131,8 @@ func (b *S3FileBackend) RemoveFile(path string) *model.AppError {
 	}
 
 	path = filepath.Join(b.pathPrefix, path)
+	// On Windows, filepath.join return "\", we must replace "\" to "/"
+	path = filepath.ToSlash(path)
 	if err := s3Client.RemoveObject(context.Background(), b.bucket, path, s3.RemoveObjectOptions{
 		GovernanceBypass: true,
 		VersionID:        "",
@@ -146,6 +150,8 @@ func (b *S3FileBackend) ReadFile(path string) ([]byte, *model.AppError) {
 	}
 
 	path = filepath.Join(b.pathPrefix, path)
+	// On Windows, filepath.join return "\", we must replace "\" to "/"
+	path = filepath.ToSlash(path)
 	minioObject, err := s3Client.GetObject(context.Background(), b.bucket, path, s3.GetObjectOptions{})
 	if err != nil {
 		return nil, model.NewAppError("ReadFile", "api.file.read_file.s3.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -166,6 +172,8 @@ func (b *S3FileBackend) Reader(path string) (ReadCloseSeeker, *model.AppError) {
 	}
 
 	path = filepath.Join(b.pathPrefix, path)
+	// On Windows, filepath.join return "\", we must replace "\" to "/"
+	path = filepath.ToSlash(path)
 	minioObject, err := s3Client.GetObject(context.Background(), b.bucket, path, s3.GetObjectOptions{})
 	if err != nil {
 		return nil, model.NewAppError("Reader", "api.file.reader.s3.app_error", nil, err.Error(), http.StatusInternalServerError)

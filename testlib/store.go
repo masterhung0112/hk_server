@@ -5,6 +5,7 @@ import (
 	"github.com/masterhung0112/go_server/store"
 	"github.com/masterhung0112/go_server/store/storetest/mocks"
 	"github.com/stretchr/testify/mock"
+	"net/http"
 	"strconv"
 )
 
@@ -19,27 +20,27 @@ func (s *TestStore) Close() {
 func GetMockStoreForSetupFunctions() *mocks.Store {
 	mockStore := mocks.Store{}
 	systemStore := mocks.SystemStore{}
-	// systemStore.On("GetByName", "UpgradedFromTE").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
-	// systemStore.On("GetByName", "AsymmetricSigningKey").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
-	// systemStore.On("GetByName", "PostActionCookieSecret").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
+	systemStore.On("GetByName", "UpgradedFromTE").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
+	systemStore.On("GetByName", "AsymmetricSigningKey").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
+	systemStore.On("GetByName", "PostActionCookieSecret").Return(nil, model.NewAppError("FakeError", "app.system.get_by_name.app_error", nil, "", http.StatusInternalServerError))
 	systemStore.On("GetByName", "InstallationDate").Return(&model.System{Name: "InstallationDate", Value: strconv.FormatInt(model.GetMillis(), 10)}, nil)
-	// systemStore.On("GetByName", "FirstServerRunTimestamp").Return(&model.System{Name: "FirstServerRunTimestamp", Value: "10"}, nil)
-	// systemStore.On("GetByName", "AdvancedPermissionsMigrationComplete").Return(&model.System{Name: "AdvancedPermissionsMigrationComplete", Value: "true"}, nil)
-	// systemStore.On("GetByName", "EmojisPermissionsMigrationComplete").Return(&model.System{Name: "EmojisPermissionsMigrationComplete", Value: "true"}, nil)
-	// systemStore.On("GetByName", "GuestRolesCreationMigrationComplete").Return(&model.System{Name: "GuestRolesCreationMigrationComplete", Value: "true"}, nil)
-	// systemStore.On("GetByName", "SystemConsoleRolesCreationMigrationComplete").Return(&model.System{Name: "SystemConsoleRolesCreationMigrationComplete", Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_EMOJI_PERMISSIONS_SPLIT).Return(&model.System{Name: model.MIGRATION_KEY_EMOJI_PERMISSIONS_SPLIT, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_WEBHOOK_PERMISSIONS_SPLIT).Return(&model.System{Name: model.MIGRATION_KEY_WEBHOOK_PERMISSIONS_SPLIT, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_LIST_JOIN_PUBLIC_PRIVATE_TEAMS).Return(&model.System{Name: model.MIGRATION_KEY_LIST_JOIN_PUBLIC_PRIVATE_TEAMS, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_REMOVE_PERMANENT_DELETE_USER).Return(&model.System{Name: model.MIGRATION_KEY_REMOVE_PERMANENT_DELETE_USER, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_ADD_BOT_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_ADD_BOT_PERMISSIONS, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_APPLY_CHANNEL_MANAGE_DELETE_TO_CHANNEL_USER).Return(&model.System{Name: model.MIGRATION_KEY_APPLY_CHANNEL_MANAGE_DELETE_TO_CHANNEL_USER, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_REMOVE_CHANNEL_MANAGE_DELETE_FROM_TEAM_USER).Return(&model.System{Name: model.MIGRATION_KEY_REMOVE_CHANNEL_MANAGE_DELETE_FROM_TEAM_USER, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_VIEW_MEMBERS_NEW_PERMISSION).Return(&model.System{Name: model.MIGRATION_KEY_VIEW_MEMBERS_NEW_PERMISSION, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_ADD_MANAGE_GUESTS_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_ADD_MANAGE_GUESTS_PERMISSIONS, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_CHANNEL_MODERATIONS_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_CHANNEL_MODERATIONS_PERMISSIONS, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_ADD_USE_GROUP_MENTIONS_PERMISSION).Return(&model.System{Name: model.MIGRATION_KEY_ADD_USE_GROUP_MENTIONS_PERMISSION, Value: "true"}, nil)
-	// systemStore.On("GetByName", model.MIGRATION_KEY_ADD_SYSTEM_CONSOLE_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_ADD_SYSTEM_CONSOLE_PERMISSIONS, Value: "true"}, nil)
+	systemStore.On("GetByName", "FirstServerRunTimestamp").Return(&model.System{Name: "FirstServerRunTimestamp", Value: "10"}, nil)
+	systemStore.On("GetByName", "AdvancedPermissionsMigrationComplete").Return(&model.System{Name: "AdvancedPermissionsMigrationComplete", Value: "true"}, nil)
+	systemStore.On("GetByName", "EmojisPermissionsMigrationComplete").Return(&model.System{Name: "EmojisPermissionsMigrationComplete", Value: "true"}, nil)
+	systemStore.On("GetByName", "GuestRolesCreationMigrationComplete").Return(&model.System{Name: "GuestRolesCreationMigrationComplete", Value: "true"}, nil)
+	systemStore.On("GetByName", "SystemConsoleRolesCreationMigrationComplete").Return(&model.System{Name: "SystemConsoleRolesCreationMigrationComplete", Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_EMOJI_PERMISSIONS_SPLIT).Return(&model.System{Name: model.MIGRATION_KEY_EMOJI_PERMISSIONS_SPLIT, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_WEBHOOK_PERMISSIONS_SPLIT).Return(&model.System{Name: model.MIGRATION_KEY_WEBHOOK_PERMISSIONS_SPLIT, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_LIST_JOIN_PUBLIC_PRIVATE_TEAMS).Return(&model.System{Name: model.MIGRATION_KEY_LIST_JOIN_PUBLIC_PRIVATE_TEAMS, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_REMOVE_PERMANENT_DELETE_USER).Return(&model.System{Name: model.MIGRATION_KEY_REMOVE_PERMANENT_DELETE_USER, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_ADD_BOT_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_ADD_BOT_PERMISSIONS, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_APPLY_CHANNEL_MANAGE_DELETE_TO_CHANNEL_USER).Return(&model.System{Name: model.MIGRATION_KEY_APPLY_CHANNEL_MANAGE_DELETE_TO_CHANNEL_USER, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_REMOVE_CHANNEL_MANAGE_DELETE_FROM_TEAM_USER).Return(&model.System{Name: model.MIGRATION_KEY_REMOVE_CHANNEL_MANAGE_DELETE_FROM_TEAM_USER, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_VIEW_MEMBERS_NEW_PERMISSION).Return(&model.System{Name: model.MIGRATION_KEY_VIEW_MEMBERS_NEW_PERMISSION, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_ADD_MANAGE_GUESTS_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_ADD_MANAGE_GUESTS_PERMISSIONS, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_CHANNEL_MODERATIONS_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_CHANNEL_MODERATIONS_PERMISSIONS, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_ADD_USE_GROUP_MENTIONS_PERMISSION).Return(&model.System{Name: model.MIGRATION_KEY_ADD_USE_GROUP_MENTIONS_PERMISSION, Value: "true"}, nil)
+	systemStore.On("GetByName", model.MIGRATION_KEY_ADD_SYSTEM_CONSOLE_PERMISSIONS).Return(&model.System{Name: model.MIGRATION_KEY_ADD_SYSTEM_CONSOLE_PERMISSIONS, Value: "true"}, nil)
 	systemStore.On("Get").Return(make(model.StringMap), nil)
 	systemStore.On("Save", mock.AnythingOfType("*model.System")).Return(nil)
 
