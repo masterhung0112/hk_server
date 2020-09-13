@@ -1,12 +1,12 @@
 package main
 
 import (
-	"path/filepath"
-	"github.com/masterhung0112/go_server/model"
-	"io/ioutil"
-	"testing"
 	"github.com/masterhung0112/go_server/api"
+	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/testlib"
+	"io/ioutil"
+	"path/filepath"
+	"testing"
 )
 
 var mainHelper *testlib.MainHelper

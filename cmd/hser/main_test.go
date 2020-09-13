@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"github.com/masterhung0112/go_server/api"
 	"github.com/masterhung0112/go_server/mlog"
-	"flag"
 	"github.com/masterhung0112/go_server/testlib"
 	"os"
 	"testing"

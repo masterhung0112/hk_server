@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -24,8 +25,8 @@ func newSqlUserStore(sqlStore SqlStore) store.UserStore {
 
 	// note: we are providing field names explicitly here to maintain order of columns (needed when using raw queries)
 	us.usersQuery = us.getQueryBuilder().
-		// Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.AuthData", "u.AuthService", "u.Email", "u.EmailVerified", "u.Nickname", "u.FirstName", "u.LastName", "u.Position", "u.Roles", "u.AllowMarketing", "u.Props", "u.NotifyProps", "u.LastPasswordUpdate", "u.LastPictureUpdate", "u.FailedAttempts", "u.Locale", "u.Timezone", "u.MfaActive", "u.MfaSecret",
-		Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.Email", "u.EmailVerified", "u.FirstName", "u.LastName", "u.Roles"). // "b.UserId IS NOT NULL AS IsBot", "COALESCE(b.Description, '') AS BotDescription", "COALESCE(b.LastIconUpdate, 0) AS BotLastIconUpdate"
+		Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.AuthData", "u.AuthService", "u.Email", "u.EmailVerified", "u.Nickname", "u.FirstName", "u.LastName", "u.Position", "u.Roles", "u.AllowMarketing", "u.Props", "u.NotifyProps", "u.LastPasswordUpdate", "u.LastPictureUpdate", "u.FailedAttempts", "u.Locale", "u.Timezone", "u.MfaActive", "u.MfaSecret").
+		// "b.UserId IS NOT NULL AS IsBot", "COALESCE(b.Description, '') AS BotDescription", "COALESCE(b.LastIconUpdate, 0) AS BotLastIconUpdate").
 		From("Users u")
 	// LeftJoin("Bots b ON ( b.UserId = u.Id )")
 
@@ -37,19 +38,19 @@ func newSqlUserStore(sqlStore SqlStore) store.UserStore {
 		table.ColMap("Id").SetMaxSize(26)
 		table.ColMap("Username").SetMaxSize(64).SetUnique(true)
 		table.ColMap("Password").SetMaxSize(128)
-		// table.ColMap("AuthData").SetMaxSize(128).SetUnique(true)
-		// table.ColMap("AuthService").SetMaxSize(32)
+		table.ColMap("AuthData").SetMaxSize(128).SetUnique(true)
+		table.ColMap("AuthService").SetMaxSize(32)
 		table.ColMap("Email").SetMaxSize(128).SetUnique(true)
-		// table.ColMap("Nickname").SetMaxSize(64)
+		table.ColMap("Nickname").SetMaxSize(64)
 		table.ColMap("FirstName").SetMaxSize(64)
 		table.ColMap("LastName").SetMaxSize(64)
 		table.ColMap("Roles").SetMaxSize(256)
-		// table.ColMap("Props").SetMaxSize(4000)
-		// table.ColMap("NotifyProps").SetMaxSize(2000)
-		// table.ColMap("Locale").SetMaxSize(5)
-		// table.ColMap("MfaSecret").SetMaxSize(128)
-		// table.ColMap("Position").SetMaxSize(128)
-		// table.ColMap("Timezone").SetMaxSize(256)
+		table.ColMap("Props").SetMaxSize(4000)
+		table.ColMap("NotifyProps").SetMaxSize(2000)
+		table.ColMap("Locale").SetMaxSize(5)
+		table.ColMap("MfaSecret").SetMaxSize(128)
+		table.ColMap("Position").SetMaxSize(128)
+		table.ColMap("Timezone").SetMaxSize(256)
 	}
 
 	return us
@@ -117,30 +118,29 @@ func (us SqlUserStore) Get(id string) (*model.User, *model.AppError) {
 	row := us.GetReplica().Db.QueryRow(queryString, args...)
 
 	var user model.User
-	// var props, notifyProps, timezone []byte
+	var props, notifyProps, timezone []byte
 	err = row.Scan(&user.Id, &user.CreateAt, &user.UpdateAt, &user.DeleteAt, &user.Username,
-		// &user.Password, &user.AuthData, &user.AuthService, &user.Email, &user.EmailVerified,
-		// &user.Nickname, &user.FirstName, &user.LastName, &user.Position, &user.Roles,
-		// &user.AllowMarketing, &props, &notifyProps, &user.LastPasswordUpdate, &user.LastPictureUpdate,
-		// &user.FailedAttempts, &user.Locale, &timezone, &user.MfaActive, &user.MfaSecret,
-		&user.Password, &user.Email, &user.EmailVerified,
-		&user.FirstName, &user.LastName, &user.Roles)
+		&user.Password, &user.AuthData, &user.AuthService, &user.Email, &user.EmailVerified,
+		&user.Nickname, &user.FirstName, &user.LastName, &user.Position, &user.Roles,
+		&user.AllowMarketing, &props, &notifyProps, &user.LastPasswordUpdate, &user.LastPictureUpdate,
+		&user.FailedAttempts, &user.Locale, &timezone, &user.MfaActive, &user.MfaSecret)
+	// &user.IsBot, &user.BotDescription, &user.BotLastIconUpdate)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, failure(err, store.MISSING_ACCOUNT_ERROR, http.StatusNotFound)
 		}
 		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
 	}
-	//TODO: open
-	// if err = json.Unmarshal(props, &user.Props); err != nil {
-	// 	return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
-	// }
-	// if err = json.Unmarshal(notifyProps, &user.NotifyProps); err != nil {
-	// 	return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
-	// }
-	// if err = json.Unmarshal(timezone, &user.Timezone); err != nil {
-	// 	return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
-	// }
+
+	if err = json.Unmarshal(props, &user.Props); err != nil {
+		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	}
+	if err = json.Unmarshal(notifyProps, &user.NotifyProps); err != nil {
+		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	}
+	if err = json.Unmarshal(timezone, &user.Timezone); err != nil {
+		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+	}
 
 	return &user, nil
 }
@@ -688,6 +688,7 @@ func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) ([]*model.U
 		return nil, model.NewAppError("SqlUserStore.GetAllProfiles", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
+	fmt.Println(queryString)
 	var users []*model.User
 	if _, err := us.GetReplica().Select(&users, queryString, args...); err != nil {
 		return nil, model.NewAppError("SqlUserStore.GetAllProfiles", "store.sql_user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)

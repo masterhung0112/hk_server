@@ -146,3 +146,36 @@ func (r *Role) IsValidWithoutId() bool {
 
 	return true
 }
+
+func MakeDefaultRoles() map[string]*Role {
+	roles := make(map[string]*Role)
+
+	roles[SYSTEM_USER_ROLE_ID] = &Role{
+		Name:        "system_user",
+		DisplayName: "authentication.roles.global_user.name",
+		Description: "authentication.roles.global_user.description",
+		Permissions: []string{
+			// PERMISSION_LIST_PUBLIC_TEAMS.Id,
+			// PERMISSION_JOIN_PUBLIC_TEAMS.Id,
+			// PERMISSION_CREATE_DIRECT_CHANNEL.Id,
+			// PERMISSION_CREATE_GROUP_CHANNEL.Id,
+			PERMISSION_VIEW_MEMBERS.Id,
+		},
+		SchemeManaged: true,
+		BuiltIn:       true,
+	}
+
+	roles[SYSTEM_GUEST_ROLE_ID] = &Role{
+		Name:        "system_guest",
+		DisplayName: "authentication.roles.global_guest.name",
+		Description: "authentication.roles.global_guest.description",
+		Permissions: []string{
+			// PERMISSION_CREATE_DIRECT_CHANNEL.Id,
+			// PERMISSION_CREATE_GROUP_CHANNEL.Id,
+		},
+		SchemeManaged: true,
+		BuiltIn:       true,
+	}
+
+	return roles
+}

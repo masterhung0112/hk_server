@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -50,6 +51,8 @@ type Server struct {
 
 	goroutineCount      int32
 	goroutineExitSignal chan struct{}
+
+	AppInitializedOnce sync.Once
 }
 
 // Global app options that should be applied to apps created by this server

@@ -34,7 +34,9 @@ func (a *App) Srv() *Server {
 }
 
 func (a *App) InitServer() {
-	//TODO: Add implementation
+	a.srv.AppInitializedOnce.Do(func() {
+		a.DoAppMigrations()
+	})
 }
 
 func (a *App) SetServer(srv *Server) {

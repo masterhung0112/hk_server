@@ -194,7 +194,7 @@ func (s *UserStoreGetAllProfilesTS) TestFilterToSystemAdminRole() {
 	})
 	s.Require().Nil(err)
 	s.Require().Equal([]*model.User{
-		sanitized(s.u1),
+		sanitized(s.u5),
 		sanitized(s.u6),
 	}, actual)
 }

@@ -72,17 +72,16 @@ func setupTestHelper(dbStore store.Store) *TestHelper {
 	}
 
 	// Initialize the router URL
-  ApiInit(th.Server.AppOptions, th.App.Srv().Router)
-  prevListenAddress := *th.App.Config().ServiceSettings.ListenAddress
+	ApiInit(th.Server.AppOptions, th.App.Srv().Router)
+	prevListenAddress := *th.App.Config().ServiceSettings.ListenAddress
 	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = ":0" })
 
 	// Start HTTP Server and other stuff
 	if err := th.Server.Start(); err != nil {
 		panic(err)
-  }
+	}
 
-  th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = prevListenAddress })
-
+	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = prevListenAddress })
 
 	// Disable strict password requirements for test
 	th.App.UpdateConfig(func(cfg *model.Config) {
@@ -330,22 +329,35 @@ func (me *TestHelper) InitLogin() *TestHelper {
 
 	// create users once and cache them because password hashing is slow
 	initBasicOnce.Do(func() {
+		var err *model.AppError = nil
 		me.SystemAdminUser = me.CreateUser()
 		me.App.UpdateUserRoles(me.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
-		me.SystemAdminUser, _ = me.App.GetUser(me.SystemAdminUser.Id)
+		me.SystemAdminUser, err = me.App.GetUser(me.SystemAdminUser.Id)
+		if err != nil {
+			panic(err)
+		}
 		userCache.SystemAdminUser = me.SystemAdminUser.DeepCopy()
 
 		me.TeamAdminUser = me.CreateUser()
 		me.App.UpdateUserRoles(me.TeamAdminUser.Id, model.SYSTEM_USER_ROLE_ID, false)
-		me.TeamAdminUser, _ = me.App.GetUser(me.TeamAdminUser.Id)
+		me.TeamAdminUser, err = me.App.GetUser(me.TeamAdminUser.Id)
+		if err != nil {
+			panic(err)
+		}
 		userCache.TeamAdminUser = me.TeamAdminUser.DeepCopy()
 
 		me.BasicUser = me.CreateUser()
-		me.BasicUser, _ = me.App.GetUser(me.BasicUser.Id)
+		me.BasicUser, err = me.App.GetUser(me.BasicUser.Id)
+		if err != nil {
+			panic(err)
+		}
 		userCache.BasicUser = me.BasicUser.DeepCopy()
 
 		me.BasicUser2 = me.CreateUser()
-		me.BasicUser2, _ = me.App.GetUser(me.BasicUser2.Id)
+		me.BasicUser2, err = me.App.GetUser(me.BasicUser2.Id)
+		if err != nil {
+			panic(err)
+		}
 		userCache.BasicUser2 = me.BasicUser2.DeepCopy()
 	})
 	// restore cached users

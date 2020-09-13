@@ -22,8 +22,8 @@ const (
 	IMAGE_DRIVER_LOCAL = "local"
 	IMAGE_DRIVER_S3    = "s3"
 
-	MINIO_ACCESS_KEY = "minioadmin"
-	MINIO_SECRET_KEY = "minioadmin"
+	MINIO_ACCESS_KEY = "minioaccesskey"
+	MINIO_SECRET_KEY = "miniosecretkey"
 	MINIO_BUCKET     = "hungknow-test"
 
 	FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
@@ -57,6 +57,11 @@ const (
 	EMAIL_NOTIFICATION_CONTENTS_GENERIC = "generic"
 
 	SERVICE_SETTINGS_DEFAULT_MAX_LOGIN_ATTEMPTS = 10
+
+	PERMISSIONS_ALL           = "all"
+	PERMISSIONS_CHANNEL_ADMIN = "channel_admin"
+	PERMISSIONS_TEAM_ADMIN    = "team_admin"
+	PERMISSIONS_SYSTEM_ADMIN  = "system_admin"
 )
 
 type Config struct {
