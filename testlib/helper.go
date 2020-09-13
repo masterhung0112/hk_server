@@ -1,8 +1,8 @@
 package testlib
 
 import (
-	"github.com/masterhung0112/go_server/mlog"
 	"flag"
+	"github.com/masterhung0112/go_server/mlog"
 	"log"
 	"os"
 	"testing"
@@ -32,9 +32,9 @@ type HelperOptions struct {
 
 func NewMainHelperWithOptions(options *HelperOptions) *MainHelper {
 	var mainHelper MainHelper
-  flag.Parse()
+	flag.Parse()
 
-  // Setup a global logger to catch tests logging outside of app context
+	// Setup a global logger to catch tests logging outside of app context
 	// The global logger will be stomped by apps initializing but that's fine for testing.
 	// Ideally this won't happen.
 	mlog.InitGlobalLogger(mlog.NewLogger(&mlog.LoggerConfiguration{

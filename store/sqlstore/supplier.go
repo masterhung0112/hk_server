@@ -23,8 +23,12 @@ import (
 )
 
 type SqlSupplierStores struct {
-  user                store.UserStore
-  system              store.SystemStore
+	team    store.TeamStore
+	user    store.UserStore
+	system  store.SystemStore
+	role    store.RoleStore
+	scheme  store.SchemeStore
+	channel store.ChannelStore
 }
 
 type SqlSupplier struct {
@@ -255,8 +259,12 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.initConnection()
 
 	// Create tables if necessary
-  supplier.stores.user = newSqlUserStore(supplier)
-  supplier.stores.system = newSqlSystemStore(supplier)
+	supplier.stores.team = newSqlTeamStore(supplier)
+	supplier.stores.user = newSqlUserStore(supplier)
+	supplier.stores.system = newSqlSystemStore(supplier)
+	supplier.stores.role = newSqlRoleStore(supplier)
+	supplier.stores.scheme = newSqlSchemeStore(supplier)
+	supplier.stores.channel = newSqlChannelStore(supplier)
 
 	err := supplier.GetMaster().CreateTablesIfNotExists()
 	if err != nil {
@@ -292,4 +300,20 @@ func IsUniqueConstraintError(err error, indexName []string) bool {
 
 func (ss *SqlSupplier) System() store.SystemStore {
 	return ss.stores.system
+}
+
+func (ss *SqlSupplier) Team() store.TeamStore {
+	return ss.stores.team
+}
+
+func (ss *SqlSupplier) Role() store.RoleStore {
+	return ss.stores.role
+}
+
+func (ss *SqlSupplier) Scheme() store.SchemeStore {
+	return ss.stores.scheme
+}
+
+func (ss *SqlSupplier) Channel() store.ChannelStore {
+	return ss.stores.channel
 }

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -264,5 +265,48 @@ func GetImageMimeType(ext string) string {
 		return "image"
 	} else {
 		return IMAGE_MIME_TYPES[ext]
+	}
+}
+
+func AsStringBoolMap(list []string) map[string]bool {
+	listMap := map[string]bool{}
+	for _, p := range list {
+		listMap[p] = true
+	}
+	return listMap
+}
+
+func IsValidChannelIdentifier(s string) bool {
+
+	if !IsValidAlphaNumHyphenUnderscore(s, true) {
+		return false
+	}
+
+	if len(s) < CHANNEL_NAME_MIN_LENGTH {
+		return false
+	}
+
+	return true
+}
+
+func IsValidAlphaNumHyphenUnderscore(s string, withFormat bool) bool {
+	if withFormat {
+		validAlphaNumHyphenUnderscore := regexp.MustCompile(`^[a-z0-9]+([a-z\-\_0-9]+|(__)?)[a-z0-9]+$`)
+		return validAlphaNumHyphenUnderscore.MatchString(s)
+	}
+
+	validSimpleAlphaNumHyphenUnderscore := regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`)
+	return validSimpleAlphaNumHyphenUnderscore.MatchString(s)
+}
+
+// MapFromJson will decode the key/value pair map
+func MapFromJson(data io.Reader) map[string]string {
+	decoder := json.NewDecoder(data)
+
+	var objmap map[string]string
+	if err := decoder.Decode(&objmap); err != nil {
+		return make(map[string]string)
+	} else {
+		return objmap
 	}
 }

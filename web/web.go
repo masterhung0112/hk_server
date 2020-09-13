@@ -2,10 +2,10 @@ package web
 
 import (
 	"github.com/masterhung0112/go_server/services/configservice"
+	"github.com/masterhung0112/go_server/utils"
 	"net/http"
 	"path"
 	"strings"
-	"github.com/masterhung0112/go_server/utils"
 )
 
 func IsApiCall(config configservice.ConfigService, r *http.Request) bool {

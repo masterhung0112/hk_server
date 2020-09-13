@@ -1,14 +1,14 @@
 package filesstore
 
 import (
+	"bytes"
+	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/go_server/model"
+	"io"
 	"io/ioutil"
 	"net/http"
-	"github.com/masterhung0112/go_server/mlog"
 	"os"
-	"io"
 	"path/filepath"
-	"bytes"
-	"github.com/masterhung0112/go_server/model"
 )
 
 const (
@@ -20,13 +20,13 @@ type LocalFileBackend struct {
 }
 
 func (b *LocalFileBackend) TestConnection() *model.AppError {
-  f := bytes.NewReader([]byte("testingwrite"))
-  if _, err := writeFileLocally(f, filepath.Join(b.directory, TEST_FILE_PATH)); err != nil{
+	f := bytes.NewReader([]byte("testingwrite"))
+	if _, err := writeFileLocally(f, filepath.Join(b.directory, TEST_FILE_PATH)); err != nil {
 		return model.NewAppError("TestFileConnection", "api.file.test_connection.local.connection.app_error", nil, err.Error(), http.StatusInternalServerError)
-  }
-  os.Remove(filepath.Join(b.directory, TEST_FILE_PATH))
+	}
+	os.Remove(filepath.Join(b.directory, TEST_FILE_PATH))
 	mlog.Debug("Able to write files to local storage.")
-  return nil
+	return nil
 }
 
 func (b *LocalFileBackend) WriteFile(fr io.Reader, path string) (int64, *model.AppError) {
@@ -34,11 +34,11 @@ func (b *LocalFileBackend) WriteFile(fr io.Reader, path string) (int64, *model.A
 }
 
 func writeFileLocally(fr io.Reader, path string) (int64, *model.AppError) {
-  if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
-    directory, _ := filepath.Abs(filepath.Dir(path))
+	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
+		directory, _ := filepath.Abs(filepath.Dir(path))
 		return 0, model.NewAppError("WriteFile", "api.file.write_file_locally.create_dir.app_error", nil, "directory="+directory+", err="+err.Error(), http.StatusInternalServerError)
-  }
-  fw, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	}
+	fw, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return 0, model.NewAppError("WriteFile", "api.file.write_file_locally.writing.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}

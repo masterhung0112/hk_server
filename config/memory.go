@@ -2,16 +2,15 @@ package config
 
 import (
 	"bytes"
-	"io/ioutil"
-	"github.com/pkg/errors"
 	"github.com/masterhung0112/go_server/model"
-
+	"github.com/pkg/errors"
+	"io/ioutil"
 )
 
 type MemoryStore struct {
-  commonStore
+	commonStore
 
-  allowEnvironmentOverrides bool
+	allowEnvironmentOverrides bool
 	validate                  bool
 	files                     map[string][]byte
 	savedConfig               *model.Config
@@ -32,7 +31,7 @@ func NewMemoryStore() (*MemoryStore, error) {
 
 // NewMemoryStoreWithOptions creates a new MemoryStore instance.
 func NewMemoryStoreWithOptions(options *MemoryStoreOptions) (*MemoryStore, error) {
-  savedConfig := options.InitialConfig
+	savedConfig := options.InitialConfig
 	if savedConfig == nil {
 		savedConfig = &model.Config{}
 		savedConfig.SetDefaults()
@@ -41,24 +40,23 @@ func NewMemoryStoreWithOptions(options *MemoryStoreOptions) (*MemoryStore, error
 	initialFiles := options.InitialFiles
 	if initialFiles == nil {
 		initialFiles = make(map[string][]byte)
-  }
+	}
 
-  ms := &MemoryStore{
+	ms := &MemoryStore{
 		allowEnvironmentOverrides: !options.IgnoreEnvironmentOverrides,
 		validate:                  !options.SkipValidation,
 		files:                     initialFiles,
 		savedConfig:               savedConfig,
-  }
+	}
 
-  ms.commonStore.config = &model.Config{}
+	ms.commonStore.config = &model.Config{}
 	ms.commonStore.config.SetDefaults()
 
 	if err := ms.Load(); err != nil {
 		return nil, err
 	}
 
-
-  return ms, nil
+	return ms, nil
 }
 
 // Set replaces the current configuration in its entirety.

@@ -1,8 +1,8 @@
 package mlog
 
 import (
-  "context"
-  "encoding/json"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"

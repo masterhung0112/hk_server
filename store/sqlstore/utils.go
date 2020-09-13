@@ -4,7 +4,23 @@ import (
 	"database/sql"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/mattermost/gorp"
+	"strings"
 )
+
+var escapeLikeSearchChar = []string{
+	"%",
+	"_",
+}
+
+func sanitizeSearchTerm(term string, escapeChar string) string {
+	term = strings.Replace(term, escapeChar, "", -1)
+
+	for _, c := range escapeLikeSearchChar {
+		term = strings.Replace(term, c, escapeChar+c, -1)
+	}
+
+	return term
+}
 
 // finalizeTransaction ensures a transaction is closed after use, rolling back if not already committed.
 func finalizeTransaction(transaction *gorp.Transaction) {

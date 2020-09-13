@@ -1,36 +1,36 @@
 package config
 
 import (
-  "sync"
+	"sync"
 
-  "github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/model"
 )
 
 // emitter enables threadsafe registration and broadcasting to configuration listeners
 type emitter struct {
-  listeners sync.Map
+	listeners sync.Map
 }
 
 // AddListener adds a callback function to invoke when the configuration is modified.
 func (e *emitter) AddListener(listener Listener) string {
-  id := model.NewId()
+	id := model.NewId()
 
-  e.listeners.Store(id, listener)
+	e.listeners.Store(id, listener)
 
-  return id
+	return id
 }
 
 // RemoveListener removes a callback function using an id returned from AddListener.
 func (e *emitter) RemoveListener(id string) {
-  e.listeners.Delete(id)
+	e.listeners.Delete(id)
 }
 
 // invokeConfigListeners synchronously notifies all listeners about the configuration change.
 func (e *emitter) invokeConfigListeners(oldCfg, newCfg *model.Config) {
-  e.listeners.Range(func(key, value interface{}) bool {
-    listener := value.(Listener)
-    listener(oldCfg, newCfg)
+	e.listeners.Range(func(key, value interface{}) bool {
+		listener := value.(Listener)
+		listener(oldCfg, newCfg)
 
-    return true
-  })
+		return true
+	})
 }

@@ -1,15 +1,15 @@
 package filesstore
 
 import (
-	"io/ioutil"
-	"io"
 	"bytes"
-	"github.com/minio/minio-go/v7/pkg/encrypt"
-	"path/filepath"
 	"context"
 	"github.com/masterhung0112/go_server/mlog"
+	"github.com/minio/minio-go/v7/pkg/encrypt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/masterhung0112/go_server/model"
 	s3 "github.com/minio/minio-go/v7"
@@ -17,16 +17,16 @@ import (
 )
 
 type S3FileBackend struct {
-	endpoint  string
-	accessKey string
-	secretKey string
-	secure    bool
-	signV2    bool
-	region    string
-  trace     bool
-  bucket     string
-  pathPrefix string
-  encrypt    bool
+	endpoint   string
+	accessKey  string
+	secretKey  string
+	secure     bool
+	signV2     bool
+	region     string
+	trace      bool
+	bucket     string
+	pathPrefix string
+	encrypt    bool
 }
 
 func (b *S3FileBackend) s3New() (*s3.Client, error) {
@@ -57,23 +57,23 @@ func (b *S3FileBackend) s3New() (*s3.Client, error) {
 }
 
 func (b *S3FileBackend) TestConnection() *model.AppError {
-  s3Client, err := b.s3New()
+	s3Client, err := b.s3New()
 
-  if err != nil {
+	if err != nil {
 		return model.NewAppError("TestFileConnection", "api.file.test_connection.s3.connection.app_error", nil, err.Error(), http.StatusInternalServerError)
-  }
+	}
 
-  exists, err := s3Client.BucketExists(context.Background(), b.bucket)
+	exists, err := s3Client.BucketExists(context.Background(), b.bucket)
 	if err != nil {
 		return model.NewAppError("TestFileConnection", "api.file.test_connection.s3.bucket_exists.app_error", nil, err.Error(), http.StatusInternalServerError)
-  }
+	}
 
-  if !exists {
+	if !exists {
 		mlog.Warn("Bucket specified does not exist. Attempting to create...")
 		err := s3Client.MakeBucket(context.Background(), b.bucket, s3.MakeBucketOptions{
-      Region: b.region,
-      ObjectLocking: false,
-    })
+			Region:        b.region,
+			ObjectLocking: false,
+		})
 		if err != nil {
 			mlog.Error("Unable to create bucket.")
 			return model.NewAppError("TestFileConnection", "api.file.test_connection.s3.bucked_create.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -81,12 +81,12 @@ func (b *S3FileBackend) TestConnection() *model.AppError {
 	}
 
 	mlog.Debug("Connection to S3 or minio is good. Bucket exists.")
-  return nil
+	return nil
 }
 
 func (b *S3FileBackend) WriteFile(fr io.Reader, path string) (int64, *model.AppError) {
-  s3Client, err := b.s3New()
-  if err != nil {
+	s3Client, err := b.s3New()
+	if err != nil {
 		return 0, model.NewAppError("WriteFile", "api.file.write_file.s3.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -96,12 +96,12 @@ func (b *S3FileBackend) WriteFile(fr io.Reader, path string) (int64, *model.AppE
 		contentType = model.GetImageMimeType(ext)
 	} else {
 		contentType = "binary/octet-stream"
-  }
+	}
 
-  options := s3PutOptions(b.encrypt, contentType)
+	options := s3PutOptions(b.encrypt, contentType)
 	var buf bytes.Buffer
-  _, err = buf.ReadFrom(fr)
-  if err != nil {
+	_, err = buf.ReadFrom(fr)
+	if err != nil {
 		return 0, model.NewAppError("WriteFile", "api.file.write_file.s3.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 	info, err := s3Client.PutObject(context.Background(), b.bucket, path, &buf, int64(buf.Len()), options)
@@ -129,10 +129,10 @@ func (b *S3FileBackend) RemoveFile(path string) *model.AppError {
 	}
 
 	path = filepath.Join(b.pathPrefix, path)
-	if err := s3Client.RemoveObject(context.Background(), b.bucket, path, s3.RemoveObjectOptions {
-    GovernanceBypass: true,
-    VersionID: "",
-  }); err != nil {
+	if err := s3Client.RemoveObject(context.Background(), b.bucket, path, s3.RemoveObjectOptions{
+		GovernanceBypass: true,
+		VersionID:        "",
+	}); err != nil {
 		return model.NewAppError("RemoveFile", "utils.file.remove_file.s3.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 

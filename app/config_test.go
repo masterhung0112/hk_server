@@ -1,14 +1,14 @@
 package app
 
 import (
-	"strconv"
-	"time"
-	"github.com/masterhung0112/go_server/utils"
-	"github.com/stretchr/testify/mock"
-	"github.com/masterhung0112/go_server/store/storetest/mocks"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/store/storetest/mocks"
+	"github.com/masterhung0112/go_server/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"strconv"
 	"testing"
+	"time"
 )
 
 func TestConfigListener(t *testing.T) {
@@ -46,7 +46,6 @@ func TestConfigListener(t *testing.T) {
 	assert.True(t, listener2Called, "listener 2 should've been called")
 }
 
-
 func TestAsymmetricSigningKey(t *testing.T) {
 	th := SetupWithStoreMock(t)
 	defer th.TearDown()
@@ -66,8 +65,8 @@ func TestClientConfigWithComputed(t *testing.T) {
 
 	mockStore := th.App.Srv().Store.(*mocks.Store)
 	mockUserStore := mocks.UserStore{}
-  mockUserStore.On("Count", mock.Anything).Return(int64(10), nil)
-  //TODO: Open this
+	mockUserStore.On("Count", mock.Anything).Return(int64(10), nil)
+	//TODO: Open this
 	// mockPostStore := mocks.PostStore{}
 	// mockPostStore.On("GetMaxPostSize").Return(65535, nil)
 	// mockSystemStore := mocks.SystemStore{}

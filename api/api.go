@@ -1,37 +1,37 @@
 package api
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/masterhung0112/go_server/app"
 	"github.com/masterhung0112/go_server/model"
-  "github.com/gorilla/mux"
 )
 
 type ApiRoutes struct {
-  Root    *mux.Router // ''
-  ApiRoot *mux.Router // 'api/v1'
+	Root    *mux.Router // ''
+	ApiRoot *mux.Router // 'api/v1'
 
-  Users          *mux.Router // 'api/v1/users'
-	User           *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}'
+	Users *mux.Router // 'api/v1/users'
+	User  *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}'
 }
 
 type API struct {
-  BaseRoutes    *ApiRoutes
-  GetGlobalAppOptions app.AppOptionCreator
+	BaseRoutes          *ApiRoutes
+	GetGlobalAppOptions app.AppOptionCreator
 }
 
-func ApiInit(globalOptionsFunc app.AppOptionCreator, root *mux.Router) (*API) {
-  api := &API {
-    BaseRoutes: &ApiRoutes{},
-    GetGlobalAppOptions: globalOptionsFunc,
-  }
+func ApiInit(globalOptionsFunc app.AppOptionCreator, root *mux.Router) *API {
+	api := &API{
+		BaseRoutes:          &ApiRoutes{},
+		GetGlobalAppOptions: globalOptionsFunc,
+	}
 
-  api.BaseRoutes.Root = root
-  api.BaseRoutes.ApiRoot = root.PathPrefix(model.API_URL_SUFFIX).Subrouter()
+	api.BaseRoutes.Root = root
+	api.BaseRoutes.ApiRoot = root.PathPrefix(model.API_URL_SUFFIX).Subrouter()
 
-  api.BaseRoutes.Users = api.BaseRoutes.ApiRoot.PathPrefix("/users").Subrouter()
-  api.BaseRoutes.User = api.BaseRoutes.ApiRoot.PathPrefix("/users/{user_id:[A-za-z0-9]+}").Subrouter()
-  api.InitUser()
-  api.InitConfig()
+	api.BaseRoutes.Users = api.BaseRoutes.ApiRoot.PathPrefix("/users").Subrouter()
+	api.BaseRoutes.User = api.BaseRoutes.ApiRoot.PathPrefix("/users/{user_id:[A-za-z0-9]+}").Subrouter()
+	api.InitUser()
+	api.InitConfig()
 
-  return api
+	return api
 }

@@ -1,9 +1,9 @@
 package main
 
 import (
-  "testing"
+	"testing"
 )
 
 func TestRunMain(t *testing.T) {
-  main()
+	main()
 }

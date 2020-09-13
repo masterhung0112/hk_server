@@ -14,6 +14,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	ME = "me"
+
+	DEFAULT_LOCALE          = "en"
+	USER_AUTH_SERVICE_EMAIL = "email"
+)
+
 type User struct {
 	Id            string `json:"id"`
 	CreateAt      int64  `json:"create_at,omitempty"`
@@ -26,6 +33,11 @@ type User struct {
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
 	Roles         string `json:"roles"`
+}
+
+type UserUpdate struct {
+	Old *User
+	New *User
 }
 
 // Options for counting users
@@ -261,9 +273,8 @@ func (u *User) IsValid() *AppError {
 	return nil
 }
 
-
 func (u *User) MakeNonNil() {
-  //TODO: Open
+	//TODO: Open
 	// if u.Props == nil {
 	// 	u.Props = make(map[string]string)
 	// }
@@ -275,8 +286,8 @@ func (u *User) MakeNonNil() {
 
 // Remove any private data from the user object
 func (u *User) Sanitize(options map[string]bool) {
-  u.Password = ""
-  //TODO: Open
+	u.Password = ""
+	//TODO: Open
 	// u.AuthData = NewString("")
 	// u.MfaSecret = ""
 
@@ -286,12 +297,100 @@ func (u *User) Sanitize(options map[string]bool) {
 	if len(options) != 0 && !options["fullname"] {
 		u.FirstName = ""
 		u.LastName = ""
-  }
-  //TODO: Open
+	}
+	//TODO: Open
 	if len(options) != 0 && !options["passwordupdate"] {
 		// u.LastPasswordUpdate = 0
 	}
 	if len(options) != 0 && !options["authservice"] {
 		// u.AuthService = ""
 	}
+}
+
+func (u *User) GetRoles() []string {
+	return strings.Fields(u.Roles)
+}
+
+func (u *User) ClearNonProfileFields() {
+	u.Password = ""
+	//TODO: Open this
+	// u.AuthData = NewString("")
+	// u.MfaSecret = ""
+	u.EmailVerified = false
+	// u.AllowMarketing = false
+	// u.NotifyProps = StringMap{}
+	// u.LastPasswordUpdate = 0
+	// u.FailedAttempts = 0
+}
+
+func (u *User) SanitizeProfile(options map[string]bool) {
+	u.ClearNonProfileFields()
+
+	u.Sanitize(options)
+}
+
+func UserListToJson(u []*User) string {
+	b, _ := json.Marshal(u)
+	return string(b)
+}
+
+func UserListFromJson(data io.Reader) []*User {
+	var users []*User
+	json.NewDecoder(data).Decode(&users)
+	return users
+}
+
+// PreUpdate should be run before updating the user in the db.
+func (u *User) PreUpdate() {
+	u.Username = SanitizeUnicode(u.Username)
+	u.FirstName = SanitizeUnicode(u.FirstName)
+	u.LastName = SanitizeUnicode(u.LastName)
+	//TODO: Open this
+	// u.Nickname = SanitizeUnicode(u.Nickname)
+	// u.BotDescription = SanitizeUnicode(u.BotDescription)
+
+	u.Username = NormalizeUsername(u.Username)
+	u.Email = NormalizeEmail(u.Email)
+	u.UpdateAt = GetMillis()
+
+	u.FirstName = SanitizeUnicode(u.FirstName)
+	// u.LastName = SanitizeUnicode(u.LastName)
+	// u.Nickname = SanitizeUnicode(u.Nickname)
+	// u.BotDescription = SanitizeUnicode(u.BotDescription)
+
+	// if u.AuthData != nil && *u.AuthData == "" {
+	// 	u.AuthData = nil
+	// }
+
+	// if u.NotifyProps == nil || len(u.NotifyProps) == 0 {
+	// 	u.SetDefaultNotifications()
+	// } else if _, ok := u.NotifyProps[MENTION_KEYS_NOTIFY_PROP]; ok {
+	// 	// Remove any blank mention keys
+	// 	splitKeys := strings.Split(u.NotifyProps[MENTION_KEYS_NOTIFY_PROP], ",")
+	// 	goodKeys := []string{}
+	// 	for _, key := range splitKeys {
+	// 		if len(key) > 0 {
+	// 			goodKeys = append(goodKeys, strings.ToLower(key))
+	// 		}
+	// 	}
+	// 	u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] = strings.Join(goodKeys, ",")
+	// }
+}
+
+func (u *User) DeepCopy() *User {
+	copyUser := *u
+	//TODO: Open
+	// if u.AuthData != nil {
+	// 	copyUser.AuthData = NewString(*u.AuthData)
+	// }
+	// if u.Props != nil {
+	// 	copyUser.Props = CopyStringMap(u.Props)
+	// }
+	// if u.NotifyProps != nil {
+	// 	copyUser.NotifyProps = CopyStringMap(u.NotifyProps)
+	// }
+	// if u.Timezone != nil {
+	// 	copyUser.Timezone = CopyStringMap(u.Timezone)
+	// }
+	return &copyUser
 }

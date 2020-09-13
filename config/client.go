@@ -1,16 +1,16 @@
 package config
 
 import (
-	"strings"
-	"strconv"
 	"github.com/masterhung0112/go_server/model"
+	"strconv"
+	"strings"
 )
 
 // GenerateClientConfig renders the given configuration for a client.
 func GenerateClientConfig(c *model.Config, diagnosticID string, license *model.License) map[string]string {
-  props := GenerateLimitedClientConfig(c, diagnosticID, license)
+	props := GenerateLimitedClientConfig(c, diagnosticID, license)
 
-  props["SiteURL"] = strings.TrimRight(*c.ServiceSettings.SiteURL, "/")
+	props["SiteURL"] = strings.TrimRight(*c.ServiceSettings.SiteURL, "/")
 	props["EnableUserDeactivation"] = strconv.FormatBool(*c.TeamSettings.EnableUserDeactivation)
 	props["RestrictDirectMessage"] = *c.TeamSettings.RestrictDirectMessage
 	props["EnableXToLeaveChannelsFromLHS"] = strconv.FormatBool(*c.TeamSettings.EnableXToLeaveChannelsFromLHS)

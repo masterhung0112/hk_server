@@ -1,18 +1,18 @@
 package app
 
 import (
+	"context"
+	"net/http"
 	"strconv"
-  "context"
-  "net/http"
 
 	"github.com/masterhung0112/go_server/model"
 )
 
 type App struct {
-	srv           *Server
-  context       context.Context
+	srv     *Server
+	context context.Context
 
-  session       model.Session
+	session model.Session
 }
 
 func New(options ...AppOption) *App {

@@ -5,45 +5,47 @@ import (
 )
 
 const (
-  CONN_SECURITY_TLS = "TLS"
+	CONN_SECURITY_TLS = "TLS"
 
-  PASSWORD_MAXIMUM_LENGTH = 64
-  PASSWORD_MINIMUM_LENGTH = 5
-  SERVICE_SETTINGS_DEFAULT_SITE_URL           = "http://localhost:9065"
-  SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS = ":9065"
-  DEFAULT_LOCALE = "en"
+	PASSWORD_MAXIMUM_LENGTH                     = 64
+	PASSWORD_MINIMUM_LENGTH                     = 5
+	SERVICE_SETTINGS_DEFAULT_SITE_URL           = "http://localhost:9065"
+	SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS = ":9065"
 
-  DATABASE_DRIVER_SQLITE   = "sqlite3"
+	DATABASE_DRIVER_SQLITE   = "sqlite3"
 	DATABASE_DRIVER_MYSQL    = "mysql"
-  DATABASE_DRIVER_POSTGRES = "postgres"
+	DATABASE_DRIVER_POSTGRES = "postgres"
 
-  IMAGE_DRIVER_LOCAL = "local"
-  IMAGE_DRIVER_S3    = "s3"
+	IMAGE_DRIVER_LOCAL = "local"
+	IMAGE_DRIVER_S3    = "s3"
 
-  MINIO_ACCESS_KEY = "minioadmin"
+	MINIO_ACCESS_KEY = "minioadmin"
 	MINIO_SECRET_KEY = "minioadmin"
 	MINIO_BUCKET     = "hungknow-test"
 
-  FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
+	FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
 
-  SQL_SETTINGS_DEFAULT_DATA_SOURCE = "hkuser:mostest@tcp(localhost:7306)/hungknow_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
+	SQL_SETTINGS_DEFAULT_DATA_SOURCE = "hkuser:mostest@tcp(localhost:7306)/hungknow_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
 
-  TEAM_SETTINGS_DEFAULT_SITE_NAME                = "HungKnow"
-  TEAM_SETTINGS_DEFAULT_MAX_USERS_PER_TEAM       = 50
+	TEAM_SETTINGS_DEFAULT_SITE_NAME                = "HungKnow"
+	TEAM_SETTINGS_DEFAULT_MAX_USERS_PER_TEAM       = 50
 	TEAM_SETTINGS_DEFAULT_CUSTOM_BRAND_TEXT        = ""
 	TEAM_SETTINGS_DEFAULT_CUSTOM_DESCRIPTION_TEXT  = ""
-  TEAM_SETTINGS_DEFAULT_USER_STATUS_AWAY_TIMEOUT = 300
+	TEAM_SETTINGS_DEFAULT_USER_STATUS_AWAY_TIMEOUT = 300
 
-  DIRECT_MESSAGE_ANY  = "any"
+	DIRECT_MESSAGE_ANY  = "any"
 	DIRECT_MESSAGE_TEAM = "team"
+
+	LOCAL_MODE_SOCKET_PATH = "/var/tmp/hungknow_local.socket"
 )
 
 type Config struct {
-  ServiceSettings           ServiceSettings
-  TeamSettings              TeamSettings
-  PasswordSettings PasswordSettings
-  LocalizationSettings LocalizationSettings
-  SqlSettings SqlSettings
+	ServiceSettings      ServiceSettings
+	TeamSettings         TeamSettings
+	PasswordSettings     PasswordSettings
+	LocalizationSettings LocalizationSettings
+	SqlSettings          SqlSettings
+	PrivacySettings      PrivacySettings
 }
 
 // isUpdate detects a pre-existing config based on whether SiteURL has been changed
@@ -54,16 +56,17 @@ func (o *Config) isUpdate() bool {
 func (o *Config) SetDefaults() {
 	isUpdate := o.isUpdate()
 
-  o.ServiceSettings.SetDefaults(isUpdate)
-  o.PasswordSettings.SetDefaults()
-  o.LocalizationSettings.SetDefaults()
-  o.SqlSettings.SetDefaults(isUpdate)
-  o.TeamSettings.SetDefaults()
+	o.ServiceSettings.SetDefaults(isUpdate)
+	o.PasswordSettings.SetDefaults()
+	o.LocalizationSettings.SetDefaults()
+	o.SqlSettings.SetDefaults(isUpdate)
+	o.TeamSettings.SetDefaults()
+	o.PrivacySettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
-  b, _ := json.Marshal(o)
-  return string(b)
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 func (o *Config) Clone() *Config {
@@ -75,7 +78,7 @@ func (o *Config) Clone() *Config {
 }
 
 func (o *Config) IsValid() *AppError {
-  //TODO: Uncomment out
+	//TODO: Uncomment out
 	// if len(*o.ServiceSettings.SiteURL) == 0 && *o.EmailSettings.EnableEmailBatching {
 	// 	return NewAppError("Config.IsValid", "model.config.is_valid.site_url_email_batching.app_error", nil, "", http.StatusBadRequest)
 	// }
@@ -155,68 +158,73 @@ func (o *Config) IsValid() *AppError {
 }
 
 type PasswordSettings struct {
-  MinimumLength *int
-  Lowercase     *bool
-  Number        *bool
-  Uppercase     *bool
-  Symbol        *bool
+	MinimumLength *int
+	Lowercase     *bool
+	Number        *bool
+	Uppercase     *bool
+	Symbol        *bool
 }
 
 func (s *PasswordSettings) SetDefaults() {
-  if s.MinimumLength == nil {
-    s.MinimumLength = NewInt(10)
-  }
+	if s.MinimumLength == nil {
+		s.MinimumLength = NewInt(10)
+	}
 
-  if s.Lowercase == nil {
-    s.Lowercase = NewBool(true)
-  }
+	if s.Lowercase == nil {
+		s.Lowercase = NewBool(true)
+	}
 
-  if s.Number == nil {
-    s.Number = NewBool(true)
-  }
+	if s.Number == nil {
+		s.Number = NewBool(true)
+	}
 
-  if s.Uppercase == nil {
-    s.Uppercase = NewBool(true)
-  }
+	if s.Uppercase == nil {
+		s.Uppercase = NewBool(true)
+	}
 
-  if s.Symbol == nil {
-    s.Symbol = NewBool(true)
-  }
+	if s.Symbol == nil {
+		s.Symbol = NewBool(true)
+	}
 }
 
 type ServiceSettings struct {
-  SiteURL                                           *string  `restricted:"true"`
-  ConnectionSecurity                                *string  `restricted:"true"`
-  ListenAddress                                     *string  `restricted:"true"`
-  EnableDeveloper                                   *bool   `restricted:"true"`
+	SiteURL                 *string `restricted:"true"`
+	ConnectionSecurity      *string `restricted:"true"`
+	ListenAddress           *string `restricted:"true"`
+	EnableDeveloper         *bool   `restricted:"true"`
+	LocalModeSocketLocation *string
 }
 
 func (s *ServiceSettings) SetDefaults(isUpdate bool) {
-  if s.ConnectionSecurity == nil {
+	if s.ConnectionSecurity == nil {
 		s.ConnectionSecurity = NewString("")
-  }
+	}
 
-  if s.SiteURL == nil {
+	if s.SiteURL == nil {
 		if s.EnableDeveloper != nil && *s.EnableDeveloper {
 			s.SiteURL = NewString(SERVICE_SETTINGS_DEFAULT_SITE_URL)
 		} else {
 			s.SiteURL = NewString("")
 		}
-  }
+	}
 
-  if s.EnableDeveloper == nil {
+	if s.EnableDeveloper == nil {
 		s.EnableDeveloper = NewBool(false)
 	}
 
-  if s.ListenAddress == nil {
+	if s.ListenAddress == nil {
 		s.ListenAddress = NewString(SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS)
+	}
+
+	if s.LocalModeSocketLocation == nil {
+		s.LocalModeSocketLocation = NewString(LOCAL_MODE_SOCKET_PATH)
 	}
 }
 
 type LocalizationSettings struct {
-  DefaultServerLocale *string
-  DefaultClientLocale *string
-  AvailableLocales    *string
+	DefaultServerLocale *string
+	DefaultClientLocale *string
+	AvailableLocales    *string
 }
 
 func (s *LocalizationSettings) SetDefaults() {
@@ -234,34 +242,34 @@ func (s *LocalizationSettings) SetDefaults() {
 }
 
 type SqlSettings struct {
-  DriverName *string
-  DataSource                  *string  `restricted:"true"`
-  DataSourceReplicas          []string
-  QueryTimeout                *int     `restricted:"true"`
+	DriverName         *string
+	DataSource         *string `restricted:"true"`
+	DataSourceReplicas []string
+	QueryTimeout       *int `restricted:"true"`
 }
 
 func (s *SqlSettings) SetDefaults(isUpdate bool) {
-  if s.DriverName == nil {
+	if s.DriverName == nil {
 		s.DriverName = NewString(DATABASE_DRIVER_MYSQL)
-  }
+	}
 
-  if s.DataSource == nil {
+	if s.DataSource == nil {
 		s.DataSource = NewString(SQL_SETTINGS_DEFAULT_DATA_SOURCE)
 	}
 
-  if s.DataSourceReplicas == nil {
+	if s.DataSourceReplicas == nil {
 		s.DataSourceReplicas = []string{}
-  }
+	}
 
-  if s.QueryTimeout == nil {
+	if s.QueryTimeout == nil {
 		s.QueryTimeout = NewInt(30)
 	}
 }
 
 type FileSettings struct {
-  Directory         *string `restricted:"true"`
-  DriverName        *string `restricted:"true"`
-  S3AccessKeyId     *string `restricted:"true"`
+	Directory         *string `restricted:"true"`
+	DriverName        *string `restricted:"true"`
+	S3AccessKeyId     *string `restricted:"true"`
 	S3SecretAccessKey *string `restricted:"true"`
 	S3Bucket          *string `restricted:"true"`
 	S3PathPrefix      *string `restricted:"true"`
@@ -274,15 +282,15 @@ type FileSettings struct {
 }
 
 func (s *FileSettings) SetDefaults(isUpdate bool) {
-  if s.DriverName == nil {
+	if s.DriverName == nil {
 		s.DriverName = NewString(IMAGE_DRIVER_LOCAL)
-  }
+	}
 
-  if s.Directory == nil || *s.Directory == "" {
+	if s.Directory == nil || *s.Directory == "" {
 		s.Directory = NewString(FILE_SETTINGS_DEFAULT_DIRECTORY)
 	}
 
-  if s.S3AccessKeyId == nil {
+	if s.S3AccessKeyId == nil {
 		s.S3AccessKeyId = NewString("")
 	}
 
@@ -326,30 +334,30 @@ func (s *FileSettings) SetDefaults(isUpdate bool) {
 }
 
 type TeamSettings struct {
-	SiteName                                                  *string  `access:"site"`
-	MaxUsersPerTeam                                           *int     `access:"site"`
-	DEPRECATED_DO_NOT_USE_EnableTeamCreation                  *bool    `json:"EnableTeamCreation" mapstructure:"EnableTeamCreation"` // This field is deprecated and must not be used.
-	EnableUserCreation                                        *bool    `access:"authentication"`
-	EnableOpenServer                                          *bool    `access:"authentication"`
-	EnableUserDeactivation                                    *bool    `access:"experimental"`
-	RestrictCreationToDomains                                 *string  `access:"authentication"`
-	EnableCustomBrand                                         *bool    `access:"site"`
-	CustomBrandText                                           *string  `access:"site"`
-	CustomDescriptionText                                     *string  `access:"site"`
-	RestrictDirectMessage                                     *string  `access:"site"`
-	EnableXToLeaveChannelsFromLHS                             *bool    `access:"experimental"`
-	UserStatusAwayTimeout                                     *int64   `access:"experimental"`
-	MaxChannelsPerTeam                                        *int64   `access:"site"`
-	MaxNotificationsPerChannel                                *int64   `access:"environment"`
-	EnableConfirmNotificationsToChannel                       *bool    `access:"site"`
-	TeammateNameDisplay                                       *string  `access:"site"`
-	ExperimentalViewArchivedChannels                          *bool    `access:"experimental,site"`
-	ExperimentalEnableAutomaticReplies                        *bool    `access:"experimental"`
-	ExperimentalHideTownSquareinLHS                           *bool    `access:"experimental"`
-	ExperimentalTownSquareIsReadOnly                          *bool    `access:"experimental"`
-	LockTeammateNameDisplay                                   *bool    `access:"site"`
-	ExperimentalPrimaryTeam                                   *string  `access:"experimental"`
-	ExperimentalDefaultChannels                               []string `access:"experimental"`
+	SiteName                                 *string  `access:"site"`
+	MaxUsersPerTeam                          *int     `access:"site"`
+	DEPRECATED_DO_NOT_USE_EnableTeamCreation *bool    `json:"EnableTeamCreation" mapstructure:"EnableTeamCreation"` // This field is deprecated and must not be used.
+	EnableUserCreation                       *bool    `access:"authentication"`
+	EnableOpenServer                         *bool    `access:"authentication"`
+	EnableUserDeactivation                   *bool    `access:"experimental"`
+	RestrictCreationToDomains                *string  `access:"authentication"`
+	EnableCustomBrand                        *bool    `access:"site"`
+	CustomBrandText                          *string  `access:"site"`
+	CustomDescriptionText                    *string  `access:"site"`
+	RestrictDirectMessage                    *string  `access:"site"`
+	EnableXToLeaveChannelsFromLHS            *bool    `access:"experimental"`
+	UserStatusAwayTimeout                    *int64   `access:"experimental"`
+	MaxChannelsPerTeam                       *int64   `access:"site"`
+	MaxNotificationsPerChannel               *int64   `access:"environment"`
+	EnableConfirmNotificationsToChannel      *bool    `access:"site"`
+	TeammateNameDisplay                      *string  `access:"site"`
+	ExperimentalViewArchivedChannels         *bool    `access:"experimental,site"`
+	ExperimentalEnableAutomaticReplies       *bool    `access:"experimental"`
+	ExperimentalHideTownSquareinLHS          *bool    `access:"experimental"`
+	ExperimentalTownSquareIsReadOnly         *bool    `access:"experimental"`
+	LockTeammateNameDisplay                  *bool    `access:"site"`
+	ExperimentalPrimaryTeam                  *string  `access:"experimental"`
+	ExperimentalDefaultChannels              []string `access:"experimental"`
 }
 
 func (s *TeamSettings) SetDefaults() {
@@ -392,7 +400,7 @@ func (s *TeamSettings) SetDefaults() {
 
 	if s.RestrictDirectMessage == nil {
 		s.RestrictDirectMessage = NewString(DIRECT_MESSAGE_ANY)
-  }
+	}
 
 	if s.EnableXToLeaveChannelsFromLHS == nil {
 		s.EnableXToLeaveChannelsFromLHS = NewBool(false)
@@ -444,5 +452,28 @@ func (s *TeamSettings) SetDefaults() {
 
 	if s.LockTeammateNameDisplay == nil {
 		s.LockTeammateNameDisplay = NewBool(false)
+	}
+}
+
+func (o *Config) GetSanitizeOptions() map[string]bool {
+	options := map[string]bool{}
+	options["fullname"] = *o.PrivacySettings.ShowFullName
+	options["email"] = *o.PrivacySettings.ShowEmailAddress
+
+	return options
+}
+
+type PrivacySettings struct {
+	ShowEmailAddress *bool `access:"site"`
+	ShowFullName     *bool `access:"site"`
+}
+
+func (s *PrivacySettings) SetDefaults() {
+	if s.ShowEmailAddress == nil {
+		s.ShowEmailAddress = NewBool(true)
+	}
+
+	if s.ShowFullName == nil {
+		s.ShowFullName = NewBool(true)
 	}
 }

@@ -3,14 +3,13 @@ package filesstore
 import (
 	"bytes"
 	"fmt"
-	"testing"
-	"os"
-	"io/ioutil"
-	"github.com/masterhung0112/go_server/mlog"
-	"github.com/stretchr/testify/require"
-	"github.com/masterhung0112/go_server/utils"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/utils"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"io/ioutil"
+	"os"
+	"testing"
 )
 
 type FileBackendTestSuite struct {
@@ -22,7 +21,6 @@ type FileBackendTestSuite struct {
 
 func (s *FileBackendTestSuite) SetupTest() {
 	utils.TranslationsPreInit()
-
 	backend, err := NewFileBackend(&s.settings, true)
 	require.Nil(s.T(), err)
 	s.backend = backend
@@ -33,14 +31,14 @@ func (s *FileBackendTestSuite) TestConnection() {
 }
 
 func TestLocalFileBackendTestSuite(t *testing.T) {
-  // Setup a global logger to catch tests logging outside of app context
+	// Setup a global logger to catch tests logging outside of app context
 	// The global logger will be stomped by apps initializing but that's fine for testing. Ideally this won't happen.
-	mlog.InitGlobalLogger(mlog.NewLogger(&mlog.LoggerConfiguration{
-		EnableConsole: true,
-		ConsoleJson:   true,
-		ConsoleLevel:  "error",
-		EnableFile:    false,
-	}))
+	// mlog.InitGlobalLogger(mlog.NewLogger(&mlog.LoggerConfiguration{
+	// 	EnableConsole: true,
+	// 	ConsoleJson:   true,
+	// 	ConsoleLevel:  "error",
+	// 	EnableFile:    false,
+	// }))
 
 	dir, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
@@ -87,11 +85,11 @@ func runBackendTest(t *testing.T, encrypt bool) {
 }
 
 func (s *FileBackendTestSuite) TestReadWriteFile() {
-  b := []byte("test")
-  path := "tests/" + model.NewId()
+	b := []byte("test")
+	path := "tests/" + model.NewId()
 
-  written, err := s.backend.WriteFile(bytes.NewReader(b), path)
-	s.Nil(err)
+	written, err := s.backend.WriteFile(bytes.NewReader(b), path)
+	s.NotNil(err)
 	s.EqualValues(len(b), written, "expected given number of bytes to have been written")
 	defer s.backend.RemoveFile(path)
 

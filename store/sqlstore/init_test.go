@@ -1,9 +1,9 @@
 package sqlstore
 
 func InitTest() {
-  initStores()
+	initStores()
 }
 
 func TearDownTest() {
-  tearDownStores()
+	tearDownStores()
 }

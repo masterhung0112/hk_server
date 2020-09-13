@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/pkg/errors"
-	"github.com/masterhung0112/go_server/store"
 	"github.com/masterhung0112/go_server/config"
+	"github.com/masterhung0112/go_server/store"
+	"github.com/pkg/errors"
 )
 
 type Option func(server *Server) error
@@ -12,18 +12,18 @@ type AppOption func(a *App)
 type AppOptionCreator func() []AppOption
 
 func ServerConnector(s *Server) AppOption {
-  return func (a *App) {
-    a.srv = s
-  }
+	return func(a *App) {
+		a.srv = s
+	}
 }
 
 // ConfigStore applies the given config store,
 // typically to replace the traditional sources with a memory store for testing
 func ConfigStore(configStore config.Store) Option {
-  return func(s *Server) error {
-    s.configStore = configStore
-    return nil
-  }
+	return func(s *Server) error {
+		s.configStore = configStore
+		return nil
+	}
 }
 
 // By default, the app will use the store specified by the configuration. This allows you to

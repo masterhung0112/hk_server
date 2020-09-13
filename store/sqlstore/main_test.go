@@ -1,17 +1,18 @@
 package sqlstore_test
 
 import (
-	"github.com/masterhung0112/go_server/testlib"
 	"github.com/masterhung0112/go_server/store/sqlstore"
+	"github.com/masterhung0112/go_server/testlib"
 	"testing"
 )
 
 var mainHelper *testlib.MainHelper
 
 func TestMain(m *testing.M) {
-  mainHelper = testlib.NewMainHelperWithOptions(nil)
-  sqlstore.InitTest()
+	mainHelper = testlib.NewMainHelperWithOptions(nil)
+	defer mainHelper.Close()
+	sqlstore.InitTest()
 
-  mainHelper.Main(m)
-  sqlstore.TearDownTest()
+	mainHelper.Main(m)
+	sqlstore.TearDownTest()
 }

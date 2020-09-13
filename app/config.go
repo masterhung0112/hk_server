@@ -1,15 +1,15 @@
 package app
 
 import (
+	"crypto/ecdsa"
 	"crypto/md5"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/masterhung0112/go_server/config"
-	"time"
+	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/utils"
 	"strconv"
-	"crypto/ecdsa"
-	"github.com/masterhung0112/go_server/model"
+	"time"
 )
 
 func (s *Server) Config() *model.Config {
@@ -27,7 +27,6 @@ func (a *App) UpdateConfig(f func(*model.Config)) {
 func (a *App) ClientConfig() map[string]string {
 	return a.Srv().clientConfig.Load().(map[string]string)
 }
-
 
 // Registers a function with a given listener to be called when the config is reloaded and may have changed. The function
 // will be called with two arguments: the old config and the new config. AddConfigListener returns a unique ID
@@ -51,7 +50,7 @@ func (a *App) RemoveConfigListener(id string) {
 
 // AsymmetricSigningKey will return a private key that can be used for asymmetric signing.
 func (s *Server) AsymmetricSigningKey() *ecdsa.PrivateKey {
-  //TODO: Open
+	//TODO: Open
 	return nil //s.asymmetricSigningKey
 }
 
@@ -76,9 +75,9 @@ func (s *Server) ClientConfigWithComputed() map[string]string {
 
 	// These properties are not configurable, but nevertheless represent configuration expected
 	// by the client.
-  respCfg["NoAccounts"] = strconv.FormatBool(s.IsFirstUserAccount())
+	respCfg["NoAccounts"] = strconv.FormatBool(s.IsFirstUserAccount())
 
-  //TODO: Open this code
+	//TODO: Open this code
 	// respCfg["MaxPostSize"] = strconv.Itoa(s.MaxPostSize())
 	// respCfg["UpgradedFromTE"] = strconv.FormatBool(s.isUpgradedFromTE())
 	// respCfg["InstallationDate"] = ""
@@ -112,7 +111,6 @@ func (a *App) LimitedClientConfigWithComputed() map[string]string {
 	return respCfg
 }
 
-
 func (s *Server) ensureInstallationDate() error {
 	_, appErr := s.getSystemInstallDate()
 	if appErr == nil {
@@ -137,10 +135,10 @@ func (s *Server) ensureInstallationDate() error {
 }
 
 func (s *Server) regenerateClientConfig() {
-  clientConfig := config.GenerateClientConfig(s.Config(), "", nil)// s.diagnosticId, s.License())
-  limitedClientConfig := config.GenerateLimitedClientConfig(s.Config(), "", nil) //s.diagnosticId, s.License())
+	clientConfig := config.GenerateClientConfig(s.Config(), "", nil)               // s.diagnosticId, s.License())
+	limitedClientConfig := config.GenerateLimitedClientConfig(s.Config(), "", nil) //s.diagnosticId, s.License())
 
-  //TODO: Open this
+	//TODO: Open this
 	// if clientConfig["EnableCustomTermsOfService"] == "true" {
 	// 	termsOfService, err := s.Store.TermsOfService().GetLatest(true)
 	// 	if err != nil {
@@ -152,7 +150,7 @@ func (s *Server) regenerateClientConfig() {
 	// }
 
 	if key := s.AsymmetricSigningKey(); key != nil {
-    //TODO: Open
+		//TODO: Open
 		// der, _ := x509.MarshalPKIXPublicKey(&key.PublicKey)
 		// clientConfig["AsymmetricSigningPublicKey"] = base64.StdEncoding.EncodeToString(der)
 		// limitedClientConfig["AsymmetricSigningPublicKey"] = base64.StdEncoding.EncodeToString(der)

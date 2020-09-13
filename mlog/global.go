@@ -1,37 +1,37 @@
 package mlog
 
 import (
-  "context"
+	"context"
 
-  "github.com/mattermost/logr"
-  "go.uber.org/zap"
-  "go.uber.org/zap/zapcore"
+	"github.com/mattermost/logr"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var globalLogger *Logger
 
 func InitGlobalLogger(logger *Logger) {
-  if globalLogger != nil && globalLogger.logrLogger != nil {
-    globalLogger.logrLogger.Logr().Shutdown()
-  }
-  glob := *logger
-  glob.zap = glob.zap.WithOptions(zap.AddCallerSkip(1))
-  globalLogger = &glob
-  Debug = globalLogger.Debug
-  Info = globalLogger.Info
-  Warn = globalLogger.Warn
-  Error = globalLogger.Error
-  Critical = globalLogger.Critical
-  Log = globalLogger.Log
-  LogM = globalLogger.LogM
-  Flush = globalLogger.Flush
-  ConfigAdvancedLogging = globalLogger.ConfigAdvancedLogging
-  ShutdownAdvancedLogging = globalLogger.ShutdownAdvancedLogging
-  AddTarget = globalLogger.AddTarget
+	if globalLogger != nil && globalLogger.logrLogger != nil {
+		globalLogger.logrLogger.Logr().Shutdown()
+	}
+	glob := *logger
+	glob.zap = glob.zap.WithOptions(zap.AddCallerSkip(1))
+	globalLogger = &glob
+	Debug = globalLogger.Debug
+	Info = globalLogger.Info
+	Warn = globalLogger.Warn
+	Error = globalLogger.Error
+	Critical = globalLogger.Critical
+	Log = globalLogger.Log
+	LogM = globalLogger.LogM
+	Flush = globalLogger.Flush
+	ConfigAdvancedLogging = globalLogger.ConfigAdvancedLogging
+	ShutdownAdvancedLogging = globalLogger.ShutdownAdvancedLogging
+	AddTarget = globalLogger.AddTarget
 }
 
 func RedirectStdLog(logger *Logger) {
-  zap.RedirectStdLogAt(logger.zap.With(zap.String("source", "stdlog")).WithOptions(zap.AddCallerSkip(-2)), zapcore.ErrorLevel)
+	zap.RedirectStdLogAt(logger.zap.With(zap.String("source", "stdlog")).WithOptions(zap.AddCallerSkip(-2)), zapcore.ErrorLevel)
 }
 
 type LogFunc func(string, ...Field)
