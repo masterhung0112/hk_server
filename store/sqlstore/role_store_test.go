@@ -132,3 +132,36 @@ func (s *RoleStoreTestSuite) TestRoleStoreGetAll() {
 		s.Len(data, prevCount+2)
 	}
 }
+
+func (s *RoleStoreTestSuite) TestRoleStoreGetByName() {
+	// Save a role to test with.
+	r1 := &model.Role{
+		Name:        model.NewId(),
+		DisplayName: model.NewId(),
+		Description: model.NewId(),
+		Permissions: []string{
+			"invite_user",
+			"create_public_channel",
+			"add_user_to_team",
+		},
+		SchemeManaged: false,
+	}
+
+	d1, err := s.Store().Role().Save(r1)
+	s.Require().Nil(err)
+	s.Require().Len(d1.Id, 26)
+
+	// Get a valid role
+	d2, err := s.Store().Role().GetByName(d1.Name)
+	s.Require().Nil(err)
+	s.Require().Equal(d1.Id, d2.Id)
+	s.Require().Equal(r1.Name, d2.Name)
+	s.Require().Equal(r1.DisplayName, d2.DisplayName)
+	s.Require().Equal(r1.Description, d2.Description)
+	s.Require().Equal(r1.Permissions, d2.Permissions)
+	s.Require().Equal(r1.SchemeManaged, d2.SchemeManaged)
+
+	// Get an invalid role
+	_, err = s.Store().Role().GetByName(model.NewId())
+	s.Require().NotNil(err)
+}

@@ -416,12 +416,11 @@ func (a *App) UpdateUserRoles(userId string, newRoles string, sendWebSocketEvent
 	}()
 
 	schan := make(chan store.StoreResult, 1)
-	//TODO: Open
-	// go func() {
-	// 	id, err := a.Srv().Store.Session().UpdateRoles(user.Id, newRoles)
-	// 	schan <- store.StoreResult{Data: id, NErr: err}
-	// 	close(schan)
-	// }()
+	go func() {
+		id, err := a.Srv().Store.Session().UpdateRoles(user.Id, newRoles)
+		schan <- store.StoreResult{Data: id, NErr: err}
+		close(schan)
+	}()
 
 	result := <-uchan
 	if result.Err != nil {

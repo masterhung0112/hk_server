@@ -26,15 +26,15 @@ func (a *App) DoAdvancedPermissionsMigration() {
 	allSucceeded := true
 
 	for _, role := range roles {
-		_, err := a.Srv().Store.Role().Save(role)
-		if err == nil {
+		_, saveErr := a.Srv().Store.Role().Save(role)
+		if saveErr == nil {
 			continue
 		}
 
 		// If this failed for reasons other than the role already existing, don't mark the migration as done.
 		fetchedRole, err := a.Srv().Store.Role().GetByName(role.Name)
 		if err != nil {
-			mlog.Critical("Failed to migrate role to database.", mlog.Err(err))
+			mlog.Critical("Failed to migrate role to database.", mlog.Err(err), mlog.Err(saveErr))
 			allSucceeded = false
 			continue
 		}

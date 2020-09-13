@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -130,17 +131,17 @@ func (r *Role) MergeChannelHigherScopedPermissions(higherScopedPermissions *Role
 	r.Permissions = mergedPermissions
 }
 
-func (r *Role) IsValidWithoutId() bool {
+func (r *Role) IsValidWithoutId() (bool, error) {
 	if !IsValidRoleName(r.Name) {
-		return false
+		return false, fmt.Errorf("Invalid role name %s", r.Name)
 	}
 
 	if len(r.DisplayName) == 0 || len(r.DisplayName) > ROLE_DISPLAY_NAME_MAX_LENGTH {
-		return false
+		return false, fmt.Errorf("Invalid length of display name: %d", len(r.DisplayName))
 	}
 
 	if len(r.Description) > ROLE_DESCRIPTION_MAX_LENGTH {
-		return false
+		return false, fmt.Errorf("Invalid length of description: %d", len(r.Description))
 	}
 
 	for _, permission := range r.Permissions {
@@ -153,11 +154,11 @@ func (r *Role) IsValidWithoutId() bool {
 		}
 
 		if !permissionValidated {
-			return false
+			return false, fmt.Errorf("permission invalidated: %s", permission)
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 func MakeDefaultRoles() map[string]*Role {

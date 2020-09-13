@@ -95,8 +95,8 @@ func newSqlRoleStore(sqlStore SqlStore) store.RoleStore {
 
 func (s *SqlRoleStore) Save(role *model.Role) (*model.Role, error) {
 	// Check the role is valid before proceeding.
-	if !role.IsValidWithoutId() {
-		return nil, store.NewErrInvalidInput("Role", "<any>", fmt.Sprintf("%v", role))
+	if ok, err := role.IsValidWithoutId(); !ok {
+		return nil, store.NewErrInvalidInput("Role", "<any>", fmt.Sprintf("%v, err: %s", role, err))
 	}
 
 	if len(role.Id) == 0 {
@@ -128,8 +128,8 @@ func (s *SqlRoleStore) Save(role *model.Role) (*model.Role, error) {
 
 func (s *SqlRoleStore) createRole(role *model.Role, transaction *gorp.Transaction) (*model.Role, error) {
 	// Check the role is valid before proceeding.
-	if !role.IsValidWithoutId() {
-		return nil, store.NewErrInvalidInput("Role", "<any>", fmt.Sprintf("%v", role))
+	if ok, err := role.IsValidWithoutId(); !ok {
+		return nil, store.NewErrInvalidInput("Role", "<any>", fmt.Sprintf("%v, err: %s", role, err))
 	}
 
 	dbRole := NewRoleFromModel(role)

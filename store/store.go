@@ -274,7 +274,7 @@ type SessionStore interface {
 	// PermanentDeleteSessionsByUser(teamId string) error
 	// UpdateExpiresAt(sessionId string, time int64) error
 	// UpdateLastActivityAt(sessionId string, time int64) error
-	// UpdateRoles(userId string, roles string) (string, error)
+	UpdateRoles(userId string, roles string) (string, error)
 	// UpdateDeviceId(id string, deviceId string, expiresAt int64) (string, error)
 	// UpdateProps(session *model.Session) error
 	// AnalyticsSessionCount() (int64, error)

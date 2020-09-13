@@ -110,3 +110,13 @@ func (me SqlSessionStore) GetSessions(userId string) ([]*model.Session, error) {
 	}
 	return sessions, nil
 }
+
+func (me SqlSessionStore) UpdateRoles(userId, roles string) (string, error) {
+	query := "UPDATE Sessions SET Roles = :Roles WHERE UserId = :UserId"
+
+	_, err := me.GetMaster().Exec(query, map[string]interface{}{"Roles": roles, "UserId": userId})
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to update Session with userId=%s and roles=%s", userId, roles)
+	}
+	return userId, nil
+}
