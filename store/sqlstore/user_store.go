@@ -668,14 +668,14 @@ func (us SqlUserStore) GetProfilesInChannel(channelId string, offset int, limit 
 }
 
 func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
-	// isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
+	isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	query := us.usersQuery.
 		OrderBy("u.Username ASC").
 		Offset(uint64(options.Page * options.PerPage)).Limit(uint64(options.PerPage))
 
-	// query = applyViewRestrictionsFilter(query, options.ViewRestrictions, true)
+	query = applyViewRestrictionsFilter(query, options.ViewRestrictions, true)
 
-	// query = applyRoleFilter(query, options.Role, isPostgreSQL)
+	query = applyRoleFilter(query, options.Role, isPostgreSQL)
 
 	if options.Inactive {
 		query = query.Where("u.DeleteAt != 0")

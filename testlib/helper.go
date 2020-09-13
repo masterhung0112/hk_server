@@ -121,3 +121,11 @@ func (h *MainHelper) GetSQLSupplier() *sqlstore.SqlSupplier {
 
 	return h.SQLSupplier
 }
+
+func (h *MainHelper) GetSQLSettings() *model.SqlSettings {
+	if h.Settings == nil {
+		panic("MainHelper not initialized with database access.")
+	}
+
+	return h.Settings
+}

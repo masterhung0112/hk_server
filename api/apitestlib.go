@@ -72,12 +72,17 @@ func setupTestHelper(dbStore store.Store) *TestHelper {
 	}
 
 	// Initialize the router URL
-	ApiInit(th.Server.AppOptions, th.App.Srv().Router)
+  ApiInit(th.Server.AppOptions, th.App.Srv().Router)
+  prevListenAddress := *th.App.Config().ServiceSettings.ListenAddress
+	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = ":0" })
 
 	// Start HTTP Server and other stuff
 	if err := th.Server.Start(); err != nil {
 		panic(err)
-	}
+  }
+
+  th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = prevListenAddress })
+
 
 	// Disable strict password requirements for test
 	th.App.UpdateConfig(func(cfg *model.Config) {
