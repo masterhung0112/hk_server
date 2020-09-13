@@ -227,3 +227,18 @@ func (s *SqlSchemeStore) Save(scheme *model.Scheme) (*model.Scheme, error) {
 
 	return scheme, nil
 }
+
+func (s *SqlSchemeStore) GetAllPage(scope string, offset int, limit int) ([]*model.Scheme, error) {
+	var schemes []*model.Scheme
+
+	scopeClause := ""
+	if len(scope) > 0 {
+		scopeClause = " AND Scope=:Scope "
+	}
+
+	if _, err := s.GetReplica().Select(&schemes, "SELECT * from Schemes WHERE DeleteAt = 0 "+scopeClause+" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Limit": limit, "Offset": offset, "Scope": scope}); err != nil {
+		return nil, errors.Wrapf(err, "failed to get Schemes")
+	}
+
+	return schemes, nil
+}

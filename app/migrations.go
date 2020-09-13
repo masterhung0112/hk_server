@@ -1,11 +1,16 @@
 package app
 
 import (
+	"fmt"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/utils"
 	"reflect"
 )
+
+const EMOJIS_PERMISSIONS_MIGRATION_KEY = "EmojisPermissionsMigrationComplete"
+const GUEST_ROLES_CREATION_MIGRATION_KEY = "GuestRolesCreationMigrationComplete"
+const SYSTEM_CONSOLE_ROLES_CREATION_MIGRATION_KEY = "SystemConsoleRolesCreationMigrationComplete"
 
 // This function migrates the default built in roles from code/config to the database.
 func (a *App) DoAdvancedPermissionsMigration() {
@@ -52,13 +57,13 @@ func (a *App) DoAdvancedPermissionsMigration() {
 		return
 	}
 
-	config := a.Config()
-	if *config.ServiceSettings.DEPRECATED_DO_NOT_USE_AllowEditPost == model.ALLOW_EDIT_POST_ALWAYS {
-		*config.ServiceSettings.PostEditTimeLimit = -1
-		if err := a.SaveConfig(config, true); err != nil {
-			mlog.Error("Failed to update config in Advanced Permissions Phase 1 Migration.", mlog.Err(err))
-		}
-	}
+	// config := a.Config()
+	// if *config.ServiceSettings.DEPRECATED_DO_NOT_USE_AllowEditPost == model.ALLOW_EDIT_POST_ALWAYS {
+	// 	*config.ServiceSettings.PostEditTimeLimit = -1
+	// 	if err := a.SaveConfig(config, true); err != nil {
+	// 		mlog.Error("Failed to update config in Advanced Permissions Phase 1 Migration.", mlog.Err(err))
+	// 	}
+	// }
 
 	system := model.System{
 		Name:  model.ADVANCED_PERMISSIONS_MIGRATION_KEY,
@@ -70,8 +75,138 @@ func (a *App) DoAdvancedPermissionsMigration() {
 	}
 }
 
+func (a *App) DoGuestRolesCreationMigration() {
+	// If the migration is already marked as completed, don't do it again.
+	if _, err := a.Srv().Store.System().GetByName(GUEST_ROLES_CREATION_MIGRATION_KEY); err == nil {
+		return
+	}
+
+	roles := model.MakeDefaultRoles()
+
+	allSucceeded := true
+	if _, err := a.Srv().Store.Role().GetByName(model.CHANNEL_GUEST_ROLE_ID); err != nil {
+		if _, err := a.Srv().Store.Role().Save(roles[model.CHANNEL_GUEST_ROLE_ID]); err != nil {
+			mlog.Critical("Failed to create new guest role to database.", mlog.Err(err))
+			allSucceeded = false
+		}
+	}
+	if _, err := a.Srv().Store.Role().GetByName(model.TEAM_GUEST_ROLE_ID); err != nil {
+		if _, err := a.Srv().Store.Role().Save(roles[model.TEAM_GUEST_ROLE_ID]); err != nil {
+			mlog.Critical("Failed to create new guest role to database.", mlog.Err(err))
+			allSucceeded = false
+		}
+	}
+	if _, err := a.Srv().Store.Role().GetByName(model.SYSTEM_GUEST_ROLE_ID); err != nil {
+		if _, err := a.Srv().Store.Role().Save(roles[model.SYSTEM_GUEST_ROLE_ID]); err != nil {
+			mlog.Critical("Failed to create new guest role to database.", mlog.Err(err))
+			allSucceeded = false
+		}
+	}
+
+	schemes, err := a.Srv().Store.Scheme().GetAllPage("", 0, 1000000)
+	if err != nil {
+		mlog.Critical("Failed to get all schemes.", mlog.Err(err))
+		allSucceeded = false
+	}
+	for _, scheme := range schemes {
+		if scheme.DefaultTeamGuestRole == "" || scheme.DefaultChannelGuestRole == "" {
+			// Team Guest Role
+			teamGuestRole := &model.Role{
+				Name:          model.NewId(),
+				DisplayName:   fmt.Sprintf("Team Guest Role for Scheme %s", scheme.Name),
+				Permissions:   roles[model.TEAM_GUEST_ROLE_ID].Permissions,
+				SchemeManaged: true,
+			}
+
+			if savedRole, err := a.Srv().Store.Role().Save(teamGuestRole); err != nil {
+				mlog.Critical("Failed to create new guest role for custom scheme.", mlog.Err(err))
+				allSucceeded = false
+			} else {
+				scheme.DefaultTeamGuestRole = savedRole.Name
+			}
+
+			// Channel Guest Role
+			channelGuestRole := &model.Role{
+				Name:          model.NewId(),
+				DisplayName:   fmt.Sprintf("Channel Guest Role for Scheme %s", scheme.Name),
+				Permissions:   roles[model.CHANNEL_GUEST_ROLE_ID].Permissions,
+				SchemeManaged: true,
+			}
+
+			if savedRole, err := a.Srv().Store.Role().Save(channelGuestRole); err != nil {
+				mlog.Critical("Failed to create new guest role for custom scheme.", mlog.Err(err))
+				allSucceeded = false
+			} else {
+				scheme.DefaultChannelGuestRole = savedRole.Name
+			}
+
+			_, err := a.Srv().Store.Scheme().Save(scheme)
+			if err != nil {
+				mlog.Critical("Failed to update custom scheme.", mlog.Err(err))
+				allSucceeded = false
+			}
+		}
+	}
+
+	if !allSucceeded {
+		return
+	}
+
+	system := model.System{
+		Name:  GUEST_ROLES_CREATION_MIGRATION_KEY,
+		Value: "true",
+	}
+
+	if err := a.Srv().Store.System().Save(&system); err != nil {
+		mlog.Critical("Failed to mark guest roles creation migration as completed.", mlog.Err(err))
+	}
+}
+
+func (a *App) DoSystemConsoleRolesCreationMigration() {
+	// If the migration is already marked as completed, don't do it again.
+	if _, err := a.Srv().Store.System().GetByName(SYSTEM_CONSOLE_ROLES_CREATION_MIGRATION_KEY); err == nil {
+		return
+	}
+
+	roles := model.MakeDefaultRoles()
+
+	allSucceeded := true
+	if _, err := a.Srv().Store.Role().GetByName(model.SYSTEM_MANAGER_ROLE_ID); err != nil {
+		if _, err := a.Srv().Store.Role().Save(roles[model.SYSTEM_MANAGER_ROLE_ID]); err != nil {
+			mlog.Critical("Failed to create new role.", mlog.Err(err), mlog.String("role", model.SYSTEM_MANAGER_ROLE_ID))
+			allSucceeded = false
+		}
+	}
+	if _, err := a.Srv().Store.Role().GetByName(model.SYSTEM_READ_ONLY_ADMIN_ROLE_ID); err != nil {
+		if _, err := a.Srv().Store.Role().Save(roles[model.SYSTEM_READ_ONLY_ADMIN_ROLE_ID]); err != nil {
+			mlog.Critical("Failed to create new role.", mlog.Err(err), mlog.String("role", model.SYSTEM_READ_ONLY_ADMIN_ROLE_ID))
+			allSucceeded = false
+		}
+	}
+	if _, err := a.Srv().Store.Role().GetByName(model.SYSTEM_USER_MANAGER_ROLE_ID); err != nil {
+		if _, err := a.Srv().Store.Role().Save(roles[model.SYSTEM_USER_MANAGER_ROLE_ID]); err != nil {
+			mlog.Critical("Failed to create new role.", mlog.Err(err), mlog.String("role", model.SYSTEM_USER_MANAGER_ROLE_ID))
+			allSucceeded = false
+		}
+	}
+
+	if !allSucceeded {
+		return
+	}
+
+	system := model.System{
+		Name:  SYSTEM_CONSOLE_ROLES_CREATION_MIGRATION_KEY,
+		Value: "true",
+	}
+
+	if err := a.Srv().Store.System().Save(&system); err != nil {
+		mlog.Critical("Failed to mark system console roles creation migration as completed.", mlog.Err(err))
+	}
+}
+
 func (a *App) DoAppMigrations() {
 	a.DoAdvancedPermissionsMigration()
+	//TODO: Open
 	// a.DoEmojisPermissionsMigration()
 	a.DoGuestRolesCreationMigration()
 	a.DoSystemConsoleRolesCreationMigration()

@@ -62,6 +62,10 @@ const (
 	PERMISSIONS_CHANNEL_ADMIN = "channel_admin"
 	PERMISSIONS_TEAM_ADMIN    = "team_admin"
 	PERMISSIONS_SYSTEM_ADMIN  = "system_admin"
+
+	ALLOW_EDIT_POST_ALWAYS     = "always"
+	ALLOW_EDIT_POST_NEVER      = "never"
+	ALLOW_EDIT_POST_TIME_LIMIT = "time_limit"
 )
 
 type Config struct {
