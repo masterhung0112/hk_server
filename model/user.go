@@ -35,6 +35,11 @@ type User struct {
 	Roles         string `json:"roles"`
 }
 
+type UserUpdate struct {
+	Old *User
+	New *User
+}
+
 // Options for counting users
 type UserCountOptions struct {
 	// Should include users that are bots
@@ -333,4 +338,59 @@ func UserListFromJson(data io.Reader) []*User {
 	var users []*User
 	json.NewDecoder(data).Decode(&users)
 	return users
+}
+
+// PreUpdate should be run before updating the user in the db.
+func (u *User) PreUpdate() {
+	u.Username = SanitizeUnicode(u.Username)
+	u.FirstName = SanitizeUnicode(u.FirstName)
+  u.LastName = SanitizeUnicode(u.LastName)
+  //TODO: Open this
+	// u.Nickname = SanitizeUnicode(u.Nickname)
+	// u.BotDescription = SanitizeUnicode(u.BotDescription)
+
+	u.Username = NormalizeUsername(u.Username)
+	u.Email = NormalizeEmail(u.Email)
+	u.UpdateAt = GetMillis()
+
+	u.FirstName = SanitizeUnicode(u.FirstName)
+	// u.LastName = SanitizeUnicode(u.LastName)
+	// u.Nickname = SanitizeUnicode(u.Nickname)
+	// u.BotDescription = SanitizeUnicode(u.BotDescription)
+
+	// if u.AuthData != nil && *u.AuthData == "" {
+	// 	u.AuthData = nil
+	// }
+
+	// if u.NotifyProps == nil || len(u.NotifyProps) == 0 {
+	// 	u.SetDefaultNotifications()
+	// } else if _, ok := u.NotifyProps[MENTION_KEYS_NOTIFY_PROP]; ok {
+	// 	// Remove any blank mention keys
+	// 	splitKeys := strings.Split(u.NotifyProps[MENTION_KEYS_NOTIFY_PROP], ",")
+	// 	goodKeys := []string{}
+	// 	for _, key := range splitKeys {
+	// 		if len(key) > 0 {
+	// 			goodKeys = append(goodKeys, strings.ToLower(key))
+	// 		}
+	// 	}
+	// 	u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] = strings.Join(goodKeys, ",")
+	// }
+}
+
+func (u *User) DeepCopy() *User {
+  copyUser := *u
+  //TODO: Open
+	// if u.AuthData != nil {
+	// 	copyUser.AuthData = NewString(*u.AuthData)
+	// }
+	// if u.Props != nil {
+	// 	copyUser.Props = CopyStringMap(u.Props)
+	// }
+	// if u.NotifyProps != nil {
+	// 	copyUser.NotifyProps = CopyStringMap(u.NotifyProps)
+	// }
+	// if u.Timezone != nil {
+	// 	copyUser.Timezone = CopyStringMap(u.Timezone)
+	// }
+	return &copyUser
 }

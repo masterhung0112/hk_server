@@ -1,6 +1,8 @@
 package model
 
 import ()
+import "io"
+import "encoding/json"
 
 const (
 	TEAM_OPEN                       = "O"
@@ -54,4 +56,15 @@ type Invites struct {
 type TeamsWithCount struct {
 	Teams      []*Team `json:"teams"`
 	TotalCount int64   `json:"total_count"`
+}
+
+func TeamFromJson(data io.Reader) *Team {
+	var o *Team
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func (o *Team) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }

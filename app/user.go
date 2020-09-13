@@ -7,6 +7,8 @@
 package app
 
 import (
+	"github.com/masterhung0112/go_server/store"
+	"strings"
 	"fmt"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
@@ -381,4 +383,57 @@ func (a *App) RestrictUsersGetByPermissions(userId string, options *model.UserGe
 
 	options.ViewRestrictions = restrictions
 	return options, nil
+}
+
+func (a *App) UpdateUserRoles(userId string, newRoles string, sendWebSocketEvent bool) (*model.User, *model.AppError) {
+	user, err := a.GetUser(userId)
+	if err != nil {
+		err.StatusCode = http.StatusBadRequest
+		return nil, err
+	}
+
+	if err := a.CheckRolesExist(strings.Fields(newRoles)); err != nil {
+		return nil, err
+	}
+
+	user.Roles = newRoles
+	uchan := make(chan store.StoreResult, 1)
+	go func() {
+		userUpdate, err := a.Srv().Store.User().Update(user, true)
+		uchan <- store.StoreResult{Data: userUpdate, Err: err}
+		close(uchan)
+	}()
+
+  schan := make(chan store.StoreResult, 1)
+  //TODO: Open
+	// go func() {
+	// 	id, err := a.Srv().Store.Session().UpdateRoles(user.Id, newRoles)
+	// 	schan <- store.StoreResult{Data: id, NErr: err}
+	// 	close(schan)
+	// }()
+
+	result := <-uchan
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	ruser := result.Data.(*model.UserUpdate).New
+
+	if result := <-schan; result.NErr != nil {
+		// soft error since the user roles were still updated
+		mlog.Error("Failed during updating user roles", mlog.Err(result.NErr))
+	}
+
+  //TODO: Open this
+	// a.InvalidateCacheForUser(userId)
+	// a.ClearSessionCacheForUser(user.Id)
+
+  //TODO: Open this
+	// if sendWebSocketEvent {
+	// 	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_USER_ROLE_UPDATED, "", "", user.Id, nil)
+	// 	message.Add("user_id", user.Id)
+	// 	message.Add("roles", newRoles)
+	// 	a.Publish(message)
+	// }
+
+	return ruser, nil
 }

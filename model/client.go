@@ -98,6 +98,10 @@ func (client *Client) GetUsersRoute() string {
 	return "/users"
 }
 
+func (c *Client) GetTeamsRoute() string {
+	return "/teams"
+}
+
 func (c *Client) DoApiGet(url string, etag string) (*http.Response, *AppError) {
 	return c.DoApiRequest(http.MethodGet, c.ApiUrl+url, "", etag)
 }
@@ -210,4 +214,16 @@ func CheckStatusOK(r *http.Response) bool {
 	}
 
 	return false
+}
+
+// Team Section
+
+// CreateTeam creates a team in the system based on the provided team struct.
+func (c *Client) CreateTeam(team *Team) (*Team, *Response) {
+	r, err := c.DoApiPost(c.GetTeamsRoute(), team.ToJson())
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	return TeamFromJson(r.Body), BuildResponse(r)
 }

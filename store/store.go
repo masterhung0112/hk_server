@@ -4,6 +4,14 @@ import (
 	"github.com/masterhung0112/go_server/model"
 )
 
+type StoreResult struct {
+	Data interface{}
+	Err  *model.AppError
+
+	// NErr a temporary field used by the new code for the AppError migration. This will later become Err when the entire store is migrated.
+	NErr error
+}
+
 type Store interface {
 	Team() TeamStore
 	Channel() ChannelStore
@@ -17,7 +25,8 @@ type Store interface {
 }
 
 type UserStore interface {
-	Save(user *model.User) (*model.User, *model.AppError)
+  Save(user *model.User) (*model.User, *model.AppError)
+  Update(user *model.User, allowRoleUpdate bool) (*model.UserUpdate, *model.AppError)
 	Get(id string) (*model.User, *model.AppError)
 	GetAll() ([]*model.User, *model.AppError)
 	Count(options model.UserCountOptions) (int64, *model.AppError)

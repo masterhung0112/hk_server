@@ -55,3 +55,25 @@ func (a *App) GetRolesByNames(names []string) ([]*model.Role, *model.AppError) {
 
 	return roles, nil
 }
+
+func (a *App) CheckRolesExist(roleNames []string) *model.AppError {
+	roles, err := a.GetRolesByNames(roleNames)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range roleNames {
+		nameFound := false
+		for _, role := range roles {
+			if name == role.Name {
+				nameFound = true
+				break
+			}
+		}
+		if !nameFound {
+			return model.NewAppError("CheckRolesExist", "app.role.check_roles_exist.role_not_found", nil, "role="+name, http.StatusBadRequest)
+		}
+	}
+
+	return nil
+}
