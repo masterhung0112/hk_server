@@ -356,17 +356,17 @@ func (me *TestHelper) InitLogin() *TestHelper {
 	me.BasicUser2.Password = "Pa$$word11"
 
 	//TODO: Open
-	// var wg sync.WaitGroup
-	// wg.Add(2)
-	// go func() {
-	// 	me.LoginSystemAdmin()
-	// 	wg.Done()
-	// }()
-	// go func() {
-	// 	me.LoginTeamAdmin()
-	// 	wg.Done()
-	// }()
-	// wg.Wait()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		me.LoginSystemAdmin()
+		wg.Done()
+	}()
+	go func() {
+		me.LoginTeamAdmin()
+		wg.Done()
+	}()
+	wg.Wait()
 	return me
 }
 

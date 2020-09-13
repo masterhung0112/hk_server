@@ -302,8 +302,8 @@ func login(c *Context, w http.ResponseWriter, r *http.Request) {
 
 		config := c.App.Config()
 		enableUsername := *config.EmailSettings.EnableSignInWithUsername
-    enableEmail := *config.EmailSettings.EnableSignInWithEmail
-    //TODO: Open
+		enableEmail := *config.EmailSettings.EnableSignInWithEmail
+		//TODO: Open
 		// samlEnabled := *config.SamlSettings.Enable
 		// gitlabEnabled := *config.GetSSOService("gitlab").Enable
 		// googleEnabled := *config.GetSSOService("google").Enable
@@ -395,7 +395,7 @@ func login(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.App.AttachSessionCookies(w, r)
 	}
 
-  //TODO: Open
+	//TODO: Open
 	// userTermsOfService, err := c.App.GetUserTermsOfService(user.Id)
 	// if err != nil && err.StatusCode != http.StatusNotFound {
 	// 	c.Err = err

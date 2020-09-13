@@ -2,10 +2,9 @@ package app
 
 import (
 	"fmt"
-	"strings"
 	"github.com/avct/uasurfer"
+	"strings"
 )
-
 
 var platformNames = map[uasurfer.Platform]string{
 	uasurfer.PlatformUnknown:      "Windows",
@@ -79,7 +78,6 @@ func getOSName(ua *uasurfer.UserAgent) string {
 
 	return osNames[uasurfer.OSUnknown]
 }
-
 
 var browserNames = map[uasurfer.BrowserName]string{
 	uasurfer.BrowserUnknown:    "Unknown",

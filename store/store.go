@@ -20,8 +20,8 @@ type Store interface {
 	Role() RoleStore
 	Scheme() SchemeStore
 	Session() SessionStore
-  UserAccessToken() UserAccessTokenStore
-  Token() TokenStore
+	UserAccessToken() UserAccessTokenStore
+	Token() TokenStore
 	Close()
 	DropAllTables()
 	MarkSystemRanUnitTests()
@@ -47,8 +47,8 @@ type UserStore interface {
 	GetProfilesInChannel(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 	GetProfilesInChannelByStatus(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
 	GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
-  UpdateFailedPasswordAttempts(userId string, attempts int) *model.AppError
-  GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, *model.AppError)
+	UpdateFailedPasswordAttempts(userId string, attempts int) *model.AppError
+	GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, *model.AppError)
 }
 
 type SystemStore interface {

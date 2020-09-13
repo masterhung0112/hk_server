@@ -22,7 +22,7 @@ func (a *App) CreateSession(session *model.Session) (*model.Session, *model.AppE
 		}
 	}
 
-  //TODO: Open
+	//TODO: Open
 	// a.AddSessionToCache(session)
 
 	return session, nil

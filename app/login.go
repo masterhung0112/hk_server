@@ -1,18 +1,18 @@
 package app
 
 import (
-	"fmt"
-	"strconv"
-	"github.com/masterhung0112/go_server/utils"
-	"time"
 	"crypto/subtle"
-	"github.com/pkg/errors"
-	"github.com/masterhung0112/go_server/store"
+	"fmt"
+	"github.com/avct/uasurfer"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/store"
+	"github.com/masterhung0112/go_server/utils"
+	"github.com/pkg/errors"
 	"net/http"
-  "os"
-  "github.com/avct/uasurfer"
+	"os"
+	"strconv"
+	"time"
 )
 
 const cwsTokenEnv = "CWS_CLOUD_TOKEN"
@@ -119,8 +119,8 @@ func (a *App) GetUserForLogin(id, loginId string) (*model.User, *model.AppError)
 		return user, nil
 	}
 
-  // Try to get the user with LDAP if enabled
-  //TODO: Open
+	// Try to get the user with LDAP if enabled
+	//TODO: Open
 	// if *a.Config().LdapSettings.Enable && a.Ldap() != nil {
 	// 	if ldapUser, err := a.Ldap().GetUser(loginId); err == nil {
 	// 		if user, err := a.GetUserByAuth(ldapUser.AuthData, model.USER_AUTH_SERVICE_LDAP); err == nil {
@@ -134,8 +134,8 @@ func (a *App) GetUserForLogin(id, loginId string) (*model.User, *model.AppError)
 }
 
 func IsCWSLogin(a *App, token string) bool {
-  return false
-  //TODO: Open
+	return false
+	//TODO: Open
 	// return a.Srv().License() != nil && *a.Srv().License().Features.Cloud && token != ""
 }
 
@@ -193,9 +193,8 @@ func GetProtocol(r *http.Request) string {
 	return "http"
 }
 
-
 func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, deviceId string, isMobile, isOAuthUser, isSaml bool) *model.AppError {
-  //TODO: Open
+	//TODO: Open
 	// if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
 	// 	var rejectionReason string
 	// 	pluginContext := a.PluginContext()
@@ -258,14 +257,14 @@ func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, 
 
 	a.SetSession(session)
 
-  //TODO: Open
+	//TODO: Open
 	// if a.Srv().License() != nil && *a.Srv().License().Features.LDAP && a.Ldap() != nil {
 	// 	a.Srv().Go(func() {
 	// 		a.Ldap().UpdateProfilePictureIfNecessary(user, session)
 	// 	})
 	// }
 
-  //TODO: Open
+	//TODO: Open
 	// if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
 	// 	a.Srv().Go(func() {
 	// 		pluginContext := a.PluginContext()

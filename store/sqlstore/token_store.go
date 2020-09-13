@@ -1,14 +1,13 @@
 package sqlstore
 
 import (
-	"fmt"
 	"database/sql"
-	"github.com/masterhung0112/go_server/store"
+	"fmt"
 	"github.com/masterhung0112/go_server/mlog"
-	"github.com/pkg/errors"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/store"
+	"github.com/pkg/errors"
 )
-
 
 type SqlTokenStore struct {
 	SqlStore

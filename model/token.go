@@ -11,18 +11,18 @@ const (
 )
 
 type Token struct {
-	Token     string
+	Token    string
 	CreateAt int64
-	Type      string
-	Extra     string
+	Type     string
+	Extra    string
 }
 
 func NewToken(tokentype, extra string) *Token {
 	return &Token{
-		Token:     NewRandomString(TOKEN_SIZE),
+		Token:    NewRandomString(TOKEN_SIZE),
 		CreateAt: GetMillis(),
-		Type:      tokentype,
-		Extra:     extra,
+		Type:     tokentype,
+		Extra:    extra,
 	}
 }
 

@@ -60,14 +60,14 @@ const (
 )
 
 type Config struct {
-	ServiceSettings      ServiceSettings
-	TeamSettings         TeamSettings
-	PasswordSettings     PasswordSettings
-	LocalizationSettings LocalizationSettings
-	SqlSettings          SqlSettings
-	PrivacySettings      PrivacySettings
-  EmailSettings        EmailSettings
-  GuestAccountsSettings     GuestAccountsSettings
+	ServiceSettings       ServiceSettings
+	TeamSettings          TeamSettings
+	PasswordSettings      PasswordSettings
+	LocalizationSettings  LocalizationSettings
+	SqlSettings           SqlSettings
+	PrivacySettings       PrivacySettings
+	EmailSettings         EmailSettings
+	GuestAccountsSettings GuestAccountsSettings
 }
 
 // isUpdate detects a pre-existing config based on whether SiteURL has been changed
@@ -78,13 +78,14 @@ func (o *Config) isUpdate() bool {
 func (o *Config) SetDefaults() {
 	isUpdate := o.isUpdate()
 
+	o.TeamSettings.SetDefaults()
 	o.ServiceSettings.SetDefaults(isUpdate)
 	o.PasswordSettings.SetDefaults()
 	o.LocalizationSettings.SetDefaults()
 	o.SqlSettings.SetDefaults(isUpdate)
-	o.TeamSettings.SetDefaults()
-  o.PrivacySettings.SetDefaults()
-  o.GuestAccountsSettings.SetDefaults()
+	o.PrivacySettings.SetDefaults()
+	o.EmailSettings.SetDefaults(isUpdate)
+	o.GuestAccountsSettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
@@ -219,11 +220,11 @@ type ServiceSettings struct {
 	ExtendSessionLengthWithActivity *bool `access:"environment,write_restrictable"`
 	SessionIdleTimeoutInMinutes     *int  `access:"environment,write_restrictable"`
 	EnableUserAccessTokens          *bool `access:"integrations"`
-  MaximumLoginAttempts            *int  `access:"authentication,write_restrictable"`
-  SessionLengthWebInDays                            *int     `access:"environment,write_restrictable"`
-  AllowCookiesForSubdomains                         *bool    `access:"write_restrictable"`
-  SessionLengthMobileInDays                         *int     `access:"environment,write_restrictable"`
-  SessionLengthSSOInDays                            *int     `access:"environment,write_restrictable"`
+	MaximumLoginAttempts            *int  `access:"authentication,write_restrictable"`
+	SessionLengthWebInDays          *int  `access:"environment,write_restrictable"`
+	AllowCookiesForSubdomains       *bool `access:"write_restrictable"`
+	SessionLengthMobileInDays       *int  `access:"environment,write_restrictable"`
+	SessionLengthSSOInDays          *int  `access:"environment,write_restrictable"`
 }
 
 func (s *ServiceSettings) SetDefaults(isUpdate bool) {
@@ -266,29 +267,29 @@ func (s *ServiceSettings) SetDefaults(isUpdate bool) {
 
 	if s.MaximumLoginAttempts == nil {
 		s.MaximumLoginAttempts = NewInt(SERVICE_SETTINGS_DEFAULT_MAX_LOGIN_ATTEMPTS)
-  }
+	}
 
-  if s.SessionLengthWebInDays == nil {
+	if s.SessionLengthWebInDays == nil {
 		if isUpdate {
 			s.SessionLengthWebInDays = NewInt(180)
 		} else {
 			s.SessionLengthWebInDays = NewInt(30)
 		}
-  }
+	}
 
-  if s.SessionLengthMobileInDays == nil {
+	if s.SessionLengthMobileInDays == nil {
 		if isUpdate {
 			s.SessionLengthMobileInDays = NewInt(180)
 		} else {
 			s.SessionLengthMobileInDays = NewInt(30)
 		}
-  }
+	}
 
-  if s.SessionLengthSSOInDays == nil {
+	if s.SessionLengthSSOInDays == nil {
 		s.SessionLengthSSOInDays = NewInt(30)
 	}
 
-  if s.AllowCookiesForSubdomains == nil {
+	if s.AllowCookiesForSubdomains == nil {
 		s.AllowCookiesForSubdomains = NewBool(false)
 	}
 }
@@ -724,7 +725,6 @@ func (s *EmailSettings) SetDefaults(isUpdate bool) {
 		s.LoginButtonTextColor = NewString("#2389D7")
 	}
 }
-
 
 type GuestAccountsSettings struct {
 	Enable                           *bool   `access:"authentication"`
