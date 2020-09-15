@@ -206,3 +206,7 @@ func ChannelFromJson(data io.Reader) *Channel {
 	json.NewDecoder(data).Decode(&o)
 	return o
 }
+
+func (o *Channel) IsGroupOrDirect() bool {
+	return o.Type == CHANNEL_DIRECT || o.Type == CHANNEL_GROUP
+}

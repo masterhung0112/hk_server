@@ -318,3 +318,87 @@ func (a *App) CreateChannel(channel *model.Channel, addMember bool) (*model.Chan
 
 	return sc, nil
 }
+
+func (a *App) CreateChannelWithUser(channel *model.Channel, userId string) (*model.Channel, *model.AppError) {
+	if channel.IsGroupOrDirect() {
+		return nil, model.NewAppError("CreateChannelWithUser", "api.channel.create_channel.direct_channel.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	if len(channel.TeamId) == 0 {
+		return nil, model.NewAppError("CreateChannelWithUser", "app.channel.create_channel.no_team_id.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	// Get total number of channels on current team
+	count, err := a.GetNumberOfChannelsOnTeam(channel.TeamId)
+	if err != nil {
+		return nil, err
+	}
+
+	if int64(count+1) > *a.Config().TeamSettings.MaxChannelsPerTeam {
+		return nil, model.NewAppError("CreateChannelWithUser", "api.channel.create_channel.max_channel_limit.app_error", map[string]interface{}{"MaxChannelsPerTeam": *a.Config().TeamSettings.MaxChannelsPerTeam}, "", http.StatusBadRequest)
+	}
+
+	channel.CreatorId = userId
+
+	rchannel, err := a.CreateChannel(channel, true)
+	if err != nil {
+		return nil, err
+	}
+
+	var user *model.User
+	if user, err = a.GetUser(userId); err != nil {
+		return nil, err
+	}
+
+	a.postJoinChannelMessage(user, channel)
+
+	//TODO: Open
+	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", userId, nil)
+	// message.Add("channel_id", channel.Id)
+	// message.Add("team_id", channel.TeamId)
+	// a.Publish(message)
+
+	return rchannel, nil
+}
+
+func (a *App) postJoinChannelMessage(user *model.User, channel *model.Channel) *model.AppError {
+	//TODO: Open
+	// message := fmt.Sprintf(utils.T("api.channel.join_channel.post_and_forget"), user.Username)
+	// postType := model.POST_JOIN_CHANNEL
+
+	// if user.IsGuest() {
+	// 	message = fmt.Sprintf(utils.T("api.channel.guest_join_channel.post_and_forget"), user.Username)
+	// 	postType = model.POST_GUEST_JOIN_CHANNEL
+	// }
+
+	// post := &model.Post{
+	// 	ChannelId: channel.Id,
+	// 	Message:   message,
+	// 	Type:      postType,
+	// 	UserId:    user.Id,
+	// 	Props: model.StringInterface{
+	// 		"username": user.Username,
+	// 	},
+	// }
+
+	// if _, err := a.CreatePost(post, channel, false, true); err != nil {
+	// 	return model.NewAppError("postJoinChannelMessage", "api.channel.post_user_add_remove_message_and_forget.error", nil, err.Error(), http.StatusInternalServerError)
+	// }
+
+	return nil
+}
+
+func (a *App) GetNumberOfChannelsOnTeam(teamId string) (int, *model.AppError) {
+	// Get total number of channels on current team
+	list, err := a.Srv().Store.Channel().GetTeamChannels(teamId)
+	if err != nil {
+		var nfErr *store.ErrNotFound
+		switch {
+		case errors.As(err, &nfErr):
+			return 0, model.NewAppError("GetNumberOfChannelsOnTeam", "app.channel.get_channels.not_found.app_error", nil, nfErr.Error(), http.StatusNotFound)
+		default:
+			return 0, model.NewAppError("GetNumberOfChannelsOnTeam", "app.channel.get_channels.get.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	return len(*list), nil
+}

@@ -488,3 +488,44 @@ func (a *App) filterNonGroupUsers(userIds []string, groupUsers []*model.User) ([
 func (a *App) GetChannelGroupUsers(channelID string) ([]*model.User, *model.AppError) {
 	return a.Srv().Store.User().GetChannelGroupUsers(channelID)
 }
+
+func (a *App) UserCanSeeOtherUser(userId string, otherUserId string) (bool, *model.AppError) {
+	if userId == otherUserId {
+		return true, nil
+	}
+
+	restrictions, err := a.GetViewUsersRestrictions(userId)
+	if err != nil {
+		return false, err
+	}
+
+	if restrictions == nil {
+		return true, nil
+	}
+
+	if len(restrictions.Teams) > 0 {
+		result, err := a.Srv().Store.Team().UserBelongsToTeams(otherUserId, restrictions.Teams)
+		if err != nil {
+			return false, err
+		}
+		if result {
+			return true, nil
+		}
+	}
+
+	if len(restrictions.Channels) > 0 {
+		result, err := a.userBelongsToChannels(otherUserId, restrictions.Channels)
+		if err != nil {
+			return false, err
+		}
+		if result {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (a *App) userBelongsToChannels(userId string, channelIds []string) (bool, *model.AppError) {
+	return a.Srv().Store.Channel().UserBelongsToChannels(userId, channelIds)
+}

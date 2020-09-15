@@ -15,6 +15,8 @@ type ApiRoutes struct {
 	User  *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}'
 
 	Teams *mux.Router // 'api/v1/teams'
+
+	Channels *mux.Router // 'api/v1/channels'
 }
 
 type API struct {
@@ -35,8 +37,12 @@ func ApiInit(globalOptionsFunc app.AppOptionCreator, root *mux.Router) *API {
 	api.BaseRoutes.User = api.BaseRoutes.ApiRoot.PathPrefix("/users/{user_id:[A-za-z0-9]+}").Subrouter()
 
 	api.BaseRoutes.Teams = api.BaseRoutes.ApiRoot.PathPrefix("/teams").Subrouter()
+
+	api.BaseRoutes.Channels = api.BaseRoutes.ApiRoot.PathPrefix("/channels").Subrouter()
+
 	api.InitUser()
 	api.InitTeam()
+	api.InitChannel()
 	api.InitConfig()
 
 	return api

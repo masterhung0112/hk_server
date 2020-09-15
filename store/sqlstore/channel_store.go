@@ -950,3 +950,38 @@ func (s SqlChannelStore) getByName(teamId string, name string, includeDeleted bo
 	// channelByNameCache.SetWithExpiry(teamId+name, &channel, CHANNEL_CACHE_DURATION)
 	return &channel, nil
 }
+
+func (s SqlChannelStore) GetTeamChannels(teamId string) (*model.ChannelList, error) {
+	data := &model.ChannelList{}
+	_, err := s.GetReplica().Select(data, "SELECT * FROM Channels WHERE TeamId = :TeamId And Type != 'D' ORDER BY DisplayName", map[string]interface{}{"TeamId": teamId})
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find Channels with teamId=%s", teamId)
+	}
+
+	if len(*data) == 0 {
+		return nil, store.NewErrNotFound("Channel", fmt.Sprintf("teamId=%s", teamId))
+	}
+
+	return data, nil
+}
+
+func (s SqlChannelStore) UserBelongsToChannels(userId string, channelIds []string) (bool, *model.AppError) {
+	query := s.getQueryBuilder().
+		Select("Count(*)").
+		From("ChannelMembers").
+		Where(sq.And{
+			sq.Eq{"UserId": userId},
+			sq.Eq{"ChannelId": channelIds},
+		})
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return false, model.NewAppError("SqlChannelStore.UserBelongsToChannels", "store.sql_channel.user_belongs_to_channels.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	c, err := s.GetReplica().SelectInt(queryString, args...)
+	if err != nil {
+		return false, model.NewAppError("SqlChannelStore.UserBelongsToChannels", "store.sql_channel.user_belongs_to_channels.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	return c > 0, nil
+}

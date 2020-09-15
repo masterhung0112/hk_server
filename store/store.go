@@ -134,7 +134,7 @@ type TeamStore interface {
 	// AnalyticsGetTeamCountForScheme(schemeId string) (int64, *model.AppError)
 	// GetAllForExportAfter(limit int, afterId string) ([]*model.TeamForExport, *model.AppError)
 	// GetTeamMembersForExport(userId string) ([]*model.TeamMemberForExport, *model.AppError)
-	// UserBelongsToTeams(userId string, teamIds []string) (bool, *model.AppError)
+	UserBelongsToTeams(userId string, teamIds []string) (bool, *model.AppError)
 	GetUserTeamIds(userId string, allowFromCache bool) ([]string, *model.AppError)
 	InvalidateAllTeamIdsForUser(userId string)
 	// ClearCaches()
@@ -176,7 +176,7 @@ type ChannelStore interface {
 	// GetPublicChannelsForTeam(teamId string, offset int, limit int) (*model.ChannelList, error)
 	// GetPublicChannelsByIdsForTeam(teamId string, channelIds []string) (*model.ChannelList, error)
 	// GetChannelCounts(teamId string, userId string) (*model.ChannelCounts, error)
-	// GetTeamChannels(teamId string) (*model.ChannelList, error)
+	GetTeamChannels(teamId string) (*model.ChannelList, error)
 	// GetAll(teamId string) ([]*model.Channel, error)
 	// GetChannelsByIds(channelIds []string, includeDeleted bool) ([]*model.Channel, error)
 	GetForPost(postId string) (*model.Channel, error)
@@ -245,7 +245,7 @@ type ChannelStore interface {
 	// GetChannelMembersForExport(userId string, teamId string) ([]*model.ChannelMemberForExport, *model.AppError)
 	// RemoveAllDeactivatedMembers(channelId string) *model.AppError
 	// GetChannelsBatchForIndexing(startTime, endTime int64, limit int) ([]*model.Channel, *model.AppError)
-	// UserBelongsToChannels(userId string, channelIds []string) (bool, *model.AppError)
+	UserBelongsToChannels(userId string, channelIds []string) (bool, *model.AppError)
 
 	// // UpdateMembersRole sets all of the given team members to admins and all of the other members of the team to
 	// // non-admin members.
