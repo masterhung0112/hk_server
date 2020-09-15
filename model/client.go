@@ -103,6 +103,10 @@ func (client *Client) GetUsersRoute() string {
 	return "/users"
 }
 
+func (c *Client) GetUserRoute(userId string) string {
+	return fmt.Sprintf(c.GetUsersRoute()+"/%v", userId)
+}
+
 func (c *Client) GetTeamsRoute() string {
 	return "/teams"
 }
@@ -231,4 +235,46 @@ func (c *Client) CreateTeam(team *Team) (*Team, *Response) {
 	}
 	defer closeBody(r)
 	return TeamFromJson(r.Body), BuildResponse(r)
+}
+
+// GetMe returns the logged in user.
+func (c *Client) GetMe(etag string) (*User, *Response) {
+	r, err := c.DoApiGet(c.GetUserRoute(ME), etag)
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	return UserFromJson(r.Body), BuildResponse(r)
+}
+
+// CreateChannel creates a channel based on the provided channel struct.
+func (c *Client) CreateChannel(channel *Channel) (*Channel, *Response) {
+	r, err := c.DoApiPost(c.GetChannelsRoute(), channel.ToJson())
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	return ChannelFromJson(r.Body), BuildResponse(r)
+}
+
+// DeleteChannel deletes channel based on the provided channel id string.
+func (c *Client) DeleteChannel(channelId string) (bool, *Response) {
+	r, err := c.DoApiDelete(c.GetChannelRoute(channelId))
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	return CheckStatusOK(r), BuildResponse(r)
+}
+
+func (c *Client) DoApiDelete(url string) (*http.Response, *AppError) {
+	return c.DoApiRequest(http.MethodDelete, c.ApiUrl+url, "", "")
+}
+
+func (c *Client) GetChannelsRoute() string {
+	return "/channels"
+}
+
+func (c *Client) GetChannelRoute(channelId string) string {
+	return fmt.Sprintf(c.GetChannelsRoute()+"/%v", channelId)
 }

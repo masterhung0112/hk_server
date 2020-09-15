@@ -49,6 +49,9 @@ type UserStore interface {
 	GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
 	UpdateFailedPasswordAttempts(userId string, attempts int) *model.AppError
 	GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, *model.AppError)
+	GetProfileByIds(userIds []string, options *UserGetByIdsOpts, allowFromCache bool) ([]*model.User, *model.AppError)
+	GetChannelGroupUsers(channelID string) ([]*model.User, *model.AppError)
+	UpdateUpdateAt(userId string) (int64, *model.AppError)
 }
 
 type SystemStore interface {
@@ -107,13 +110,13 @@ type TeamStore interface {
 	// AnalyticsPrivateTeamCount() (int64, error)
 	SaveMultipleMembers(members []*model.TeamMember, maxUsersPerTeam int) ([]*model.TeamMember, error)
 	SaveMember(member *model.TeamMember, maxUsersPerTeam int) (*model.TeamMember, error)
-	// UpdateMember(member *model.TeamMember) (*model.TeamMember, *model.AppError)
-	// UpdateMultipleMembers(members []*model.TeamMember) ([]*model.TeamMember, *model.AppError)
+	UpdateMember(member *model.TeamMember) (*model.TeamMember, *model.AppError)
+	UpdateMultipleMembers(members []*model.TeamMember) ([]*model.TeamMember, *model.AppError)
 	GetMember(teamId string, userId string) (*model.TeamMember, *model.AppError)
 	GetMembers(teamId string, offset int, limit int, teamMembersGetOptions *model.TeamMembersGetOptions) ([]*model.TeamMember, *model.AppError)
 	// GetMembersByIds(teamId string, userIds []string, restrictions *model.ViewUsersRestrictions) ([]*model.TeamMember, *model.AppError)
 	// GetTotalMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError)
-	// GetActiveMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError)
+	GetActiveMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError)
 	GetTeamsForUser(userId string) ([]*model.TeamMember, *model.AppError)
 	// GetTeamsForUserWithPagination(userId string, page, perPage int) ([]*model.TeamMember, *model.AppError)
 	// GetChannelUnreadsForAllTeams(excludeTeamId, userId string) ([]*model.ChannelUnread, *model.AppError)
@@ -159,7 +162,7 @@ type ChannelStore interface {
 	// SetDeleteAt(channelId string, deleteAt int64, updateAt int64) error
 	// PermanentDelete(channelId string) error
 	// PermanentDeleteByTeam(teamId string) error
-	// GetByName(team_id string, name string, allowFromCache bool) (*model.Channel, error)
+	GetByName(team_id string, name string, allowFromCache bool) (*model.Channel, error)
 	// GetByNames(team_id string, names []string, allowFromCache bool) ([]*model.Channel, error)
 	// GetByNameIncludeDeleted(team_id string, name string, allowFromCache bool) (*model.Channel, error)
 	// GetDeletedByName(team_id string, name string) (*model.Channel, error)
@@ -176,15 +179,15 @@ type ChannelStore interface {
 	// GetAll(teamId string) ([]*model.Channel, error)
 	// GetChannelsByIds(channelIds []string, includeDeleted bool) ([]*model.Channel, error)
 	GetForPost(postId string) (*model.Channel, error)
-	// SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError)
-	// SaveMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
+	SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError)
+	SaveMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
 	// UpdateMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
 	// UpdateMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError)
 	// GetMembers(channelId string, offset, limit int) (*model.ChannelMembers, *model.AppError)
-	// GetMember(channelId string, userId string) (*model.ChannelMember, *model.AppError)
+	GetMember(channelId string, userId string) (*model.ChannelMember, *model.AppError)
 	// GetChannelMembersTimezones(channelId string) ([]model.StringMap, *model.AppError)
 	GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, *model.AppError)
-	// InvalidateAllChannelMembersForUser(userId string)
+	InvalidateAllChannelMembersForUser(userId string)
 	// IsUserInChannelUseCache(userId string, channelId string) bool
 	// GetAllChannelMembersNotifyPropsForChannel(channelId string, allowFromCache bool) (map[string]model.StringMap, *model.AppError)
 	// InvalidateCacheForChannelMembersNotifyProps(channelId string)
@@ -226,7 +229,7 @@ type ChannelStore interface {
 	// ResetAllChannelSchemes() *model.AppError
 	// ClearAllCustomRoleAssignments() *model.AppError
 	// MigratePublicChannels() error
-	// CreateInitialSidebarCategories(userId, teamId string) error
+	CreateInitialSidebarCategories(userId, teamId string) error
 	// GetSidebarCategories(userId, teamId string) (*model.OrderedSidebarCategories, *model.AppError)
 	GetSidebarCategory(categoryId string) (*model.SidebarCategoryWithChannels, *model.AppError)
 	// GetSidebarCategoryOrder(userId, teamId string) ([]string, *model.AppError)
@@ -300,4 +303,15 @@ type TokenStore interface {
 	GetByToken(token string) (*model.Token, error)
 	Cleanup()
 	RemoveAllTokensByType(tokenType string) error
+}
+
+type UserGetByIdsOpts struct {
+	// IsAdmin tracks whether or not the request is being made by an administrator. Does nothing when provided by a client.
+	IsAdmin bool
+
+	// Restrict to search in a list of teams and channels. Does nothing when provided by a client.
+	ViewRestrictions *model.ViewUsersRestrictions
+
+	// Since filters the users based on their UpdateAt timestamp.
+	Since int64
 }

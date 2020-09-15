@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/store"
 	"github.com/masterhung0112/go_server/testlib"
 	"github.com/masterhung0112/go_server/utils"
@@ -19,15 +20,21 @@ import (
 )
 
 type TestHelper struct {
-	App           *app.App
-	Server        *app.Server
-	ConfigStore   config.Store
-	Client        *model.Client
-	BasicUser     *model.User
-	BasicUser2    *model.User
-	TeamAdminUser *model.User
-	BasicTeam     *model.Team
-	BasicChannel  *model.Channel
+	App                  *app.App
+	Server               *app.Server
+	ConfigStore          config.Store
+	Client               *model.Client
+	BasicUser            *model.User
+	BasicUser2           *model.User
+	TeamAdminUser        *model.User
+	BasicTeam            *model.Team
+	BasicChannel         *model.Channel
+	BasicPrivateChannel  *model.Channel
+	BasicPrivateChannel2 *model.Channel
+	BasicDeletedChannel  *model.Channel
+	BasicChannel2        *model.Channel
+	// BasicPost            *model.Post
+	// Group                *model.Group
 
 	SystemAdminClient *model.Client
 	SystemAdminUser   *model.User
@@ -100,6 +107,32 @@ func setupTestHelper(dbStore store.Store) *TestHelper {
 	th.App.InitServer()
 
 	return th
+}
+
+func (me *TestHelper) InitBasic() *TestHelper {
+	me.BasicTeam = me.CreateTeam()
+	me.BasicChannel = me.CreatePublicChannel()
+	me.BasicPrivateChannel = me.CreatePrivateChannel()
+	me.BasicPrivateChannel2 = me.CreatePrivateChannel()
+	me.BasicDeletedChannel = me.CreatePublicChannel()
+	me.BasicChannel2 = me.CreatePublicChannel()
+	// me.BasicPost = me.CreatePost()
+	me.LinkUserToTeam(me.BasicUser, me.BasicTeam)
+	me.LinkUserToTeam(me.BasicUser2, me.BasicTeam)
+	me.App.AddUserToChannel(me.BasicUser, me.BasicChannel)
+	me.App.AddUserToChannel(me.BasicUser2, me.BasicChannel)
+	me.App.AddUserToChannel(me.BasicUser, me.BasicChannel2)
+	me.App.AddUserToChannel(me.BasicUser2, me.BasicChannel2)
+	me.App.AddUserToChannel(me.BasicUser, me.BasicPrivateChannel)
+	me.App.AddUserToChannel(me.BasicUser2, me.BasicPrivateChannel)
+	me.App.AddUserToChannel(me.BasicUser, me.BasicDeletedChannel)
+	me.App.AddUserToChannel(me.BasicUser2, me.BasicDeletedChannel)
+	me.App.UpdateUserRoles(me.BasicUser.Id, model.SYSTEM_USER_ROLE_ID, false)
+	me.Client.DeleteChannel(me.BasicDeletedChannel.Id)
+	me.LoginBasic()
+	// me.Group = me.CreateGroup()
+
+	return me
 }
 
 func (th *TestHelper) CreateClient() *model.Client {
@@ -300,9 +333,9 @@ func (me *TestHelper) CreateUserWithClient(client *model.Client) *model.User {
 	id := model.NewId()
 
 	user := &model.User{
-		Email:    me.GenerateTestEmail(),
-		Username: GenerateTestUsername(),
-		// Nickname:  "nn_" + id,
+		Email:     me.GenerateTestEmail(),
+		Username:  GenerateTestUsername(),
+		Nickname:  "nn_" + id,
 		FirstName: "f_" + id,
 		LastName:  "l_" + id,
 		Password:  "Pa$$word11",
@@ -442,4 +475,65 @@ func (me *TestHelper) LoginSystemAdminWithClient(client *model.Client) {
 		panic(resp.Error)
 	}
 	utils.EnableDebugLogForTest()
+}
+
+func (me *TestHelper) CreatePublicChannel() *model.Channel {
+	return me.CreateChannelWithClient(me.Client, model.CHANNEL_OPEN)
+}
+
+func (me *TestHelper) CreatePrivateChannel() *model.Channel {
+	return me.CreateChannelWithClient(me.Client, model.CHANNEL_PRIVATE)
+}
+
+func (me *TestHelper) CreateChannelWithClient(client *model.Client, channelType string) *model.Channel {
+	return me.CreateChannelWithClientAndTeam(client, channelType, me.BasicTeam.Id)
+}
+
+func (me *TestHelper) CreateChannelWithClientAndTeam(client *model.Client, channelType string, teamId string) *model.Channel {
+	id := model.NewId()
+
+	channel := &model.Channel{
+		DisplayName: "dn_" + id,
+		Name:        GenerateTestChannelName(),
+		Type:        channelType,
+		TeamId:      teamId,
+	}
+
+	utils.DisableDebugLogForTest()
+	rchannel, resp := client.CreateChannel(channel)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+	return rchannel
+}
+
+func (me *TestHelper) LinkUserToTeam(user *model.User, team *model.Team) {
+	utils.DisableDebugLogForTest()
+
+	err := me.App.JoinUserToTeam(team, user, "")
+	if err != nil {
+		mlog.Error(err.Error())
+
+		time.Sleep(time.Second)
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (me *TestHelper) AddUserToChannel(user *model.User, channel *model.Channel) *model.ChannelMember {
+	utils.DisableDebugLogForTest()
+
+	member, err := me.App.AddUserToChannel(user, channel)
+	if err != nil {
+		mlog.Error(err.Error())
+
+		time.Sleep(time.Second)
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
+
+	return member
 }

@@ -4,6 +4,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/mattermost/gorp"
+	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -102,4 +103,134 @@ func (s SqlChannelStore) GetSidebarCategory(categoryId string) (*model.SidebarCa
 		}
 	}
 	return s.completePopulatingCategoryChannels(result)
+}
+
+func (s SqlChannelStore) CreateInitialSidebarCategories(userId, teamId string) error {
+	transaction, err := s.GetMaster().Begin()
+	if err != nil {
+		return errors.Wrap(err, "CreateInitialSidebarCategories: begin_transaction")
+	}
+	defer finalizeTransaction(transaction)
+
+	if err := s.createInitialSidebarCategoriesT(transaction, userId, teamId); err != nil {
+		return errors.Wrap(err, "CreateInitialSidebarCategories: createInitialSidebarCategoriesT")
+	}
+
+	if err := transaction.Commit(); err != nil {
+		return errors.Wrap(err, "CreateInitialSidebarCategories: commit_transaction")
+	}
+
+	return nil
+}
+
+func (s SqlChannelStore) createInitialSidebarCategoriesT(transaction *gorp.Transaction, userId, teamId string) error {
+	selectQuery, selectParams, _ := s.getQueryBuilder().
+		Select("Type").
+		From("SidebarCategories").
+		Where(sq.Eq{
+			"UserId": userId,
+			"TeamId": teamId,
+			"Type":   []model.SidebarCategoryType{model.SidebarCategoryFavorites, model.SidebarCategoryChannels, model.SidebarCategoryDirectMessages},
+		}).ToSql()
+
+	var existingTypes []model.SidebarCategoryType
+	_, err := transaction.Select(&existingTypes, selectQuery, selectParams...)
+	if err != nil {
+		return errors.Wrap(err, "createInitialSidebarCategoriesT: failed to select existing categories")
+	}
+
+	hasCategoryOfType := make(map[model.SidebarCategoryType]bool, len(existingTypes))
+	for _, existingType := range existingTypes {
+		hasCategoryOfType[existingType] = true
+	}
+
+	if !hasCategoryOfType[model.SidebarCategoryFavorites] {
+		favoritesCategoryId := model.NewId()
+
+		// Create the SidebarChannels first since there's more opportunity for something to fail here
+		if err := s.migrateFavoritesToSidebarT(transaction, userId, teamId, favoritesCategoryId); err != nil {
+			return errors.Wrap(err, "createInitialSidebarCategoriesT: failed to migrate favorites to sidebar")
+		}
+
+		if err := transaction.Insert(&model.SidebarCategory{
+			DisplayName: "Favorites", // This will be retranslated by the client into the user's locale
+			Id:          favoritesCategoryId,
+			UserId:      userId,
+			TeamId:      teamId,
+			Sorting:     model.SidebarCategorySortDefault,
+			SortOrder:   model.DefaultSidebarSortOrderFavorites,
+			Type:        model.SidebarCategoryFavorites,
+		}); err != nil {
+			return errors.Wrap(err, "createInitialSidebarCategoriesT: failed to insert favorites category")
+		}
+	}
+
+	if !hasCategoryOfType[model.SidebarCategoryChannels] {
+		if err := transaction.Insert(&model.SidebarCategory{
+			DisplayName: "Channels", // This will be retranslateed by the client into the user's locale
+			Id:          model.NewId(),
+			UserId:      userId,
+			TeamId:      teamId,
+			Sorting:     model.SidebarCategorySortDefault,
+			SortOrder:   model.DefaultSidebarSortOrderChannels,
+			Type:        model.SidebarCategoryChannels,
+		}); err != nil {
+			return errors.Wrap(err, "createInitialSidebarCategoriesT: failed to insert channels category")
+		}
+	}
+
+	if !hasCategoryOfType[model.SidebarCategoryDirectMessages] {
+		if err := transaction.Insert(&model.SidebarCategory{
+			DisplayName: "Direct Messages", // This will be retranslateed by the client into the user's locale
+			Id:          model.NewId(),
+			UserId:      userId,
+			TeamId:      teamId,
+			Sorting:     model.SidebarCategorySortRecent,
+			SortOrder:   model.DefaultSidebarSortOrderDMs,
+			Type:        model.SidebarCategoryDirectMessages,
+		}); err != nil {
+			return errors.Wrap(err, "createInitialSidebarCategoriesT: failed to insert direct messages category")
+		}
+	}
+
+	return nil
+}
+
+func (s SqlChannelStore) migrateFavoritesToSidebarT(transaction *gorp.Transaction, userId, teamId, favoritesCategoryId string) error {
+	favoritesQuery, favoritesParams, _ := s.getQueryBuilder().
+		Select("Preferences.Name").
+		From("Preferences").
+		Join("Channels on Preferences.Name = Channels.Id").
+		Join("ChannelMembers on Preferences.Name = ChannelMembers.ChannelId and Preferences.UserId = ChannelMembers.UserId").
+		Where(sq.Eq{
+			"Preferences.UserId":   userId,
+			"Preferences.Category": model.PREFERENCE_CATEGORY_FAVORITE_CHANNEL,
+			"Preferences.Value":    "true",
+		}).
+		Where(sq.Or{
+			sq.Eq{"Channels.TeamId": teamId},
+			sq.Eq{"Channels.TeamId": ""},
+		}).
+		OrderBy(
+			"Channels.DisplayName",
+			"Channels.Name ASC",
+		).ToSql()
+
+	var favoriteChannelIds []string
+	if _, err := transaction.Select(&favoriteChannelIds, favoritesQuery, favoritesParams...); err != nil {
+		return errors.Wrap(err, "migrateFavoritesToSidebarT: unable to get favorite channel IDs")
+	}
+
+	for i, channelId := range favoriteChannelIds {
+		if err := transaction.Insert(&model.SidebarChannel{
+			ChannelId:  channelId,
+			CategoryId: favoritesCategoryId,
+			UserId:     userId,
+			SortOrder:  int64(i * model.MinimalSidebarSortDistance),
+		}); err != nil {
+			return errors.Wrap(err, "migrateFavoritesToSidebarT: unable to insert SidebarChannel")
+		}
+	}
+
+	return nil
 }

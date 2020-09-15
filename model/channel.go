@@ -1,6 +1,8 @@
 package model
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 	"unicode/utf8"
@@ -188,4 +190,19 @@ func (o *Channel) PreSave() {
 	o.CreateAt = GetMillis()
 	o.UpdateAt = o.CreateAt
 	o.ExtraUpdateAt = 0
+}
+
+func (o *Channel) IsGroupConstrained() bool {
+	return o.GroupConstrained != nil && *o.GroupConstrained
+}
+
+func (o *Channel) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}
+
+func ChannelFromJson(data io.Reader) *Channel {
+	var o *Channel
+	json.NewDecoder(data).Decode(&o)
+	return o
 }

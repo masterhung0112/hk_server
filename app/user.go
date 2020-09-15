@@ -447,3 +447,44 @@ func (a *App) UpdateUserRoles(userId string, newRoles string, sendWebSocketEvent
 
 	return ruser, nil
 }
+
+// FilterNonGroupChannelMembers returns the subset of the given user IDs of the users who are not members of groups
+// associated to the channel excluding bots
+func (a *App) FilterNonGroupChannelMembers(userIds []string, channel *model.Channel) ([]string, error) {
+	channelGroupUsers, err := a.GetChannelGroupUsers(channel.Id)
+	if err != nil {
+		return nil, err
+	}
+	return a.filterNonGroupUsers(userIds, channelGroupUsers)
+}
+
+// filterNonGroupUsers is a helper function that takes a list of user ids and a list of users
+// and returns the list of normal users present in userIds but not in groupUsers.
+func (a *App) filterNonGroupUsers(userIds []string, groupUsers []*model.User) ([]string, error) {
+	nonMemberIds := []string{}
+	users, err := a.Srv().Store.User().GetProfileByIds(userIds, nil, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		userIsMember := user.IsBot
+
+		for _, pu := range groupUsers {
+			if pu.Id == user.Id {
+				userIsMember = true
+				break
+			}
+		}
+		if !userIsMember {
+			nonMemberIds = append(nonMemberIds, user.Id)
+		}
+	}
+
+	return nonMemberIds, nil
+}
+
+// GetChannelGroupUsers returns the users who are associated to the channel via GroupChannels and GroupMembers.
+func (a *App) GetChannelGroupUsers(channelID string) ([]*model.User, *model.AppError) {
+	return a.Srv().Store.User().GetChannelGroupUsers(channelID)
+}

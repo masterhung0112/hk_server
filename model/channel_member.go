@@ -1,6 +1,7 @@
 package model
 
 import (
+	"net/http"
 	"strings"
 )
 
@@ -60,4 +61,82 @@ type ChannelMemberForExport struct {
 
 func (o *ChannelMember) GetRoles() []string {
 	return strings.Fields(o.Roles)
+}
+
+func GetDefaultChannelNotifyProps() StringMap {
+	return StringMap{
+		DESKTOP_NOTIFY_PROP:                 CHANNEL_NOTIFY_DEFAULT,
+		MARK_UNREAD_NOTIFY_PROP:             CHANNEL_MARK_UNREAD_ALL,
+		PUSH_NOTIFY_PROP:                    CHANNEL_NOTIFY_DEFAULT,
+		EMAIL_NOTIFY_PROP:                   CHANNEL_NOTIFY_DEFAULT,
+		IGNORE_CHANNEL_MENTIONS_NOTIFY_PROP: IGNORE_CHANNEL_MENTIONS_DEFAULT,
+	}
+}
+
+func (o *ChannelMember) PreSave() {
+	o.LastUpdateAt = GetMillis()
+}
+
+func (o *ChannelMember) PreUpdate() {
+	o.LastUpdateAt = GetMillis()
+}
+
+func IsChannelNotifyLevelValid(notifyLevel string) bool {
+	return notifyLevel == CHANNEL_NOTIFY_DEFAULT ||
+		notifyLevel == CHANNEL_NOTIFY_ALL ||
+		notifyLevel == CHANNEL_NOTIFY_MENTION ||
+		notifyLevel == CHANNEL_NOTIFY_NONE
+}
+
+func IsChannelMarkUnreadLevelValid(markUnreadLevel string) bool {
+	return markUnreadLevel == CHANNEL_MARK_UNREAD_ALL || markUnreadLevel == CHANNEL_MARK_UNREAD_MENTION
+}
+
+func IsSendEmailValid(sendEmail string) bool {
+	return sendEmail == CHANNEL_NOTIFY_DEFAULT || sendEmail == "true" || sendEmail == "false"
+}
+
+func IsIgnoreChannelMentionsValid(ignoreChannelMentions string) bool {
+	return ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_ON || ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_OFF || ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_DEFAULT
+}
+
+func (o *ChannelMember) IsValid() *AppError {
+
+	if !IsValidId(o.ChannelId) {
+		return NewAppError("ChannelMember.IsValid", "model.channel_member.is_valid.channel_id.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	if !IsValidId(o.UserId) {
+		return NewAppError("ChannelMember.IsValid", "model.channel_member.is_valid.user_id.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	notifyLevel := o.NotifyProps[DESKTOP_NOTIFY_PROP]
+	if len(notifyLevel) > 20 || !IsChannelNotifyLevelValid(notifyLevel) {
+		return NewAppError("ChannelMember.IsValid", "model.channel_member.is_valid.notify_level.app_error", nil, "notify_level="+notifyLevel, http.StatusBadRequest)
+	}
+
+	markUnreadLevel := o.NotifyProps[MARK_UNREAD_NOTIFY_PROP]
+	if len(markUnreadLevel) > 20 || !IsChannelMarkUnreadLevelValid(markUnreadLevel) {
+		return NewAppError("ChannelMember.IsValid", "model.channel_member.is_valid.unread_level.app_error", nil, "mark_unread_level="+markUnreadLevel, http.StatusBadRequest)
+	}
+
+	if pushLevel, ok := o.NotifyProps[PUSH_NOTIFY_PROP]; ok {
+		if len(pushLevel) > 20 || !IsChannelNotifyLevelValid(pushLevel) {
+			return NewAppError("ChannelMember.IsValid", "model.channel_member.is_valid.push_level.app_error", nil, "push_notification_level="+pushLevel, http.StatusBadRequest)
+		}
+	}
+
+	if sendEmail, ok := o.NotifyProps[EMAIL_NOTIFY_PROP]; ok {
+		if len(sendEmail) > 20 || !IsSendEmailValid(sendEmail) {
+			return NewAppError("ChannelMember.IsValid", "model.channel_member.is_valid.email_value.app_error", nil, "push_notification_level="+sendEmail, http.StatusBadRequest)
+		}
+	}
+
+	if ignoreChannelMentions, ok := o.NotifyProps[IGNORE_CHANNEL_MENTIONS_NOTIFY_PROP]; ok {
+		if len(ignoreChannelMentions) > 40 || !IsIgnoreChannelMentionsValid(ignoreChannelMentions) {
+			return NewAppError("ChannelMember.IsValid", "model.channel_member.is_valid.ignore_channel_mentions_value.app_error", nil, "ignore_channel_mentions="+ignoreChannelMentions, http.StatusBadRequest)
+		}
+	}
+
+	return nil
 }

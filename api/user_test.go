@@ -79,6 +79,20 @@ func TestCreateUser(t *testing.T) {
 	// })
 }
 
+func TestGetMe(t *testing.T) {
+	th := Setup(t).InitBasic()
+	defer th.TearDown()
+
+	ruser, resp := th.Client.GetMe("")
+	CheckNoError(t, resp)
+
+	require.Equal(t, th.BasicUser.Id, ruser.Id)
+
+	th.Client.Logout()
+	_, resp = th.Client.GetMe("")
+	CheckUnauthorizedStatus(t, resp)
+}
+
 func TestGetUsers(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
