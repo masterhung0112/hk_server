@@ -259,10 +259,10 @@ func SetRolePermissionsFromConfig(roles map[string]*model.Role, cfg *model.Confi
 	// }
 
 	// if *cfg.TeamSettings.DEPRECATED_DO_NOT_USE_EnableTeamCreation {
-		roles[model.SYSTEM_USER_ROLE_ID].Permissions = append(
-			roles[model.SYSTEM_USER_ROLE_ID].Permissions,
-			model.PERMISSION_CREATE_TEAM.Id,
-		)
+	roles[model.SYSTEM_USER_ROLE_ID].Permissions = append(
+		roles[model.SYSTEM_USER_ROLE_ID].Permissions,
+		model.PERMISSION_CREATE_TEAM.Id,
+	)
 	// }
 
 	// if isLicensed {

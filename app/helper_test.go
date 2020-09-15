@@ -21,15 +21,15 @@ type TestHelper struct {
 	Server    *Server
 	LogBuffer *bytes.Buffer
 
-  tempWorkspace string
+	tempWorkspace string
 
-  BasicTeam    *model.Team
+	BasicTeam    *model.Team
 	BasicUser    *model.User
 	BasicUser2   *model.User
 	BasicChannel *model.Channel
 	// BasicPost    *model.Post
 
-	SystemAdminUser   *model.User
+	SystemAdminUser *model.User
 }
 
 func setupTestHelper(dbStore store.Store, tb testing.TB, configSet func(*model.Config)) *TestHelper {
@@ -117,7 +117,7 @@ var userCache struct {
 func (me *TestHelper) InitBasic() *TestHelper {
 	// create users once and cache them because password hashing is slow
 	initBasicOnce.Do(func() {
-    me.SystemAdminUser = me.CreateUser()
+		me.SystemAdminUser = me.CreateUser()
 		me.App.UpdateUserRoles(me.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
 		me.SystemAdminUser, _ = me.App.GetUser(me.SystemAdminUser.Id)
 		userCache.SystemAdminUser = me.SystemAdminUser.DeepCopy()
@@ -129,9 +129,9 @@ func (me *TestHelper) InitBasic() *TestHelper {
 		me.BasicUser2 = me.CreateUser()
 		me.BasicUser2, _ = me.App.GetUser(me.BasicUser2.Id)
 		userCache.BasicUser2 = me.BasicUser2.DeepCopy()
-  })
+	})
 
-  // restore cached users
+	// restore cached users
 	me.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
 	me.BasicUser = userCache.BasicUser.DeepCopy()
 	me.BasicUser2 = userCache.BasicUser2.DeepCopy()

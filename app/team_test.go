@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/stretchr/testify/require"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 

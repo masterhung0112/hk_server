@@ -21,6 +21,7 @@ type Store interface {
 	Scheme() SchemeStore
 	Session() SessionStore
 	UserAccessToken() UserAccessTokenStore
+	Preference() PreferenceStore
 	Token() TokenStore
 	Close()
 	DropAllTables()
@@ -303,6 +304,18 @@ type TokenStore interface {
 	GetByToken(token string) (*model.Token, error)
 	Cleanup()
 	RemoveAllTokensByType(tokenType string) error
+}
+
+type PreferenceStore interface {
+	Save(preferences *model.Preferences) error
+	// GetCategory(userId string, category string) (model.Preferences, error)
+	Get(userId string, category string, name string) (*model.Preference, error)
+	// GetAll(userId string) (model.Preferences, error)
+	// Delete(userId, category, name string) error
+	// DeleteCategory(userId string, category string) error
+	// DeleteCategoryAndName(category string, name string) error
+	// PermanentDeleteByUser(userId string) error
+	// CleanupFlagsBatch(limit int64) (int64, error)
 }
 
 type UserGetByIdsOpts struct {

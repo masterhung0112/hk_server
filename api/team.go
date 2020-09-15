@@ -1,13 +1,13 @@
 package api
 
 import (
+	"github.com/masterhung0112/go_server/model"
 	"net/http"
 	"strings"
-	"github.com/masterhung0112/go_server/model"
 )
 
 func (api *API) InitTeam() {
-  api.BaseRoutes.Teams.Handle("", api.ApiSessionRequired(createTeam)).Methods("POST")
+	api.BaseRoutes.Teams.Handle("", api.ApiSessionRequired(createTeam)).Methods("POST")
 }
 
 func createTeam(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,7 @@ func createTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	// Don't sanitize the team here since the user will be a team admin and their session won't reflect that yet
 
-  //TODO: Open
+	//TODO: Open
 	// auditRec.Success()
 	// auditRec.AddMeta("team", team) // overwrite meta
 

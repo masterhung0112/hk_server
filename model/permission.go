@@ -210,9 +210,9 @@ func initializePermissions() {
 		"authentication.permissions.delete_others_posts.name",
 		"authentication.permissions.delete_others_posts.description",
 		PermissionScopeChannel,
-  }
+	}
 
-  PERMISSION_CREATE_TEAM = &Permission{
+	PERMISSION_CREATE_TEAM = &Permission{
 		"create_team",
 		"authentication.permissions.create_team.name",
 		"authentication.permissions.create_team.description",
@@ -228,8 +228,8 @@ func initializePermissions() {
 	SystemScopedPermissionsMinusSysconsole := []*Permission{
 		PERMISSION_MANAGE_SYSTEM,
 		PERMISSION_LIST_USERS_WITHOUT_TEAM,
-    PERMISSION_EDIT_OTHER_USERS,
-    PERMISSION_CREATE_TEAM,
+		PERMISSION_EDIT_OTHER_USERS,
+		PERMISSION_CREATE_TEAM,
 	}
 
 	TeamScopedPermissions := []*Permission{
@@ -238,8 +238,8 @@ func initializePermissions() {
 		PERMISSION_CREATE_PUBLIC_CHANNEL,
 		PERMISSION_CREATE_PRIVATE_CHANNEL,
 		PERMISSION_VIEW_MEMBERS,
-    PERMISSION_VIEW_TEAM,
-    PERMISSION_MANAGE_TEAM,
+		PERMISSION_VIEW_TEAM,
+		PERMISSION_MANAGE_TEAM,
 	}
 
 	ChannelScopedPermissions := []*Permission{

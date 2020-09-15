@@ -1,13 +1,13 @@
 package app
 
 import (
-	"strings"
-	"github.com/masterhung0112/go_server/utils"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store"
+	"github.com/masterhung0112/go_server/utils"
 	"github.com/pkg/errors"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -294,18 +294,18 @@ func (a *App) CreateChannel(channel *model.Channel, addMember bool) (*model.Chan
 
 		if _, err := a.Srv().Store.Channel().SaveMember(cm); err != nil {
 			return nil, err
-    }
-    //TODO: Open
+		}
+		//TODO: Open
 		// if err := a.Srv().Store.ChannelMemberHistory().LogJoinEvent(channel.CreatorId, sc.Id, model.GetMillis()); err != nil {
 		// 	mlog.Error("Failed to update ChannelMemberHistory table", mlog.Err(err))
 		// 	return nil, model.NewAppError("CreateChannel", "app.channel_member_history.log_join_event.internal_error", nil, err.Error(), http.StatusInternalServerError)
 		// }
 
-    //TODO: Open
+		//TODO: Open
 		// a.InvalidateCacheForUser(channel.CreatorId)
 	}
 
-  //TODO: Open
+	//TODO: Open
 	// if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
 	// 	a.Srv().Go(func() {
 	// 		pluginContext := a.PluginContext()
