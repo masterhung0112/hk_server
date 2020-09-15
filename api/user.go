@@ -12,6 +12,8 @@ func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("", api.ApiHandler(createUser)).Methods("POST")
 	api.BaseRoutes.Users.Handle("", api.ApiSessionRequired(getUsers)).Methods("GET")
 
+	api.BaseRoutes.User.Handle("", api.ApiSessionRequired(getUser)).Methods("GET")
+
 	api.BaseRoutes.Users.Handle("/login", api.ApiHandler(login)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/logout", api.ApiHandler(logout)).Methods("POST")
 
@@ -410,5 +412,60 @@ func login(c *Context, w http.ResponseWriter, r *http.Request) {
 	user.Sanitize(map[string]bool{})
 
 	// auditRec.Success()
+	w.Write([]byte(user.ToJson()))
+}
+
+func getUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireUserId()
+	if c.Err != nil {
+		return
+	}
+
+	canSee, err := c.App.UserCanSeeOtherUser(c.App.Session().UserId, c.Params.UserId)
+	if err != nil {
+		c.SetPermissionError(model.PERMISSION_VIEW_MEMBERS)
+		return
+	}
+
+	if !canSee {
+		c.SetPermissionError(model.PERMISSION_VIEW_MEMBERS)
+		return
+	}
+
+	user, err := c.App.GetUser(c.Params.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	if c.IsSystemAdmin() || c.App.Session().UserId == user.Id {
+		//TODO: Open
+		// userTermsOfService, err := c.App.GetUserTermsOfService(user.Id)
+		// if err != nil && err.StatusCode != http.StatusNotFound {
+		// 	c.Err = err
+		// 	return
+		// }
+
+		// if userTermsOfService != nil {
+		// 	user.TermsOfServiceId = userTermsOfService.TermsOfServiceId
+		// 	user.TermsOfServiceCreateAt = userTermsOfService.CreateAt
+		// }
+	}
+
+	//TODO: Open
+	// etag := user.Etag(*c.App.Config().PrivacySettings.ShowFullName, *c.App.Config().PrivacySettings.ShowEmailAddress)
+
+	// if c.HandleEtag(etag, "Get User", w, r) {
+	// 	return
+	// }
+
+	if c.App.Session().UserId == user.Id {
+		user.Sanitize(map[string]bool{})
+	} else {
+		c.App.SanitizeProfile(user, c.IsSystemAdmin())
+	}
+	//TODO: Open
+	// c.App.UpdateLastActivityAtIfNeeded(*c.App.Session())
+	// w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	w.Write([]byte(user.ToJson()))
 }

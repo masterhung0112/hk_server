@@ -19,6 +19,37 @@ const (
 
 	DEFAULT_LOCALE          = "en"
 	USER_AUTH_SERVICE_EMAIL = "email"
+
+	USER_NOTIFY_ALL                    = "all"
+	USER_NOTIFY_HERE                   = "here"
+	USER_NOTIFY_MENTION                = "mention"
+	USER_NOTIFY_NONE                   = "none"
+	DESKTOP_NOTIFY_PROP                = "desktop"
+	DESKTOP_SOUND_NOTIFY_PROP          = "desktop_sound"
+	MARK_UNREAD_NOTIFY_PROP            = "mark_unread"
+	PUSH_NOTIFY_PROP                   = "push"
+	PUSH_STATUS_NOTIFY_PROP            = "push_status"
+	EMAIL_NOTIFY_PROP                  = "email"
+	CHANNEL_MENTIONS_NOTIFY_PROP       = "channel"
+	COMMENTS_NOTIFY_PROP               = "comments"
+	MENTION_KEYS_NOTIFY_PROP           = "mention_keys"
+	COMMENTS_NOTIFY_NEVER              = "never"
+	COMMENTS_NOTIFY_ROOT               = "root"
+	COMMENTS_NOTIFY_ANY                = "any"
+	FIRST_NAME_NOTIFY_PROP             = "first_name"
+	AUTO_RESPONDER_ACTIVE_NOTIFY_PROP  = "auto_responder_active"
+	AUTO_RESPONDER_MESSAGE_NOTIFY_PROP = "auto_responder_message"
+
+	USER_EMAIL_MAX_LENGTH     = 128
+	USER_NICKNAME_MAX_RUNES   = 64
+	USER_POSITION_MAX_RUNES   = 128
+	USER_FIRST_NAME_MAX_RUNES = 64
+	USER_LAST_NAME_MAX_RUNES  = 64
+	USER_AUTH_DATA_MAX_LENGTH = 128
+	USER_NAME_MAX_LENGTH      = 64
+	USER_NAME_MIN_LENGTH      = 1
+	USER_PASSWORD_MAX_LENGTH  = 72
+	USER_LOCALE_MAX_LENGTH    = 5
 )
 
 type User struct {
@@ -97,19 +128,6 @@ func (r *ViewUsersRestrictions) Hash() string {
 	hash.Write([]byte(strings.Join(ids, "")))
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
-
-const (
-	USER_EMAIL_MAX_LENGTH     = 128
-	USER_NICKNAME_MAX_RUNES   = 64
-	USER_POSITION_MAX_RUNES   = 128
-	USER_FIRST_NAME_MAX_RUNES = 64
-	USER_LAST_NAME_MAX_RUNES  = 64
-	USER_AUTH_DATA_MAX_LENGTH = 128
-	USER_NAME_MAX_LENGTH      = 64
-	USER_NAME_MIN_LENGTH      = 1
-	USER_PASSWORD_MAX_LENGTH  = 72
-	USER_LOCALE_MAX_LENGTH    = 5
-)
 
 // UserFromJson will decode the input and return a User
 func UserFromJson(data io.Reader) *User {

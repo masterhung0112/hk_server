@@ -118,6 +118,28 @@ func newSqlTeamStore(sqlStore SqlStore) store.TeamStore {
 	return s
 }
 
+// Save adds the team to the database if a team with the same name does not already
+// exist in the database. It returns the team added if the operation is successful.
+func (s SqlTeamStore) Save(team *model.Team) (*model.Team, error) {
+	if len(team.Id) > 0 {
+		return nil, store.NewErrInvalidInput("Team", "id", team.Id)
+	}
+
+	team.PreSave()
+
+	if err := team.IsValid(); err != nil {
+		return nil, err
+	}
+
+	if err := s.GetMaster().Insert(team); err != nil {
+		if IsUniqueConstraintError(err, []string{"Name", "teams_name_key"}) {
+			return nil, store.NewErrInvalidInput("Team", "id", team.Id)
+		}
+		return nil, errors.Wrapf(err, "failed to save Team with id=%s", team.Id)
+	}
+	return team, nil
+}
+
 func getTeamRoles(schemeGuest, schemeUser, schemeAdmin bool, defaultTeamGuestRole, defaultTeamUserRole, defaultTeamAdminRole string, roles []string) rolesInfo {
 	result := rolesInfo{
 		roles:         []string{},
@@ -543,4 +565,125 @@ func (s SqlTeamStore) GetTeamsForUser(userId string) ([]*model.TeamMember, *mode
 	}
 
 	return dbMembers.ToModel(), nil
+}
+
+func (s SqlTeamStore) GetActiveMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError) {
+	query := s.getQueryBuilder().
+		Select("count(DISTINCT TeamMembers.UserId)").
+		From("TeamMembers, Users").
+		Where("TeamMembers.DeleteAt = 0").
+		Where("TeamMembers.UserId = Users.Id").
+		Where("Users.DeleteAt = 0").
+		Where(sq.Eq{"TeamMembers.TeamId": teamId})
+
+	query = applyTeamMemberViewRestrictionsFilterForStats(query, teamId, restrictions)
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return 0, model.NewAppError("SqlTeamStore.GetActiveMemberCount", "store.sql.build_query.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	count, err := s.GetReplica().SelectInt(queryString, args...)
+	if err != nil {
+		return 0, model.NewAppError("SqlTeamStore.GetActiveMemberCount", "store.sql_team.get_active_member_count.app_error", nil, "teamId="+teamId+" "+err.Error(), http.StatusInternalServerError)
+	}
+
+	return count, nil
+}
+
+func (s SqlTeamStore) UpdateMember(member *model.TeamMember) (*model.TeamMember, *model.AppError) {
+	members, err := s.UpdateMultipleMembers([]*model.TeamMember{member})
+	if err != nil {
+		return nil, err
+	}
+	return members[0], nil
+}
+
+func (s SqlTeamStore) UpdateMultipleMembers(members []*model.TeamMember) ([]*model.TeamMember, *model.AppError) {
+	teams := []string{}
+	for _, member := range members {
+		member.PreUpdate()
+
+		if err := member.IsValid(); err != nil {
+			return nil, err
+		}
+
+		if _, err := s.GetMaster().Update(NewTeamMemberFromModel(member)); err != nil {
+			return nil, model.NewAppError("SqlTeamStore.UpdateMember", "store.sql_team.save_member.save.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+		teams = append(teams, member.TeamId)
+	}
+
+	query := s.getQueryBuilder().
+		Select(
+			"Teams.Id as Id",
+			"TeamScheme.DefaultTeamGuestRole as Guest",
+			"TeamScheme.DefaultTeamUserRole as User",
+			"TeamScheme.DefaultTeamAdminRole as Admin",
+		).
+		From("Teams").
+		LeftJoin("Schemes TeamScheme ON Teams.SchemeId = TeamScheme.Id").
+		Where(sq.Eq{"Teams.Id": teams})
+
+	sqlQuery, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.Save", "store.sql.build_query.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	var defaultTeamsRoles []struct {
+		Id    string
+		Guest sql.NullString
+		User  sql.NullString
+		Admin sql.NullString
+	}
+	_, err = s.GetMaster().Select(&defaultTeamsRoles, sqlQuery, args...)
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.Save", "store.sql_user.save.member_count.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	defaultTeamRolesByTeam := map[string]struct {
+		Id    string
+		Guest sql.NullString
+		User  sql.NullString
+		Admin sql.NullString
+	}{}
+	for _, defaultRoles := range defaultTeamsRoles {
+		defaultTeamRolesByTeam[defaultRoles.Id] = defaultRoles
+	}
+
+	updatedMembers := []*model.TeamMember{}
+	for _, member := range members {
+		s.InvalidateAllTeamIdsForUser(member.UserId)
+		defaultTeamGuestRole := defaultTeamRolesByTeam[member.TeamId].Guest.String
+		defaultTeamUserRole := defaultTeamRolesByTeam[member.TeamId].User.String
+		defaultTeamAdminRole := defaultTeamRolesByTeam[member.TeamId].Admin.String
+		rolesResult := getTeamRoles(member.SchemeGuest, member.SchemeUser, member.SchemeAdmin, defaultTeamGuestRole, defaultTeamUserRole, defaultTeamAdminRole, strings.Fields(member.ExplicitRoles))
+		updatedMember := *member
+		updatedMember.SchemeGuest = rolesResult.schemeGuest
+		updatedMember.SchemeUser = rolesResult.schemeUser
+		updatedMember.SchemeAdmin = rolesResult.schemeAdmin
+		updatedMember.Roles = strings.Join(rolesResult.roles, " ")
+		updatedMember.ExplicitRoles = strings.Join(rolesResult.explicitRoles, " ")
+		updatedMembers = append(updatedMembers, &updatedMember)
+	}
+
+	return updatedMembers, nil
+}
+
+func (s SqlTeamStore) UserBelongsToTeams(userId string, teamIds []string) (bool, *model.AppError) {
+	idQuery := sq.Eq{
+		"UserId":   userId,
+		"TeamId":   teamIds,
+		"DeleteAt": 0,
+	}
+
+	query, params, err := s.getQueryBuilder().Select("Count(*)").From("TeamMembers").Where(idQuery).ToSql()
+	if err != nil {
+		return false, model.NewAppError("SqlTeamStore.UserBelongsToTeams", "store.sql.build_query.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	c, err := s.GetReplica().SelectInt(query, params...)
+	if err != nil {
+		return false, model.NewAppError("SqlTeamStore.UserBelongsToTeams", "store.sql_team.user_belongs_to_teams.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return c > 0, nil
 }

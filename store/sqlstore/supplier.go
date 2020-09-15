@@ -32,6 +32,7 @@ type SqlSupplierStores struct {
 	session         store.SessionStore
 	userAccessToken store.UserAccessTokenStore
 	token           store.TokenStore
+	preference      store.PreferenceStore
 }
 
 type SqlSupplier struct {
@@ -271,6 +272,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.stores.session = newSqlSessionStore(supplier)
 	supplier.stores.userAccessToken = newSqlUserAccessTokenStore(supplier)
 	supplier.stores.token = newSqlTokenStore(supplier)
+	supplier.stores.preference = newSqlPreferenceStore(supplier)
 
 	err := supplier.GetMaster().CreateTablesIfNotExists()
 	if err != nil {
@@ -334,4 +336,8 @@ func (ss *SqlSupplier) UserAccessToken() store.UserAccessTokenStore {
 
 func (ss *SqlSupplier) Token() store.TokenStore {
 	return ss.stores.token
+}
+
+func (ss *SqlSupplier) Preference() store.PreferenceStore {
+	return ss.stores.preference
 }

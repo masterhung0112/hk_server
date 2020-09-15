@@ -56,6 +56,9 @@ var PERMISSION_DELETE_OTHERS_POSTS *Permission
 var SysconsoleReadPermissions []*Permission
 var SysconsoleWritePermissions []*Permission
 
+var PERMISSION_CREATE_TEAM *Permission
+var PERMISSION_MANAGE_TEAM *Permission
+
 func initializePermissions() {
 	PERMISSION_INVITE_USER = &Permission{
 		"invite_user",
@@ -209,10 +212,24 @@ func initializePermissions() {
 		PermissionScopeChannel,
 	}
 
+	PERMISSION_CREATE_TEAM = &Permission{
+		"create_team",
+		"authentication.permissions.create_team.name",
+		"authentication.permissions.create_team.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_MANAGE_TEAM = &Permission{
+		"manage_team",
+		"authentication.permissions.manage_team.name",
+		"authentication.permissions.manage_team.description",
+		PermissionScopeTeam,
+	}
+
 	SystemScopedPermissionsMinusSysconsole := []*Permission{
 		PERMISSION_MANAGE_SYSTEM,
 		PERMISSION_LIST_USERS_WITHOUT_TEAM,
 		PERMISSION_EDIT_OTHER_USERS,
+		PERMISSION_CREATE_TEAM,
 	}
 
 	TeamScopedPermissions := []*Permission{
@@ -222,6 +239,7 @@ func initializePermissions() {
 		PERMISSION_CREATE_PRIVATE_CHANNEL,
 		PERMISSION_VIEW_MEMBERS,
 		PERMISSION_VIEW_TEAM,
+		PERMISSION_MANAGE_TEAM,
 	}
 
 	ChannelScopedPermissions := []*Permission{

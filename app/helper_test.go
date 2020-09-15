@@ -22,6 +22,14 @@ type TestHelper struct {
 	LogBuffer *bytes.Buffer
 
 	tempWorkspace string
+
+	BasicTeam    *model.Team
+	BasicUser    *model.User
+	BasicUser2   *model.User
+	BasicChannel *model.Channel
+	// BasicPost    *model.Post
+
+	SystemAdminUser *model.User
 }
 
 func setupTestHelper(dbStore store.Store, tb testing.TB, configSet func(*model.Config)) *TestHelper {
@@ -100,12 +108,73 @@ func Setup(tb testing.TB) *TestHelper {
 }
 
 var initBasicOnce sync.Once
+var userCache struct {
+	SystemAdminUser *model.User
+	BasicUser       *model.User
+	BasicUser2      *model.User
+}
 
 func (me *TestHelper) InitBasic() *TestHelper {
 	// create users once and cache them because password hashing is slow
 	initBasicOnce.Do(func() {
+		me.SystemAdminUser = me.CreateUser()
+		me.App.UpdateUserRoles(me.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
+		me.SystemAdminUser, _ = me.App.GetUser(me.SystemAdminUser.Id)
+		userCache.SystemAdminUser = me.SystemAdminUser.DeepCopy()
+
+		me.BasicUser = me.CreateUser()
+		me.BasicUser, _ = me.App.GetUser(me.BasicUser.Id)
+		userCache.BasicUser = me.BasicUser.DeepCopy()
+
+		me.BasicUser2 = me.CreateUser()
+		me.BasicUser2, _ = me.App.GetUser(me.BasicUser2.Id)
+		userCache.BasicUser2 = me.BasicUser2.DeepCopy()
 	})
+
+	// restore cached users
+	me.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
+	me.BasicUser = userCache.BasicUser.DeepCopy()
+	me.BasicUser2 = userCache.BasicUser2.DeepCopy()
+	mainHelper.GetSQLSupplier().GetMaster().Insert(me.SystemAdminUser, me.BasicUser, me.BasicUser2)
+
+	me.BasicTeam = me.CreateTeam()
+
+	me.LinkUserToTeam(me.BasicUser, me.BasicTeam)
+	me.LinkUserToTeam(me.BasicUser2, me.BasicTeam)
+	me.BasicChannel = me.CreateChannel(me.BasicTeam)
+	// me.BasicPost = me.CreatePost(me.BasicChannel)
 	return me
+}
+
+func (me *TestHelper) CreateChannel(team *model.Team) *model.Channel {
+	return me.createChannel(team, model.CHANNEL_OPEN)
+}
+
+func (me *TestHelper) CreatePrivateChannel(team *model.Team) *model.Channel {
+	return me.createChannel(team, model.CHANNEL_PRIVATE)
+}
+
+func (me *TestHelper) createChannel(team *model.Team, channelType string) *model.Channel {
+	id := model.NewId()
+
+	channel := &model.Channel{
+		DisplayName: "dn_" + id,
+		Name:        "name_" + id,
+		Type:        channelType,
+		TeamId:      team.Id,
+		CreatorId:   me.BasicUser.Id,
+	}
+
+	utils.DisableDebugLogForTest()
+	var err *model.AppError
+	if channel, err = me.App.CreateChannel(channel, true); err != nil {
+		mlog.Error(err.Error())
+
+		time.Sleep(time.Second)
+		panic(err)
+	}
+	utils.EnableDebugLogForTest()
+	return channel
 }
 
 func (me *TestHelper) ShutdownApp() {
@@ -183,4 +252,39 @@ func (me *TestHelper) CreateUserOrGuest(guest bool) *model.User {
 	}
 	utils.EnableDebugLogForTest()
 	return user
+}
+
+func (me *TestHelper) CreateTeam() *model.Team {
+	id := model.NewId()
+	team := &model.Team{
+		DisplayName: "dn_" + id,
+		Name:        "name" + id,
+		Email:       "success+" + id + "@simulator.amazonses.com",
+		Type:        model.TEAM_OPEN,
+	}
+
+	utils.DisableDebugLogForTest()
+	var err *model.AppError
+	if team, err = me.App.CreateTeam(team); err != nil {
+		mlog.Error(err.Error())
+
+		time.Sleep(time.Second)
+		panic(err)
+	}
+	utils.EnableDebugLogForTest()
+	return team
+}
+
+func (me *TestHelper) LinkUserToTeam(user *model.User, team *model.Team) {
+	utils.DisableDebugLogForTest()
+
+	err := me.App.JoinUserToTeam(team, user, "")
+	if err != nil {
+		mlog.Error(err.Error())
+
+		time.Sleep(time.Second)
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
 }

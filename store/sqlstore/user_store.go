@@ -814,3 +814,65 @@ func (us SqlUserStore) GetForLogin(loginId string, allowSignInWithUsername, allo
 
 	return users[0], nil
 }
+
+func (us SqlUserStore) GetProfileByIds(userIds []string, options *store.UserGetByIdsOpts, _ bool) ([]*model.User, *model.AppError) {
+	if options == nil {
+		options = &store.UserGetByIdsOpts{}
+	}
+
+	users := []*model.User{}
+	query := us.usersQuery.
+		Where(map[string]interface{}{
+			"u.Id": userIds,
+		}).
+		OrderBy("u.Username ASC")
+
+	if options.Since > 0 {
+		query = query.Where(sq.Gt(map[string]interface{}{
+			"u.UpdateAt": options.Since,
+		}))
+	}
+
+	query = applyViewRestrictionsFilter(query, options.ViewRestrictions, true)
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetProfileByIds", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	if _, err := us.GetReplica().Select(&users, queryString, args...); err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetProfileByIds", "store.sql_user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return users, nil
+}
+
+func (us SqlUserStore) GetChannelGroupUsers(channelID string) ([]*model.User, *model.AppError) {
+	query := applyChannelGroupConstrainedFilter(us.usersQuery, channelID)
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetChannelGroupUsers", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	var users []*model.User
+	if _, err := us.GetReplica().Select(&users, queryString, args...); err != nil {
+		return nil, model.NewAppError("SqlUserStore.GetChannelGroupUsers", "store.sql_user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	for _, u := range users {
+		u.Sanitize(map[string]bool{})
+	}
+
+	return users, nil
+}
+
+func (us SqlUserStore) UpdateUpdateAt(userId string) (int64, *model.AppError) {
+	curTime := model.GetMillis()
+
+	if _, err := us.GetMaster().Exec("UPDATE Users SET UpdateAt = :Time WHERE Id = :UserId", map[string]interface{}{"Time": curTime, "UserId": userId}); err != nil {
+		return curTime, model.NewAppError("SqlUserStore.UpdateUpdateAt", "store.sql_user.update_update.app_error", nil, "user_id="+userId, http.StatusInternalServerError)
+	}
+
+	return curTime, nil
+}
