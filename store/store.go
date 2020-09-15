@@ -86,7 +86,7 @@ type RoleStore interface {
 }
 
 type TeamStore interface {
-	// Save(team *model.Team) (*model.Team, error)
+	Save(team *model.Team) (*model.Team, error)
 	// Update(team *model.Team) (*model.Team, error)
 	// Get(id string) (*model.Team, error)
 	// GetByName(name string) (*model.Team, error)

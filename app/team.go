@@ -196,3 +196,49 @@ func (a *App) normalizeDomains(domains string) []string {
 	// can be in the form of "@corp.mattermost.com, mattermost.com mattermost.org" -> corp.mattermost.com mattermost.com mattermost.org
 	return strings.Fields(strings.TrimSpace(strings.ToLower(strings.Replace(strings.Replace(domains, "@", " ", -1), ",", " ", -1))))
 }
+
+func (a *App) CreateTeam(team *model.Team) (*model.Team, *model.AppError) {
+	team.InviteId = ""
+	rteam, err := a.Srv().Store.Team().Save(team)
+	if err != nil {
+		var invErr *store.ErrInvalidInput
+		var appErr *model.AppError
+		switch {
+		case errors.As(err, &invErr):
+			return nil, model.NewAppError("CreateTeam", "app.team.save.existing.app_error", nil, invErr.Error(), http.StatusBadRequest)
+		case errors.As(err, &appErr):
+			return nil, appErr
+		default:
+			return nil, model.NewAppError("CreateTeam", "app.team.save.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	if _, err := a.CreateDefaultChannels(rteam.Id); err != nil {
+		return nil, err
+	}
+
+	return rteam, nil
+}
+
+func (a *App) CreateTeamWithUser(team *model.Team, userId string) (*model.Team, *model.AppError) {
+	user, err := a.GetUser(userId)
+	if err != nil {
+		return nil, err
+	}
+	team.Email = user.Email
+
+	if !a.isTeamEmailAllowed(user, team) {
+		return nil, model.NewAppError("isTeamEmailAllowed", "api.team.is_team_creation_allowed.domain.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	rteam, err := a.CreateTeam(team)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = a.JoinUserToTeam(rteam, user, ""); err != nil {
+		return nil, err
+	}
+
+	return rteam, nil
+}

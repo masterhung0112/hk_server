@@ -118,6 +118,28 @@ func newSqlTeamStore(sqlStore SqlStore) store.TeamStore {
 	return s
 }
 
+// Save adds the team to the database if a team with the same name does not already
+// exist in the database. It returns the team added if the operation is successful.
+func (s SqlTeamStore) Save(team *model.Team) (*model.Team, error) {
+	if len(team.Id) > 0 {
+		return nil, store.NewErrInvalidInput("Team", "id", team.Id)
+	}
+
+	team.PreSave()
+
+	if err := team.IsValid(); err != nil {
+		return nil, err
+	}
+
+	if err := s.GetMaster().Insert(team); err != nil {
+		if IsUniqueConstraintError(err, []string{"Name", "teams_name_key"}) {
+			return nil, store.NewErrInvalidInput("Team", "id", team.Id)
+		}
+		return nil, errors.Wrapf(err, "failed to save Team with id=%s", team.Id)
+	}
+	return team, nil
+}
+
 func getTeamRoles(schemeGuest, schemeUser, schemeAdmin bool, defaultTeamGuestRole, defaultTeamUserRole, defaultTeamAdminRole string, roles []string) rolesInfo {
 	result := rolesInfo{
 		roles:         []string{},

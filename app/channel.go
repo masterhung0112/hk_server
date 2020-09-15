@@ -1,6 +1,8 @@
 package app
 
 import (
+	"strings"
+	"github.com/masterhung0112/go_server/utils"
 	"github.com/masterhung0112/go_server/mlog"
 	"github.com/masterhung0112/go_server/model"
 	"github.com/masterhung0112/go_server/store"
@@ -8,6 +10,26 @@ import (
 	"net/http"
 	"time"
 )
+
+// CreateDefaultChannels creates channels in the given team for each channel returned by (*App).DefaultChannelNames.
+//
+func (a *App) CreateDefaultChannels(teamID string) ([]*model.Channel, *model.AppError) {
+	displayNames := map[string]string{
+		"town-square": utils.T("api.channel.create_default_channels.town_square"),
+		"off-topic":   utils.T("api.channel.create_default_channels.off_topic"),
+	}
+	channels := []*model.Channel{}
+	defaultChannelNames := a.DefaultChannelNames()
+	for _, name := range defaultChannelNames {
+		displayName := utils.TDefault(displayNames[name], name)
+		channel := &model.Channel{DisplayName: displayName, Name: name, Type: model.CHANNEL_OPEN, TeamId: teamID}
+		if _, err := a.CreateChannel(channel, false); err != nil {
+			return nil, err
+		}
+		channels = append(channels, channel)
+	}
+	return channels, nil
+}
 
 func (a *App) GetChannel(channelId string) (*model.Channel, *model.AppError) {
 	channel, err := a.Srv().Store.Channel().Get(channelId, true)
@@ -224,4 +246,75 @@ func (a *App) DefaultChannelNames() []string {
 	}
 
 	return names
+}
+
+func (a *App) CreateChannel(channel *model.Channel, addMember bool) (*model.Channel, *model.AppError) {
+	channel.DisplayName = strings.TrimSpace(channel.DisplayName)
+	sc, nErr := a.Srv().Store.Channel().Save(channel, *a.Config().TeamSettings.MaxChannelsPerTeam)
+	if nErr != nil {
+		var invErr *store.ErrInvalidInput
+		var cErr *store.ErrConflict
+		var ltErr *store.ErrLimitExceeded
+		var appErr *model.AppError
+		switch {
+		case errors.As(nErr, &invErr):
+			switch {
+			case invErr.Entity == "Channel" && invErr.Field == "DeleteAt":
+				return nil, model.NewAppError("CreateChannel", "store.sql_channel.save.archived_channel.app_error", nil, "", http.StatusBadRequest)
+			case invErr.Entity == "Channel" && invErr.Field == "Type":
+				return nil, model.NewAppError("CreateChannel", "store.sql_channel.save.direct_channel.app_error", nil, "", http.StatusBadRequest)
+			case invErr.Entity == "Channel" && invErr.Field == "Id":
+				return nil, model.NewAppError("CreateChannel", "store.sql_channel.save_channel.existing.app_error", nil, "id="+invErr.Value.(string), http.StatusBadRequest)
+			}
+		case errors.As(nErr, &cErr):
+			return sc, model.NewAppError("CreateChannel", store.CHANNEL_EXISTS_ERROR, nil, cErr.Error(), http.StatusBadRequest)
+		case errors.As(nErr, &ltErr):
+			return nil, model.NewAppError("CreateChannel", "store.sql_channel.save_channel.limit.app_error", nil, ltErr.Error(), http.StatusBadRequest)
+		case errors.As(nErr, &appErr): // in case we haven't converted to plain error.
+			return nil, appErr
+		default: // last fallback in case it doesn't map to an existing app error.
+			return nil, model.NewAppError("CreateChannel", "app.channel.create_channel.internal_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	if addMember {
+		user, err := a.Srv().Store.User().Get(channel.CreatorId)
+		if err != nil {
+			return nil, err
+		}
+
+		cm := &model.ChannelMember{
+			ChannelId:   sc.Id,
+			UserId:      user.Id,
+			SchemeGuest: user.IsGuest(),
+			SchemeUser:  !user.IsGuest(),
+			SchemeAdmin: true,
+			NotifyProps: model.GetDefaultChannelNotifyProps(),
+		}
+
+		if _, err := a.Srv().Store.Channel().SaveMember(cm); err != nil {
+			return nil, err
+    }
+    //TODO: Open
+		// if err := a.Srv().Store.ChannelMemberHistory().LogJoinEvent(channel.CreatorId, sc.Id, model.GetMillis()); err != nil {
+		// 	mlog.Error("Failed to update ChannelMemberHistory table", mlog.Err(err))
+		// 	return nil, model.NewAppError("CreateChannel", "app.channel_member_history.log_join_event.internal_error", nil, err.Error(), http.StatusInternalServerError)
+		// }
+
+    //TODO: Open
+		// a.InvalidateCacheForUser(channel.CreatorId)
+	}
+
+  //TODO: Open
+	// if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
+	// 	a.Srv().Go(func() {
+	// 		pluginContext := a.PluginContext()
+	// 		pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
+	// 			hooks.ChannelHasBeenCreated(pluginContext, sc)
+	// 			return true
+	// 		}, plugin.ChannelHasBeenCreatedId)
+	// 	})
+	// }
+
+	return sc, nil
 }

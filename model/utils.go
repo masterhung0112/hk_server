@@ -24,6 +24,23 @@ const (
 	SYMBOLS           = " !\"\\#$%&'()*+,-./:;<=>?@[]^_`|~"
 )
 
+var reservedName = []string{
+	"admin",
+	"api",
+	"channel",
+	"claim",
+	"error",
+	"help",
+	"landing",
+	"login",
+	"mfa",
+	"oauth",
+	"plug",
+	"plugins",
+	"post",
+	"signup",
+}
+
 type StringInterface map[string]interface{}
 type StringMap map[string]string
 type StringArray []string
@@ -314,4 +331,10 @@ func MapFromJson(data io.Reader) map[string]string {
 	} else {
 		return objmap
 	}
+}
+
+func IsValidAlphaNum(s string) bool {
+	validAlphaNum := regexp.MustCompile(`^[a-z0-9]+([a-z\-0-9]+|(__)?)[a-z0-9]+$`)
+
+	return validAlphaNum.MatchString(s)
 }
