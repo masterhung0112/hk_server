@@ -2,7 +2,7 @@
     "ServiceSettings": {
         "SiteURL": "",
         "ConnectionSecurity": "",
-        "ListenAddress": ":0",
+        "ListenAddress": ":9065",
         "EnableDeveloper": false,
         "LocalModeSocketLocation": "/var/tmp/hungknow_local.socket",
         "ExtendSessionLengthWithActivity": true,
