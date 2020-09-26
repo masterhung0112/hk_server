@@ -1,8 +1,8 @@
 package model
 
 import (
-	"io"
 	"encoding/json"
+	"io"
 )
 
 const (
@@ -66,14 +66,22 @@ const (
 
 	ALLOW_EDIT_POST_ALWAYS     = "always"
 	ALLOW_EDIT_POST_NEVER      = "never"
-  ALLOW_EDIT_POST_TIME_LIMIT = "time_limit"
+	ALLOW_EDIT_POST_TIME_LIMIT = "time_limit"
 
-  FAKE_SETTING = "********************************"
+	FAKE_SETTING = "********************************"
 
-  EXPERIMENTAL_SETTINGS_DEFAULT_LINK_METADATA_TIMEOUT_MILLISECONDS = 5000
+	EXPERIMENTAL_SETTINGS_DEFAULT_LINK_METADATA_TIMEOUT_MILLISECONDS = 5000
 
-  CLIENT_SIDE_CERT_CHECK_PRIMARY_AUTH   = "primary"
+	CLIENT_SIDE_CERT_CHECK_PRIMARY_AUTH   = "primary"
 	CLIENT_SIDE_CERT_CHECK_SECONDARY_AUTH = "secondary"
+
+	SUPPORT_SETTINGS_DEFAULT_TERMS_OF_SERVICE_LINK = "https://about.hungknow.com/default-terms/"
+	SUPPORT_SETTINGS_DEFAULT_PRIVACY_POLICY_LINK   = "https://about.hungknow.com/default-privacy-policy/"
+	SUPPORT_SETTINGS_DEFAULT_ABOUT_LINK            = "https://about.hungknow.com/default-about/"
+	SUPPORT_SETTINGS_DEFAULT_HELP_LINK             = "https://about.hungknow.com/default-help/"
+	SUPPORT_SETTINGS_DEFAULT_REPORT_A_PROBLEM_LINK = "https://about.hungknow.com/default-report-a-problem/"
+	SUPPORT_SETTINGS_DEFAULT_SUPPORT_EMAIL         = "hungbn0112@gmail.com"
+	SUPPORT_SETTINGS_DEFAULT_RE_ACCEPTANCE_PERIOD  = 365
 )
 
 const ConfigAccessTagWriteRestrictable = "write_restrictable"
@@ -86,8 +94,10 @@ type Config struct {
 	SqlSettings           SqlSettings
 	PrivacySettings       PrivacySettings
 	EmailSettings         EmailSettings
-  GuestAccountsSettings GuestAccountsSettings
-  ExperimentalSettings      ExperimentalSettings
+	GuestAccountsSettings GuestAccountsSettings
+	ExperimentalSettings  ExperimentalSettings
+	SupportSettings       SupportSettings
+	RateLimitSettings     RateLimitSettings
 }
 
 func ConfigFromJson(data io.Reader) *Config {
@@ -111,8 +121,10 @@ func (o *Config) SetDefaults() {
 	o.SqlSettings.SetDefaults(isUpdate)
 	o.PrivacySettings.SetDefaults()
 	o.EmailSettings.SetDefaults(isUpdate)
-  o.GuestAccountsSettings.SetDefaults()
-  o.ExperimentalSettings.SetDefaults()
+	o.GuestAccountsSettings.SetDefaults()
+	o.ExperimentalSettings.SetDefaults()
+	o.SupportSettings.SetDefaults()
+	o.RateLimitSettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
@@ -870,5 +882,111 @@ func (s *ExperimentalSettings) SetDefaults() {
 
 	if s.UseNewSAMLLibrary == nil {
 		s.UseNewSAMLLibrary = NewBool(false)
+	}
+}
+
+type SupportSettings struct {
+	TermsOfServiceLink                     *string `access:"site,write_restrictable"`
+	PrivacyPolicyLink                      *string `access:"site,write_restrictable"`
+	AboutLink                              *string `access:"site,write_restrictable"`
+	HelpLink                               *string `access:"site,write_restrictable"`
+	ReportAProblemLink                     *string `access:"site,write_restrictable"`
+	SupportEmail                           *string `access:"site"`
+	CustomTermsOfServiceEnabled            *bool   `access:"compliance"`
+	CustomTermsOfServiceReAcceptancePeriod *int    `access:"compliance"`
+	EnableAskCommunityLink                 *bool   `access:"site"`
+}
+
+func (s *SupportSettings) SetDefaults() {
+	if !IsSafeLink(s.TermsOfServiceLink) {
+		*s.TermsOfServiceLink = SUPPORT_SETTINGS_DEFAULT_TERMS_OF_SERVICE_LINK
+	}
+
+	if s.TermsOfServiceLink == nil {
+		s.TermsOfServiceLink = NewString(SUPPORT_SETTINGS_DEFAULT_TERMS_OF_SERVICE_LINK)
+	}
+
+	if !IsSafeLink(s.PrivacyPolicyLink) {
+		*s.PrivacyPolicyLink = ""
+	}
+
+	if s.PrivacyPolicyLink == nil {
+		s.PrivacyPolicyLink = NewString(SUPPORT_SETTINGS_DEFAULT_PRIVACY_POLICY_LINK)
+	}
+
+	if !IsSafeLink(s.AboutLink) {
+		*s.AboutLink = ""
+	}
+
+	if s.AboutLink == nil {
+		s.AboutLink = NewString(SUPPORT_SETTINGS_DEFAULT_ABOUT_LINK)
+	}
+
+	if !IsSafeLink(s.HelpLink) {
+		*s.HelpLink = ""
+	}
+
+	if s.HelpLink == nil {
+		s.HelpLink = NewString(SUPPORT_SETTINGS_DEFAULT_HELP_LINK)
+	}
+
+	if !IsSafeLink(s.ReportAProblemLink) {
+		*s.ReportAProblemLink = ""
+	}
+
+	if s.ReportAProblemLink == nil {
+		s.ReportAProblemLink = NewString(SUPPORT_SETTINGS_DEFAULT_REPORT_A_PROBLEM_LINK)
+	}
+
+	if s.SupportEmail == nil {
+		s.SupportEmail = NewString(SUPPORT_SETTINGS_DEFAULT_SUPPORT_EMAIL)
+	}
+
+	if s.CustomTermsOfServiceEnabled == nil {
+		s.CustomTermsOfServiceEnabled = NewBool(false)
+	}
+
+	if s.CustomTermsOfServiceReAcceptancePeriod == nil {
+		s.CustomTermsOfServiceReAcceptancePeriod = NewInt(SUPPORT_SETTINGS_DEFAULT_RE_ACCEPTANCE_PERIOD)
+	}
+
+	if s.EnableAskCommunityLink == nil {
+		s.EnableAskCommunityLink = NewBool(true)
+	}
+}
+
+type RateLimitSettings struct {
+	Enable           *bool  `access:"environment,write_restrictable"`
+	PerSec           *int   `access:"environment,write_restrictable"`
+	MaxBurst         *int   `access:"environment,write_restrictable"`
+	MemoryStoreSize  *int   `access:"environment,write_restrictable"`
+	VaryByRemoteAddr *bool  `access:"environment,write_restrictable"`
+	VaryByUser       *bool  `access:"environment,write_restrictable"`
+	VaryByHeader     string `access:"environment,write_restrictable"`
+}
+
+func (s *RateLimitSettings) SetDefaults() {
+	if s.Enable == nil {
+		s.Enable = NewBool(false)
+	}
+
+	if s.PerSec == nil {
+		s.PerSec = NewInt(10)
+	}
+
+	if s.MaxBurst == nil {
+		s.MaxBurst = NewInt(100)
+	}
+
+	if s.MemoryStoreSize == nil {
+		s.MemoryStoreSize = NewInt(10000)
+	}
+
+	if s.VaryByRemoteAddr == nil {
+		s.VaryByRemoteAddr = NewBool(true)
+	}
+
+	if s.VaryByUser == nil {
+		s.VaryByUser = NewBool(false)
 	}
 }

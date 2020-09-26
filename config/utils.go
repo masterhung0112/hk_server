@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/masterhung0112/go_server/utils"
 	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/go_server/utils"
 )
 
 // desanitize replaces fake settings with their actual values.

@@ -1,13 +1,13 @@
 package utils_test
 
 import (
+	"github.com/masterhung0112/go_server/utils"
 	"github.com/stretchr/testify/suite"
 	"testing"
-	"github.com/masterhung0112/go_server/utils"
 )
 
 type TestMergeStruct struct {
-  suite.Suite
+	suite.Suite
 }
 
 // Test merging maps alone. This isolates the complexity of merging maps from merging maps recursively in
@@ -19,51 +19,51 @@ func TestMergeTestSuite(t *testing.T) {
 }
 
 func (s *TestMergeStruct) TestMergeMapsWherePatchIsLonger() {
-  m1 := map[string]int{"this": 1, "is": 2, "a map": 3}
-  m2 := map[string]int{"this": 1, "is": 3, "a secnd map": 3, "another key": 4}
+	m1 := map[string]int{"this": 1, "is": 2, "a map": 3}
+	m2 := map[string]int{"this": 1, "is": 3, "a secnd map": 3, "another key": 4}
 
-  expected := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
-  merged, err := mergeStringIntMap(m1, m2)
-  s.NoError(err)
+	expected := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
+	merged, err := mergeStringIntMap(m1, m2)
+	s.NoError(err)
 
-  s.Equal(expected, merged)
+	s.Equal(expected, merged)
 }
 
 func (s *TestMergeStruct) TestMergeMapsWhereBaseIsLonger() {
-  m1 := map[string]int{"this": 1, "is": 2, "a map": 3, "with": 4, "more keys": -12}
-  m2 := map[string]int{"this": 1, "is": 3, "a second map": 3}
-  expected := map[string]int{"this": 1, "is": 3, "a second map": 3}
+	m1 := map[string]int{"this": 1, "is": 2, "a map": 3, "with": 4, "more keys": -12}
+	m2 := map[string]int{"this": 1, "is": 3, "a second map": 3}
+	expected := map[string]int{"this": 1, "is": 3, "a second map": 3}
 
-  merged, err := mergeStringIntMap(m1, m2)
-  s.NoError(err)
+	merged, err := mergeStringIntMap(m1, m2)
+	s.NoError(err)
 
-  s.Equal(expected, merged)
+	s.Equal(expected, merged)
 }
 
 func (s *TestMergeStruct) TestMergeMapsWhereBaseIsEmpty() {
-  m1 := make(map[string]int)
-		m2 := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
+	m1 := make(map[string]int)
+	m2 := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
 
-		expected := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
-		merged, err := mergeStringIntMap(m1, m2)
-		s.NoError(err)
+	expected := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
+	merged, err := mergeStringIntMap(m1, m2)
+	s.NoError(err)
 
-		s.Equal(expected, merged)
+	s.Equal(expected, merged)
 }
 
 func (s *TestMergeStruct) TestMergeMapsWherePatchIsEmpty() {
-  m1 := map[string]int{"this": 1, "is": 3, "a map": 3, "another key": 4}
-  var m2 map[string]int
-  expected := map[string]int{"this": 1, "is": 3, "a map": 3, "another key": 4}
+	m1 := map[string]int{"this": 1, "is": 3, "a map": 3, "another key": 4}
+	var m2 map[string]int
+	expected := map[string]int{"this": 1, "is": 3, "a map": 3, "another key": 4}
 
-  merged, err := mergeStringIntMap(m1, m2)
-  s.NoError(err)
+	merged, err := mergeStringIntMap(m1, m2)
+	s.NoError(err)
 
-  s.Equal(expected, merged)
+	s.Equal(expected, merged)
 }
 
 func (s *TestMergeStruct) TestMergeMapStringIntPtrPatchWithDifferentKeysAndValues() {
-  m1 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
+	m1 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
 	m2 := map[string]*int{"this": newInt(2), "is": newInt(3), "a key": newInt(4)}
 	expected := map[string]*int{"this": newInt(2), "is": newInt(3), "a key": newInt(4)}
 
@@ -74,8 +74,8 @@ func (s *TestMergeStruct) TestMergeMapStringIntPtrPatchWithDifferentKeysAndValue
 }
 
 func (s *TestMergeStruct) TestMergeMapStringIntPtrPatchHasNilKeys() {
-  //  -- doesn't matter, maps overwrite completely
-  m1 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
+	//  -- doesn't matter, maps overwrite completely
+	m1 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
 	m2 := map[string]*int{"this": newInt(1), "is": nil, "a key": newInt(3)}
 	expected := map[string]*int{"this": newInt(1), "is": nil, "a key": newInt(3)}
 
@@ -86,40 +86,40 @@ func (s *TestMergeStruct) TestMergeMapStringIntPtrPatchHasNilKeys() {
 }
 
 func (s *TestMergeStruct) TestMergeMapStringIntPtrPatchHasNilVals() {
-  //  overwrite base with patch
-  m1 := map[string]*int{"this": newInt(1), "is": nil, "base key": newInt(4)}
-  m2 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
-  expected := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
+	//  overwrite base with patch
+	m1 := map[string]*int{"this": newInt(1), "is": nil, "base key": newInt(4)}
+	m2 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
+	expected := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(3)}
 
-  merged, err := mergeStringPtrIntMap(m1, m2)
+	merged, err := mergeStringPtrIntMap(m1, m2)
 	s.NoError(err)
 
 	s.Equal(expected, merged)
 }
 
 func (s *TestMergeStruct) TestMergeMapStringIntPtrPatchHasNilValsPatchNil() {
-  // patch is nil, so keep base
-  m1 := map[string]*int{"this": newInt(1), "is": nil, "base key": newInt(4)}
-  var m2 map[string]*int
-  expected := map[string]*int{"this": newInt(1), "is": nil, "base key": newInt(4)}
+	// patch is nil, so keep base
+	m1 := map[string]*int{"this": newInt(1), "is": nil, "base key": newInt(4)}
+	var m2 map[string]*int
+	expected := map[string]*int{"this": newInt(1), "is": nil, "base key": newInt(4)}
 
-  merged, err := mergeStringPtrIntMap(m1, m2)
+	merged, err := mergeStringPtrIntMap(m1, m2)
 	s.NoError(err)
 
 	s.Equal(expected, merged)
 }
 
 func (s *TestMergeStruct) TestMergeMapStringIntPtrAreNotCopiedChangeInBaseDoNotAffectMerged() {
-  // patch is nil, so keep base
-  m1 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(4)}
+	// patch is nil, so keep base
+	m1 := map[string]*int{"this": newInt(1), "is": newInt(3), "a key": newInt(4)}
 	m2 := map[string]*int{"this": newInt(1), "a key": newInt(5)}
 	expected := map[string]*int{"this": newInt(1), "a key": newInt(5)}
 
-  merged, err := mergeStringPtrIntMap(m1, m2)
+	merged, err := mergeStringPtrIntMap(m1, m2)
 	s.NoError(err)
 
-  s.Equal(expected, merged)
-  *m1["this"] = 6
+	s.Equal(expected, merged)
+	*m1["this"] = 6
 	s.Equal(1, *merged["this"])
 }
 
