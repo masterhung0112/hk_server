@@ -3,9 +3,9 @@ package filesstore
 import (
 	"bytes"
 	"fmt"
-	"github.com/masterhung0112/go_server/mlog"
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/utils"
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/utils"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"io/ioutil"

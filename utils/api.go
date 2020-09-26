@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 	"html/template"
 	"net/http"
 	"net/url"

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/hk_server/mlog"
 )
 
 // DON'T USE THIS Modify the level on the app logger

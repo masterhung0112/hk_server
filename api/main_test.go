@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/masterhung0112/go_server/mlog"
-	"github.com/masterhung0112/go_server/testlib"
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/testlib"
 	"testing"
 )
 

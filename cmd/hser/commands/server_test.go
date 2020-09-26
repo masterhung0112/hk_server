@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/masterhung0112/go_server/config"
-	"github.com/masterhung0112/go_server/jobs"
+	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/jobs"
 	"github.com/stretchr/testify/require"
 	"os"
 	"syscall"

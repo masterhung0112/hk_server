@@ -4,8 +4,8 @@
 package app
 
 import (
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/utils"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/utils"
 	"net/http"
 	"strings"
 )

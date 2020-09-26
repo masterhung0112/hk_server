@@ -1,9 +1,9 @@
 package testlib
 
 import (
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/store"
-	"github.com/masterhung0112/go_server/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/store/storetest/mocks"
 	"github.com/stretchr/testify/mock"
 	"net/http"
 	"strconv"

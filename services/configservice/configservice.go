@@ -2,7 +2,7 @@ package configservice
 
 import (
 	"crypto/ecdsa"
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 )
 
 // An interface representing something that contains a Config, such as the app.App struct

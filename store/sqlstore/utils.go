@@ -2,7 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
-	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/mattermost/gorp"
 	"strings"
 )

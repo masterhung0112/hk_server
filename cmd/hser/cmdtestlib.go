@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/masterhung0112/go_server/api"
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/testlib"
+	"github.com/masterhung0112/hk_server/api"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/testlib"
 	"io/ioutil"
 	"path/filepath"
 	"testing"

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	model "github.com/masterhung0112/go_server/model"
+	model "github.com/masterhung0112/hk_server/model"
 	mock "github.com/stretchr/testify/mock"
 )
 

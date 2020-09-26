@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/masterhung0112/go_server/utils/jsonutils"
+	"github.com/masterhung0112/hk_server/utils/jsonutils"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/hk_server/mlog"
 	"strconv"
 	"strings"
 )

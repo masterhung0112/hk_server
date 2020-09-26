@@ -2,7 +2,7 @@ package config
 
 import (
 	"bytes"
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 	"io"
 	"strings"
 	"sync"

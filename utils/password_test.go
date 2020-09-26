@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 	"strings"
 
 	"github.com/stretchr/testify/assert"
