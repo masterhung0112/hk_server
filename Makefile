@@ -14,3 +14,6 @@ test-run-coverage:
 start-cmd-server:
   docker-compose up -d
 	go run .\cmd\hser\main.go
+
+run-fmt:
+	go fmt ./...
