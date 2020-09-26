@@ -12,7 +12,7 @@ test-run-coverage:
 	go tool cover -html=coverage_result
 
 start-cmd-server:
-  docker-compose up -d
+	docker-compose up -d
 	go run .\cmd\hser\main.go
 
 run-fmt:
