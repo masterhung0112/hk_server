@@ -1,7 +1,7 @@
 package utils_test
 
 import (
-	"github.com/masterhung0112/go_server/utils"
+	"github.com/masterhung0112/hk_server/utils"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )

@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/masterhung0112/go_server/web"
+	"github.com/masterhung0112/hk_server/web"
 )
 
 // ApiSessionRequired provides a handler for API endpoints which require the user to be logged in in order for access to

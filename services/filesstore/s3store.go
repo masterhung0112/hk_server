@@ -3,7 +3,7 @@ package filesstore
 import (
 	"bytes"
 	"context"
-	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/minio/minio-go/v7/pkg/encrypt"
 	"io"
 	"io/ioutil"
@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 	s3 "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )

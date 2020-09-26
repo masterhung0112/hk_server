@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	store "github.com/masterhung0112/go_server/store"
+	store "github.com/masterhung0112/hk_server/store"
 	mock "github.com/stretchr/testify/mock"
 )
 

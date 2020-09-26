@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/masterhung0112/go_server/testlib"
+	"github.com/masterhung0112/hk_server/testlib"
 	"testing"
 )
 

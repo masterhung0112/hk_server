@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
-	"github.com/masterhung0112/go_server/config"
-	"github.com/masterhung0112/go_server/mlog"
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/utils"
+	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/utils"
 	"net/http"
 	"reflect"
 	"strings"

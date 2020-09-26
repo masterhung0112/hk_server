@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/store"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store"
 )
 
 type SqlUserStore struct {

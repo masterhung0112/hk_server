@@ -2,8 +2,8 @@ package config_test
 
 import (
 	"fmt"
-	"github.com/masterhung0112/go_server/config"
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"

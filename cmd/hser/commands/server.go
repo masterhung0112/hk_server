@@ -1,11 +1,11 @@
 package commands
 
 import (
-	"github.com/masterhung0112/go_server/api"
-	"github.com/masterhung0112/go_server/app"
-	"github.com/masterhung0112/go_server/config"
-	"github.com/masterhung0112/go_server/mlog"
-	"github.com/masterhung0112/go_server/utils"
+	"github.com/masterhung0112/hk_server/api"
+	"github.com/masterhung0112/hk_server/app"
+	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/utils"
 	"github.com/mattermost/viper"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

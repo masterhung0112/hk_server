@@ -14,10 +14,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/dyatlov/go-opengraph/opengraph"
-	"github.com/masterhung0112/go_server/mlog"
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/store"
-	"github.com/masterhung0112/go_server/utils"
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/utils"
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
 )
