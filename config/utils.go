@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/utils"
 )
 
 // desanitize replaces fake settings with their actual values.
@@ -74,4 +75,16 @@ func fixConfig(cfg *model.Config) bool {
 	// }
 
 	return changed
+}
+
+// Merge merges two configs together. The receiver's values are overwritten with the patch's
+// values except when the patch's values are nil.
+func Merge(cfg *model.Config, patch *model.Config, mergeConfig *utils.MergeConfig) (*model.Config, error) {
+	ret, err := utils.Merge(cfg, patch, mergeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	retCfg := ret.(model.Config)
+	return &retCfg, nil
 }

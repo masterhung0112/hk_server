@@ -59,6 +59,21 @@ var SysconsoleWritePermissions []*Permission
 var PERMISSION_CREATE_TEAM *Permission
 var PERMISSION_MANAGE_TEAM *Permission
 
+var PERMISSION_SYSCONSOLE_READ_ENVIRONMENT *Permission
+var PERMISSION_SYSCONSOLE_WRITE_ENVIRONMENT *Permission
+
+var PERMISSION_SYSCONSOLE_READ_EXPERIMENTAL *Permission
+var PERMISSION_SYSCONSOLE_WRITE_EXPERIMENTAL *Permission
+
+var PERMISSION_SYSCONSOLE_READ_SITE *Permission
+var PERMISSION_SYSCONSOLE_WRITE_SITE *Permission
+
+var PERMISSION_SYSCONSOLE_READ_AUTHENTICATION *Permission
+var PERMISSION_SYSCONSOLE_WRITE_AUTHENTICATION *Permission
+
+var PERMISSION_SYSCONSOLE_READ_INTEGRATIONS *Permission
+var PERMISSION_SYSCONSOLE_WRITE_INTEGRATIONS *Permission
+
 func initializePermissions() {
 	PERMISSION_INVITE_USER = &Permission{
 		"invite_user",
@@ -224,6 +239,69 @@ func initializePermissions() {
 		"authentication.permissions.manage_team.description",
 		PermissionScopeTeam,
 	}
+	PERMISSION_SYSCONSOLE_READ_ENVIRONMENT = &Permission{
+		"sysconsole_read_environment",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_ENVIRONMENT = &Permission{
+		"sysconsole_write_environment",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_READ_EXPERIMENTAL = &Permission{
+		"sysconsole_read_experimental",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_EXPERIMENTAL = &Permission{
+		"sysconsole_write_experimental",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+
+	PERMISSION_SYSCONSOLE_READ_SITE = &Permission{
+		"sysconsole_read_site",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_SITE = &Permission{
+		"sysconsole_write_site",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+
+	PERMISSION_SYSCONSOLE_READ_AUTHENTICATION = &Permission{
+		"sysconsole_read_authentication",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_AUTHENTICATION = &Permission{
+		"sysconsole_write_authentication",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+
+	PERMISSION_SYSCONSOLE_READ_INTEGRATIONS = &Permission{
+		"sysconsole_read_integrations",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_INTEGRATIONS = &Permission{
+		"sysconsole_write_integrations",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
 
 	SystemScopedPermissionsMinusSysconsole := []*Permission{
 		PERMISSION_MANAGE_SYSTEM,
@@ -260,9 +338,19 @@ func initializePermissions() {
 
 	SysconsoleReadPermissions = []*Permission{
 		PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS,
+		PERMISSION_SYSCONSOLE_READ_ENVIRONMENT,
+		PERMISSION_SYSCONSOLE_READ_EXPERIMENTAL,
+		PERMISSION_SYSCONSOLE_READ_SITE,
+		PERMISSION_SYSCONSOLE_READ_AUTHENTICATION,
+		PERMISSION_SYSCONSOLE_READ_INTEGRATIONS,
 	}
 	SysconsoleWritePermissions = []*Permission{
 		PERMISSION_SYSCONSOLE_WRITE_USERMANAGEMENT_GROUPS,
+		PERMISSION_SYSCONSOLE_WRITE_ENVIRONMENT,
+		PERMISSION_SYSCONSOLE_WRITE_EXPERIMENTAL,
+		PERMISSION_SYSCONSOLE_WRITE_SITE,
+		PERMISSION_SYSCONSOLE_WRITE_AUTHENTICATION,
+		PERMISSION_SYSCONSOLE_WRITE_INTEGRATIONS,
 	}
 
 	AllPermissions = []*Permission{}

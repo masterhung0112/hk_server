@@ -537,3 +537,86 @@ func (me *TestHelper) AddUserToChannel(user *model.User, channel *model.Channel)
 
 	return member
 }
+
+func CheckForbiddenStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusForbidden, true)
+}
+
+// TestForSystemAdminAndLocal runs a test function for both
+// SystemAdmin and Local clients. Several endpoints work in the same
+// way when used by a fully privileged user and through the local
+// mode, so this helper facilitates checking both
+func (me *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client), name ...string) {
+	var testName string
+	if len(name) > 0 {
+		testName = name[0] + "/"
+	}
+
+	t.Run(testName+"SystemAdminClient", func(t *testing.T) {
+		f(t, me.SystemAdminClient)
+	})
+
+	// t.Run(testName+"LocalClient", func(t *testing.T) {
+	// 	f(t, me.LocalClient)
+	// })
+}
+
+func (me *TestHelper) AddPermissionToRole(permission string, roleName string) {
+	utils.DisableDebugLogForTest()
+
+	role, err1 := me.App.GetRoleByName(roleName)
+	if err1 != nil {
+		utils.EnableDebugLogForTest()
+		panic(err1)
+	}
+
+	for _, existingPermission := range role.Permissions {
+		if existingPermission == permission {
+			utils.EnableDebugLogForTest()
+			return
+		}
+	}
+
+	role.Permissions = append(role.Permissions, permission)
+
+	_, err2 := me.App.UpdateRole(role)
+	if err2 != nil {
+		utils.EnableDebugLogForTest()
+		panic(err2)
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (me *TestHelper) RemovePermissionFromRole(permission string, roleName string) {
+	utils.DisableDebugLogForTest()
+
+	role, err1 := me.App.GetRoleByName(roleName)
+	if err1 != nil {
+		utils.EnableDebugLogForTest()
+		panic(err1)
+	}
+
+	var newPermissions []string
+	for _, p := range role.Permissions {
+		if p != permission {
+			newPermissions = append(newPermissions, p)
+		}
+	}
+
+	if strings.Join(role.Permissions, " ") == strings.Join(newPermissions, " ") {
+		utils.EnableDebugLogForTest()
+		return
+	}
+
+	role.Permissions = newPermissions
+
+	_, err2 := me.App.UpdateRole(role)
+	if err2 != nil {
+		utils.EnableDebugLogForTest()
+		panic(err2)
+	}
+
+	utils.EnableDebugLogForTest()
+}

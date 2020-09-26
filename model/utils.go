@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/mail"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -337,4 +338,30 @@ func IsValidAlphaNum(s string) bool {
 	validAlphaNum := regexp.MustCompile(`^[a-z0-9]+([a-z\-0-9]+|(__)?)[a-z0-9]+$`)
 
 	return validAlphaNum.MatchString(s)
+}
+
+func IsValidHttpUrl(rawUrl string) bool {
+	if strings.Index(rawUrl, "http://") != 0 && strings.Index(rawUrl, "https://") != 0 {
+		return false
+	}
+
+	if _, err := url.ParseRequestURI(rawUrl); err != nil {
+		return false
+	}
+
+	return true
+}
+
+func IsSafeLink(link *string) bool {
+	if link != nil {
+		if IsValidHttpUrl(*link) {
+			return true
+		} else if strings.HasPrefix(*link, "/") {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	return true
 }

@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"io"
 )
 
 const (
@@ -66,7 +67,24 @@ const (
 	ALLOW_EDIT_POST_ALWAYS     = "always"
 	ALLOW_EDIT_POST_NEVER      = "never"
 	ALLOW_EDIT_POST_TIME_LIMIT = "time_limit"
+
+	FAKE_SETTING = "********************************"
+
+	EXPERIMENTAL_SETTINGS_DEFAULT_LINK_METADATA_TIMEOUT_MILLISECONDS = 5000
+
+	CLIENT_SIDE_CERT_CHECK_PRIMARY_AUTH   = "primary"
+	CLIENT_SIDE_CERT_CHECK_SECONDARY_AUTH = "secondary"
+
+	SUPPORT_SETTINGS_DEFAULT_TERMS_OF_SERVICE_LINK = "https://about.hungknow.com/default-terms/"
+	SUPPORT_SETTINGS_DEFAULT_PRIVACY_POLICY_LINK   = "https://about.hungknow.com/default-privacy-policy/"
+	SUPPORT_SETTINGS_DEFAULT_ABOUT_LINK            = "https://about.hungknow.com/default-about/"
+	SUPPORT_SETTINGS_DEFAULT_HELP_LINK             = "https://about.hungknow.com/default-help/"
+	SUPPORT_SETTINGS_DEFAULT_REPORT_A_PROBLEM_LINK = "https://about.hungknow.com/default-report-a-problem/"
+	SUPPORT_SETTINGS_DEFAULT_SUPPORT_EMAIL         = "hungbn0112@gmail.com"
+	SUPPORT_SETTINGS_DEFAULT_RE_ACCEPTANCE_PERIOD  = 365
 )
+
+const ConfigAccessTagWriteRestrictable = "write_restrictable"
 
 type Config struct {
 	ServiceSettings       ServiceSettings
@@ -77,6 +95,15 @@ type Config struct {
 	PrivacySettings       PrivacySettings
 	EmailSettings         EmailSettings
 	GuestAccountsSettings GuestAccountsSettings
+	ExperimentalSettings  ExperimentalSettings
+	SupportSettings       SupportSettings
+	RateLimitSettings     RateLimitSettings
+}
+
+func ConfigFromJson(data io.Reader) *Config {
+	var o *Config
+	json.NewDecoder(data).Decode(&o)
+	return o
 }
 
 // isUpdate detects a pre-existing config based on whether SiteURL has been changed
@@ -95,6 +122,9 @@ func (o *Config) SetDefaults() {
 	o.PrivacySettings.SetDefaults()
 	o.EmailSettings.SetDefaults(isUpdate)
 	o.GuestAccountsSettings.SetDefaults()
+	o.ExperimentalSettings.SetDefaults()
+	o.SupportSettings.SetDefaults()
+	o.RateLimitSettings.SetDefaults()
 }
 
 func (o *Config) ToJson() string {
@@ -757,5 +787,206 @@ func (s *GuestAccountsSettings) SetDefaults() {
 
 	if s.RestrictCreationToDomains == nil {
 		s.RestrictCreationToDomains = NewString("")
+	}
+}
+
+func (o *Config) Sanitize() {
+	// if o.LdapSettings.BindPassword != nil && len(*o.LdapSettings.BindPassword) > 0 {
+	// 	*o.LdapSettings.BindPassword = FAKE_SETTING
+	// }
+
+	// *o.FileSettings.PublicLinkSalt = FAKE_SETTING
+
+	// if len(*o.FileSettings.AmazonS3SecretAccessKey) > 0 {
+	// 	*o.FileSettings.AmazonS3SecretAccessKey = FAKE_SETTING
+	// }
+
+	if o.EmailSettings.SMTPPassword != nil && len(*o.EmailSettings.SMTPPassword) > 0 {
+		*o.EmailSettings.SMTPPassword = FAKE_SETTING
+	}
+
+	// if len(*o.GitLabSettings.Secret) > 0 {
+	// 	*o.GitLabSettings.Secret = FAKE_SETTING
+	// }
+
+	// if o.GoogleSettings.Secret != nil && len(*o.GoogleSettings.Secret) > 0 {
+	// 	*o.GoogleSettings.Secret = FAKE_SETTING
+	// }
+
+	// if o.Office365Settings.Secret != nil && len(*o.Office365Settings.Secret) > 0 {
+	// 	*o.Office365Settings.Secret = FAKE_SETTING
+	// }
+
+	*o.SqlSettings.DataSource = FAKE_SETTING
+	// *o.SqlSettings.AtRestEncryptKey = FAKE_SETTING
+
+	// *o.ElasticsearchSettings.Password = FAKE_SETTING
+
+	for i := range o.SqlSettings.DataSourceReplicas {
+		o.SqlSettings.DataSourceReplicas[i] = FAKE_SETTING
+	}
+
+	// for i := range o.SqlSettings.DataSourceSearchReplicas {
+	// 	o.SqlSettings.DataSourceSearchReplicas[i] = FAKE_SETTING
+	// }
+
+	// if o.MessageExportSettings.GlobalRelaySettings.SmtpPassword != nil && len(*o.MessageExportSettings.GlobalRelaySettings.SmtpPassword) > 0 {
+	// 	*o.MessageExportSettings.GlobalRelaySettings.SmtpPassword = FAKE_SETTING
+	// }
+
+	// if o.ServiceSettings.GfycatApiSecret != nil && len(*o.ServiceSettings.GfycatApiSecret) > 0 {
+	// 	*o.ServiceSettings.GfycatApiSecret = FAKE_SETTING
+	// }
+}
+
+type ExperimentalSettings struct {
+	ClientSideCertEnable            *bool   `access:"experimental"`
+	ClientSideCertCheck             *string `access:"experimental"`
+	EnableClickToReply              *bool   `access:"experimental,write_restrictable"`
+	LinkMetadataTimeoutMilliseconds *int64  `access:"experimental,write_restrictable"`
+	RestrictSystemAdmin             *bool   `access:"experimental,write_restrictable"`
+	UseNewSAMLLibrary               *bool   `access:"experimental"`
+	CloudUserLimit                  *int64  `access:"experimental,write_restrictable"`
+	CloudBilling                    *bool   `access:"experimental,write_restrictable"`
+}
+
+func (s *ExperimentalSettings) SetDefaults() {
+	if s.ClientSideCertEnable == nil {
+		s.ClientSideCertEnable = NewBool(false)
+	}
+
+	if s.ClientSideCertCheck == nil {
+		s.ClientSideCertCheck = NewString(CLIENT_SIDE_CERT_CHECK_SECONDARY_AUTH)
+	}
+
+	if s.EnableClickToReply == nil {
+		s.EnableClickToReply = NewBool(false)
+	}
+
+	if s.LinkMetadataTimeoutMilliseconds == nil {
+		s.LinkMetadataTimeoutMilliseconds = NewInt64(EXPERIMENTAL_SETTINGS_DEFAULT_LINK_METADATA_TIMEOUT_MILLISECONDS)
+	}
+
+	if s.RestrictSystemAdmin == nil {
+		s.RestrictSystemAdmin = NewBool(false)
+	}
+
+	if s.CloudUserLimit == nil {
+		// User limit 0 is treated as no limit
+		s.CloudUserLimit = NewInt64(0)
+	}
+
+	if s.CloudBilling == nil {
+		s.CloudBilling = NewBool(false)
+	}
+
+	if s.UseNewSAMLLibrary == nil {
+		s.UseNewSAMLLibrary = NewBool(false)
+	}
+}
+
+type SupportSettings struct {
+	TermsOfServiceLink                     *string `access:"site,write_restrictable"`
+	PrivacyPolicyLink                      *string `access:"site,write_restrictable"`
+	AboutLink                              *string `access:"site,write_restrictable"`
+	HelpLink                               *string `access:"site,write_restrictable"`
+	ReportAProblemLink                     *string `access:"site,write_restrictable"`
+	SupportEmail                           *string `access:"site"`
+	CustomTermsOfServiceEnabled            *bool   `access:"compliance"`
+	CustomTermsOfServiceReAcceptancePeriod *int    `access:"compliance"`
+	EnableAskCommunityLink                 *bool   `access:"site"`
+}
+
+func (s *SupportSettings) SetDefaults() {
+	if !IsSafeLink(s.TermsOfServiceLink) {
+		*s.TermsOfServiceLink = SUPPORT_SETTINGS_DEFAULT_TERMS_OF_SERVICE_LINK
+	}
+
+	if s.TermsOfServiceLink == nil {
+		s.TermsOfServiceLink = NewString(SUPPORT_SETTINGS_DEFAULT_TERMS_OF_SERVICE_LINK)
+	}
+
+	if !IsSafeLink(s.PrivacyPolicyLink) {
+		*s.PrivacyPolicyLink = ""
+	}
+
+	if s.PrivacyPolicyLink == nil {
+		s.PrivacyPolicyLink = NewString(SUPPORT_SETTINGS_DEFAULT_PRIVACY_POLICY_LINK)
+	}
+
+	if !IsSafeLink(s.AboutLink) {
+		*s.AboutLink = ""
+	}
+
+	if s.AboutLink == nil {
+		s.AboutLink = NewString(SUPPORT_SETTINGS_DEFAULT_ABOUT_LINK)
+	}
+
+	if !IsSafeLink(s.HelpLink) {
+		*s.HelpLink = ""
+	}
+
+	if s.HelpLink == nil {
+		s.HelpLink = NewString(SUPPORT_SETTINGS_DEFAULT_HELP_LINK)
+	}
+
+	if !IsSafeLink(s.ReportAProblemLink) {
+		*s.ReportAProblemLink = ""
+	}
+
+	if s.ReportAProblemLink == nil {
+		s.ReportAProblemLink = NewString(SUPPORT_SETTINGS_DEFAULT_REPORT_A_PROBLEM_LINK)
+	}
+
+	if s.SupportEmail == nil {
+		s.SupportEmail = NewString(SUPPORT_SETTINGS_DEFAULT_SUPPORT_EMAIL)
+	}
+
+	if s.CustomTermsOfServiceEnabled == nil {
+		s.CustomTermsOfServiceEnabled = NewBool(false)
+	}
+
+	if s.CustomTermsOfServiceReAcceptancePeriod == nil {
+		s.CustomTermsOfServiceReAcceptancePeriod = NewInt(SUPPORT_SETTINGS_DEFAULT_RE_ACCEPTANCE_PERIOD)
+	}
+
+	if s.EnableAskCommunityLink == nil {
+		s.EnableAskCommunityLink = NewBool(true)
+	}
+}
+
+type RateLimitSettings struct {
+	Enable           *bool  `access:"environment,write_restrictable"`
+	PerSec           *int   `access:"environment,write_restrictable"`
+	MaxBurst         *int   `access:"environment,write_restrictable"`
+	MemoryStoreSize  *int   `access:"environment,write_restrictable"`
+	VaryByRemoteAddr *bool  `access:"environment,write_restrictable"`
+	VaryByUser       *bool  `access:"environment,write_restrictable"`
+	VaryByHeader     string `access:"environment,write_restrictable"`
+}
+
+func (s *RateLimitSettings) SetDefaults() {
+	if s.Enable == nil {
+		s.Enable = NewBool(false)
+	}
+
+	if s.PerSec == nil {
+		s.PerSec = NewInt(10)
+	}
+
+	if s.MaxBurst == nil {
+		s.MaxBurst = NewInt(100)
+	}
+
+	if s.MemoryStoreSize == nil {
+		s.MemoryStoreSize = NewInt(10000)
+	}
+
+	if s.VaryByRemoteAddr == nil {
+		s.VaryByRemoteAddr = NewBool(true)
+	}
+
+	if s.VaryByUser == nil {
+		s.VaryByUser = NewBool(false)
 	}
 }
