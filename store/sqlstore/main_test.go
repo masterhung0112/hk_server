@@ -1,8 +1,8 @@
 package sqlstore_test
 
 import (
-	"github.com/masterhung0112/go_server/store/sqlstore"
-	"github.com/masterhung0112/go_server/testlib"
+	"github.com/masterhung0112/hk_server/store/sqlstore"
+	"github.com/masterhung0112/hk_server/testlib"
 	"testing"
 )
 

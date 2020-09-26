@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 	"github.com/pkg/errors"
 	"net/url"
 	"os"

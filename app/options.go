@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/masterhung0112/go_server/config"
-	"github.com/masterhung0112/go_server/store"
+	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/store"
 	"github.com/pkg/errors"
 )
 

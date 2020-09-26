@@ -1,4 +1,4 @@
-module github.com/masterhung0112/go_server
+module github.com/masterhung0112/hk_server
 
 go 1.14
 

@@ -1,7 +1,7 @@
 package storetest
 
 import (
-	"github.com/masterhung0112/go_server/store"
+	"github.com/masterhung0112/hk_server/store"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )

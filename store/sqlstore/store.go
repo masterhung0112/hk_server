@@ -2,7 +2,7 @@ package sqlstore
 
 import (
 	sq "github.com/Masterminds/squirrel"
-	"github.com/masterhung0112/go_server/store"
+	"github.com/masterhung0112/hk_server/store"
 	"github.com/mattermost/gorp"
 )
 

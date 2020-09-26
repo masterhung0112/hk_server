@@ -3,7 +3,7 @@ package config
 import (
 	"sync"
 
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 )
 
 // emitter enables threadsafe registration and broadcasting to configuration listeners

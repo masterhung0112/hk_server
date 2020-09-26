@@ -1,8 +1,8 @@
 package sqlstore
 
 import (
-	"github.com/masterhung0112/go_server/model"
-	"github.com/masterhung0112/go_server/store/storetest"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store/storetest"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )

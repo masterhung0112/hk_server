@@ -3,7 +3,7 @@ package config
 import (
 	"strings"
 
-	"github.com/masterhung0112/go_server/model"
+	"github.com/masterhung0112/hk_server/model"
 )
 
 // Listener is a callback function invoked when the configuration changes

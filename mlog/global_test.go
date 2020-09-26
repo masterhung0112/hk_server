@@ -1,7 +1,7 @@
 package mlog_test
 
 import (
-	"github.com/masterhung0112/go_server/mlog"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"

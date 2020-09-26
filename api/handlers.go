@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/masterhung0112/go_server/web"
+	"github.com/masterhung0112/hk_server/web"
 	"net/http"
 )
 
