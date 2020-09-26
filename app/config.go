@@ -171,3 +171,11 @@ func (a *App) GetCookieDomain() string {
 	}
 	return ""
 }
+
+// GetSanitizedConfig gets the configuration for a system admin without any secrets.
+func (a *App) GetSanitizedConfig() *model.Config {
+	cfg := a.Config().Clone()
+	cfg.Sanitize()
+
+	return cfg
+}

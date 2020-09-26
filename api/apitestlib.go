@@ -537,3 +537,27 @@ func (me *TestHelper) AddUserToChannel(user *model.User, channel *model.Channel)
 
 	return member
 }
+
+func CheckForbiddenStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusForbidden, true)
+}
+
+// TestForSystemAdminAndLocal runs a test function for both
+// SystemAdmin and Local clients. Several endpoints work in the same
+// way when used by a fully privileged user and through the local
+// mode, so this helper facilitates checking both
+func (me *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client), name ...string) {
+	var testName string
+	if len(name) > 0 {
+		testName = name[0] + "/"
+	}
+
+	t.Run(testName+"SystemAdminClient", func(t *testing.T) {
+		f(t, me.SystemAdminClient)
+	})
+
+	// t.Run(testName+"LocalClient", func(t *testing.T) {
+	// 	f(t, me.LocalClient)
+	// })
+}

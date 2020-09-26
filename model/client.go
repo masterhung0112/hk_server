@@ -278,3 +278,17 @@ func (c *Client) GetChannelsRoute() string {
 func (c *Client) GetChannelRoute(channelId string) string {
 	return fmt.Sprintf(c.GetChannelsRoute()+"/%v", channelId)
 }
+
+func (c *Client) GetConfigRoute() string {
+	return "/config"
+}
+
+// GetConfig will retrieve the server config with some sanitized items.
+func (c *Client) GetConfig() (*Config, *Response) {
+	r, err := c.DoApiGet(c.GetConfigRoute(), "")
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	return ConfigFromJson(r.Body), BuildResponse(r)
+}
