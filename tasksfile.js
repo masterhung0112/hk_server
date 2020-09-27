@@ -84,7 +84,13 @@ function test_data() {
 }
 help(test_data, 'Add test data to the local instance')
 
+function start_server() {
+  sh(`go run ./cmd/hser/main.go`, { nopipe: true })
+}
+help(start_server, 'Start server instance')
+
 cli({
   start_docker,
+  start_server,
   test_data,
 })

@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/masterhung0112/hk_server#readme",
   "devDependencies": {
-    "tasksfile": "^5.1.1"
+    "tasksfile": "^5.1.1",
+    "lodash": "^4.17.19"
   }
 }

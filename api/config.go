@@ -22,6 +22,7 @@ const filterTypeRead filterType = "read"
 
 func (api *API) InitConfig() {
 	api.BaseRoutes.ApiRoot.Handle("/config", api.ApiSessionRequired(getConfig)).Methods("GET")
+	api.BaseRoutes.ApiRoot.Handle("/config", api.ApiSessionRequired(updateConfig)).Methods("PUT")
 	api.BaseRoutes.ApiRoot.Handle("/config/client", api.ApiHandler(getClientConfig)).Methods("GET")
 }
 
@@ -135,4 +136,73 @@ func makeFilterConfigByPermission(accessType filterType) func(c *Context, struct
 		// with manage_system, default to allow, otherwise default not-allow
 		return c.App.SessionHasPermissionTo(*c.App.Session(), model.PERMISSION_MANAGE_SYSTEM)
 	}
+}
+
+func updateConfig(c *Context, w http.ResponseWriter, r *http.Request) {
+	cfg := model.ConfigFromJson(r.Body)
+	if cfg == nil {
+		c.SetInvalidParam("config")
+		return
+	}
+
+	// auditRec := c.MakeAuditRecord("updateConfig", audit.Fail)
+	// defer c.LogAuditRec(auditRec)
+
+	cfg.SetDefaults()
+
+	if !c.App.SessionHasPermissionToAny(*c.App.Session(), model.SysconsoleWritePermissions) {
+		c.SetPermissionError(model.SysconsoleWritePermissions...)
+		return
+	}
+
+	appCfg := c.App.Config()
+	if *appCfg.ServiceSettings.SiteURL != "" && *cfg.ServiceSettings.SiteURL == "" {
+		c.Err = model.NewAppError("updateConfig", "api.config.update_config.clear_siteurl.app_error", nil, "", http.StatusBadRequest)
+		return
+	}
+
+	var err1 error
+	cfg, err1 = config.Merge(appCfg, cfg, &utils.MergeConfig{
+		StructFieldFilter: func(structField reflect.StructField, base, patch reflect.Value) bool {
+			return writeFilter(c, structField)
+		},
+	})
+	if err1 != nil {
+		c.Err = model.NewAppError("updateConfig", "api.config.update_config.restricted_merge.app_error", nil, err1.Error(), http.StatusInternalServerError)
+	}
+
+	// Do not allow plugin uploads to be toggled through the API
+	cfg.PluginSettings.EnableUploads = appCfg.PluginSettings.EnableUploads
+
+	// Do not allow certificates to be changed through the API
+	cfg.PluginSettings.SignaturePublicKeyFiles = appCfg.PluginSettings.SignaturePublicKeyFiles
+
+	c.App.HandleMessageExportConfig(cfg, appCfg)
+
+	err := cfg.IsValid()
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	err = c.App.SaveConfig(cfg, true)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	cfg, mergeErr := config.Merge(&model.Config{}, c.App.GetSanitizedConfig(), &utils.MergeConfig{
+		StructFieldFilter: func(structField reflect.StructField, base, patch reflect.Value) bool {
+			return readFilter(c, structField)
+		},
+	})
+	if mergeErr != nil {
+		c.Err = model.NewAppError("getConfig", "api.config.update_config.restricted_merge.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	// auditRec.Success()
+	// c.LogAudit("updateConfig")
+
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Write([]byte(cfg.ToJson()))
 }
