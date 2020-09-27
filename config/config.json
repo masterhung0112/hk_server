@@ -16,7 +16,7 @@
     },
     "TeamSettings": {
         "SiteName": "HungKnow",
-        "MaxUsersPerTeam": 50,
+        "MaxUsersPerTeam": 100,
         "EnableTeamCreation": null,
         "EnableUserCreation": true,
         "EnableOpenServer": false,
@@ -99,5 +99,49 @@
         "AllowEmailAccounts": true,
         "EnforceMultifactorAuthentication": false,
         "RestrictCreationToDomains": ""
+    },
+    "ExperimentalSettings": {
+        "ClientSideCertEnable": false,
+        "ClientSideCertCheck": "secondary",
+        "EnableClickToReply": false,
+        "LinkMetadataTimeoutMilliseconds": 5000,
+        "RestrictSystemAdmin": false,
+        "UseNewSAMLLibrary": false,
+        "CloudUserLimit": 0,
+        "CloudBilling": false
+    },
+    "SupportSettings": {
+        "TermsOfServiceLink": "https://about.hungknow.com/default-terms/",
+        "PrivacyPolicyLink": "https://about.hungknow.com/default-privacy-policy/",
+        "AboutLink": "https://about.hungknow.com/default-about/",
+        "HelpLink": "https://about.hungknow.com/default-help/",
+        "ReportAProblemLink": "https://about.hungknow.com/default-report-a-problem/",
+        "SupportEmail": "hungbn0112@gmail.com",
+        "CustomTermsOfServiceEnabled": false,
+        "CustomTermsOfServiceReAcceptancePeriod": 365,
+        "EnableAskCommunityLink": true
+    },
+    "RateLimitSettings": {
+        "Enable": false,
+        "PerSec": 10,
+        "MaxBurst": 100,
+        "MemoryStoreSize": 10000,
+        "VaryByRemoteAddr": true,
+        "VaryByUser": false,
+        "VaryByHeader": ""
+    },
+    "FileSettings": {
+        "Directory": "./data/",
+        "DriverName": "local",
+        "S3AccessKeyId": "",
+        "S3SecretAccessKey": "",
+        "S3Bucket": "",
+        "S3PathPrefix": "",
+        "S3Region": "",
+        "S3Endpoint": "s3.amazonaws.com",
+        "S3SSL": true,
+        "S3SignV2": false,
+        "S3SSE": false,
+        "S3Trace": false
     }
 }

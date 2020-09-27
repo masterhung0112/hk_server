@@ -6,6 +6,7 @@ import (
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/pkg/errors"
 	"net/http"
+	"strings"
 )
 
 // mergeChannelHigherScopedPermissions updates the permissions based on the role type, whether the permission is
@@ -188,4 +189,47 @@ func (a *App) sendUpdatedRoleEvent(role *model.Role) {
 	// a.Srv().Go(func() {
 	// 	a.Publish(message)
 	// })
+}
+
+func (a *App) CreateRole(role *model.Role) (*model.Role, *model.AppError) {
+	role.Id = ""
+	role.CreateAt = 0
+	role.UpdateAt = 0
+	role.DeleteAt = 0
+	role.BuiltIn = false
+	role.SchemeManaged = false
+
+	var err error
+	role, err = a.Srv().Store.Role().Save(role)
+	if err != nil {
+		var invErr *store.ErrInvalidInput
+		switch {
+		case errors.As(err, &invErr):
+			return nil, model.NewAppError("CreateRole", "app.role.save.invalid_role.app_error", nil, invErr.Error(), http.StatusBadRequest)
+		default:
+			return nil, model.NewAppError("CreateRole", "app.role.save.insert.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	return role, nil
+}
+
+func RemoveRoles(rolesToRemove []string, roles string) string {
+	roleList := strings.Fields(roles)
+	newRoles := make([]string, 0)
+
+	for _, role := range roleList {
+		shouldRemove := false
+		for _, roleToRemove := range rolesToRemove {
+			if role == roleToRemove {
+				shouldRemove = true
+				break
+			}
+		}
+		if !shouldRemove {
+			newRoles = append(newRoles, role)
+		}
+	}
+
+	return strings.Join(newRoles, " ")
 }

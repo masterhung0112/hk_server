@@ -23,9 +23,12 @@ type Store interface {
 	UserAccessToken() UserAccessTokenStore
 	Preference() PreferenceStore
 	Token() TokenStore
+	Group() GroupStore
 	Close()
 	DropAllTables()
 	MarkSystemRanUnitTests()
+	LockToMaster()
+	UnlockFromMaster()
 }
 
 type UserStore interface {
@@ -36,6 +39,10 @@ type UserStore interface {
 	Count(options model.UserCountOptions) (int64, *model.AppError)
 	PermanentDelete(userId string) *model.AppError
 	InferSystemInstallDate() (int64, *model.AppError)
+	UpdatePassword(userId, newPassword string) *model.AppError
+
+	UpdateAuthData(userId string, service string, authData *string, email string, resetMfa bool) (string, *model.AppError)
+	UpdateLastPictureUpdate(userId string) *model.AppError
 
 	GetByUsername(username string) (*model.User, *model.AppError)
 	GetByEmail(email string) (*model.User, *model.AppError)
@@ -53,6 +60,7 @@ type UserStore interface {
 	GetProfileByIds(userIds []string, options *UserGetByIdsOpts, allowFromCache bool) ([]*model.User, *model.AppError)
 	GetChannelGroupUsers(channelID string) ([]*model.User, *model.AppError)
 	UpdateUpdateAt(userId string) (int64, *model.AppError)
+	GetProfilesByUsernames(usernames []string, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
 }
 
 type SystemStore interface {
@@ -88,10 +96,10 @@ type RoleStore interface {
 
 type TeamStore interface {
 	Save(team *model.Team) (*model.Team, error)
-	// Update(team *model.Team) (*model.Team, error)
-	// Get(id string) (*model.Team, error)
-	// GetByName(name string) (*model.Team, error)
-	// GetByNames(name []string) ([]*model.Team, error)
+	Update(team *model.Team) (*model.Team, error)
+	Get(id string) (*model.Team, error)
+	GetByName(name string) (*model.Team, error)
+	GetByNames(name []string) ([]*model.Team, error)
 	// SearchAll(term string, opts *model.TeamSearch) ([]*model.Team, error)
 	// SearchAllPaged(term string, opts *model.TeamSearch) ([]*model.Team, int64, error)
 	// SearchOpen(term string) ([]*model.Team, error)
@@ -149,14 +157,14 @@ type TeamStore interface {
 
 type ChannelStore interface {
 	Save(channel *model.Channel, maxChannelsPerTeam int64) (*model.Channel, error)
-	// CreateDirectChannel(userId *model.User, otherUserId *model.User) (*model.Channel, error)
+	CreateDirectChannel(userId *model.User, otherUserId *model.User) (*model.Channel, error)
 	// SaveDirectChannel(channel *model.Channel, member1 *model.ChannelMember, member2 *model.ChannelMember) (*model.Channel, error)
-	// Update(channel *model.Channel) (*model.Channel, error)
+	Update(channel *model.Channel) (*model.Channel, error)
 	// UpdateSidebarChannelCategoryOnMove(channel *model.Channel, newTeamId string) error
 	// ClearSidebarOnTeamLeave(userId, teamId string) error
 	Get(id string, allowFromCache bool) (*model.Channel, error)
-	// InvalidateChannel(id string)
-	// InvalidateChannelByName(teamId, name string)
+	InvalidateChannel(id string)
+	InvalidateChannelByName(teamId, name string)
 	// GetFromMaster(id string) (*model.Channel, error)
 	// Delete(channelId string, time int64) error
 	// Restore(channelId string, time int64) error
@@ -164,8 +172,8 @@ type ChannelStore interface {
 	// PermanentDelete(channelId string) error
 	// PermanentDeleteByTeam(teamId string) error
 	GetByName(team_id string, name string, allowFromCache bool) (*model.Channel, error)
-	// GetByNames(team_id string, names []string, allowFromCache bool) ([]*model.Channel, error)
-	// GetByNameIncludeDeleted(team_id string, name string, allowFromCache bool) (*model.Channel, error)
+	GetByNames(team_id string, names []string, allowFromCache bool) ([]*model.Channel, error)
+	GetByNameIncludeDeleted(team_id string, name string, allowFromCache bool) (*model.Channel, error)
 	// GetDeletedByName(team_id string, name string) (*model.Channel, error)
 	// GetDeleted(team_id string, offset int, limit int, userId string) (*model.ChannelList, error)
 	// GetChannels(teamId string, userId string, includeDeleted bool, lastDeleteAt int) (*model.ChannelList, error)
@@ -182,10 +190,10 @@ type ChannelStore interface {
 	GetForPost(postId string) (*model.Channel, error)
 	SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError)
 	SaveMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
-	// UpdateMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
-	// UpdateMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError)
+	UpdateMember(member *model.ChannelMember) (*model.ChannelMember, error)
+	UpdateMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, error)
 	// GetMembers(channelId string, offset, limit int) (*model.ChannelMembers, *model.AppError)
-	GetMember(channelId string, userId string) (*model.ChannelMember, *model.AppError)
+	GetMember(channelId string, userId string) (*model.ChannelMember, error)
 	// GetChannelMembersTimezones(channelId string) ([]model.StringMap, *model.AppError)
 	GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, *model.AppError)
 	InvalidateAllChannelMembersForUser(userId string)
@@ -211,8 +219,8 @@ type ChannelStore interface {
 	// CountPostsAfter(channelId string, timestamp int64, userId string) (int, *model.AppError)
 	// IncrementMentionCount(channelId string, userId string) *model.AppError
 	// AnalyticsTypeCount(teamId string, channelType string) (int64, *model.AppError)
-	// GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, *model.AppError)
-	// GetMembersForUserWithPagination(teamId, userId string, page, perPage int) (*model.ChannelMembers, *model.AppError)
+	GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, error)
+	GetMembersForUserWithPagination(teamId, userId string, page, perPage int) (*model.ChannelMembers, error)
 	// AutocompleteInTeam(teamId string, term string, includeDeleted bool) (*model.ChannelList, *model.AppError)
 	// AutocompleteInTeamForSearch(teamId string, userId string, term string, includeDeleted bool) (*model.ChannelList, *model.AppError)
 	// SearchAllChannels(term string, opts ChannelSearchOpts) (*model.ChannelListWithTeamData, int64, *model.AppError)
@@ -257,8 +265,8 @@ type ChannelStore interface {
 
 type SchemeStore interface {
 	Save(scheme *model.Scheme) (*model.Scheme, error)
-	// Get(schemeId string) (*model.Scheme, error)
-	// GetByName(schemeName string) (*model.Scheme, error)
+	Get(schemeId string) (*model.Scheme, error)
+	GetByName(schemeName string) (*model.Scheme, error)
 	GetAllPage(scope string, offset int, limit int) ([]*model.Scheme, error)
 	// Delete(schemeId string) (*model.Scheme, error)
 	// PermanentDeleteAll() error
@@ -327,4 +335,91 @@ type UserGetByIdsOpts struct {
 
 	// Since filters the users based on their UpdateAt timestamp.
 	Since int64
+}
+
+type GroupStore interface {
+	Create(group *model.Group) (*model.Group, *model.AppError)
+	Get(groupID string) (*model.Group, *model.AppError)
+	GetByName(name string, opts model.GroupSearchOpts) (*model.Group, *model.AppError)
+	// GetByIDs(groupIDs []string) ([]*model.Group, *model.AppError)
+	// GetByRemoteID(remoteID string, groupSource model.GroupSource) (*model.Group, *model.AppError)
+	// GetAllBySource(groupSource model.GroupSource) ([]*model.Group, *model.AppError)
+	// GetByUser(userId string) ([]*model.Group, *model.AppError)
+	// Update(group *model.Group) (*model.Group, *model.AppError)
+	// Delete(groupID string) (*model.Group, *model.AppError)
+
+	// GetMemberUsers(groupID string) ([]*model.User, *model.AppError)
+	// GetMemberUsersPage(groupID string, page int, perPage int) ([]*model.User, *model.AppError)
+	// GetMemberCount(groupID string) (int64, *model.AppError)
+
+	// GetMemberUsersInTeam(groupID string, teamID string) ([]*model.User, *model.AppError)
+	// GetMemberUsersNotInChannel(groupID string, channelID string) ([]*model.User, *model.AppError)
+
+	// UpsertMember(groupID string, userID string) (*model.GroupMember, *model.AppError)
+	// DeleteMember(groupID string, userID string) (*model.GroupMember, *model.AppError)
+	// PermanentDeleteMembersByUser(userId string) *model.AppError
+
+	// CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, *model.AppError)
+	// GetGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, *model.AppError)
+	// GetAllGroupSyncablesByGroupId(groupID string, syncableType model.GroupSyncableType) ([]*model.GroupSyncable, *model.AppError)
+	// UpdateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, *model.AppError)
+	// DeleteGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, *model.AppError)
+
+	// // TeamMembersToAdd returns a slice of UserTeamIDPair that need newly created memberships
+	// // based on the groups configurations. The returned list can be optionally scoped to a single given team.
+	// //
+	// // Typically since will be the last successful group sync time.
+	// TeamMembersToAdd(since int64, teamID *string) ([]*model.UserTeamIDPair, *model.AppError)
+
+	// // ChannelMembersToAdd returns a slice of UserChannelIDPair that need newly created memberships
+	// // based on the groups configurations. The returned list can be optionally scoped to a single given channel.
+	// //
+	// // Typically since will be the last successful group sync time.
+	// ChannelMembersToAdd(since int64, channelID *string) ([]*model.UserChannelIDPair, *model.AppError)
+
+	// // TeamMembersToRemove returns all team members that should be removed based on group constraints.
+	// TeamMembersToRemove(teamID *string) ([]*model.TeamMember, *model.AppError)
+
+	// // ChannelMembersToRemove returns all channel members that should be removed based on group constraints.
+	// ChannelMembersToRemove(channelID *string) ([]*model.ChannelMember, *model.AppError)
+
+	// GetGroupsByChannel(channelId string, opts model.GroupSearchOpts) ([]*model.GroupWithSchemeAdmin, *model.AppError)
+	// CountGroupsByChannel(channelId string, opts model.GroupSearchOpts) (int64, *model.AppError)
+
+	// GetGroupsByTeam(teamId string, opts model.GroupSearchOpts) ([]*model.GroupWithSchemeAdmin, *model.AppError)
+	// GetGroupsAssociatedToChannelsByTeam(teamId string, opts model.GroupSearchOpts) (map[string][]*model.GroupWithSchemeAdmin, *model.AppError)
+	// CountGroupsByTeam(teamId string, opts model.GroupSearchOpts) (int64, *model.AppError)
+
+	// GetGroups(page, perPage int, opts model.GroupSearchOpts) ([]*model.Group, *model.AppError)
+
+	// TeamMembersMinusGroupMembers(teamID string, groupIDs []string, page, perPage int) ([]*model.UserWithGroups, *model.AppError)
+	// CountTeamMembersMinusGroupMembers(teamID string, groupIDs []string) (int64, *model.AppError)
+	// ChannelMembersMinusGroupMembers(channelID string, groupIDs []string, page, perPage int) ([]*model.UserWithGroups, *model.AppError)
+	// CountChannelMembersMinusGroupMembers(channelID string, groupIDs []string) (int64, *model.AppError)
+
+	// AdminRoleGroupsForSyncableMember returns the IDs of all of the groups that the user is a member of that are
+	// configured as SchemeAdmin: true for the given syncable.
+	AdminRoleGroupsForSyncableMember(userID, syncableID string, syncableType model.GroupSyncableType) ([]string, *model.AppError)
+
+	// // PermittedSyncableAdmins returns the IDs of all of the user who are permitted by the group syncable to have
+	// // the admin role for the given syncable.
+	// PermittedSyncableAdmins(syncableID string, syncableType model.GroupSyncableType) ([]string, *model.AppError)
+
+	// // GroupCount returns the total count of records in the UserGroups table.
+	// GroupCount() (int64, *model.AppError)
+
+	// // GroupTeamCount returns the total count of records in the GroupTeams table.
+	// GroupTeamCount() (int64, *model.AppError)
+
+	// // GroupChannelCount returns the total count of records in the GroupChannels table.
+	// GroupChannelCount() (int64, *model.AppError)
+
+	// // GroupMemberCount returns the total count of records in the GroupMembers table.
+	// GroupMemberCount() (int64, *model.AppError)
+
+	// // DistinctGroupMemberCount returns the count of records in the GroupMembers table with distinct UserId values.
+	// DistinctGroupMemberCount() (int64, *model.AppError)
+
+	// // GroupCountWithAllowReference returns the count of records in the Groups table with AllowReference set to true.
+	// GroupCountWithAllowReference() (int64, *model.AppError)
 }

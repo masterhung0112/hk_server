@@ -705,14 +705,14 @@ func (s SqlChannelStore) GetForPost(postId string) (*model.Channel, error) {
 	return channel, nil
 }
 
-func (s SqlChannelStore) GetMember(channelId string, userId string) (*model.ChannelMember, *model.AppError) {
+func (s SqlChannelStore) GetMember(channelId string, userId string) (*model.ChannelMember, error) {
 	var dbMember channelMemberWithSchemeRoles
 
 	if err := s.GetReplica().SelectOne(&dbMember, CHANNEL_MEMBERS_WITH_SCHEME_SELECT_QUERY+"WHERE ChannelMembers.ChannelId = :ChannelId AND ChannelMembers.UserId = :UserId", map[string]interface{}{"ChannelId": channelId, "UserId": userId}); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, model.NewAppError("SqlChannelStore.GetMember", store.MISSING_CHANNEL_MEMBER_ERROR, nil, "channel_id="+channelId+"user_id="+userId+","+err.Error(), http.StatusNotFound)
+			return nil, store.NewErrNotFound("ChannelMember", fmt.Sprintf("channelId=%s, userId=%s", channelId, userId))
 		}
-		return nil, model.NewAppError("SqlChannelStore.GetMember", "store.sql_channel.get_member.app_error", nil, "channel_id="+channelId+"user_id="+userId+","+err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrapf(err, "failed to get ChannelMember with channelId=%s and userId=%s", channelId, userId)
 	}
 
 	return dbMember.ToModel(), nil
@@ -984,4 +984,284 @@ func (s SqlChannelStore) UserBelongsToChannels(userId string, channelIds []strin
 		return false, model.NewAppError("SqlChannelStore.UserBelongsToChannels", "store.sql_channel.user_belongs_to_channels.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 	return c > 0, nil
+}
+
+func (s SqlChannelStore) GetByNameIncludeDeleted(teamId string, name string, allowFromCache bool) (*model.Channel, error) {
+	return s.getByName(teamId, name, true, allowFromCache)
+}
+
+func (s SqlChannelStore) InvalidateChannel(id string) {
+}
+
+func (s SqlChannelStore) InvalidateChannelByName(teamId, name string) {
+	//TODO: Open
+	// channelByNameCache.Remove(teamId + name)
+	// if s.metrics != nil {
+	// 	s.metrics.IncrementMemCacheInvalidationCounter("Channel by Name - Remove by TeamId and Name")
+	// }
+}
+
+func (s SqlChannelStore) GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, error) {
+	var dbMembers channelMemberWithSchemeRolesList
+	_, err := s.GetReplica().Select(&dbMembers, CHANNEL_MEMBERS_WITH_SCHEME_SELECT_QUERY+"WHERE ChannelMembers.UserId = :UserId AND (Teams.Id = :TeamId OR Teams.Id = '' OR Teams.Id IS NULL)", map[string]interface{}{"TeamId": teamId, "UserId": userId})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find ChannelMembers data with teamId=%s and userId=%s", teamId, userId)
+	}
+
+	return dbMembers.ToModel(), nil
+}
+
+func (s SqlChannelStore) GetMembersForUserWithPagination(teamId, userId string, page, perPage int) (*model.ChannelMembers, error) {
+	var dbMembers channelMemberWithSchemeRolesList
+	offset := page * perPage
+	_, err := s.GetReplica().Select(&dbMembers, CHANNEL_MEMBERS_WITH_SCHEME_SELECT_QUERY+"WHERE ChannelMembers.UserId = :UserId Limit :Limit Offset :Offset", map[string]interface{}{"TeamId": teamId, "UserId": userId, "Limit": perPage, "Offset": offset})
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find ChannelMembers data with teamId=%s and userId=%s", teamId, userId)
+	}
+
+	return dbMembers.ToModel(), nil
+}
+
+func (s SqlChannelStore) UpdateMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, error) {
+	for _, member := range members {
+		member.PreUpdate()
+
+		if err := member.IsValid(); err != nil {
+			return nil, err
+		}
+	}
+
+	var transaction *gorp.Transaction
+	var err error
+
+	if transaction, err = s.GetMaster().Begin(); err != nil {
+		return nil, errors.Wrap(err, "begin_transaction")
+	}
+	defer finalizeTransaction(transaction)
+
+	updatedMembers := []*model.ChannelMember{}
+	for _, member := range members {
+		if _, err := transaction.Update(NewChannelMemberFromModel(member)); err != nil {
+			return nil, errors.Wrap(err, "failed to update ChannelMember")
+		}
+
+		// TODO: Get this out of the transaction when is possible
+		var dbMember channelMemberWithSchemeRoles
+		if err := transaction.SelectOne(&dbMember, CHANNEL_MEMBERS_WITH_SCHEME_SELECT_QUERY+"WHERE ChannelMembers.ChannelId = :ChannelId AND ChannelMembers.UserId = :UserId", map[string]interface{}{"ChannelId": member.ChannelId, "UserId": member.UserId}); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, store.NewErrNotFound("ChannelMember", fmt.Sprintf("channelId=%s, userId=%s", member.ChannelId, member.UserId))
+			}
+			return nil, errors.Wrapf(err, "failed to get ChannelMember with channelId=%s and userId=%s", member.ChannelId, member.UserId)
+		}
+		updatedMembers = append(updatedMembers, dbMember.ToModel())
+	}
+
+	if err := transaction.Commit(); err != nil {
+		return nil, errors.Wrap(err, "commit_transaction")
+	}
+	return updatedMembers, nil
+}
+
+func (s SqlChannelStore) GetByNames(teamId string, names []string, allowFromCache bool) ([]*model.Channel, error) {
+	var channels []*model.Channel
+
+	if allowFromCache {
+		var misses []string
+		visited := make(map[string]struct{})
+		for _, name := range names {
+			if _, ok := visited[name]; ok {
+				continue
+			}
+			visited[name] = struct{}{}
+			//TODO: Open
+			// var cacheItem *model.Channel
+			// if err := channelByNameCache.Get(teamId+name, &cacheItem); err == nil {
+			// 	channels = append(channels, cacheItem)
+			// } else {
+			misses = append(misses, name)
+			// }
+		}
+		names = misses
+	}
+
+	if len(names) > 0 {
+		props := map[string]interface{}{}
+		var namePlaceholders []string
+		for _, name := range names {
+			key := fmt.Sprintf("Name%v", len(namePlaceholders))
+			props[key] = name
+			namePlaceholders = append(namePlaceholders, ":"+key)
+		}
+
+		var query string
+		if teamId == "" {
+			query = `SELECT * FROM Channels WHERE Name IN (` + strings.Join(namePlaceholders, ", ") + `) AND DeleteAt = 0`
+		} else {
+			props["TeamId"] = teamId
+			query = `SELECT * FROM Channels WHERE Name IN (` + strings.Join(namePlaceholders, ", ") + `) AND TeamId = :TeamId AND DeleteAt = 0`
+		}
+
+		var dbChannels []*model.Channel
+		if _, err := s.GetReplica().Select(&dbChannels, query, props); err != nil && err != sql.ErrNoRows {
+			msg := fmt.Sprintf("failed to get channels with names=%v", names)
+			if teamId != "" {
+				msg += fmt.Sprintf("teamId=%s", teamId)
+			}
+			return nil, errors.Wrap(err, msg)
+		}
+		for _, channel := range dbChannels {
+			//TODO: Open
+			// channelByNameCache.SetWithExpiry(teamId+channel.Name, channel, CHANNEL_CACHE_DURATION)
+			channels = append(channels, channel)
+		}
+		// Not all channels are in cache. Increment aggregate miss counter.
+		// if s.metrics != nil {
+		// 	s.metrics.IncrementMemCacheMissCounter("Channel By Name - Aggregate")
+		// }
+	} else {
+		// All of the channel names are in cache. Increment aggregate hit counter.
+		// if s.metrics != nil {
+		// 	s.metrics.IncrementMemCacheHitCounter("Channel By Name - Aggregate")
+		// }
+	}
+
+	return channels, nil
+}
+
+// Update writes the updated channel to the database.
+func (s SqlChannelStore) Update(channel *model.Channel) (*model.Channel, error) {
+	transaction, err := s.GetMaster().Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "begin_transaction")
+	}
+	defer finalizeTransaction(transaction)
+
+	updatedChannel, appErr := s.updateChannelT(transaction, channel)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	// Additionally propagate the write to the PublicChannels table.
+	if err := s.upsertPublicChannelT(transaction, updatedChannel); err != nil {
+		return nil, errors.Wrap(err, "upsertPublicChannelT: failed to upsert channel")
+	}
+
+	if err := transaction.Commit(); err != nil {
+		return nil, errors.Wrap(err, "commit_transaction")
+	}
+	return updatedChannel, nil
+}
+
+func (s SqlChannelStore) updateChannelT(transaction *gorp.Transaction, channel *model.Channel) (*model.Channel, error) {
+	channel.PreUpdate()
+
+	if channel.DeleteAt != 0 {
+		return nil, store.NewErrInvalidInput("Channel", "DeleteAt", channel.DeleteAt)
+	}
+
+	if err := channel.IsValid(); err != nil {
+		return nil, err
+	}
+
+	count, err := transaction.Update(channel)
+	if err != nil {
+		if IsUniqueConstraintError(err, []string{"Name", "channels_name_teamid_key"}) {
+			dupChannel := model.Channel{}
+			s.GetReplica().SelectOne(&dupChannel, "SELECT * FROM Channels WHERE TeamId = :TeamId AND Name= :Name AND DeleteAt > 0", map[string]interface{}{"TeamId": channel.TeamId, "Name": channel.Name})
+			if dupChannel.DeleteAt > 0 {
+				return nil, store.NewErrInvalidInput("Channel", "Id", channel.Id)
+			}
+			return nil, store.NewErrInvalidInput("Channel", "Id", channel.Id)
+		}
+		return nil, errors.Wrapf(err, "failed to update channel with id=%s", channel.Id)
+	}
+
+	if count > 1 {
+		return nil, fmt.Errorf("the expected number of channels to be updated is <=1 but was %d", count)
+	}
+
+	return channel, nil
+}
+
+func (s SqlChannelStore) UpdateMember(member *model.ChannelMember) (*model.ChannelMember, error) {
+	updatedMembers, err := s.UpdateMultipleMembers([]*model.ChannelMember{member})
+	if err != nil {
+		return nil, err
+	}
+	return updatedMembers[0], nil
+}
+
+func (s SqlChannelStore) CreateDirectChannel(user *model.User, otherUser *model.User) (*model.Channel, error) {
+	channel := new(model.Channel)
+
+	channel.DisplayName = ""
+	channel.Name = model.GetDMNameFromIds(otherUser.Id, user.Id)
+
+	channel.Header = ""
+	channel.Type = model.CHANNEL_DIRECT
+
+	cm1 := &model.ChannelMember{
+		UserId:      user.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+		SchemeGuest: user.IsGuest(),
+		SchemeUser:  !user.IsGuest(),
+	}
+	cm2 := &model.ChannelMember{
+		UserId:      otherUser.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+		SchemeGuest: otherUser.IsGuest(),
+		SchemeUser:  !otherUser.IsGuest(),
+	}
+
+	return s.SaveDirectChannel(channel, cm1, cm2)
+}
+
+func (s SqlChannelStore) SaveDirectChannel(directchannel *model.Channel, member1 *model.ChannelMember, member2 *model.ChannelMember) (*model.Channel, error) {
+	if directchannel.DeleteAt != 0 {
+		return nil, store.NewErrInvalidInput("Channel", "DeleteAt", directchannel.DeleteAt)
+	}
+
+	if directchannel.Type != model.CHANNEL_DIRECT {
+		return nil, store.NewErrInvalidInput("Channel", "Type", directchannel.Type)
+	}
+
+	transaction, err := s.GetMaster().Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "begin_transaction")
+	}
+	defer finalizeTransaction(transaction)
+
+	directchannel.TeamId = ""
+	newChannel, err := s.saveChannelT(transaction, directchannel, 0)
+	if err != nil {
+		return newChannel, err
+	}
+
+	// Members need new channel ID
+	member1.ChannelId = newChannel.Id
+	member2.ChannelId = newChannel.Id
+
+	if member1.UserId != member2.UserId {
+		_, err = s.saveMultipleMembersT(transaction, []*model.ChannelMember{member1, member2})
+	} else {
+		_, err = s.saveMemberT(transaction, member2)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if err := transaction.Commit(); err != nil {
+		return nil, errors.Wrap(err, "commit_transaction")
+	}
+
+	return newChannel, nil
+}
+
+func (s SqlChannelStore) saveMemberT(transaction *gorp.Transaction, member *model.ChannelMember) (*model.ChannelMember, error) {
+	members, err := s.saveMultipleMembersT(transaction, []*model.ChannelMember{member})
+	if err != nil {
+		return nil, err
+	}
+	return members[0], nil
 }

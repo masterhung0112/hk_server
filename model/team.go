@@ -174,3 +174,11 @@ func IsValidTeamName(s string) bool {
 
 	return true
 }
+
+func (o *Team) PreUpdate() {
+	o.UpdateAt = GetMillis()
+	o.Name = SanitizeUnicode(o.Name)
+	o.DisplayName = SanitizeUnicode(o.DisplayName)
+	o.Description = SanitizeUnicode(o.Description)
+	o.CompanyName = SanitizeUnicode(o.CompanyName)
+}

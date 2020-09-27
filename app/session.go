@@ -227,3 +227,17 @@ func (a *App) RevokeSessionsForDeviceId(userId string, deviceId string, currentS
 
 	return nil
 }
+
+func (a *App) ClearSessionCacheForUser(userId string) {
+	//TODO: Open
+	// a.ClearSessionCacheForUserSkipClusterSend(userId)
+
+	// if a.Cluster() != nil {
+	// 	msg := &model.ClusterMessage{
+	// 		Event:    model.CLUSTER_EVENT_CLEAR_SESSION_CACHE_FOR_USER,
+	// 		SendType: model.CLUSTER_SEND_RELIABLE,
+	// 		Data:     userId,
+	// 	}
+	// 	a.Cluster().SendClusterMessage(msg)
+	// }
+}

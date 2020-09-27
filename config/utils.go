@@ -1,8 +1,10 @@
 package config
 
 import (
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/utils"
+	"strings"
 )
 
 // desanitize replaces fake settings with their actual values.
@@ -87,4 +89,54 @@ func Merge(cfg *model.Config, patch *model.Config, mergeConfig *utils.MergeConfi
 
 	retCfg := ret.(model.Config)
 	return &retCfg, nil
+}
+
+// FixInvalidLocales checks and corrects the given config for invalid locale-related settings.
+//
+// Ideally, this function would be completely internal, but it's currently exposed to allow the cli
+// to test the config change before allowing the save.
+func FixInvalidLocales(cfg *model.Config) bool {
+	var changed bool
+
+	locales := utils.GetSupportedLocales()
+	if _, ok := locales[*cfg.LocalizationSettings.DefaultServerLocale]; !ok {
+		*cfg.LocalizationSettings.DefaultServerLocale = model.DEFAULT_LOCALE
+		mlog.Warn("DefaultServerLocale must be one of the supported locales. Setting DefaultServerLocale to en as default value.")
+		changed = true
+	}
+
+	if _, ok := locales[*cfg.LocalizationSettings.DefaultClientLocale]; !ok {
+		*cfg.LocalizationSettings.DefaultClientLocale = model.DEFAULT_LOCALE
+		mlog.Warn("DefaultClientLocale must be one of the supported locales. Setting DefaultClientLocale to en as default value.")
+		changed = true
+	}
+
+	if len(*cfg.LocalizationSettings.AvailableLocales) > 0 {
+		isDefaultClientLocaleInAvailableLocales := false
+		for _, word := range strings.Split(*cfg.LocalizationSettings.AvailableLocales, ",") {
+			if _, ok := locales[word]; !ok {
+				*cfg.LocalizationSettings.AvailableLocales = ""
+				isDefaultClientLocaleInAvailableLocales = true
+				mlog.Warn("AvailableLocales must include DefaultClientLocale. Setting AvailableLocales to all locales as default value.")
+				changed = true
+				break
+			}
+
+			if word == *cfg.LocalizationSettings.DefaultClientLocale {
+				isDefaultClientLocaleInAvailableLocales = true
+			}
+		}
+
+		availableLocales := *cfg.LocalizationSettings.AvailableLocales
+
+		if !isDefaultClientLocaleInAvailableLocales {
+			availableLocales += "," + *cfg.LocalizationSettings.DefaultClientLocale
+			mlog.Warn("Adding DefaultClientLocale to AvailableLocales.")
+			changed = true
+		}
+
+		*cfg.LocalizationSettings.AvailableLocales = strings.Join(utils.RemoveDuplicatesFromStringArray(strings.Split(availableLocales, ",")), ",")
+	}
+
+	return changed
 }
