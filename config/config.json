@@ -1,8 +1,8 @@
 {
     "ServiceSettings": {
-        "SiteURL": "http://localhost:8065",
+        "SiteURL": "http://localhost:9065",
         "ConnectionSecurity": "",
-        "ListenAddress": ":8065",
+        "ListenAddress": ":9065",
         "EnableDeveloper": false,
         "LocalModeSocketLocation": "/var/tmp/hungknow_local.socket",
         "ExtendSessionLengthWithActivity": true,
@@ -15,7 +15,7 @@
         "SessionLengthSSOInDays": 30
     },
     "TeamSettings": {
-        "SiteName": "Mattermost",
+        "SiteName": "HungKnow",
         "MaxUsersPerTeam": 2000,
         "EnableTeamCreation": true,
         "EnableUserCreation": true,
@@ -111,12 +111,12 @@
         "CloudBilling": false
     },
     "SupportSettings": {
-        "TermsOfServiceLink": "https://about.mattermost.com/default-terms/",
-        "PrivacyPolicyLink": "https://about.mattermost.com/default-privacy-policy/",
-        "AboutLink": "https://about.mattermost.com/default-about/",
-        "HelpLink": "https://about.mattermost.com/default-help/",
-        "ReportAProblemLink": "https://about.mattermost.com/default-report-a-problem/",
-        "SupportEmail": "feedback@mattermost.com",
+        "TermsOfServiceLink": "https://about.hungknow.com/default-terms/",
+        "PrivacyPolicyLink": "https://about.hungknow.com/default-privacy-policy/",
+        "AboutLink": "https://about.hungknow.com/default-about/",
+        "HelpLink": "https://about.hungknow.com/default-help/",
+        "ReportAProblemLink": "https://about.hungknow.com/default-report-a-problem/",
+        "SupportEmail": "feedback@hungknow.com",
         "CustomTermsOfServiceEnabled": false,
         "CustomTermsOfServiceReAcceptancePeriod": 365,
         "EnableAskCommunityLink": true

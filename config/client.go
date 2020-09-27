@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/masterhung0112/hk_server/model"
 	"strconv"
 	"strings"
@@ -221,25 +222,25 @@ func GenerateLimitedClientConfig(c *model.Config, diagnosticID string, license *
 
 	// props["EnableDiagnostics"] = strconv.FormatBool(*c.LogSettings.EnableDiagnostics)
 
-	// props["EnableSignUpWithEmail"] = strconv.FormatBool(*c.EmailSettings.EnableSignUpWithEmail)
-	// props["EnableSignInWithEmail"] = strconv.FormatBool(*c.EmailSettings.EnableSignInWithEmail)
-	// props["EnableSignInWithUsername"] = strconv.FormatBool(*c.EmailSettings.EnableSignInWithUsername)
+	props["EnableSignUpWithEmail"] = strconv.FormatBool(*c.EmailSettings.EnableSignUpWithEmail)
+	props["EnableSignInWithEmail"] = strconv.FormatBool(*c.EmailSettings.EnableSignInWithEmail)
+	props["EnableSignInWithUsername"] = strconv.FormatBool(*c.EmailSettings.EnableSignInWithUsername)
 
-	// props["EmailLoginButtonColor"] = *c.EmailSettings.LoginButtonColor
-	// props["EmailLoginButtonBorderColor"] = *c.EmailSettings.LoginButtonBorderColor
-	// props["EmailLoginButtonTextColor"] = *c.EmailSettings.LoginButtonTextColor
+	props["EmailLoginButtonColor"] = *c.EmailSettings.LoginButtonColor
+	props["EmailLoginButtonBorderColor"] = *c.EmailSettings.LoginButtonBorderColor
+	props["EmailLoginButtonTextColor"] = *c.EmailSettings.LoginButtonTextColor
 
 	// props["EnableSignUpWithGitLab"] = strconv.FormatBool(*c.GitLabSettings.Enable)
 
-	// props["TermsOfServiceLink"] = *c.SupportSettings.TermsOfServiceLink
-	// props["PrivacyPolicyLink"] = *c.SupportSettings.PrivacyPolicyLink
-	// props["AboutLink"] = *c.SupportSettings.AboutLink
-	// props["HelpLink"] = *c.SupportSettings.HelpLink
-	// props["ReportAProblemLink"] = *c.SupportSettings.ReportAProblemLink
-	// props["SupportEmail"] = *c.SupportSettings.SupportEmail
-	// props["EnableAskCommunityLink"] = strconv.FormatBool(*c.SupportSettings.EnableAskCommunityLink)
+	props["TermsOfServiceLink"] = *c.SupportSettings.TermsOfServiceLink
+	props["PrivacyPolicyLink"] = *c.SupportSettings.PrivacyPolicyLink
+	props["AboutLink"] = *c.SupportSettings.AboutLink
+	props["HelpLink"] = *c.SupportSettings.HelpLink
+	props["ReportAProblemLink"] = *c.SupportSettings.ReportAProblemLink
+	props["SupportEmail"] = *c.SupportSettings.SupportEmail
+	props["EnableAskCommunityLink"] = strconv.FormatBool(*c.SupportSettings.EnableAskCommunityLink)
 
-	// props["DefaultClientLocale"] = *c.LocalizationSettings.DefaultClientLocale
+	props["DefaultClientLocale"] = *c.LocalizationSettings.DefaultClientLocale
 
 	// props["EnableCustomEmoji"] = strconv.FormatBool(*c.ServiceSettings.EnableCustomEmoji)
 	// props["AppDownloadLink"] = *c.NativeAppSettings.AppDownloadLink
@@ -253,11 +254,11 @@ func GenerateLimitedClientConfig(c *model.Config, diagnosticID string, license *
 
 	// props["PluginsEnabled"] = strconv.FormatBool(*c.PluginSettings.Enable)
 
-	// props["PasswordMinimumLength"] = fmt.Sprintf("%v", *c.PasswordSettings.MinimumLength)
-	// props["PasswordRequireLowercase"] = strconv.FormatBool(*c.PasswordSettings.Lowercase)
-	// props["PasswordRequireUppercase"] = strconv.FormatBool(*c.PasswordSettings.Uppercase)
-	// props["PasswordRequireNumber"] = strconv.FormatBool(*c.PasswordSettings.Number)
-	// props["PasswordRequireSymbol"] = strconv.FormatBool(*c.PasswordSettings.Symbol)
+	props["PasswordMinimumLength"] = fmt.Sprintf("%v", *c.PasswordSettings.MinimumLength)
+	props["PasswordRequireLowercase"] = strconv.FormatBool(*c.PasswordSettings.Lowercase)
+	props["PasswordRequireUppercase"] = strconv.FormatBool(*c.PasswordSettings.Uppercase)
+	props["PasswordRequireNumber"] = strconv.FormatBool(*c.PasswordSettings.Number)
+	props["PasswordRequireSymbol"] = strconv.FormatBool(*c.PasswordSettings.Symbol)
 
 	// // Set default values for all options that require a license.
 	// props["EnableCustomBrand"] = "false"
