@@ -8,6 +8,8 @@ import (
 	"github.com/masterhung0112/hk_server/config"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/utils"
+	"github.com/pkg/errors"
+	"net/http"
 	"net/url"
 	"strconv"
 	"time"
@@ -178,4 +180,58 @@ func (a *App) GetSanitizedConfig() *model.Config {
 	cfg.Sanitize()
 
 	return cfg
+}
+
+// SaveConfig replaces the active configuration, optionally notifying cluster peers.
+func (s *Server) SaveConfig(newCfg *model.Config, sendConfigChangeClusterMessage bool) *model.AppError {
+	//oldCfg
+	_, err := s.configStore.Set(newCfg)
+	if errors.Cause(err) == config.ErrReadOnlyConfiguration {
+		return model.NewAppError("saveConfig", "ent.cluster.save_config.error", nil, err.Error(), http.StatusForbidden)
+	} else if err != nil {
+		return model.NewAppError("saveConfig", "app.save_config.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	//TODO: Open
+	// if s.Metrics != nil {
+	// 	if *s.Config().MetricsSettings.Enable {
+	// 		s.Metrics.StartServer()
+	// 	} else {
+	// 		s.Metrics.StopServer()
+	// 	}
+	// }
+
+	//TODO: Open
+	// if s.Cluster != nil {
+	// 	newCfg = s.configStore.RemoveEnvironmentOverrides(newCfg)
+	// 	oldCfg = s.configStore.RemoveEnvironmentOverrides(oldCfg)
+	// 	err := s.Cluster.ConfigChanged(oldCfg, newCfg, sendConfigChangeClusterMessage)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	return nil
+}
+
+// SaveConfig replaces the active configuration, optionally notifying cluster peers.
+func (a *App) SaveConfig(newCfg *model.Config, sendConfigChangeClusterMessage bool) *model.AppError {
+	return a.Srv().SaveConfig(newCfg, sendConfigChangeClusterMessage)
+}
+
+func (a *App) HandleMessageExportConfig(cfg *model.Config, appCfg *model.Config) {
+	//TODO: Open
+	// If the Message Export feature has been toggled in the System Console, rewrite the ExportFromTimestamp field to an
+	// appropriate value. The rewriting occurs here to ensure it doesn't affect values written to the config file
+	// directly and not through the System Console UI.
+	// if *cfg.MessageExportSettings.EnableExport != *appCfg.MessageExportSettings.EnableExport {
+	// 	if *cfg.MessageExportSettings.EnableExport && *cfg.MessageExportSettings.ExportFromTimestamp == int64(0) {
+	// 		// When the feature is toggled on, use the current timestamp as the start time for future exports.
+	// 		cfg.MessageExportSettings.ExportFromTimestamp = model.NewInt64(model.GetMillis())
+	// 	} else if !*cfg.MessageExportSettings.EnableExport {
+	// 		// When the feature is disabled, reset the timestamp so that the timestamp will be set if
+	// 		// the feature is re-enabled from the System Console in future.
+	// 		cfg.MessageExportSettings.ExportFromTimestamp = model.NewInt64(0)
+	// 	}
+	// }
 }

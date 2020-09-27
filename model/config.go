@@ -82,6 +82,12 @@ const (
 	SUPPORT_SETTINGS_DEFAULT_REPORT_A_PROBLEM_LINK = "https://about.hungknow.com/default-report-a-problem/"
 	SUPPORT_SETTINGS_DEFAULT_SUPPORT_EMAIL         = "hungbn0112@gmail.com"
 	SUPPORT_SETTINGS_DEFAULT_RE_ACCEPTANCE_PERIOD  = 365
+
+	PLUGIN_SETTINGS_DEFAULT_DIRECTORY          = "./plugins"
+	PLUGIN_SETTINGS_DEFAULT_CLIENT_DIRECTORY   = "./client/plugins"
+	PLUGIN_SETTINGS_DEFAULT_ENABLE_MARKETPLACE = true
+	PLUGIN_SETTINGS_DEFAULT_MARKETPLACE_URL    = "https://api.integrations.hungknow.com"
+	PLUGIN_SETTINGS_OLD_MARKETPLACE_URL        = "https://marketplace.integrations.hungknow.com"
 )
 
 const ConfigAccessTagWriteRestrictable = "write_restrictable"
@@ -99,6 +105,8 @@ type Config struct {
 	SupportSettings       SupportSettings
 	RateLimitSettings     RateLimitSettings
 	FileSettings          FileSettings
+	LogSettings           LogSettings
+	PluginSettings        PluginSettings
 }
 
 func ConfigFromJson(data io.Reader) *Config {
@@ -127,6 +135,8 @@ func (o *Config) SetDefaults() {
 	o.SupportSettings.SetDefaults()
 	o.RateLimitSettings.SetDefaults()
 	o.FileSettings.SetDefaults(isUpdate)
+	o.LogSettings.SetDefaults()
+	o.PluginSettings.SetDefaults(o.LogSettings)
 }
 
 func (o *Config) ToJson() string {
@@ -990,5 +1000,154 @@ func (s *RateLimitSettings) SetDefaults() {
 
 	if s.VaryByUser == nil {
 		s.VaryByUser = NewBool(false)
+	}
+}
+
+type LogSettings struct {
+	EnableConsole          *bool   `access:"environment,write_restrictable"`
+	ConsoleLevel           *string `access:"environment,write_restrictable"`
+	ConsoleJson            *bool   `access:"environment,write_restrictable"`
+	EnableFile             *bool   `access:"environment,write_restrictable"`
+	FileLevel              *string `access:"environment,write_restrictable"`
+	FileJson               *bool   `access:"environment,write_restrictable"`
+	FileLocation           *string `access:"environment,write_restrictable"`
+	EnableWebhookDebugging *bool   `access:"environment,write_restrictable"`
+	EnableDiagnostics      *bool   `access:"environment,write_restrictable"`
+	EnableSentry           *bool   `access:"environment,write_restrictable"`
+	AdvancedLoggingConfig  *string `access:"environment,write_restrictable"`
+}
+
+func (s *LogSettings) SetDefaults() {
+	if s.EnableConsole == nil {
+		s.EnableConsole = NewBool(true)
+	}
+
+	if s.ConsoleLevel == nil {
+		s.ConsoleLevel = NewString("DEBUG")
+	}
+
+	if s.EnableFile == nil {
+		s.EnableFile = NewBool(true)
+	}
+
+	if s.FileLevel == nil {
+		s.FileLevel = NewString("INFO")
+	}
+
+	if s.FileLocation == nil {
+		s.FileLocation = NewString("")
+	}
+
+	if s.EnableWebhookDebugging == nil {
+		s.EnableWebhookDebugging = NewBool(true)
+	}
+
+	if s.EnableDiagnostics == nil {
+		s.EnableDiagnostics = NewBool(true)
+	}
+
+	if s.EnableSentry == nil {
+		s.EnableSentry = NewBool(*s.EnableDiagnostics)
+	}
+
+	if s.ConsoleJson == nil {
+		s.ConsoleJson = NewBool(true)
+	}
+
+	if s.FileJson == nil {
+		s.FileJson = NewBool(true)
+	}
+
+	if s.AdvancedLoggingConfig == nil {
+		s.AdvancedLoggingConfig = NewString("")
+	}
+}
+
+type PluginState struct {
+	Enable bool
+}
+
+type PluginSettings struct {
+	Enable                      *bool                             `access:"plugins,write_restrictable"`
+	EnableUploads               *bool                             `access:"plugins,write_restrictable"`
+	AllowInsecureDownloadUrl    *bool                             `access:"plugins,write_restrictable"`
+	EnableHealthCheck           *bool                             `access:"plugins,write_restrictable"`
+	Directory                   *string                           `access:"plugins,write_restrictable"`
+	ClientDirectory             *string                           `access:"plugins,write_restrictable"`
+	Plugins                     map[string]map[string]interface{} `access:"plugins"`
+	PluginStates                map[string]*PluginState           `access:"plugins"`
+	EnableMarketplace           *bool                             `access:"plugins,write_restrictable"`
+	EnableRemoteMarketplace     *bool                             `access:"plugins,write_restrictable"`
+	AutomaticPrepackagedPlugins *bool                             `access:"plugins,write_restrictable"`
+	RequirePluginSignature      *bool                             `access:"plugins,write_restrictable"`
+	MarketplaceUrl              *string                           `access:"plugins,write_restrictable"`
+	SignaturePublicKeyFiles     []string                          `access:"plugins,write_restrictable"`
+}
+
+func (s *PluginSettings) SetDefaults(ls LogSettings) {
+	if s.Enable == nil {
+		s.Enable = NewBool(true)
+	}
+
+	if s.EnableUploads == nil {
+		s.EnableUploads = NewBool(false)
+	}
+
+	if s.AllowInsecureDownloadUrl == nil {
+		s.AllowInsecureDownloadUrl = NewBool(false)
+	}
+
+	if s.EnableHealthCheck == nil {
+		s.EnableHealthCheck = NewBool(true)
+	}
+
+	if s.Directory == nil || *s.Directory == "" {
+		s.Directory = NewString(PLUGIN_SETTINGS_DEFAULT_DIRECTORY)
+	}
+
+	if s.ClientDirectory == nil || *s.ClientDirectory == "" {
+		s.ClientDirectory = NewString(PLUGIN_SETTINGS_DEFAULT_CLIENT_DIRECTORY)
+	}
+
+	if s.Plugins == nil {
+		s.Plugins = make(map[string]map[string]interface{})
+	}
+
+	if s.PluginStates == nil {
+		s.PluginStates = make(map[string]*PluginState)
+	}
+
+	if s.PluginStates["com.mattermost.nps"] == nil {
+		// Enable the NPS plugin by default if diagnostics are enabled
+		s.PluginStates["com.mattermost.nps"] = &PluginState{Enable: ls.EnableDiagnostics == nil || *ls.EnableDiagnostics}
+	}
+
+	if s.PluginStates["com.mattermost.plugin-incident-response"] == nil {
+		// Enable the incident response plugin by default
+		s.PluginStates["com.mattermost.plugin-incident-response"] = &PluginState{Enable: true}
+	}
+
+	if s.EnableMarketplace == nil {
+		s.EnableMarketplace = NewBool(PLUGIN_SETTINGS_DEFAULT_ENABLE_MARKETPLACE)
+	}
+
+	if s.EnableRemoteMarketplace == nil {
+		s.EnableRemoteMarketplace = NewBool(true)
+	}
+
+	if s.AutomaticPrepackagedPlugins == nil {
+		s.AutomaticPrepackagedPlugins = NewBool(true)
+	}
+
+	if s.MarketplaceUrl == nil || *s.MarketplaceUrl == "" || *s.MarketplaceUrl == PLUGIN_SETTINGS_OLD_MARKETPLACE_URL {
+		s.MarketplaceUrl = NewString(PLUGIN_SETTINGS_DEFAULT_MARKETPLACE_URL)
+	}
+
+	if s.RequirePluginSignature == nil {
+		s.RequirePluginSignature = NewBool(false)
+	}
+
+	if s.SignaturePublicKeyFiles == nil {
+		s.SignaturePublicKeyFiles = []string{}
 	}
 }

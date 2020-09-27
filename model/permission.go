@@ -75,6 +75,12 @@ var PERMISSION_SYSCONSOLE_WRITE_AUTHENTICATION *Permission
 var PERMISSION_SYSCONSOLE_READ_INTEGRATIONS *Permission
 var PERMISSION_SYSCONSOLE_WRITE_INTEGRATIONS *Permission
 
+var PERMISSION_SYSCONSOLE_READ_COMPLIANCE *Permission
+var PERMISSION_SYSCONSOLE_WRITE_COMPLIANCE *Permission
+
+var PERMISSION_SYSCONSOLE_READ_PLUGINS *Permission
+var PERMISSION_SYSCONSOLE_WRITE_PLUGINS *Permission
+
 func initializePermissions() {
 	PERMISSION_INVITE_USER = &Permission{
 		"invite_user",
@@ -303,6 +309,30 @@ func initializePermissions() {
 		"authentication.permissions.use_group_mentions.description",
 		PermissionScopeSystem,
 	}
+	PERMISSION_SYSCONSOLE_READ_COMPLIANCE = &Permission{
+		"sysconsole_read_compliance",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_COMPLIANCE = &Permission{
+		"sysconsole_write_compliance",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_READ_PLUGINS = &Permission{
+		"sysconsole_read_plugins",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
+	PERMISSION_SYSCONSOLE_WRITE_PLUGINS = &Permission{
+		"sysconsole_write_plugins",
+		"authentication.permissions.use_group_mentions.name",
+		"authentication.permissions.use_group_mentions.description",
+		PermissionScopeSystem,
+	}
 
 	SystemScopedPermissionsMinusSysconsole := []*Permission{
 		PERMISSION_MANAGE_SYSTEM,
@@ -344,6 +374,8 @@ func initializePermissions() {
 		PERMISSION_SYSCONSOLE_READ_SITE,
 		PERMISSION_SYSCONSOLE_READ_AUTHENTICATION,
 		PERMISSION_SYSCONSOLE_READ_INTEGRATIONS,
+		PERMISSION_SYSCONSOLE_READ_COMPLIANCE,
+		PERMISSION_SYSCONSOLE_READ_PLUGINS,
 	}
 	SysconsoleWritePermissions = []*Permission{
 		PERMISSION_SYSCONSOLE_WRITE_USERMANAGEMENT_GROUPS,
@@ -352,6 +384,8 @@ func initializePermissions() {
 		PERMISSION_SYSCONSOLE_WRITE_SITE,
 		PERMISSION_SYSCONSOLE_WRITE_AUTHENTICATION,
 		PERMISSION_SYSCONSOLE_WRITE_INTEGRATIONS,
+		PERMISSION_SYSCONSOLE_WRITE_COMPLIANCE,
+		PERMISSION_SYSCONSOLE_WRITE_PLUGINS,
 	}
 
 	DeprecatedPermissions = []*Permission{}
