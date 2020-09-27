@@ -117,6 +117,8 @@ func NewServer(options ...Option) (*Server, error) {
 	}
 	s.Router = s.RootRouter.PathPrefix(subpath).Subrouter()
 
+	mlog.Info("Server is initialized...")
+
 	return s, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/icrowley/fake"
 	"github.com/masterhung0112/hk_server/app"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/pkg/errors"
@@ -134,6 +135,8 @@ func randomMessage(users []string) string {
 }
 
 func sampleDataCmdF(command *cobra.Command, args []string) error {
+	mlog.Debug("Start running sampling data")
+
 	a, err := InitDBCommandContextCobra(command)
 	if err != nil {
 		return err
@@ -242,7 +245,8 @@ func sampleDataCmdF(command *cobra.Command, args []string) error {
 	var bulkFile *os.File
 	switch bulk {
 	case "":
-		bulkFile, err = ioutil.TempFile("", ".mattermost-sample-data-")
+		bulkFile, err = ioutil.TempFile("", ".hungknow-sample-data-")
+		mlog.Debug(fmt.Sprintf("bulk file at %s", bulkFile.Name()))
 		defer os.Remove(bulkFile.Name())
 		if err != nil {
 			return errors.New("Unable to open temporary file.")
@@ -251,6 +255,8 @@ func sampleDataCmdF(command *cobra.Command, args []string) error {
 		bulkFile = os.Stdout
 	default:
 		bulkFile, err = os.OpenFile(bulk, os.O_RDWR|os.O_CREATE, 0755)
+		mlog.Debug(fmt.Sprintf("bulk file at %s", bulk))
+
 		if err != nil {
 			return errors.New("Unable to write into the \"" + bulk + "\" file.")
 		}
@@ -382,6 +388,8 @@ func sampleDataCmdF(command *cobra.Command, args []string) error {
 		}
 	}
 
+	mlog.Debug("Done running sampling data")
+
 	return nil
 }
 
@@ -399,7 +407,7 @@ func createUser(idx int, teamMemberships int, channelMemberships int, teamsAndCh
 	switch userType {
 	case GUEST_USER:
 		password = fmt.Sprintf("SampleGu@st-%d", idx)
-		email = fmt.Sprintf("guest-%d@sample.mattermost.com", idx)
+		email = fmt.Sprintf("guest-%d@sample.hungknow.com", idx)
 		roles = "system_guest"
 		if idx == 0 {
 			username = "guest"
@@ -408,14 +416,14 @@ func createUser(idx int, teamMemberships int, channelMemberships int, teamsAndCh
 		}
 	case DEACTIVATED_USER:
 		password = fmt.Sprintf("SampleDe@ctivated-%d", idx)
-		email = fmt.Sprintf("deactivated-%d@sample.mattermost.com", idx)
+		email = fmt.Sprintf("deactivated-%d@sample.hungknow.com", idx)
 	default:
 		password = fmt.Sprintf("SampleUs@r-%d", idx)
-		email = fmt.Sprintf("user-%d@sample.mattermost.com", idx)
+		email = fmt.Sprintf("user-%d@sample.hungknow.com", idx)
 		if idx == 0 {
 			username = "sysadmin"
 			password = "Sys@dmin-sample1"
-			email = "sysadmin@sample.mattermost.com"
+			email = "sysadmin@sample.hungknow.com"
 		} else if idx == 1 {
 			username = "user-1"
 		}

@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -1459,6 +1460,10 @@ func (a *App) importDirectChannel(data *DirectChannelImportData, dryRun bool) *m
 		channel = ch
 	}
 
+	if channel == nil {
+		return model.NewAppError("BulkImport", "app.import.import_direct_channel.create_group_channel.error", nil, fmt.Sprintf("channel is nil when created %v", userIds), http.StatusBadRequest)
+	}
+
 	var preferences model.Preferences
 
 	for _, userId := range userIds {
@@ -1693,49 +1698,49 @@ func (a *App) importDirectChannel(data *DirectChannelImportData, dryRun bool) *m
 // 	return 0, nil
 // }
 
-// func (a *App) importEmoji(data *EmojiImportData, dryRun bool) *model.AppError {
-// 	if err := validateEmojiImportData(data); err != nil {
-// 		return err
-// 	}
+func (a *App) importEmoji(data *EmojiImportData, dryRun bool) *model.AppError {
+	// 	if err := validateEmojiImportData(data); err != nil {
+	// 		return err
+	// 	}
 
-// 	// If this is a Dry Run, do not continue any further.
-// 	if dryRun {
-// 		return nil
-// 	}
+	// 	// If this is a Dry Run, do not continue any further.
+	// 	if dryRun {
+	// 		return nil
+	// 	}
 
-// 	var emoji *model.Emoji
+	// 	var emoji *model.Emoji
 
-// 	emoji, err := a.Srv().Store.Emoji().GetByName(*data.Name, true)
-// 	if err != nil {
-// 		var nfErr *store.ErrNotFound
-// 		if !errors.As(err, &nfErr) {
-// 			return model.NewAppError("importEmoji", "app.emoji.get_by_name.app_error", nil, err.Error(), http.StatusInternalServerError)
-// 		}
-// 	}
+	// 	emoji, err := a.Srv().Store.Emoji().GetByName(*data.Name, true)
+	// 	if err != nil {
+	// 		var nfErr *store.ErrNotFound
+	// 		if !errors.As(err, &nfErr) {
+	// 			return model.NewAppError("importEmoji", "app.emoji.get_by_name.app_error", nil, err.Error(), http.StatusInternalServerError)
+	// 		}
+	// 	}
 
-// 	alreadyExists := emoji != nil
+	// 	alreadyExists := emoji != nil
 
-// 	if !alreadyExists {
-// 		emoji = &model.Emoji{
-// 			Name: *data.Name,
-// 		}
-// 		emoji.PreSave()
-// 	}
+	// 	if !alreadyExists {
+	// 		emoji = &model.Emoji{
+	// 			Name: *data.Name,
+	// 		}
+	// 		emoji.PreSave()
+	// 	}
 
-// 	file, err := os.Open(*data.Image)
-// 	if err != nil {
-// 		return model.NewAppError("BulkImport", "app.import.emoji.bad_file.error", map[string]interface{}{"EmojiName": *data.Name}, "", http.StatusBadRequest)
-// 	}
+	// 	file, err := os.Open(*data.Image)
+	// 	if err != nil {
+	// 		return model.NewAppError("BulkImport", "app.import.emoji.bad_file.error", map[string]interface{}{"EmojiName": *data.Name}, "", http.StatusBadRequest)
+	// 	}
 
-// 	if _, err := a.WriteFile(file, getEmojiImagePath(emoji.Id)); err != nil {
-// 		return err
-// 	}
+	// 	if _, err := a.WriteFile(file, getEmojiImagePath(emoji.Id)); err != nil {
+	// 		return err
+	// 	}
 
-// 	if !alreadyExists {
-// 		if _, err := a.Srv().Store.Emoji().Save(emoji); err != nil {
-// 			return model.NewAppError("importEmoji", "api.emoji.create.internal_error", nil, err.Error(), http.StatusBadRequest)
-// 		}
-// 	}
+	// 	if !alreadyExists {
+	// 		if _, err := a.Srv().Store.Emoji().Save(emoji); err != nil {
+	// 			return model.NewAppError("importEmoji", "api.emoji.create.internal_error", nil, err.Error(), http.StatusBadRequest)
+	// 		}
+	// 	}
 
-// 	return nil
-// }
+	return nil
+}

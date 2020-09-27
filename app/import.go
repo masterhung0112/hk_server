@@ -31,18 +31,20 @@ func (a *App) bulkImportWorker(dryRun bool, wg *sync.WaitGroup, lines <-chan Lin
 	// directPostLines := []LineImportWorkerData{}
 	for line := range lines {
 		switch {
-		// case line.LineImportData.Type == "post":
-		// 	postLines = append(postLines, line)
-		// 	if line.Post == nil {
-		// 		errors <- LineImportWorkerError{model.NewAppError("BulkImport", "app.import.import_line.null_post.error", nil, "", http.StatusBadRequest), line.LineNumber}
-		// 	}
-		// 	if len(postLines) >= importMultiplePostsThreshold {
-		// 		if errLine, err := a.importMultiplePostLines(postLines, dryRun); err != nil {
-		// 			errors <- LineImportWorkerError{err, errLine}
-		// 		}
-		// 		postLines = []LineImportWorkerData{}
-		// 	}
-		// case line.LineImportData.Type == "direct_post":
+		case line.LineImportData.Type == "post":
+			break
+			// 	postLines = append(postLines, line)
+			// 	if line.Post == nil {
+			// 		errors <- LineImportWorkerError{model.NewAppError("BulkImport", "app.import.import_line.null_post.error", nil, "", http.StatusBadRequest), line.LineNumber}
+			// 	}
+			// 	if len(postLines) >= importMultiplePostsThreshold {
+			// 		if errLine, err := a.importMultiplePostLines(postLines, dryRun); err != nil {
+			// 			errors <- LineImportWorkerError{err, errLine}
+			// 		}
+			// 		postLines = []LineImportWorkerData{}
+			// 	}
+		case line.LineImportData.Type == "direct_post":
+			break
 		// 	directPostLines = append(directPostLines, line)
 		// 	if line.DirectPost == nil {
 		// 		errors <- LineImportWorkerError{model.NewAppError("BulkImport", "app.import.import_line.null_direct_post.error", nil, "", http.StatusBadRequest), line.LineNumber}
@@ -203,11 +205,11 @@ func (a *App) importLine(line LineImportData, dryRun bool) *model.AppError {
 		}
 		return a.importDirectChannel(line.DirectChannel, dryRun)
 		//TODO: open
-	// case line.Type == "emoji":
-	// 	if line.Emoji == nil {
-	// 		return model.NewAppError("BulkImport", "app.import.import_line.null_emoji.error", nil, "", http.StatusBadRequest)
-	// 	}
-	// 	return a.importEmoji(line.Emoji, dryRun)
+	case line.Type == "emoji":
+		if line.Emoji == nil {
+			return model.NewAppError("BulkImport", "app.import.import_line.null_emoji.error", nil, "", http.StatusBadRequest)
+		}
+		return a.importEmoji(line.Emoji, dryRun)
 	default:
 		return model.NewAppError("BulkImport", "app.import.import_line.unknown_line_type.error", map[string]interface{}{"Type": line.Type}, "", http.StatusBadRequest)
 	}
