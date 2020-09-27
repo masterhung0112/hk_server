@@ -1,9 +1,12 @@
 package model
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"unicode/utf8"
 )
@@ -192,6 +195,12 @@ func (o *Channel) PreSave() {
 	o.ExtraUpdateAt = 0
 }
 
+func (o *Channel) PreUpdate() {
+	o.UpdateAt = GetMillis()
+	o.Name = SanitizeUnicode(o.Name)
+	o.DisplayName = SanitizeUnicode(o.DisplayName)
+}
+
 func (o *Channel) IsGroupConstrained() bool {
 	return o.GroupConstrained != nil && *o.GroupConstrained
 }
@@ -209,4 +218,40 @@ func ChannelFromJson(data io.Reader) *Channel {
 
 func (o *Channel) IsGroupOrDirect() bool {
 	return o.Type == CHANNEL_DIRECT || o.Type == CHANNEL_GROUP
+}
+
+func GetGroupNameFromUserIds(userIds []string) string {
+	sort.Strings(userIds)
+
+	h := sha1.New()
+	for _, id := range userIds {
+		io.WriteString(h, id)
+	}
+
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func GetGroupDisplayNameFromUsers(users []*User, truncate bool) string {
+	usernames := make([]string, len(users))
+	for index, user := range users {
+		usernames[index] = user.Username
+	}
+
+	sort.Strings(usernames)
+
+	name := strings.Join(usernames, ", ")
+
+	if truncate && len(name) > CHANNEL_NAME_MAX_LENGTH {
+		name = name[:CHANNEL_NAME_MAX_LENGTH]
+	}
+
+	return name
+}
+
+func GetDMNameFromIds(userId1, userId2 string) string {
+	if userId1 > userId2 {
+		return userId2 + "__" + userId1
+	} else {
+		return userId1 + "__" + userId2
+	}
 }

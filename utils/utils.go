@@ -31,3 +31,17 @@ func RemoveStringsFromSlice(slice []string, strings ...string) []string {
 
 	return newSlice
 }
+
+func RemoveDuplicatesFromStringArray(arr []string) []string {
+	result := make([]string, 0, len(arr))
+	seen := make(map[string]bool)
+
+	for _, item := range arr {
+		if !seen[item] {
+			result = append(result, item)
+			seen[item] = true
+		}
+	}
+
+	return result
+}

@@ -11,10 +11,12 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
+	goi18n "github.com/mattermost/go-i18n/i18n"
 	"github.com/pborman/uuid"
 )
 
@@ -364,4 +366,38 @@ func IsSafeLink(link *string) bool {
 	}
 
 	return true
+}
+
+var translateFunc goi18n.TranslateFunc = nil
+
+func AppErrorInit(t goi18n.TranslateFunc) {
+	translateFunc = t
+}
+
+func IsValidTrueOrFalseString(value string) bool {
+	return value == "true" || value == "false"
+}
+
+func IsValidNumberString(value string) bool {
+	if _, err := strconv.Atoi(value); err != nil {
+		return false
+	}
+
+	return true
+}
+
+func CopyStringMap(originalMap map[string]string) map[string]string {
+	copyMap := make(map[string]string)
+	for k, v := range originalMap {
+		copyMap[k] = v
+	}
+	return copyMap
+}
+
+func GetPreferredTimezone(timezone StringMap) string {
+	if timezone["useAutomaticTimezone"] == "true" {
+		return timezone["automaticTimezone"]
+	}
+
+	return timezone["manualTimezone"]
 }

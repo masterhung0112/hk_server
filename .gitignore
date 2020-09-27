@@ -2,3 +2,4 @@ bin/
 .idea
 main.exe
 coverage_result
+node_modules/

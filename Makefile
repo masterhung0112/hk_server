@@ -17,3 +17,6 @@ start-cmd-server:
 
 run-fmt:
 	go fmt ./...
+
+gcloud-deploy:
+	gcloud app deploy

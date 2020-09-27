@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/masterhung0112/hk_server/services/filesstore"
 	"net"
 	"net/http"
 	"sync"
@@ -53,6 +54,8 @@ type Server struct {
 	goroutineExitSignal chan struct{}
 
 	AppInitializedOnce sync.Once
+
+	phase2PermissionsMigrationComplete bool
 }
 
 // Global app options that should be applied to apps created by this server
@@ -226,4 +229,9 @@ func (s *Server) Go(f func()) {
 		default:
 		}
 	}()
+}
+
+func (s *Server) FileBackend() (filesstore.FileBackend, *model.AppError) {
+	license := s.License()
+	return filesstore.NewFileBackend(&s.Config().FileSettings, license != nil && *license.Features.Compliance)
 }

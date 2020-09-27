@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -418,18 +421,18 @@ func (u *User) PreUpdate() {
 func (u *User) DeepCopy() *User {
 	copyUser := *u
 	//TODO: Open
-	// if u.AuthData != nil {
-	// 	copyUser.AuthData = NewString(*u.AuthData)
-	// }
-	// if u.Props != nil {
-	// 	copyUser.Props = CopyStringMap(u.Props)
-	// }
-	// if u.NotifyProps != nil {
-	// 	copyUser.NotifyProps = CopyStringMap(u.NotifyProps)
-	// }
-	// if u.Timezone != nil {
-	// 	copyUser.Timezone = CopyStringMap(u.Timezone)
-	// }
+	if u.AuthData != nil {
+		copyUser.AuthData = NewString(*u.AuthData)
+	}
+	if u.Props != nil {
+		copyUser.Props = CopyStringMap(u.Props)
+	}
+	if u.NotifyProps != nil {
+		copyUser.NotifyProps = CopyStringMap(u.NotifyProps)
+	}
+	if u.Timezone != nil {
+		copyUser.Timezone = CopyStringMap(u.Timezone)
+	}
 	return &copyUser
 }
 
@@ -471,4 +474,151 @@ func ComparePassword(hash string, password string) bool {
 
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+func (u *User) SetDefaultNotifications() {
+	u.NotifyProps = make(map[string]string)
+	u.NotifyProps[EMAIL_NOTIFY_PROP] = "true"
+	u.NotifyProps[PUSH_NOTIFY_PROP] = USER_NOTIFY_MENTION
+	u.NotifyProps[DESKTOP_NOTIFY_PROP] = USER_NOTIFY_MENTION
+	u.NotifyProps[DESKTOP_SOUND_NOTIFY_PROP] = "true"
+	u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] = ""
+	u.NotifyProps[CHANNEL_MENTIONS_NOTIFY_PROP] = "true"
+	u.NotifyProps[PUSH_STATUS_NOTIFY_PROP] = STATUS_AWAY
+	u.NotifyProps[COMMENTS_NOTIFY_PROP] = COMMENTS_NOTIFY_NEVER
+	u.NotifyProps[FIRST_NAME_NOTIFY_PROP] = "false"
+}
+
+func (u *User) AddNotifyProp(key string, value string) {
+	u.MakeNonNil()
+
+	u.NotifyProps[key] = value
+}
+
+func (u *User) UpdateMentionKeysFromUsername(oldUsername string) {
+	nonUsernameKeys := []string{}
+	for _, key := range u.GetMentionKeys() {
+		if key != oldUsername && key != "@"+oldUsername {
+			nonUsernameKeys = append(nonUsernameKeys, key)
+		}
+	}
+
+	u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] = ""
+	if len(nonUsernameKeys) > 0 {
+		u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] += "," + strings.Join(nonUsernameKeys, ",")
+	}
+}
+
+func (u *User) GetMentionKeys() []string {
+	var keys []string
+
+	for _, key := range strings.Split(u.NotifyProps[MENTION_KEYS_NOTIFY_PROP], ",") {
+		trimmedKey := strings.TrimSpace(key)
+
+		if trimmedKey == "" {
+			continue
+		}
+
+		keys = append(keys, trimmedKey)
+	}
+
+	return keys
+}
+
+var passwordRandomSource = rand.NewSource(time.Now().Unix())
+var passwordSpecialChars = "!$%^&*(),."
+var passwordNumbers = "0123456789"
+var passwordUpperCaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+var passwordLowerCaseLetters = "abcdefghijklmnopqrstuvwxyz"
+var passwordAllChars = passwordSpecialChars + passwordNumbers + passwordUpperCaseLetters + passwordLowerCaseLetters
+
+func GeneratePassword(minimumLength int) string {
+	r := rand.New(passwordRandomSource)
+
+	// Make sure we are guaranteed at least one of each type to meet any possible password complexity requirements.
+	password := string([]rune(passwordUpperCaseLetters)[r.Intn(len(passwordUpperCaseLetters))]) +
+		string([]rune(passwordNumbers)[r.Intn(len(passwordNumbers))]) +
+		string([]rune(passwordLowerCaseLetters)[r.Intn(len(passwordLowerCaseLetters))]) +
+		string([]rune(passwordSpecialChars)[r.Intn(len(passwordSpecialChars))])
+
+	for len(password) < minimumLength {
+		i := r.Intn(len(passwordAllChars))
+		password = password + string([]rune(passwordAllChars)[i])
+	}
+
+	return password
+}
+
+func IsValidUserRoles(userRoles string) bool {
+
+	roles := strings.Fields(userRoles)
+
+	for _, r := range roles {
+		if !IsValidRoleName(r) {
+			return false
+		}
+	}
+
+	// Exclude just the system_admin role explicitly to prevent mistakes
+	if len(roles) == 1 && roles[0] == "system_admin" {
+		return false
+	}
+
+	return true
+}
+
+func IsValidUserNotifyLevel(notifyLevel string) bool {
+	return notifyLevel == CHANNEL_NOTIFY_ALL ||
+		notifyLevel == CHANNEL_NOTIFY_MENTION ||
+		notifyLevel == CHANNEL_NOTIFY_NONE
+}
+
+func IsValidPushStatusNotifyLevel(notifyLevel string) bool {
+	return notifyLevel == STATUS_ONLINE ||
+		notifyLevel == STATUS_AWAY ||
+		notifyLevel == STATUS_OFFLINE
+}
+
+func IsValidCommentsNotifyLevel(notifyLevel string) bool {
+	return notifyLevel == COMMENTS_NOTIFY_ANY ||
+		notifyLevel == COMMENTS_NOTIFY_ROOT ||
+		notifyLevel == COMMENTS_NOTIFY_NEVER
+}
+
+func IsValidEmailBatchingInterval(emailInterval string) bool {
+	return emailInterval == PREFERENCE_EMAIL_INTERVAL_IMMEDIATELY ||
+		emailInterval == PREFERENCE_EMAIL_INTERVAL_FIFTEEN ||
+		emailInterval == PREFERENCE_EMAIL_INTERVAL_HOUR
+}
+
+func IsValidLocale(locale string) bool {
+	if locale != "" {
+		if len(locale) > USER_LOCALE_MAX_LENGTH {
+			return false
+		} else if _, err := language.Parse(locale); err != nil {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (u *User) IsSSOUser() bool {
+	return u.AuthService != "" && u.AuthService != USER_AUTH_SERVICE_EMAIL
+}
+
+func (u *User) IsOAuthUser() bool {
+	return u.AuthService == USER_AUTH_SERVICE_GITLAB
+}
+
+func (u *User) IsLDAPUser() bool {
+	return u.AuthService == USER_AUTH_SERVICE_LDAP
+}
+
+func (u *User) IsSAMLUser() bool {
+	return u.AuthService == USER_AUTH_SERVICE_SAML
+}
+
+func (u *User) GetPreferredTimezone() string {
+	return GetPreferredTimezone(u.Timezone)
 }

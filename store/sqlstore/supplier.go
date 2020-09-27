@@ -33,6 +33,7 @@ type SqlSupplierStores struct {
 	userAccessToken store.UserAccessTokenStore
 	token           store.TokenStore
 	preference      store.PreferenceStore
+	group           store.GroupStore
 }
 
 type SqlSupplier struct {
@@ -273,6 +274,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.stores.userAccessToken = newSqlUserAccessTokenStore(supplier)
 	supplier.stores.token = newSqlTokenStore(supplier)
 	supplier.stores.preference = newSqlPreferenceStore(supplier)
+	supplier.stores.group = newSqlGroupStore(supplier)
 
 	err := supplier.GetMaster().CreateTablesIfNotExists()
 	if err != nil {
@@ -340,4 +342,16 @@ func (ss *SqlSupplier) Token() store.TokenStore {
 
 func (ss *SqlSupplier) Preference() store.PreferenceStore {
 	return ss.stores.preference
+}
+
+func (ss *SqlSupplier) Group() store.GroupStore {
+	return ss.stores.group
+}
+
+func (ss *SqlSupplier) LockToMaster() {
+	ss.lockedToMaster = true
+}
+
+func (ss *SqlSupplier) UnlockFromMaster() {
+	ss.lockedToMaster = false
 }

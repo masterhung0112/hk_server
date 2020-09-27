@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
@@ -241,4 +242,29 @@ func (s *SqlSchemeStore) GetAllPage(scope string, offset int, limit int) ([]*mod
 	}
 
 	return schemes, nil
+}
+
+func (s *SqlSchemeStore) Get(schemeId string) (*model.Scheme, error) {
+	var scheme model.Scheme
+	if err := s.GetReplica().SelectOne(&scheme, "SELECT * from Schemes WHERE Id = :Id", map[string]interface{}{"Id": schemeId}); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.NewErrNotFound("Scheme", fmt.Sprintf("schemeId=%s", schemeId))
+		}
+		return nil, errors.Wrapf(err, "failed to get Scheme with schemeId=%s", schemeId)
+	}
+
+	return &scheme, nil
+}
+
+func (s *SqlSchemeStore) GetByName(schemeName string) (*model.Scheme, error) {
+	var scheme model.Scheme
+
+	if err := s.GetReplica().SelectOne(&scheme, "SELECT * from Schemes WHERE Name = :Name", map[string]interface{}{"Name": schemeName}); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.NewErrNotFound("Scheme", fmt.Sprintf("schemeName=%s", schemeName))
+		}
+		return nil, errors.Wrapf(err, "failed to get Scheme with schemeName=%s", schemeName)
+	}
+
+	return &scheme, nil
 }

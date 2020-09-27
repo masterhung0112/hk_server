@@ -8,3 +8,5 @@ var versions = []string{
 }
 
 var CurrentVersion string = versions[0]
+
+var BuildEnterpriseReady string

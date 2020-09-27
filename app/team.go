@@ -25,14 +25,13 @@ func (a *App) joinUserToTeam(team *model.Team, user *model.User) (*model.TeamMem
 		SchemeUser:  !user.IsGuest(),
 	}
 
-	//TODO: Open
-	// if !user.IsGuest() {
-	// 	userShouldBeAdmin, err := a.UserIsInAdminRoleGroup(user.Id, team.Id, model.GroupSyncableTypeTeam)
-	// 	if err != nil {
-	// 		return nil, false, err
-	// 	}
-	// 	tm.SchemeAdmin = userShouldBeAdmin
-	// }
+	if !user.IsGuest() {
+		userShouldBeAdmin, err := a.UserIsInAdminRoleGroup(user.Id, team.Id, model.GroupSyncableTypeTeam)
+		if err != nil {
+			return nil, false, err
+		}
+		tm.SchemeAdmin = userShouldBeAdmin
+	}
 
 	if team.Email == user.Email {
 		tm.SchemeAdmin = true
@@ -241,4 +240,180 @@ func (a *App) CreateTeamWithUser(team *model.Team, userId string) (*model.Team, 
 	}
 
 	return rteam, nil
+}
+
+func (a *App) updateTeamUnsanitized(team *model.Team) (*model.Team, *model.AppError) {
+	team, err := a.Srv().Store.Team().Update(team)
+	if err != nil {
+		var invErr *store.ErrInvalidInput
+		var appErr *model.AppError
+		switch {
+		case errors.As(err, &invErr):
+			return nil, model.NewAppError("updateTeamUnsanitized", "app.team.update.find.app_error", nil, invErr.Error(), http.StatusBadRequest)
+		case errors.As(err, &appErr):
+			return nil, appErr
+		default:
+			return nil, model.NewAppError("updateTeamUnsanitized", "app.team.update.updating.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	return team, nil
+}
+
+func (a *App) UpdateTeamMemberRoles(teamId string, userId string, newRoles string) (*model.TeamMember, *model.AppError) {
+	member, nErr := a.Srv().Store.Team().GetMember(teamId, userId)
+	if nErr != nil {
+		var nfErr *store.ErrNotFound
+		switch {
+		case errors.As(nErr, &nfErr):
+			return nil, model.NewAppError("UpdateTeamMemberRoles", "app.team.get_member.missing.app_error", nil, nfErr.Error(), http.StatusNotFound)
+		default:
+			return nil, model.NewAppError("UpdateTeamMemberRoles", "app.team.get_member.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	if member == nil {
+		return nil, model.NewAppError("UpdateTeamMemberRoles", "api.team.update_member_roles.not_a_member", nil, "userId="+userId+" teamId="+teamId, http.StatusBadRequest)
+	}
+
+	schemeGuestRole, schemeUserRole, schemeAdminRole, err := a.GetSchemeRolesForTeam(teamId)
+	if err != nil {
+		return nil, err
+	}
+
+	prevSchemeGuestValue := member.SchemeGuest
+
+	var newExplicitRoles []string
+	member.SchemeGuest = false
+	member.SchemeUser = false
+	member.SchemeAdmin = false
+
+	for _, roleName := range strings.Fields(newRoles) {
+		var role *model.Role
+		role, err = a.GetRoleByName(roleName)
+		if err != nil {
+			err.StatusCode = http.StatusBadRequest
+			return nil, err
+		}
+		if !role.SchemeManaged {
+			// The role is not scheme-managed, so it's OK to apply it to the explicit roles field.
+			newExplicitRoles = append(newExplicitRoles, roleName)
+		} else {
+			// The role is scheme-managed, so need to check if it is part of the scheme for this channel or not.
+			switch roleName {
+			case schemeAdminRole:
+				member.SchemeAdmin = true
+			case schemeUserRole:
+				member.SchemeUser = true
+			case schemeGuestRole:
+				member.SchemeGuest = true
+			default:
+				// If not part of the scheme for this team, then it is not allowed to apply it as an explicit role.
+				return nil, model.NewAppError("UpdateTeamMemberRoles", "api.channel.update_team_member_roles.scheme_role.app_error", nil, "role_name="+roleName, http.StatusBadRequest)
+			}
+		}
+	}
+
+	if member.SchemeGuest && member.SchemeUser {
+		return nil, model.NewAppError("UpdateTeamMemberRoles", "api.team.update_team_member_roles.guest_and_user.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	if prevSchemeGuestValue != member.SchemeGuest {
+		return nil, model.NewAppError("UpdateTeamMemberRoles", "api.channel.update_team_member_roles.changing_guest_role.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	member.ExplicitRoles = strings.Join(newExplicitRoles, " ")
+
+	member, nErr = a.Srv().Store.Team().UpdateMember(member)
+	if nErr != nil {
+		var appErr *model.AppError
+		switch {
+		case errors.As(nErr, &appErr):
+			return nil, appErr
+		default:
+			return nil, model.NewAppError("UpdateTeamMemberRoles", "app.team.save_member.save.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	a.ClearSessionCacheForUser(userId)
+
+	a.sendUpdatedMemberRoleEvent(userId, member)
+
+	return member, nil
+}
+
+func (a *App) UpdateTeamMemberSchemeRoles(teamId string, userId string, isSchemeGuest bool, isSchemeUser bool, isSchemeAdmin bool) (*model.TeamMember, *model.AppError) {
+	member, err := a.GetTeamMember(teamId, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	member.SchemeAdmin = isSchemeAdmin
+	member.SchemeUser = isSchemeUser
+	member.SchemeGuest = isSchemeGuest
+
+	if member.SchemeUser && member.SchemeGuest {
+		return nil, model.NewAppError("UpdateTeamMemberSchemeRoles", "api.team.update_team_member_roles.guest_and_user.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	// If the migration is not completed, we also need to check the default team_admin/team_user roles are not present in the roles field.
+	if err = a.IsPhase2MigrationCompleted(); err != nil {
+		member.ExplicitRoles = RemoveRoles([]string{model.TEAM_GUEST_ROLE_ID, model.TEAM_USER_ROLE_ID, model.TEAM_ADMIN_ROLE_ID}, member.ExplicitRoles)
+	}
+
+	member, nErr := a.Srv().Store.Team().UpdateMember(member)
+	if nErr != nil {
+		var appErr *model.AppError
+		switch {
+		case errors.As(nErr, &appErr):
+			return nil, appErr
+		default:
+			return nil, model.NewAppError("UpdateTeamMemberSchemeRoles", "app.team.save_member.save.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	a.ClearSessionCacheForUser(userId)
+
+	a.sendUpdatedMemberRoleEvent(userId, member)
+
+	return member, nil
+}
+
+func (a *App) GetTeam(teamId string) (*model.Team, *model.AppError) {
+	team, err := a.Srv().Store.Team().Get(teamId)
+	if err != nil {
+		var nfErr *store.ErrNotFound
+		switch {
+		case errors.As(err, &nfErr):
+			return nil, model.NewAppError("GetTeam", "app.team.get.find.app_error", nil, nfErr.Error(), http.StatusNotFound)
+		default:
+			return nil, model.NewAppError("GetTeam", "app.team.get.finding.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	return team, nil
+}
+
+func (a *App) GetSchemeRolesForTeam(teamId string) (string, string, string, *model.AppError) {
+	team, err := a.GetTeam(teamId)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if team.SchemeId != nil && len(*team.SchemeId) != 0 {
+		scheme, err := a.GetScheme(*team.SchemeId)
+		if err != nil {
+			return "", "", "", err
+		}
+		return scheme.DefaultTeamGuestRole, scheme.DefaultTeamUserRole, scheme.DefaultTeamAdminRole, nil
+	}
+
+	return model.TEAM_GUEST_ROLE_ID, model.TEAM_USER_ROLE_ID, model.TEAM_ADMIN_ROLE_ID, nil
+}
+
+func (a *App) sendUpdatedMemberRoleEvent(userId string, member *model.TeamMember) {
+	//TODO: Open
+	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_MEMBERROLE_UPDATED, "", "", userId, nil)
+	// message.Add("member", member.ToJson())
+	// a.Publish(message)
 }

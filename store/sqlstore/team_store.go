@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/utils"
 	"github.com/pkg/errors"
 	"net/http"
 	"strings"
@@ -686,4 +687,98 @@ func (s SqlTeamStore) UserBelongsToTeams(userId string, teamIds []string) (bool,
 	}
 
 	return c > 0, nil
+}
+
+// GetByName returns from the database the team that matches the name provided as parameter.
+// If there is no match in the database, it returns a model.AppError with a
+// http.StatusNotFound in the StatusCode field.
+func (s SqlTeamStore) GetByName(name string) (*model.Team, error) {
+
+	team := model.Team{}
+	query, args, err := s.teamsQuery.Where(sq.Eq{"Name": name}).ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "team_tosql")
+	}
+	err = s.GetReplica().SelectOne(&team, query, args...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.NewErrNotFound("Team", fmt.Sprintf("name=%s", name))
+		}
+		return nil, errors.Wrapf(err, "failed to find Team with name=%s", name)
+	}
+	return &team, nil
+}
+
+func (s SqlTeamStore) GetByNames(names []string) ([]*model.Team, error) {
+	uniqueNames := utils.RemoveDuplicatesFromStringArray(names)
+
+	query, args, err := s.teamsQuery.Where(sq.Eq{"Name": uniqueNames}).ToSql()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "team_tosql")
+	}
+
+	teams := []*model.Team{}
+	_, err = s.GetReplica().Select(&teams, query, args...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.NewErrNotFound("Team", fmt.Sprintf("nameIn=%v", names))
+		}
+		return nil, errors.Wrap(err, "failed to find Teams")
+	}
+	if len(teams) != len(uniqueNames) {
+		return nil, store.NewErrNotFound("Team", fmt.Sprintf("nameIn=%v", names))
+	}
+	return teams, nil
+}
+
+// Update updates the details of the team passed as the parameter using the team Id
+// if the team exists in the database.
+// It returns the updated team if the operation is successful.
+func (s SqlTeamStore) Update(team *model.Team) (*model.Team, error) {
+
+	team.PreUpdate()
+
+	if err := team.IsValid(); err != nil {
+		return nil, err
+	}
+
+	oldResult, err := s.GetMaster().Get(model.Team{}, team.Id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get Team with id=%s", team.Id)
+
+	}
+
+	if oldResult == nil {
+		return nil, store.NewErrInvalidInput("Team", "id", team.Id)
+	}
+
+	oldTeam := oldResult.(*model.Team)
+	team.CreateAt = oldTeam.CreateAt
+	team.UpdateAt = model.GetMillis()
+
+	count, err := s.GetMaster().Update(team)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to update Team with id=%s", team.Id)
+	}
+	if count > 1 {
+		return nil, errors.Wrapf(err, "multiple Teams updated with id=%s", team.Id)
+	}
+
+	return team, nil
+}
+
+// Get returns from the database the team that matches the id provided as parameter.
+// If the team doesn't exist it returns a model.AppError with a
+// http.StatusNotFound in the StatusCode field.
+func (s SqlTeamStore) Get(id string) (*model.Team, error) {
+	obj, err := s.GetReplica().Get(model.Team{}, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get Team with id=%s", id)
+	}
+	if obj == nil {
+		return nil, store.NewErrNotFound("Team", id)
+	}
+
+	return obj.(*model.Team), nil
 }

@@ -50,3 +50,16 @@ func StoreOverride(override interface{}) Option {
 		}
 	}
 }
+
+// Config applies the given config dsn, whether a path to config.json or a database connection string.
+func Config(dsn string, watch bool) Option {
+	return func(s *Server) error {
+		configStore, err := config.NewStore(dsn, watch)
+		if err != nil {
+			return errors.Wrap(err, "failed to apply Config option")
+		}
+
+		s.configStore = configStore
+		return nil
+	}
+}

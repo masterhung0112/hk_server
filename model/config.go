@@ -98,6 +98,7 @@ type Config struct {
 	ExperimentalSettings  ExperimentalSettings
 	SupportSettings       SupportSettings
 	RateLimitSettings     RateLimitSettings
+	FileSettings          FileSettings
 }
 
 func ConfigFromJson(data io.Reader) *Config {
@@ -125,6 +126,7 @@ func (o *Config) SetDefaults() {
 	o.ExperimentalSettings.SetDefaults()
 	o.SupportSettings.SetDefaults()
 	o.RateLimitSettings.SetDefaults()
+	o.FileSettings.SetDefaults(isUpdate)
 }
 
 func (o *Config) ToJson() string {

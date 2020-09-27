@@ -14,6 +14,7 @@ type Permission struct {
 }
 
 var AllPermissions []*Permission
+var DeprecatedPermissions []*Permission
 
 var ChannelModeratedPermissions []string
 var ChannelModeratedPermissionsMap map[string]string
@@ -352,6 +353,8 @@ func initializePermissions() {
 		PERMISSION_SYSCONSOLE_WRITE_AUTHENTICATION,
 		PERMISSION_SYSCONSOLE_WRITE_INTEGRATIONS,
 	}
+
+	DeprecatedPermissions = []*Permission{}
 
 	AllPermissions = []*Permission{}
 	AllPermissions = append(AllPermissions, SystemScopedPermissionsMinusSysconsole...)

@@ -1,0 +1,22 @@
+{
+  "name": "hk_server",
+  "version": "0.0.1",
+  "description": "",
+  "main": "tasksfile.js",
+  "scripts": {
+    "task": "node ./tasksfile.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masterhung0112/hk_server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/masterhung0112/hk_server/issues"
+  },
+  "homepage": "https://github.com/masterhung0112/hk_server#readme",
+  "devDependencies": {
+    "tasksfile": "^5.1.1"
+  }
+}
