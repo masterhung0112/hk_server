@@ -4,7 +4,8 @@
   "description": "",
   "main": "tasksfile.js",
   "scripts": {
-    "task": "node ./tasksfile.js"
+    "task": "node ./tasksfile.js",
+    "fmt": "go fmt ./..."
   },
   "repository": {
     "type": "git",

@@ -11,10 +11,22 @@ const (
 	CONN_SECURITY_TLS      = "TLS"
 	CONN_SECURITY_STARTTLS = "STARTTLS"
 
-	PASSWORD_MAXIMUM_LENGTH                     = 64
-	PASSWORD_MINIMUM_LENGTH                     = 5
+	PASSWORD_MAXIMUM_LENGTH = 64
+	PASSWORD_MINIMUM_LENGTH = 5
+
+	SITENAME_MAX_LENGTH = 30
+
 	SERVICE_SETTINGS_DEFAULT_SITE_URL           = "http://localhost:9065"
+	SERVICE_SETTINGS_DEFAULT_TLS_CERT_FILE      = ""
+	SERVICE_SETTINGS_DEFAULT_TLS_KEY_FILE       = ""
+	SERVICE_SETTINGS_DEFAULT_READ_TIMEOUT       = 300
+	SERVICE_SETTINGS_DEFAULT_WRITE_TIMEOUT      = 300
+	SERVICE_SETTINGS_DEFAULT_IDLE_TIMEOUT       = 60
+	SERVICE_SETTINGS_DEFAULT_MAX_LOGIN_ATTEMPTS = 10
+	SERVICE_SETTINGS_DEFAULT_ALLOW_CORS_FROM    = ""
 	SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS = ":9065"
+	SERVICE_SETTINGS_DEFAULT_GFYCAT_API_KEY     = "2_KtH_W5"
+	SERVICE_SETTINGS_DEFAULT_GFYCAT_API_SECRET  = "3wLVZPiswc3DnaiaFoLkDvB4X0IV6CpMkj4tf2inJRsBY6-FnkT08zGmppWFgeof"
 
 	DATABASE_DRIVER_SQLITE   = "sqlite3"
 	DATABASE_DRIVER_MYSQL    = "mysql"
@@ -57,18 +69,32 @@ const (
 	EMAIL_NOTIFICATION_CONTENTS_FULL    = "full"
 	EMAIL_NOTIFICATION_CONTENTS_GENERIC = "generic"
 
-	SERVICE_SETTINGS_DEFAULT_MAX_LOGIN_ATTEMPTS = 10
-
 	PERMISSIONS_ALL           = "all"
 	PERMISSIONS_CHANNEL_ADMIN = "channel_admin"
 	PERMISSIONS_TEAM_ADMIN    = "team_admin"
 	PERMISSIONS_SYSTEM_ADMIN  = "system_admin"
 
+	FAKE_SETTING = "********************************"
+
+	RESTRICT_EMOJI_CREATION_ALL          = "all"
+	RESTRICT_EMOJI_CREATION_ADMIN        = "admin"
+	RESTRICT_EMOJI_CREATION_SYSTEM_ADMIN = "system_admin"
+
+	PERMISSIONS_DELETE_POST_ALL          = "all"
+	PERMISSIONS_DELETE_POST_TEAM_ADMIN   = "team_admin"
+	PERMISSIONS_DELETE_POST_SYSTEM_ADMIN = "system_admin"
+
 	ALLOW_EDIT_POST_ALWAYS     = "always"
 	ALLOW_EDIT_POST_NEVER      = "never"
 	ALLOW_EDIT_POST_TIME_LIMIT = "time_limit"
 
-	FAKE_SETTING = "********************************"
+	GROUP_UNREAD_CHANNELS_DISABLED    = "disabled"
+	GROUP_UNREAD_CHANNELS_DEFAULT_ON  = "default_on"
+	GROUP_UNREAD_CHANNELS_DEFAULT_OFF = "default_off"
+
+	COLLAPSED_THREADS_DISABLED    = "disabled"
+	COLLAPSED_THREADS_DEFAULT_ON  = "default_on"
+	COLLAPSED_THREADS_DEFAULT_OFF = "default_off"
 
 	EXPERIMENTAL_SETTINGS_DEFAULT_LINK_METADATA_TIMEOUT_MILLISECONDS = 5000
 
@@ -263,24 +289,116 @@ func (s *PasswordSettings) SetDefaults() {
 }
 
 type ServiceSettings struct {
-	SiteURL                         *string `restricted:"true"`
-	ConnectionSecurity              *string `restricted:"true"`
-	ListenAddress                   *string `restricted:"true"`
-	EnableDeveloper                 *bool   `restricted:"true"`
-	LocalModeSocketLocation         *string
-	ExtendSessionLengthWithActivity *bool `access:"environment,write_restrictable"`
-	SessionIdleTimeoutInMinutes     *int  `access:"environment,write_restrictable"`
-	EnableUserAccessTokens          *bool `access:"integrations"`
-	MaximumLoginAttempts            *int  `access:"authentication,write_restrictable"`
-	SessionLengthWebInDays          *int  `access:"environment,write_restrictable"`
-	AllowCookiesForSubdomains       *bool `access:"write_restrictable"`
-	SessionLengthMobileInDays       *int  `access:"environment,write_restrictable"`
-	SessionLengthSSOInDays          *int  `access:"environment,write_restrictable"`
+	SiteURL                                           *string  `access:"environment,authentication,write_restrictable"`
+	WebsocketURL                                      *string  `access:"write_restrictable,cloud_restrictable"`
+	LicenseFileLocation                               *string  `access:"write_restrictable,cloud_restrictable"`
+	ListenAddress                                     *string  `access:"environment,write_restrictable,cloud_restrictable"`
+	ConnectionSecurity                                *string  `access:"environment,write_restrictable,cloud_restrictable"`
+	TLSCertFile                                       *string  `access:"environment,write_restrictable,cloud_restrictable"`
+	TLSKeyFile                                        *string  `access:"environment,write_restrictable,cloud_restrictable"`
+	TLSMinVer                                         *string  `access:"write_restrictable,cloud_restrictable"`
+	TLSStrictTransport                                *bool    `access:"write_restrictable,cloud_restrictable"`
+	TLSStrictTransportMaxAge                          *int64   `access:"write_restrictable,cloud_restrictable"`
+	TLSOverwriteCiphers                               []string `access:"write_restrictable,cloud_restrictable"`
+	UseLetsEncrypt                                    *bool    `access:"environment,write_restrictable,cloud_restrictable"`
+	LetsEncryptCertificateCacheFile                   *string  `access:"environment,write_restrictable,cloud_restrictable"`
+	Forward80To443                                    *bool    `access:"environment,write_restrictable,cloud_restrictable"`
+	TrustedProxyIPHeader                              []string `access:"write_restrictable,cloud_restrictable"`
+	ReadTimeout                                       *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	WriteTimeout                                      *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	IdleTimeout                                       *int     `access:"write_restrictable,cloud_restrictable"`
+	MaximumLoginAttempts                              *int     `access:"authentication,write_restrictable,cloud_restrictable"`
+	GoroutineHealthThreshold                          *int     `access:"write_restrictable,cloud_restrictable"`
+	GoogleDeveloperKey                                *string  `access:"site,write_restrictable,cloud_restrictable"`
+	EnableOAuthServiceProvider                        *bool    `access:"integrations"`
+	EnableIncomingWebhooks                            *bool    `access:"integrations"`
+	EnableOutgoingWebhooks                            *bool    `access:"integrations"`
+	EnableCommands                                    *bool    `access:"integrations"`
+	DEPRECATED_DO_NOT_USE_EnableOnlyAdminIntegrations *bool    `json:"EnableOnlyAdminIntegrations" mapstructure:"EnableOnlyAdminIntegrations"` // This field is deprecated and must not be used.
+	EnablePostUsernameOverride                        *bool    `access:"integrations"`
+	EnablePostIconOverride                            *bool    `access:"integrations"`
+	EnableLinkPreviews                                *bool    `access:"site"`
+	EnableTesting                                     *bool    `access:"environment,write_restrictable,cloud_restrictable"`
+	EnableDeveloper                                   *bool    `access:"environment,write_restrictable,cloud_restrictable"`
+	EnableOpenTracing                                 *bool    `access:"write_restrictable,cloud_restrictable"`
+	EnableSecurityFixAlert                            *bool    `access:"environment,write_restrictable,cloud_restrictable"`
+	EnableInsecureOutgoingConnections                 *bool    `access:"environment,write_restrictable,cloud_restrictable"`
+	AllowedUntrustedInternalConnections               *string  `access:"environment,write_restrictable,cloud_restrictable"`
+	EnableMultifactorAuthentication                   *bool    `access:"authentication"`
+	EnforceMultifactorAuthentication                  *bool    `access:"authentication"`
+	EnableUserAccessTokens                            *bool    `access:"integrations"`
+	AllowCorsFrom                                     *string  `access:"integrations,write_restrictable,cloud_restrictable"`
+	CorsExposedHeaders                                *string  `access:"integrations,write_restrictable,cloud_restrictable"`
+	CorsAllowCredentials                              *bool    `access:"integrations,write_restrictable,cloud_restrictable"`
+	CorsDebug                                         *bool    `access:"integrations,write_restrictable,cloud_restrictable"`
+	AllowCookiesForSubdomains                         *bool    `access:"write_restrictable,cloud_restrictable"`
+	ExtendSessionLengthWithActivity                   *bool    `access:"environment,write_restrictable,cloud_restrictable"`
+	SessionLengthWebInDays                            *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	SessionLengthMobileInDays                         *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	SessionLengthSSOInDays                            *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	SessionCacheInMinutes                             *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	SessionIdleTimeoutInMinutes                       *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	WebsocketSecurePort                               *int     `access:"write_restrictable,cloud_restrictable"`
+	WebsocketPort                                     *int     `access:"write_restrictable,cloud_restrictable"`
+	WebserverMode                                     *string  `access:"environment,write_restrictable,cloud_restrictable"`
+	EnableCustomEmoji                                 *bool    `access:"site"`
+	EnableEmojiPicker                                 *bool    `access:"site"`
+	EnableGifPicker                                   *bool    `access:"integrations"`
+	GfycatApiKey                                      *string  `access:"integrations"`
+	GfycatApiSecret                                   *string  `access:"integrations"`
+	DEPRECATED_DO_NOT_USE_RestrictCustomEmojiCreation *string  `json:"RestrictCustomEmojiCreation" mapstructure:"RestrictCustomEmojiCreation"` // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPostDelete          *string  `json:"RestrictPostDelete" mapstructure:"RestrictPostDelete"`                   // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_AllowEditPost               *string  `json:"AllowEditPost" mapstructure:"AllowEditPost"`                             // This field is deprecated and must not be used.
+	PostEditTimeLimit                                 *int     `access:"user_management_permissions"`
+	TimeBetweenUserTypingUpdatesMilliseconds          *int64   `access:"experimental,write_restrictable,cloud_restrictable"`
+	EnablePostSearch                                  *bool    `access:"write_restrictable,cloud_restrictable"`
+	MinimumHashtagLength                              *int     `access:"environment,write_restrictable,cloud_restrictable"`
+	EnableUserTypingMessages                          *bool    `access:"experimental,write_restrictable,cloud_restrictable"`
+	EnableChannelViewedMessages                       *bool    `access:"experimental,write_restrictable,cloud_restrictable"`
+	EnableUserStatuses                                *bool    `access:"write_restrictable,cloud_restrictable"`
+	ExperimentalEnableAuthenticationTransfer          *bool    `access:"experimental,write_restrictable,cloud_restrictable"`
+	ClusterLogTimeoutMilliseconds                     *int     `access:"write_restrictable,cloud_restrictable"`
+	CloseUnusedDirectMessages                         *bool    `access:"experimental"`
+	EnablePreviewFeatures                             *bool    `access:"experimental"`
+	EnableTutorial                                    *bool    `access:"experimental"`
+	ExperimentalEnableDefaultChannelLeaveJoinMessages *bool    `access:"experimental"`
+	ExperimentalGroupUnreadChannels                   *string  `access:"experimental"`
+	ExperimentalChannelOrganization                   *bool    `access:"experimental"`
+	ExperimentalChannelSidebarOrganization            *string  `access:"experimental"`
+	ExperimentalDataPrefetch                          *bool    `access:"experimental"`
+	DEPRECATED_DO_NOT_USE_ImageProxyType              *string  `json:"ImageProxyType" mapstructure:"ImageProxyType"`       // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_ImageProxyURL               *string  `json:"ImageProxyURL" mapstructure:"ImageProxyURL"`         // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_ImageProxyOptions           *string  `json:"ImageProxyOptions" mapstructure:"ImageProxyOptions"` // This field is deprecated and must not be used.
+	EnableAPITeamDeletion                             *bool
+	EnableAPIUserDeletion                             *bool
+	ExperimentalEnableHardenedMode                    *bool `access:"experimental"`
+	DisableLegacyMFA                                  *bool `access:"write_restrictable,cloud_restrictable"`
+	ExperimentalStrictCSRFEnforcement                 *bool `access:"experimental,write_restrictable,cloud_restrictable"`
+	EnableEmailInvitations                            *bool `access:"authentication"`
+	DisableBotsWhenOwnerIsDeactivated                 *bool `access:"integrations,write_restrictable,cloud_restrictable"`
+	EnableBotAccountCreation                          *bool `access:"integrations"`
+	EnableSVGs                                        *bool `access:"site"`
+	EnableLatex                                       *bool `access:"site"`
+	EnableAPIChannelDeletion                          *bool
+	EnableLocalMode                                   *bool
+	LocalModeSocketLocation                           *string
+	EnableAWSMetering                                 *bool
+	SplitKey                                          *string `access:"environment,write_restrictable"`
+	FeatureFlagSyncIntervalSeconds                    *int    `access:"environment,write_restrictable"`
+	DebugSplit                                        *bool   `access:"environment,write_restrictable"`
+	ThreadAutoFollow                                  *bool   `access:"experimental"`
+	CollapsedThreads                                  *string `access:"experimental"`
+	ManagedResourcePaths                              *string `access:"environment,write_restrictable,cloud_restrictable"`
 }
 
 func (s *ServiceSettings) SetDefaults(isUpdate bool) {
-	if s.ConnectionSecurity == nil {
-		s.ConnectionSecurity = NewString("")
+	if s.EnableEmailInvitations == nil {
+		// If the site URL is also not present then assume this is a clean install
+		if s.SiteURL == nil {
+			s.EnableEmailInvitations = NewBool(false)
+		} else {
+			s.EnableEmailInvitations = NewBool(true)
+		}
 	}
 
 	if s.SiteURL == nil {
@@ -291,33 +409,183 @@ func (s *ServiceSettings) SetDefaults(isUpdate bool) {
 		}
 	}
 
-	if s.EnableDeveloper == nil {
-		s.EnableDeveloper = NewBool(false)
+	if s.WebsocketURL == nil {
+		s.WebsocketURL = NewString("")
+	}
+
+	if s.LicenseFileLocation == nil {
+		s.LicenseFileLocation = NewString("")
 	}
 
 	if s.ListenAddress == nil {
 		s.ListenAddress = NewString(SERVICE_SETTINGS_DEFAULT_LISTEN_AND_ADDRESS)
 	}
 
-	if s.LocalModeSocketLocation == nil {
-		s.LocalModeSocketLocation = NewString(LOCAL_MODE_SOCKET_PATH)
+	if s.EnableLinkPreviews == nil {
+		s.EnableLinkPreviews = NewBool(true)
 	}
 
-	// Must be manually enabled for existing installations.
-	if s.ExtendSessionLengthWithActivity == nil {
-		s.ExtendSessionLengthWithActivity = NewBool(!isUpdate)
+	if s.EnableTesting == nil {
+		s.EnableTesting = NewBool(false)
 	}
 
-	if s.SessionIdleTimeoutInMinutes == nil {
-		s.SessionIdleTimeoutInMinutes = NewInt(43200)
+	if s.EnableDeveloper == nil {
+		s.EnableDeveloper = NewBool(false)
+	}
+
+	if s.EnableOpenTracing == nil {
+		s.EnableOpenTracing = NewBool(false)
+	}
+
+	if s.EnableSecurityFixAlert == nil {
+		s.EnableSecurityFixAlert = NewBool(true)
+	}
+
+	if s.EnableInsecureOutgoingConnections == nil {
+		s.EnableInsecureOutgoingConnections = NewBool(false)
+	}
+
+	if s.AllowedUntrustedInternalConnections == nil {
+		s.AllowedUntrustedInternalConnections = NewString("")
+	}
+
+	if s.EnableMultifactorAuthentication == nil {
+		s.EnableMultifactorAuthentication = NewBool(false)
+	}
+
+	if s.EnforceMultifactorAuthentication == nil {
+		s.EnforceMultifactorAuthentication = NewBool(false)
 	}
 
 	if s.EnableUserAccessTokens == nil {
 		s.EnableUserAccessTokens = NewBool(false)
 	}
 
+	if s.GoroutineHealthThreshold == nil {
+		s.GoroutineHealthThreshold = NewInt(-1)
+	}
+
+	if s.GoogleDeveloperKey == nil {
+		s.GoogleDeveloperKey = NewString("")
+	}
+
+	if s.EnableOAuthServiceProvider == nil {
+		s.EnableOAuthServiceProvider = NewBool(false)
+	}
+
+	if s.EnableIncomingWebhooks == nil {
+		s.EnableIncomingWebhooks = NewBool(true)
+	}
+
+	if s.EnableOutgoingWebhooks == nil {
+		s.EnableOutgoingWebhooks = NewBool(true)
+	}
+
+	if s.ConnectionSecurity == nil {
+		s.ConnectionSecurity = NewString("")
+	}
+
+	if s.TLSKeyFile == nil {
+		s.TLSKeyFile = NewString(SERVICE_SETTINGS_DEFAULT_TLS_KEY_FILE)
+	}
+
+	if s.TLSCertFile == nil {
+		s.TLSCertFile = NewString(SERVICE_SETTINGS_DEFAULT_TLS_CERT_FILE)
+	}
+
+	if s.TLSMinVer == nil {
+		s.TLSMinVer = NewString("1.2")
+	}
+
+	if s.TLSStrictTransport == nil {
+		s.TLSStrictTransport = NewBool(false)
+	}
+
+	if s.TLSStrictTransportMaxAge == nil {
+		s.TLSStrictTransportMaxAge = NewInt64(63072000)
+	}
+
+	if s.TLSOverwriteCiphers == nil {
+		s.TLSOverwriteCiphers = []string{}
+	}
+
+	if s.UseLetsEncrypt == nil {
+		s.UseLetsEncrypt = NewBool(false)
+	}
+
+	if s.LetsEncryptCertificateCacheFile == nil {
+		s.LetsEncryptCertificateCacheFile = NewString("./config/letsencrypt.cache")
+	}
+
+	if s.ReadTimeout == nil {
+		s.ReadTimeout = NewInt(SERVICE_SETTINGS_DEFAULT_READ_TIMEOUT)
+	}
+
+	if s.WriteTimeout == nil {
+		s.WriteTimeout = NewInt(SERVICE_SETTINGS_DEFAULT_WRITE_TIMEOUT)
+	}
+
+	if s.IdleTimeout == nil {
+		s.IdleTimeout = NewInt(SERVICE_SETTINGS_DEFAULT_IDLE_TIMEOUT)
+	}
+
 	if s.MaximumLoginAttempts == nil {
 		s.MaximumLoginAttempts = NewInt(SERVICE_SETTINGS_DEFAULT_MAX_LOGIN_ATTEMPTS)
+	}
+
+	if s.Forward80To443 == nil {
+		s.Forward80To443 = NewBool(false)
+	}
+
+	if isUpdate {
+		// When updating an existing configuration, ensure that defaults are set.
+		if s.TrustedProxyIPHeader == nil {
+			s.TrustedProxyIPHeader = []string{HEADER_FORWARDED, HEADER_REAL_IP}
+		}
+	} else {
+		// When generating a blank configuration, leave the list empty.
+		s.TrustedProxyIPHeader = []string{}
+	}
+
+	if s.TimeBetweenUserTypingUpdatesMilliseconds == nil {
+		s.TimeBetweenUserTypingUpdatesMilliseconds = NewInt64(5000)
+	}
+
+	if s.EnablePostSearch == nil {
+		s.EnablePostSearch = NewBool(true)
+	}
+
+	if s.MinimumHashtagLength == nil {
+		s.MinimumHashtagLength = NewInt(3)
+	}
+
+	if s.EnableUserTypingMessages == nil {
+		s.EnableUserTypingMessages = NewBool(true)
+	}
+
+	if s.EnableChannelViewedMessages == nil {
+		s.EnableChannelViewedMessages = NewBool(true)
+	}
+
+	if s.EnableUserStatuses == nil {
+		s.EnableUserStatuses = NewBool(true)
+	}
+
+	if s.ClusterLogTimeoutMilliseconds == nil {
+		s.ClusterLogTimeoutMilliseconds = NewInt(2000)
+	}
+
+	if s.CloseUnusedDirectMessages == nil {
+		s.CloseUnusedDirectMessages = NewBool(false)
+	}
+
+	if s.EnableTutorial == nil {
+		s.EnableTutorial = NewBool(true)
+	}
+
+	// Must be manually enabled for existing installations.
+	if s.ExtendSessionLengthWithActivity == nil {
+		s.ExtendSessionLengthWithActivity = NewBool(!isUpdate)
 	}
 
 	if s.SessionLengthWebInDays == nil {
@@ -340,8 +608,227 @@ func (s *ServiceSettings) SetDefaults(isUpdate bool) {
 		s.SessionLengthSSOInDays = NewInt(30)
 	}
 
+	if s.SessionCacheInMinutes == nil {
+		s.SessionCacheInMinutes = NewInt(10)
+	}
+
+	if s.SessionIdleTimeoutInMinutes == nil {
+		s.SessionIdleTimeoutInMinutes = NewInt(43200)
+	}
+
+	if s.EnableCommands == nil {
+		s.EnableCommands = NewBool(true)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_EnableOnlyAdminIntegrations == nil {
+		s.DEPRECATED_DO_NOT_USE_EnableOnlyAdminIntegrations = NewBool(true)
+	}
+
+	if s.EnablePostUsernameOverride == nil {
+		s.EnablePostUsernameOverride = NewBool(false)
+	}
+
+	if s.EnablePostIconOverride == nil {
+		s.EnablePostIconOverride = NewBool(false)
+	}
+
+	if s.WebsocketPort == nil {
+		s.WebsocketPort = NewInt(80)
+	}
+
+	if s.WebsocketSecurePort == nil {
+		s.WebsocketSecurePort = NewInt(443)
+	}
+
+	if s.AllowCorsFrom == nil {
+		s.AllowCorsFrom = NewString(SERVICE_SETTINGS_DEFAULT_ALLOW_CORS_FROM)
+	}
+
+	if s.CorsExposedHeaders == nil {
+		s.CorsExposedHeaders = NewString("")
+	}
+
+	if s.CorsAllowCredentials == nil {
+		s.CorsAllowCredentials = NewBool(false)
+	}
+
+	if s.CorsDebug == nil {
+		s.CorsDebug = NewBool(false)
+	}
+
 	if s.AllowCookiesForSubdomains == nil {
 		s.AllowCookiesForSubdomains = NewBool(false)
+	}
+
+	if s.WebserverMode == nil {
+		s.WebserverMode = NewString("gzip")
+	} else if *s.WebserverMode == "regular" {
+		*s.WebserverMode = "gzip"
+	}
+
+	if s.EnableCustomEmoji == nil {
+		s.EnableCustomEmoji = NewBool(true)
+	}
+
+	if s.EnableEmojiPicker == nil {
+		s.EnableEmojiPicker = NewBool(true)
+	}
+
+	if s.EnableGifPicker == nil {
+		s.EnableGifPicker = NewBool(true)
+	}
+
+	if s.GfycatApiKey == nil || *s.GfycatApiKey == "" {
+		s.GfycatApiKey = NewString(SERVICE_SETTINGS_DEFAULT_GFYCAT_API_KEY)
+	}
+
+	if s.GfycatApiSecret == nil || *s.GfycatApiSecret == "" {
+		s.GfycatApiSecret = NewString(SERVICE_SETTINGS_DEFAULT_GFYCAT_API_SECRET)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictCustomEmojiCreation == nil {
+		s.DEPRECATED_DO_NOT_USE_RestrictCustomEmojiCreation = NewString(RESTRICT_EMOJI_CREATION_ALL)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPostDelete == nil {
+		s.DEPRECATED_DO_NOT_USE_RestrictPostDelete = NewString(PERMISSIONS_DELETE_POST_ALL)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_AllowEditPost == nil {
+		s.DEPRECATED_DO_NOT_USE_AllowEditPost = NewString(ALLOW_EDIT_POST_ALWAYS)
+	}
+
+	if s.ExperimentalEnableAuthenticationTransfer == nil {
+		s.ExperimentalEnableAuthenticationTransfer = NewBool(true)
+	}
+
+	if s.PostEditTimeLimit == nil {
+		s.PostEditTimeLimit = NewInt(-1)
+	}
+
+	if s.EnablePreviewFeatures == nil {
+		s.EnablePreviewFeatures = NewBool(true)
+	}
+
+	if s.ExperimentalEnableDefaultChannelLeaveJoinMessages == nil {
+		s.ExperimentalEnableDefaultChannelLeaveJoinMessages = NewBool(true)
+	}
+
+	if s.ExperimentalGroupUnreadChannels == nil {
+		s.ExperimentalGroupUnreadChannels = NewString(GROUP_UNREAD_CHANNELS_DISABLED)
+	} else if *s.ExperimentalGroupUnreadChannels == "0" {
+		s.ExperimentalGroupUnreadChannels = NewString(GROUP_UNREAD_CHANNELS_DISABLED)
+	} else if *s.ExperimentalGroupUnreadChannels == "1" {
+		s.ExperimentalGroupUnreadChannels = NewString(GROUP_UNREAD_CHANNELS_DEFAULT_ON)
+	}
+
+	if s.ExperimentalChannelOrganization == nil {
+		experimentalUnreadEnabled := *s.ExperimentalGroupUnreadChannels != GROUP_UNREAD_CHANNELS_DISABLED
+		s.ExperimentalChannelOrganization = NewBool(experimentalUnreadEnabled)
+	}
+
+	if s.ExperimentalChannelSidebarOrganization == nil {
+		s.ExperimentalChannelSidebarOrganization = NewString("disabled")
+	}
+
+	if s.ExperimentalDataPrefetch == nil {
+		s.ExperimentalDataPrefetch = NewBool(true)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_ImageProxyType == nil {
+		s.DEPRECATED_DO_NOT_USE_ImageProxyType = NewString("")
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_ImageProxyURL == nil {
+		s.DEPRECATED_DO_NOT_USE_ImageProxyURL = NewString("")
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_ImageProxyOptions == nil {
+		s.DEPRECATED_DO_NOT_USE_ImageProxyOptions = NewString("")
+	}
+
+	if s.EnableAPITeamDeletion == nil {
+		s.EnableAPITeamDeletion = NewBool(false)
+	}
+
+	if s.EnableAPIUserDeletion == nil {
+		s.EnableAPIUserDeletion = NewBool(false)
+	}
+
+	if s.EnableAPIChannelDeletion == nil {
+		s.EnableAPIChannelDeletion = NewBool(false)
+	}
+
+	if s.ExperimentalEnableHardenedMode == nil {
+		s.ExperimentalEnableHardenedMode = NewBool(false)
+	}
+
+	if s.DisableLegacyMFA == nil {
+		s.DisableLegacyMFA = NewBool(!isUpdate)
+	}
+
+	if s.ExperimentalStrictCSRFEnforcement == nil {
+		s.ExperimentalStrictCSRFEnforcement = NewBool(false)
+	}
+
+	if s.DisableBotsWhenOwnerIsDeactivated == nil {
+		s.DisableBotsWhenOwnerIsDeactivated = NewBool(true)
+	}
+
+	if s.EnableBotAccountCreation == nil {
+		s.EnableBotAccountCreation = NewBool(false)
+	}
+
+	if s.EnableSVGs == nil {
+		if isUpdate {
+			s.EnableSVGs = NewBool(true)
+		} else {
+			s.EnableSVGs = NewBool(false)
+		}
+	}
+
+	if s.EnableLatex == nil {
+		if isUpdate {
+			s.EnableLatex = NewBool(true)
+		} else {
+			s.EnableLatex = NewBool(false)
+		}
+	}
+
+	if s.EnableLocalMode == nil {
+		s.EnableLocalMode = NewBool(false)
+	}
+
+	if s.LocalModeSocketLocation == nil {
+		s.LocalModeSocketLocation = NewString(LOCAL_MODE_SOCKET_PATH)
+	}
+
+	if s.EnableAWSMetering == nil {
+		s.EnableAWSMetering = NewBool(false)
+	}
+
+	if s.SplitKey == nil {
+		s.SplitKey = NewString("")
+	}
+
+	if s.FeatureFlagSyncIntervalSeconds == nil {
+		s.FeatureFlagSyncIntervalSeconds = NewInt(30)
+	}
+
+	if s.DebugSplit == nil {
+		s.DebugSplit = NewBool(false)
+	}
+
+	if s.ThreadAutoFollow == nil {
+		s.ThreadAutoFollow = NewBool(true)
+	}
+
+	if s.CollapsedThreads == nil {
+		s.CollapsedThreads = NewString(COLLAPSED_THREADS_DISABLED)
+	}
+
+	if s.ManagedResourcePaths == nil {
+		s.ManagedResourcePaths = NewString("")
 	}
 }
 
@@ -391,27 +878,69 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
 }
 
 type FileSettings struct {
-	Directory         *string `restricted:"true"`
-	DriverName        *string `restricted:"true"`
-	S3AccessKeyId     *string `restricted:"true"`
-	S3SecretAccessKey *string `restricted:"true"`
-	S3Bucket          *string `restricted:"true"`
-	S3PathPrefix      *string `restricted:"true"`
-	S3Region          *string `restricted:"true"`
-	S3Endpoint        *string `restricted:"true"`
-	S3SSL             *bool   `restricted:"true"`
-	S3SignV2          *bool   `restricted:"true"`
-	S3SSE             *bool   `restricted:"true"`
-	S3Trace           *bool   `restricted:"true"`
+	EnableFileAttachments *bool   `access:"site,cloud_restrictable"`
+	EnableMobileUpload    *bool   `access:"site,cloud_restrictable"`
+	EnableMobileDownload  *bool   `access:"site,cloud_restrictable"`
+	MaxFileSize           *int64  `access:"environment,cloud_restrictable"`
+	Directory             *string `restricted:"true"`
+	DriverName            *string `restricted:"true"`
+	EnablePublicLink      *bool   `access:"site,cloud_restrictable"`
+	PublicLinkSalt        *string `access:"site,cloud_restrictable"`
+	InitialFont           *string `access:"environment,cloud_restrictable"`
+	S3AccessKeyId         *string `restricted:"true"`
+	S3SecretAccessKey     *string `restricted:"true"`
+	S3Bucket              *string `restricted:"true"`
+	S3PathPrefix          *string `restricted:"true"`
+	S3Region              *string `restricted:"true"`
+	S3Endpoint            *string `restricted:"true"`
+	S3SSL                 *bool   `restricted:"true"`
+	S3SignV2              *bool   `restricted:"true"`
+	S3SSE                 *bool   `restricted:"true"`
+	S3Trace               *bool   `restricted:"true"`
 }
 
 func (s *FileSettings) SetDefaults(isUpdate bool) {
+	if s.EnableFileAttachments == nil {
+		s.EnableFileAttachments = NewBool(true)
+	}
+
+	if s.EnableMobileUpload == nil {
+		s.EnableMobileUpload = NewBool(true)
+	}
+
+	if s.EnableMobileDownload == nil {
+		s.EnableMobileDownload = NewBool(true)
+	}
+
+	if s.MaxFileSize == nil {
+		s.MaxFileSize = NewInt64(52428800) // 50 MB
+	}
+
 	if s.DriverName == nil {
 		s.DriverName = NewString(IMAGE_DRIVER_LOCAL)
 	}
 
 	if s.Directory == nil || *s.Directory == "" {
 		s.Directory = NewString(FILE_SETTINGS_DEFAULT_DIRECTORY)
+	}
+
+	if s.EnablePublicLink == nil {
+		s.EnablePublicLink = NewBool(false)
+	}
+
+	if isUpdate {
+		// When updating an existing configuration, ensure link salt has been specified.
+		if s.PublicLinkSalt == nil || len(*s.PublicLinkSalt) == 0 {
+			s.PublicLinkSalt = NewString(NewRandomString(32))
+		}
+	} else {
+		// When generating a blank configuration, leave link salt empty to be generated on server start.
+		s.PublicLinkSalt = NewString("")
+	}
+
+	if s.InitialFont == nil {
+		// Defaults to "nunito-bold.ttf"
+		s.InitialFont = NewString("nunito-bold.ttf")
 	}
 
 	if s.S3AccessKeyId == nil {
