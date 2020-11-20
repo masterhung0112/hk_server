@@ -1,5 +1,9 @@
 package model
 
+import (
+	"reflect"
+)
+
 type PostAction struct {
 	// A unique Action ID. If not set, generated automatically.
 	Id string `json:"id,omitempty"`
@@ -38,6 +42,76 @@ type PostAction struct {
 	// client, or are encrypted in a Cookie.
 	Integration *PostActionIntegration `json:"integration,omitempty"`
 	Cookie      string                 `json:"cookie,omitempty" db:"-"`
+}
+
+func (p *PostAction) Equals(input *PostAction) bool {
+	if p.Id != input.Id {
+		return false
+	}
+
+	if p.Type != input.Type {
+		return false
+	}
+
+	if p.Name != input.Name {
+		return false
+	}
+
+	if p.DataSource != input.DataSource {
+		return false
+	}
+
+	if p.DefaultOption != input.DefaultOption {
+		return false
+	}
+
+	if p.Cookie != input.Cookie {
+		return false
+	}
+
+	// Compare PostActionOptions
+	if len(p.Options) != len(input.Options) {
+		return false
+	}
+
+	for k := range p.Options {
+		if p.Options[k].Text != input.Options[k].Text {
+			return false
+		}
+
+		if p.Options[k].Value != input.Options[k].Value {
+			return false
+		}
+	}
+
+	// Compare PostActionIntegration
+	if p.Integration.URL != input.Integration.URL {
+		return false
+	}
+
+	if len(p.Integration.Context) != len(input.Integration.Context) {
+		return false
+	}
+
+	for key, value := range p.Integration.Context {
+		inputValue, ok := input.Integration.Context[key]
+		if !ok {
+			return false
+		}
+
+		switch inputValue.(type) {
+		case string, bool, int, float64:
+			if value != inputValue {
+				return false
+			}
+		default:
+			if !reflect.DeepEqual(value, inputValue) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // PostActionCookie is set by the server, serialized and encrypted into
