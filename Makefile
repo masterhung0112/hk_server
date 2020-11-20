@@ -7,6 +7,10 @@ store-mocks: ## Creates mock files.
 	$(GO) get -modfile=go.tools.mod github.com/vektra/mockery/...
 	$(GOBIN)/mockery -dir store -all -output store/storetest/mocks -note 'Regenerate this file using `make store-mocks`.'
 
+einterfaces-mocks: ## Creates mock files for einterfaces.
+	$(GO) get -modfile=go.tools.mod github.com/vektra/mockery/...
+	$(GOBIN)/mockery -dir einterfaces -all -output einterfaces/mocks -note 'Regenerate this file using `make einterfaces-mocks`.'
+
 test-run-coverage:
 	go test -coverprofile=coverage_result ./...
 	go tool cover -html=coverage_result

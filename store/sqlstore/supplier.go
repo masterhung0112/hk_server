@@ -4,6 +4,7 @@ import (
 	dbsql "database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/masterhung0112/hk_server/einterfaces"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -25,6 +26,7 @@ import (
 type SqlSupplierStores struct {
 	team            store.TeamStore
 	user            store.UserStore
+	post            store.PostStore
 	system          store.SystemStore
 	role            store.RoleStore
 	scheme          store.SchemeStore
@@ -170,6 +172,10 @@ func (ss *SqlSupplier) User() store.UserStore {
 	return ss.stores.user
 }
 
+func (ss *SqlSupplier) Post() store.PostStore {
+	return ss.stores.post
+}
+
 func setupConnection(con_type string, dataSource string, settings *model.SqlSettings) *gorp.DbMap {
 	db, err := dbsql.Open(*settings.DriverName, dataSource)
 	if err != nil {
@@ -254,7 +260,7 @@ func (ss *SqlSupplier) GetAllConns() []*gorp.DbMap {
 	return all
 }
 
-func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
+func NewSqlSupplier(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlSupplier {
 	supplier := &SqlSupplier{
 		rrCounter: 0,
 		srCounter: 0,
@@ -266,6 +272,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	// Create tables if necessary
 	supplier.stores.team = newSqlTeamStore(supplier)
 	supplier.stores.user = newSqlUserStore(supplier)
+	supplier.stores.post = newSqlPostStore(supplier, metrics)
 	supplier.stores.system = newSqlSystemStore(supplier)
 	supplier.stores.role = newSqlRoleStore(supplier)
 	supplier.stores.scheme = newSqlSchemeStore(supplier)
