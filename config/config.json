@@ -180,7 +180,7 @@
         "EnableRemoteMarketplace": true,
         "AutomaticPrepackagedPlugins": true,
         "RequirePluginSignature": false,
-        "MarketplaceUrl": "https://api.integrations.mattermost.com",
+        "MarketplaceUrl": "https://api.integrations.hungknow.com",
         "SignaturePublicKeyFiles": []
     }
 }
