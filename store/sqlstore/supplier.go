@@ -4,6 +4,7 @@ import (
 	dbsql "database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/masterhung0112/hk_server/einterfaces"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -24,8 +25,8 @@ import (
 
 type SqlSupplierStores struct {
 	team            store.TeamStore
-  user            store.UserStore
-  post            store.PostStore
+	user            store.UserStore
+	post            store.PostStore
 	system          store.SystemStore
 	role            store.RoleStore
 	scheme          store.SchemeStore
@@ -270,8 +271,8 @@ func NewSqlSupplier(settings model.SqlSettings, metrics einterfaces.MetricsInter
 
 	// Create tables if necessary
 	supplier.stores.team = newSqlTeamStore(supplier)
-  supplier.stores.user = newSqlUserStore(supplier)
-  supplier.stores.post = newSqlPostStore(supplier, metrics)
+	supplier.stores.user = newSqlUserStore(supplier)
+	supplier.stores.post = newSqlPostStore(supplier, metrics)
 	supplier.stores.system = newSqlSystemStore(supplier)
 	supplier.stores.role = newSqlRoleStore(supplier)
 	supplier.stores.scheme = newSqlSchemeStore(supplier)

@@ -451,6 +451,22 @@ var markdownDestinationEscaper = strings.NewReplacer(
 	`)`, `\)`,
 )
 
+// WithRewrittenImageURLs returns a new shallow copy of the post where the message has been
+// rewritten via RewriteImageURLs.
+func (o *Post) WithRewrittenImageURLs(f func(string) string) *Post {
+	copy := o.Clone()
+	copy.Message = RewriteImageURLs(o.Message, f)
+	if copy.MessageSource == "" && copy.Message != o.Message {
+		copy.MessageSource = o.Message
+	}
+	return copy
+}
+
+func (o *PostEphemeral) ToUnsanitizedJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}
+
 func (o *Post) SanitizeProps() {
 	membersToSanitize := []string{
 		PROPS_ADD_CHANNEL_MEMBER,
@@ -495,6 +511,12 @@ func (o *Post) PreCommit() {
 
 	// There's a rare bug where the client sends up duplicate FileIds so protect against that
 	o.FileIds = RemoveDuplicateStrings(o.FileIds)
+}
+
+func (o *Post) MakeNonNil() {
+	if o.GetProps() == nil {
+		o.SetProps(make(map[string]interface{}))
+	}
 }
 
 func (o *Post) Patch(patch *PostPatch) {

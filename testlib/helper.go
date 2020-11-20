@@ -72,7 +72,7 @@ func (h *MainHelper) setupStore() {
 	config.SetDefaults()
 
 	// Create SQL Store
-	h.SQLSupplier = sqlstore.NewSqlSupplier(*h.Settings)
+	h.SQLSupplier = sqlstore.NewSqlSupplier(*h.Settings, nil)
 	h.Store = &TestStore{
 		h.SQLSupplier,
 	}

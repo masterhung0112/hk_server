@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/masterhung0112/hk_server/einterfaces"
 	"github.com/masterhung0112/hk_server/services/filesstore"
 	"net"
 	"net/http"
@@ -56,6 +57,8 @@ type Server struct {
 	AppInitializedOnce sync.Once
 
 	phase2PermissionsMigrationComplete bool
+
+	Metrics einterfaces.MetricsInterface
 }
 
 // Global app options that should be applied to apps created by this server
@@ -97,7 +100,7 @@ func NewServer(options ...Option) (*Server, error) {
 
 	if s.newStore == nil {
 		s.newStore = func() store.Store {
-			s.sqlStore = sqlstore.NewSqlSupplier(s.Config().SqlSettings)
+			s.sqlStore = sqlstore.NewSqlSupplier(s.Config().SqlSettings, s.Metrics)
 			return s.sqlStore
 		}
 	}
