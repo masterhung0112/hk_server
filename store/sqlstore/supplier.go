@@ -27,6 +27,7 @@ type SqlSupplierStores struct {
 	team            store.TeamStore
 	user            store.UserStore
 	post            store.PostStore
+	thread          store.ThreadStore
 	system          store.SystemStore
 	role            store.RoleStore
 	scheme          store.SchemeStore
@@ -176,6 +177,10 @@ func (ss *SqlSupplier) Post() store.PostStore {
 	return ss.stores.post
 }
 
+func (ss *SqlSupplier) Thread() store.ThreadStore {
+	return ss.stores.thread
+}
+
 func setupConnection(con_type string, dataSource string, settings *model.SqlSettings) *gorp.DbMap {
 	db, err := dbsql.Open(*settings.DriverName, dataSource)
 	if err != nil {
@@ -273,6 +278,7 @@ func NewSqlSupplier(settings model.SqlSettings, metrics einterfaces.MetricsInter
 	supplier.stores.team = newSqlTeamStore(supplier)
 	supplier.stores.user = newSqlUserStore(supplier)
 	supplier.stores.post = newSqlPostStore(supplier, metrics)
+	supplier.stores.thread = newSqlThreadStore(supplier)
 	supplier.stores.system = newSqlSystemStore(supplier)
 	supplier.stores.role = newSqlRoleStore(supplier)
 	supplier.stores.scheme = newSqlSchemeStore(supplier)

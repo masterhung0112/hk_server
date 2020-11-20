@@ -16,6 +16,7 @@ type Store interface {
 	Team() TeamStore
 	Channel() ChannelStore
 	Post() PostStore
+	Thread() ThreadStore
 	User() UserStore
 	System() SystemStore
 	Role() RoleStore
@@ -32,12 +33,33 @@ type Store interface {
 	UnlockFromMaster()
 }
 
+type ThreadStore interface {
+	// SaveMultiple(thread []*model.Thread) ([]*model.Thread, int, error)
+	// Save(thread *model.Thread) (*model.Thread, error)
+	// Update(thread *model.Thread) (*model.Thread, error)
+	// Get(id string) (*model.Thread, error)
+	// GetThreadsForUser(userId string, opts model.GetUserThreadsOpts) (*model.Threads, error)
+	// Delete(postId string) error
+
+	// MarkAllAsRead(userId string, timestamp int64) error
+	// MarkAsRead(userId, threadId string, timestamp int64) error
+
+	// SaveMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
+	// UpdateMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
+	// GetMembershipsForUser(userId string) ([]*model.ThreadMembership, error)
+	// GetMembershipForUser(userId, postId string) (*model.ThreadMembership, error)
+	// DeleteMembershipForUser(userId, postId string) error
+	// CreateMembershipIfNeeded(userId, postId string, following bool) error
+	// CollectThreadsWithNewerReplies(userId string, channelIds []string, timestamp int64) ([]string, error)
+	// UpdateUnreadsByChannel(userId string, changedThreads []string, timestamp int64) error
+}
+
 type PostStore interface {
-	// SaveMultiple(posts []*model.Post) ([]*model.Post, int, error)
-	// Save(post *model.Post) (*model.Post, error)
+	SaveMultiple(posts []*model.Post) ([]*model.Post, int, error)
+	Save(post *model.Post) (*model.Post, error)
 	// Update(newPost *model.Post, oldPost *model.Post) (*model.Post, error)
 	// Get(id string, skipFetchThreads bool) (*model.PostList, error)
-	// GetSingle(id string) (*model.Post, error)
+	GetSingle(id string) (*model.Post, error)
 	// Delete(postId string, time int64, deleteByID string) error
 	// PermanentDeleteByUser(userId string) error
 	// PermanentDeleteByChannel(channelId string) error
@@ -66,7 +88,7 @@ type PostStore interface {
 	// GetPostsBatchForIndexing(startTime int64, endTime int64, limit int) ([]*model.PostForIndexing, error)
 	// PermanentDeleteBatch(endTime int64, limit int64) (int64, error)
 	// GetOldest() (*model.Post, error)
-	// GetMaxPostSize() int
+	GetMaxPostSize() int
 	// GetParentsForExportAfter(limit int, afterId string) ([]*model.PostForExport, error)
 	// GetRepliesForExport(parentId string) ([]*model.ReplyForExport, error)
 	// GetDirectPostParentsForExportAfter(limit int, afterId string) ([]*model.DirectPostForExport, error)
