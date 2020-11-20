@@ -1,11 +1,11 @@
 package model
 
 import (
-	"fmt"
 	"bytes"
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"

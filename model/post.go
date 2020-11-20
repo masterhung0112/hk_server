@@ -1,17 +1,17 @@
 package model
 
 import (
-	"sort"
-	"strings"
-	"regexp"
-	"unicode/utf8"
-	"net/http"
+	"encoding/json"
 	"errors"
 	"io"
-	"encoding/json"
-  "sync"
+	"net/http"
+	"regexp"
+	"sort"
+	"strings"
+	"sync"
+	"unicode/utf8"
 
-  "github.com/masterhung0112/hk_server/utils/markdown"
+	"github.com/masterhung0112/hk_server/utils/markdown"
 )
 
 const (

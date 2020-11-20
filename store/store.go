@@ -14,8 +14,8 @@ type StoreResult struct {
 
 type Store interface {
 	Team() TeamStore
-  Channel() ChannelStore
-  Post() PostStore
+	Channel() ChannelStore
+	Post() PostStore
 	User() UserStore
 	System() SystemStore
 	Role() RoleStore
