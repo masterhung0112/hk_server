@@ -21,7 +21,7 @@ require (
 	github.com/lib/pq v1.8.0
 	github.com/mattermost/go-i18n v1.11.0
 	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible
-	github.com/mattermost/logr v1.0.5
+	github.com/mattermost/logr v1.0.13
 	github.com/mattermost/viper v1.0.4
 	github.com/minio/minio-go/v7 v7.0.4
 	github.com/pborman/uuid v1.2.0

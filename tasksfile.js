@@ -22,8 +22,8 @@ let NOTICES_SKIP_CACHE = process.env.NOTICES_SKIP_CACHE || false
 let GOFLAGS = process.env.GOFLAGS || ''
 
 // We need to export GOBIN to allow it to be set for processes spawned from the Makefile
-let GOBIN = `${__dirname}/bin`
-let GO = 'go'
+let GOBIN = process.env.GOBIN || `${process.env.GOPATH}/bin`
+let GO =  process.env.GO || 'go'
 
 let LDFLAGS = process.env.LDFLAGS || ''
 LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/model.BuildNumber=${BUILD_NUMBER}'`
@@ -85,12 +85,21 @@ function test_data() {
 help(test_data, 'Add test data to the local instance')
 
 function start_server() {
-  sh(`go run ./cmd/hser/main.go`, { nopipe: true })
+  sh(`${GO} run ./cmd/hser/main.go`, { nopipe: true })
 }
 help(start_server, 'Start server instance')
+
+function einterfaces_mocks() {
+  sh(`${GO} get -modfile=go.tools.mod github.com/vektra/mockery/...`, { nopipe: true })
+  sh(`${GOBIN}/mockery -dir einterfaces -all -output einterfaces/mocks -note 'Regenerate this file using \`make einterfaces-mocks\`.`, { nopipe: true })
+
+}
+help(einterfaces_mocks, 'Creates mock files for einterfaces')
 
 cli({
   start_docker,
   start_server,
   test_data,
+
+  einterfaces_mocks,
 })
