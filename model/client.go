@@ -9,7 +9,7 @@ import (
 )
 
 const (
-  HEADER_REQUEST_ID         = "X-Request-ID"
+	HEADER_REQUEST_ID         = "X-Request-ID"
 	HEADER_VERSION_ID         = "X-Version-ID"
 	HEADER_CLUSTER_ID         = "X-Cluster-ID"
 	HEADER_ETAG_SERVER        = "ETag"
@@ -22,13 +22,13 @@ const (
 	HEADER_BEARER             = "BEARER"
 	HEADER_AUTH               = "Authorization"
 	HEADER_REQUESTED_WITH     = "X-Requested-With"
-  HEADER_REQUESTED_WITH_XML = "XMLHttpRequest"
+	HEADER_REQUESTED_WITH_XML = "XMLHttpRequest"
 
-	STATUS                    = "status"
-	STATUS_OK                 = "OK"
-	STATUS_FAIL               = "FAIL"
-	STATUS_UNHEALTHY          = "UNHEALTHY"
-	STATUS_REMOVE             = "REMOVE"
+	STATUS           = "status"
+	STATUS_OK        = "OK"
+	STATUS_FAIL      = "FAIL"
+	STATUS_UNHEALTHY = "UNHEALTHY"
+	STATUS_REMOVE    = "REMOVE"
 
 	API_URL_SUFFIX = "/api/v1"
 )

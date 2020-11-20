@@ -11,10 +11,10 @@ const (
 	CONN_SECURITY_TLS      = "TLS"
 	CONN_SECURITY_STARTTLS = "STARTTLS"
 
-	PASSWORD_MAXIMUM_LENGTH                     = 64
-  PASSWORD_MINIMUM_LENGTH                     = 5
+	PASSWORD_MAXIMUM_LENGTH = 64
+	PASSWORD_MINIMUM_LENGTH = 5
 
-  SITENAME_MAX_LENGTH = 30
+	SITENAME_MAX_LENGTH = 30
 
 	SERVICE_SETTINGS_DEFAULT_SITE_URL           = "http://localhost:9065"
 	SERVICE_SETTINGS_DEFAULT_TLS_CERT_FILE      = ""
@@ -67,28 +67,28 @@ const (
 	EMAIL_BATCHING_INTERVAL    = 30
 
 	EMAIL_NOTIFICATION_CONTENTS_FULL    = "full"
-  EMAIL_NOTIFICATION_CONTENTS_GENERIC = "generic"
+	EMAIL_NOTIFICATION_CONTENTS_GENERIC = "generic"
 
 	PERMISSIONS_ALL           = "all"
 	PERMISSIONS_CHANNEL_ADMIN = "channel_admin"
 	PERMISSIONS_TEAM_ADMIN    = "team_admin"
 	PERMISSIONS_SYSTEM_ADMIN  = "system_admin"
 
-  FAKE_SETTING = "********************************"
+	FAKE_SETTING = "********************************"
 
-  RESTRICT_EMOJI_CREATION_ALL          = "all"
+	RESTRICT_EMOJI_CREATION_ALL          = "all"
 	RESTRICT_EMOJI_CREATION_ADMIN        = "admin"
-  RESTRICT_EMOJI_CREATION_SYSTEM_ADMIN = "system_admin"
+	RESTRICT_EMOJI_CREATION_SYSTEM_ADMIN = "system_admin"
 
-  PERMISSIONS_DELETE_POST_ALL          = "all"
+	PERMISSIONS_DELETE_POST_ALL          = "all"
 	PERMISSIONS_DELETE_POST_TEAM_ADMIN   = "team_admin"
 	PERMISSIONS_DELETE_POST_SYSTEM_ADMIN = "system_admin"
 
 	ALLOW_EDIT_POST_ALWAYS     = "always"
 	ALLOW_EDIT_POST_NEVER      = "never"
-  ALLOW_EDIT_POST_TIME_LIMIT = "time_limit"
+	ALLOW_EDIT_POST_TIME_LIMIT = "time_limit"
 
-  GROUP_UNREAD_CHANNELS_DISABLED    = "disabled"
+	GROUP_UNREAD_CHANNELS_DISABLED    = "disabled"
 	GROUP_UNREAD_CHANNELS_DEFAULT_ON  = "default_on"
 	GROUP_UNREAD_CHANNELS_DEFAULT_OFF = "default_off"
 
@@ -878,29 +878,29 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
 }
 
 type FileSettings struct {
-  EnableFileAttachments   *bool   `access:"site,cloud_restrictable"`
-	EnableMobileUpload      *bool   `access:"site,cloud_restrictable"`
-	EnableMobileDownload    *bool   `access:"site,cloud_restrictable"`
-	MaxFileSize             *int64  `access:"environment,cloud_restrictable"`
-	Directory         *string `restricted:"true"`
-  DriverName        *string `restricted:"true"`
-  EnablePublicLink        *bool   `access:"site,cloud_restrictable"`
-  PublicLinkSalt          *string `access:"site,cloud_restrictable"`
-	InitialFont             *string `access:"environment,cloud_restrictable"`
-	S3AccessKeyId     *string `restricted:"true"`
-	S3SecretAccessKey *string `restricted:"true"`
-	S3Bucket          *string `restricted:"true"`
-	S3PathPrefix      *string `restricted:"true"`
-	S3Region          *string `restricted:"true"`
-	S3Endpoint        *string `restricted:"true"`
-	S3SSL             *bool   `restricted:"true"`
-	S3SignV2          *bool   `restricted:"true"`
-	S3SSE             *bool   `restricted:"true"`
-	S3Trace           *bool   `restricted:"true"`
+	EnableFileAttachments *bool   `access:"site,cloud_restrictable"`
+	EnableMobileUpload    *bool   `access:"site,cloud_restrictable"`
+	EnableMobileDownload  *bool   `access:"site,cloud_restrictable"`
+	MaxFileSize           *int64  `access:"environment,cloud_restrictable"`
+	Directory             *string `restricted:"true"`
+	DriverName            *string `restricted:"true"`
+	EnablePublicLink      *bool   `access:"site,cloud_restrictable"`
+	PublicLinkSalt        *string `access:"site,cloud_restrictable"`
+	InitialFont           *string `access:"environment,cloud_restrictable"`
+	S3AccessKeyId         *string `restricted:"true"`
+	S3SecretAccessKey     *string `restricted:"true"`
+	S3Bucket              *string `restricted:"true"`
+	S3PathPrefix          *string `restricted:"true"`
+	S3Region              *string `restricted:"true"`
+	S3Endpoint            *string `restricted:"true"`
+	S3SSL                 *bool   `restricted:"true"`
+	S3SignV2              *bool   `restricted:"true"`
+	S3SSE                 *bool   `restricted:"true"`
+	S3Trace               *bool   `restricted:"true"`
 }
 
 func (s *FileSettings) SetDefaults(isUpdate bool) {
-  if s.EnableFileAttachments == nil {
+	if s.EnableFileAttachments == nil {
 		s.EnableFileAttachments = NewBool(true)
 	}
 
@@ -922,9 +922,9 @@ func (s *FileSettings) SetDefaults(isUpdate bool) {
 
 	if s.Directory == nil || *s.Directory == "" {
 		s.Directory = NewString(FILE_SETTINGS_DEFAULT_DIRECTORY)
-  }
+	}
 
-  if s.EnablePublicLink == nil {
+	if s.EnablePublicLink == nil {
 		s.EnablePublicLink = NewBool(false)
 	}
 
@@ -936,9 +936,9 @@ func (s *FileSettings) SetDefaults(isUpdate bool) {
 	} else {
 		// When generating a blank configuration, leave link salt empty to be generated on server start.
 		s.PublicLinkSalt = NewString("")
-  }
+	}
 
-  if s.InitialFont == nil {
+	if s.InitialFont == nil {
 		// Defaults to "nunito-bold.ttf"
 		s.InitialFont = NewString("nunito-bold.ttf")
 	}
