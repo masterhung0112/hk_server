@@ -1,6 +1,7 @@
 package model
 
 import (
+	"sort"
 	"strings"
 	"regexp"
 	"unicode/utf8"
@@ -8,7 +9,9 @@ import (
 	"errors"
 	"io"
 	"encoding/json"
-	"sync"
+  "sync"
+
+  "github.com/masterhung0112/hk_server/utils/markdown"
 )
 
 const (
@@ -348,6 +351,14 @@ func (o *Post) AttachmentsEqual(input *Post) bool {
 	return true
 }
 
+var markdownDestinationEscaper = strings.NewReplacer(
+	`\`, `\\`,
+	`<`, `\<`,
+	`>`, `\>`,
+	`(`, `\(`,
+	`)`, `\)`,
+)
+
 func (o *Post) SanitizeProps() {
 	membersToSanitize := []string{
 		PROPS_ADD_CHANNEL_MEMBER,
@@ -396,4 +407,69 @@ func (o *Post) PreCommit() {
 
 func (o *Post) ChannelMentions() []string {
 	return ChannelMentions(o.Message)
+}
+
+// RewriteImageURLs takes a message and returns a copy that has all of the image URLs replaced
+// according to the function f. For each image URL, f will be invoked, and the resulting markdown
+// will contain the URL returned by that invocation instead.
+//
+// Image URLs are destination URLs used in inline images or reference definitions that are used
+// anywhere in the input markdown as an image.
+func RewriteImageURLs(message string, f func(string) string) string {
+	if !strings.Contains(message, "![") {
+		return message
+	}
+
+	var ranges []markdown.Range
+
+	markdown.Inspect(message, func(blockOrInline interface{}) bool {
+		switch v := blockOrInline.(type) {
+		case *markdown.ReferenceImage:
+			ranges = append(ranges, v.ReferenceDefinition.RawDestination)
+		case *markdown.InlineImage:
+			ranges = append(ranges, v.RawDestination)
+		default:
+			return true
+		}
+		return true
+	})
+
+	if ranges == nil {
+		return message
+	}
+
+	sort.Slice(ranges, func(i, j int) bool {
+		return ranges[i].Position < ranges[j].Position
+	})
+
+	copyRanges := make([]markdown.Range, 0, len(ranges))
+	urls := make([]string, 0, len(ranges))
+	resultLength := len(message)
+
+	start := 0
+	for i, r := range ranges {
+		switch {
+		case i == 0:
+		case r.Position != ranges[i-1].Position:
+			start = ranges[i-1].End
+		default:
+			continue
+		}
+		original := message[r.Position:r.End]
+		replacement := markdownDestinationEscaper.Replace(f(markdown.Unescape(original)))
+		resultLength += len(replacement) - len(original)
+		copyRanges = append(copyRanges, markdown.Range{Position: start, End: r.Position})
+		urls = append(urls, replacement)
+	}
+
+	result := make([]byte, resultLength)
+
+	offset := 0
+	for i, r := range copyRanges {
+		offset += copy(result[offset:], message[r.Position:r.End])
+		offset += copy(result[offset:], urls[i])
+	}
+	copy(result[offset:], message[ranges[len(ranges)-1].End:])
+
+	return string(result)
 }
