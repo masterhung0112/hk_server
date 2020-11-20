@@ -107,3 +107,8 @@ func TestPostIsSystemMessage(t *testing.T) {
 
 	require.True(t, post2.IsSystemMessage())
 }
+
+func TestPostChannelMentions(t *testing.T) {
+	post := Post{Message: "~a ~b ~b ~c/~d."}
+	assert.Equal(t, []string{"a", "b", "c", "d"}, post.ChannelMentions())
+}
