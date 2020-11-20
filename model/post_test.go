@@ -499,3 +499,43 @@ func BenchmarkRewriteImageURLs(b *testing.B) {
 		})
 	}
 }
+
+func TestPostShallowCopy(t *testing.T) {
+	var dst *Post
+	p := &Post{
+		Id: NewId(),
+	}
+
+	err := p.ShallowCopy(dst)
+	require.Error(t, err)
+
+	dst = &Post{}
+	err = p.ShallowCopy(dst)
+	require.NoError(t, err)
+	require.Equal(t, p, dst)
+	require.Condition(t, func() bool {
+		return p != dst
+	})
+}
+
+func TestPostClone(t *testing.T) {
+	p := &Post{
+		Id: NewId(),
+	}
+
+	pp := p.Clone()
+	require.Equal(t, p, pp)
+	require.Condition(t, func() bool {
+		return p != pp
+	})
+	require.Condition(t, func() bool {
+		return &p.propsMu != &pp.propsMu
+	})
+}
+
+func BenchmarkClonePost(b *testing.B) {
+	p := Post{}
+	for i := 0; i < b.N; i++ {
+		_ = p.Clone()
+	}
+}
