@@ -151,3 +151,18 @@ func (o *Post) StripActionIntegrations() {
 		}
 	}
 }
+
+func (o *Post) GenerateActionIds() {
+	if o.GetProp("attachments") != nil {
+		o.AddProp("attachments", o.Attachments())
+	}
+	if attachments, ok := o.GetProp("attachments").([]*SlackAttachment); ok {
+		for _, attachment := range attachments {
+			for _, action := range attachment.Actions {
+				if action.Id == "" {
+					action.Id = NewId()
+				}
+			}
+		}
+	}
+}

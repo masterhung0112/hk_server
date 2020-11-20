@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"bytes"
 	"crypto/rand"
 	"encoding/base32"
@@ -324,6 +325,17 @@ func IsValidAlphaNumHyphenUnderscore(s string, withFormat bool) bool {
 	return validSimpleAlphaNumHyphenUnderscore.MatchString(s)
 }
 
+func Etag(parts ...interface{}) string {
+
+	etag := CurrentVersion
+
+	for _, part := range parts {
+		etag += fmt.Sprintf(".%v", part)
+	}
+
+	return etag
+}
+
 // MapFromJson will decode the key/value pair map
 func MapFromJson(data io.Reader) map[string]string {
 	decoder := json.NewDecoder(data)
@@ -400,4 +412,19 @@ func GetPreferredTimezone(timezone StringMap) string {
 	}
 
 	return timezone["manualTimezone"]
+}
+
+func RemoveDuplicateStrings(in []string) []string {
+	out := []string{}
+	seen := make(map[string]bool, len(in))
+
+	for _, item := range in {
+		if !seen[item] {
+			out = append(out, item)
+
+			seen[item] = true
+		}
+	}
+
+	return out
 }
