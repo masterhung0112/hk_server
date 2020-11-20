@@ -309,6 +309,10 @@ func (o *Post) GetProp(key string) interface{} {
 	return o.Props[key]
 }
 
+func (o *Post) IsSystemMessage() bool {
+	return len(o.Type) >= len(POST_SYSTEM_MESSAGE_PREFIX) && o.Type[:len(POST_SYSTEM_MESSAGE_PREFIX)] == POST_SYSTEM_MESSAGE_PREFIX
+}
+
 func (o *Post) Attachments() []*SlackAttachment {
 	if attachments, ok := o.GetProp("attachments").([]*SlackAttachment); ok {
 		return attachments

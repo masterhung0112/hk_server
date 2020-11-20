@@ -95,3 +95,15 @@ func TestPostPreSave(t *testing.T) {
 
 	o.Etag()
 }
+
+func TestPostIsSystemMessage(t *testing.T) {
+	post1 := Post{Message: "test_1"}
+	post1.PreSave()
+
+	require.False(t, post1.IsSystemMessage())
+
+	post2 := Post{Message: "test_2", Type: POST_JOIN_LEAVE}
+	post2.PreSave()
+
+	require.True(t, post2.IsSystemMessage())
+}
