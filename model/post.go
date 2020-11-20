@@ -99,6 +99,67 @@ type Post struct {
 	Metadata   *PostMetadata `json:"metadata,omitempty" db:"-"`
 }
 
+type PostEphemeral struct {
+	UserID string `json:"user_id"`
+	Post   *Post  `json:"post"`
+}
+
+type PostPatch struct {
+	IsPinned     *bool            `json:"is_pinned"`
+	Message      *string          `json:"message"`
+	Props        *StringInterface `json:"props"`
+	FileIds      *StringArray     `json:"file_ids"`
+	HasReactions *bool            `json:"has_reactions"`
+}
+
+type SearchParameter struct {
+	Terms                  *string `json:"terms"`
+	IsOrSearch             *bool   `json:"is_or_search"`
+	TimeZoneOffset         *int    `json:"time_zone_offset"`
+	Page                   *int    `json:"page"`
+	PerPage                *int    `json:"per_page"`
+	IncludeDeletedChannels *bool   `json:"include_deleted_channels"`
+}
+
+type AnalyticsPostCountsOptions struct {
+	TeamId        string
+	BotsOnly      bool
+	YesterdayOnly bool
+}
+
+func (o *PostPatch) WithRewrittenImageURLs(f func(string) string) *PostPatch {
+	copy := *o
+	if copy.Message != nil {
+		*copy.Message = RewriteImageURLs(*o.Message, f)
+	}
+	return &copy
+}
+
+type PostForExport struct {
+	Post
+	TeamName    string
+	ChannelName string
+	Username    string
+	ReplyCount  int
+}
+
+type DirectPostForExport struct {
+	Post
+	User           string
+	ChannelMembers *[]string
+}
+
+type ReplyForExport struct {
+	Post
+	Username string
+}
+
+type PostForIndexing struct {
+	Post
+	TeamId         string `json:"team_id"`
+	ParentCreateAt *int64 `json:"parent_create_at"`
+}
+
 // ShallowCopy is an utility function to shallow copy a Post to the given
 // destination without touching the internal RWMutex.
 func (o *Post) ShallowCopy(dst *Post) error {
@@ -316,6 +377,37 @@ func (o *Post) IsSystemMessage() bool {
 	return len(o.Type) >= len(POST_SYSTEM_MESSAGE_PREFIX) && o.Type[:len(POST_SYSTEM_MESSAGE_PREFIX)] == POST_SYSTEM_MESSAGE_PREFIX
 }
 
+// DisableMentionHighlights disables a posts mention highlighting and returns the first channel mention that was present in the message.
+func (o *Post) DisableMentionHighlights() string {
+	mention, hasMentions := findAtChannelMention(o.Message)
+	if hasMentions {
+		o.AddProp(POST_PROPS_MENTION_HIGHLIGHT_DISABLED, true)
+	}
+	return mention
+}
+
+// DisableMentionHighlights disables mention highlighting for a post patch if required.
+func (o *PostPatch) DisableMentionHighlights() {
+	if o.Message == nil {
+		return
+	}
+	if _, hasMentions := findAtChannelMention(*o.Message); hasMentions {
+		if o.Props == nil {
+			o.Props = &StringInterface{}
+		}
+		(*o.Props)[POST_PROPS_MENTION_HIGHLIGHT_DISABLED] = true
+	}
+}
+
+func findAtChannelMention(message string) (mention string, found bool) {
+	re := regexp.MustCompile(`(?i)\B@(channel|all|here)\b`)
+	matched := re.FindStringSubmatch(message)
+	if found = (len(matched) > 0); found {
+		mention = strings.ToLower(matched[0])
+	}
+	return
+}
+
 func (o *Post) Attachments() []*SlackAttachment {
 	if attachments, ok := o.GetProp("attachments").([]*SlackAttachment); ok {
 		return attachments
@@ -403,6 +495,68 @@ func (o *Post) PreCommit() {
 
 	// There's a rare bug where the client sends up duplicate FileIds so protect against that
 	o.FileIds = RemoveDuplicateStrings(o.FileIds)
+}
+
+func (o *Post) Patch(patch *PostPatch) {
+	if patch.IsPinned != nil {
+		o.IsPinned = *patch.IsPinned
+	}
+
+	if patch.Message != nil {
+		o.Message = *patch.Message
+	}
+
+	if patch.Props != nil {
+		newProps := *patch.Props
+		o.SetProps(newProps)
+	}
+
+	if patch.FileIds != nil {
+		o.FileIds = *patch.FileIds
+	}
+
+	if patch.HasReactions != nil {
+		o.HasReactions = *patch.HasReactions
+	}
+}
+
+func (o *PostPatch) ToJson() string {
+	b, err := json.Marshal(o)
+	if err != nil {
+		return ""
+	}
+
+	return string(b)
+}
+
+func PostPatchFromJson(data io.Reader) *PostPatch {
+	decoder := json.NewDecoder(data)
+	var post PostPatch
+	err := decoder.Decode(&post)
+	if err != nil {
+		return nil
+	}
+
+	return &post
+}
+
+func (o *SearchParameter) SearchParameterToJson() string {
+	b, err := json.Marshal(o)
+	if err != nil {
+		return ""
+	}
+
+	return string(b)
+}
+
+func SearchParameterFromJson(data io.Reader) (*SearchParameter, error) {
+	decoder := json.NewDecoder(data)
+	var searchParam SearchParameter
+	if err := decoder.Decode(&searchParam); err != nil {
+		return nil, err
+	}
+
+	return &searchParam, nil
 }
 
 func (o *Post) ChannelMentions() []string {
