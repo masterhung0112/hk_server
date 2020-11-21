@@ -91,14 +91,14 @@ help(start_server, 'Start server instance')
 
 function store_mocks() {
   sh(`${GO} get -modfile=go.tools.mod github.com/vektra/mockery/...`, { nopipe: true })
-  sh(`${GOBIN}/mockery -dir store -all -output store/storetest/mocks -note 'Regenerate this file using \`make store_mocks\`.`, { nopipe: true })
+  sh(`${GOBIN}/mockery -dir store -all -output store/storetest/mocks -note 'Regenerate this file using \`npm run task store_mocks\`.`, { nopipe: true })
 
 }
 help(store_mocks, 'Creates mock files for stores')
 
 function einterfaces_mocks() {
   sh(`${GO} get -modfile=go.tools.mod github.com/vektra/mockery/...`, { nopipe: true })
-  sh(`${GOBIN}/mockery -dir einterfaces -all -output einterfaces/mocks -note 'Regenerate this file using \`make einterfaces-mocks\`.`, { nopipe: true })
+  sh(`${GOBIN}/mockery -dir einterfaces -all -output einterfaces/mocks -note 'Regenerate this file using \`npm run task einterfaces_mocks\`.`, { nopipe: true })
 
 }
 help(einterfaces_mocks, 'Creates mock files for einterfaces')
