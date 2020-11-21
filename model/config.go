@@ -52,6 +52,10 @@ const (
 	DIRECT_MESSAGE_ANY  = "any"
 	DIRECT_MESSAGE_TEAM = "team"
 
+	SHOW_USERNAME          = "username"
+	SHOW_NICKNAME_FULLNAME = "nickname_full_name"
+	SHOW_FULLNAME          = "full_name"
+
 	LOCAL_MODE_SOCKET_PATH = "/var/tmp/hungknow_local.socket"
 
 	EMAIL_SETTINGS_DEFAULT_FEEDBACK_ORGANIZATION = ""
@@ -109,6 +113,38 @@ const (
 	SUPPORT_SETTINGS_DEFAULT_SUPPORT_EMAIL         = "hungbn0112@gmail.com"
 	SUPPORT_SETTINGS_DEFAULT_RE_ACCEPTANCE_PERIOD  = 365
 
+	LDAP_SETTINGS_DEFAULT_FIRST_NAME_ATTRIBUTE         = ""
+	LDAP_SETTINGS_DEFAULT_LAST_NAME_ATTRIBUTE          = ""
+	LDAP_SETTINGS_DEFAULT_EMAIL_ATTRIBUTE              = ""
+	LDAP_SETTINGS_DEFAULT_USERNAME_ATTRIBUTE           = ""
+	LDAP_SETTINGS_DEFAULT_NICKNAME_ATTRIBUTE           = ""
+	LDAP_SETTINGS_DEFAULT_ID_ATTRIBUTE                 = ""
+	LDAP_SETTINGS_DEFAULT_POSITION_ATTRIBUTE           = ""
+	LDAP_SETTINGS_DEFAULT_LOGIN_FIELD_NAME             = ""
+	LDAP_SETTINGS_DEFAULT_GROUP_DISPLAY_NAME_ATTRIBUTE = ""
+	LDAP_SETTINGS_DEFAULT_GROUP_ID_ATTRIBUTE           = ""
+	LDAP_SETTINGS_DEFAULT_PICTURE_ATTRIBUTE            = ""
+
+	SAML_SETTINGS_DEFAULT_ID_ATTRIBUTE         = ""
+	SAML_SETTINGS_DEFAULT_GUEST_ATTRIBUTE      = ""
+	SAML_SETTINGS_DEFAULT_ADMIN_ATTRIBUTE      = ""
+	SAML_SETTINGS_DEFAULT_FIRST_NAME_ATTRIBUTE = ""
+	SAML_SETTINGS_DEFAULT_LAST_NAME_ATTRIBUTE  = ""
+	SAML_SETTINGS_DEFAULT_EMAIL_ATTRIBUTE      = ""
+	SAML_SETTINGS_DEFAULT_USERNAME_ATTRIBUTE   = ""
+	SAML_SETTINGS_DEFAULT_NICKNAME_ATTRIBUTE   = ""
+	SAML_SETTINGS_DEFAULT_LOCALE_ATTRIBUTE     = ""
+	SAML_SETTINGS_DEFAULT_POSITION_ATTRIBUTE   = ""
+
+	SAML_SETTINGS_SIGNATURE_ALGORITHM_SHA1    = "RSAwithSHA1"
+	SAML_SETTINGS_SIGNATURE_ALGORITHM_SHA256  = "RSAwithSHA256"
+	SAML_SETTINGS_SIGNATURE_ALGORITHM_SHA512  = "RSAwithSHA512"
+	SAML_SETTINGS_DEFAULT_SIGNATURE_ALGORITHM = SAML_SETTINGS_SIGNATURE_ALGORITHM_SHA1
+
+	SAML_SETTINGS_CANONICAL_ALGORITHM_C14N    = "Canonical1.0"
+	SAML_SETTINGS_CANONICAL_ALGORITHM_C14N11  = "Canonical1.1"
+	SAML_SETTINGS_DEFAULT_CANONICAL_ALGORITHM = SAML_SETTINGS_CANONICAL_ALGORITHM_C14N
+
 	PLUGIN_SETTINGS_DEFAULT_DIRECTORY          = "./plugins"
 	PLUGIN_SETTINGS_DEFAULT_CLIENT_DIRECTORY   = "./client/plugins"
 	PLUGIN_SETTINGS_DEFAULT_ENABLE_MARKETPLACE = true
@@ -132,7 +168,11 @@ type Config struct {
 	RateLimitSettings     RateLimitSettings
 	FileSettings          FileSettings
 	LogSettings           LogSettings
-	PluginSettings        PluginSettings
+	LdapSettings          LdapSettings
+	// ComplianceSettings        ComplianceSettings
+	// LocalizationSettings      LocalizationSettings
+	SamlSettings   SamlSettings
+	PluginSettings PluginSettings
 }
 
 func ConfigFromJson(data io.Reader) *Config {
@@ -148,6 +188,17 @@ func (o *Config) isUpdate() bool {
 
 func (o *Config) SetDefaults() {
 	isUpdate := o.isUpdate()
+
+	o.LdapSettings.SetDefaults()
+	o.SamlSettings.SetDefaults()
+
+	if o.TeamSettings.TeammateNameDisplay == nil {
+		o.TeamSettings.TeammateNameDisplay = NewString(SHOW_USERNAME)
+
+		if *o.SamlSettings.Enable || *o.LdapSettings.Enable {
+			*o.TeamSettings.TeammateNameDisplay = SHOW_FULLNAME
+		}
+	}
 
 	o.TeamSettings.SetDefaults()
 	o.ServiceSettings.SetDefaults(isUpdate)
@@ -852,6 +903,193 @@ func (s *LocalizationSettings) SetDefaults() {
 	}
 }
 
+type SamlSettings struct {
+	// Basic
+	Enable                        *bool `access:"authentication"`
+	EnableSyncWithLdap            *bool `access:"authentication"`
+	EnableSyncWithLdapIncludeAuth *bool `access:"authentication"`
+	IgnoreGuestsLdapSync          *bool `access:"authentication"`
+
+	Verify      *bool `access:"authentication"`
+	Encrypt     *bool `access:"authentication"`
+	SignRequest *bool `access:"authentication"`
+
+	IdpUrl                      *string `access:"authentication"`
+	IdpDescriptorUrl            *string `access:"authentication"`
+	IdpMetadataUrl              *string `access:"authentication"`
+	ServiceProviderIdentifier   *string `access:"authentication"`
+	AssertionConsumerServiceURL *string `access:"authentication"`
+
+	SignatureAlgorithm *string `access:"authentication"`
+	CanonicalAlgorithm *string `access:"authentication"`
+
+	ScopingIDPProviderId *string `access:"authentication"`
+	ScopingIDPName       *string `access:"authentication"`
+
+	IdpCertificateFile    *string `access:"authentication"`
+	PublicCertificateFile *string `access:"authentication"`
+	PrivateKeyFile        *string `access:"authentication"`
+
+	// User Mapping
+	IdAttribute          *string `access:"authentication"`
+	GuestAttribute       *string `access:"authentication"`
+	EnableAdminAttribute *bool
+	AdminAttribute       *string
+	FirstNameAttribute   *string `access:"authentication"`
+	LastNameAttribute    *string `access:"authentication"`
+	EmailAttribute       *string `access:"authentication"`
+	UsernameAttribute    *string `access:"authentication"`
+	NicknameAttribute    *string `access:"authentication"`
+	LocaleAttribute      *string `access:"authentication"`
+	PositionAttribute    *string `access:"authentication"`
+
+	LoginButtonText *string `access:"authentication"`
+
+	LoginButtonColor       *string `access:"authentication"`
+	LoginButtonBorderColor *string `access:"authentication"`
+	LoginButtonTextColor   *string `access:"authentication"`
+}
+
+func (s *SamlSettings) SetDefaults() {
+	if s.Enable == nil {
+		s.Enable = NewBool(false)
+	}
+
+	if s.EnableSyncWithLdap == nil {
+		s.EnableSyncWithLdap = NewBool(false)
+	}
+
+	if s.EnableSyncWithLdapIncludeAuth == nil {
+		s.EnableSyncWithLdapIncludeAuth = NewBool(false)
+	}
+
+	if s.IgnoreGuestsLdapSync == nil {
+		s.IgnoreGuestsLdapSync = NewBool(false)
+	}
+
+	if s.EnableAdminAttribute == nil {
+		s.EnableAdminAttribute = NewBool(false)
+	}
+
+	if s.Verify == nil {
+		s.Verify = NewBool(true)
+	}
+
+	if s.Encrypt == nil {
+		s.Encrypt = NewBool(true)
+	}
+
+	if s.SignRequest == nil {
+		s.SignRequest = NewBool(false)
+	}
+
+	if s.SignatureAlgorithm == nil {
+		s.SignatureAlgorithm = NewString(SAML_SETTINGS_DEFAULT_SIGNATURE_ALGORITHM)
+	}
+
+	if s.CanonicalAlgorithm == nil {
+		s.CanonicalAlgorithm = NewString(SAML_SETTINGS_DEFAULT_CANONICAL_ALGORITHM)
+	}
+
+	if s.IdpUrl == nil {
+		s.IdpUrl = NewString("")
+	}
+
+	if s.IdpDescriptorUrl == nil {
+		s.IdpDescriptorUrl = NewString("")
+	}
+
+	if s.ServiceProviderIdentifier == nil {
+		if s.IdpDescriptorUrl != nil {
+			s.ServiceProviderIdentifier = NewString(*s.IdpDescriptorUrl)
+		} else {
+			s.ServiceProviderIdentifier = NewString("")
+		}
+	}
+
+	if s.IdpMetadataUrl == nil {
+		s.IdpMetadataUrl = NewString("")
+	}
+
+	if s.IdpCertificateFile == nil {
+		s.IdpCertificateFile = NewString("")
+	}
+
+	if s.PublicCertificateFile == nil {
+		s.PublicCertificateFile = NewString("")
+	}
+
+	if s.PrivateKeyFile == nil {
+		s.PrivateKeyFile = NewString("")
+	}
+
+	if s.AssertionConsumerServiceURL == nil {
+		s.AssertionConsumerServiceURL = NewString("")
+	}
+
+	if s.ScopingIDPProviderId == nil {
+		s.ScopingIDPProviderId = NewString("")
+	}
+
+	if s.ScopingIDPName == nil {
+		s.ScopingIDPName = NewString("")
+	}
+
+	if s.LoginButtonText == nil || *s.LoginButtonText == "" {
+		s.LoginButtonText = NewString(USER_AUTH_SERVICE_SAML_TEXT)
+	}
+
+	if s.IdAttribute == nil {
+		s.IdAttribute = NewString(SAML_SETTINGS_DEFAULT_ID_ATTRIBUTE)
+	}
+
+	if s.GuestAttribute == nil {
+		s.GuestAttribute = NewString(SAML_SETTINGS_DEFAULT_GUEST_ATTRIBUTE)
+	}
+	if s.AdminAttribute == nil {
+		s.AdminAttribute = NewString(SAML_SETTINGS_DEFAULT_ADMIN_ATTRIBUTE)
+	}
+	if s.FirstNameAttribute == nil {
+		s.FirstNameAttribute = NewString(SAML_SETTINGS_DEFAULT_FIRST_NAME_ATTRIBUTE)
+	}
+
+	if s.LastNameAttribute == nil {
+		s.LastNameAttribute = NewString(SAML_SETTINGS_DEFAULT_LAST_NAME_ATTRIBUTE)
+	}
+
+	if s.EmailAttribute == nil {
+		s.EmailAttribute = NewString(SAML_SETTINGS_DEFAULT_EMAIL_ATTRIBUTE)
+	}
+
+	if s.UsernameAttribute == nil {
+		s.UsernameAttribute = NewString(SAML_SETTINGS_DEFAULT_USERNAME_ATTRIBUTE)
+	}
+
+	if s.NicknameAttribute == nil {
+		s.NicknameAttribute = NewString(SAML_SETTINGS_DEFAULT_NICKNAME_ATTRIBUTE)
+	}
+
+	if s.PositionAttribute == nil {
+		s.PositionAttribute = NewString(SAML_SETTINGS_DEFAULT_POSITION_ATTRIBUTE)
+	}
+
+	if s.LocaleAttribute == nil {
+		s.LocaleAttribute = NewString(SAML_SETTINGS_DEFAULT_LOCALE_ATTRIBUTE)
+	}
+
+	if s.LoginButtonColor == nil {
+		s.LoginButtonColor = NewString("#34a28b")
+	}
+
+	if s.LoginButtonBorderColor == nil {
+		s.LoginButtonBorderColor = NewString("#2389D7")
+	}
+
+	if s.LoginButtonTextColor == nil {
+		s.LoginButtonTextColor = NewString("#ffffff")
+	}
+}
+
 type SqlSettings struct {
 	DriverName         *string
 	DataSource         *string `restricted:"true"`
@@ -987,30 +1225,38 @@ func (s *FileSettings) SetDefaults(isUpdate bool) {
 }
 
 type TeamSettings struct {
-	SiteName                                 *string  `access:"site"`
-	MaxUsersPerTeam                          *int     `access:"site"`
-	DEPRECATED_DO_NOT_USE_EnableTeamCreation *bool    `json:"EnableTeamCreation" mapstructure:"EnableTeamCreation"` // This field is deprecated and must not be used.
-	EnableUserCreation                       *bool    `access:"authentication"`
-	EnableOpenServer                         *bool    `access:"authentication"`
-	EnableUserDeactivation                   *bool    `access:"experimental"`
-	RestrictCreationToDomains                *string  `access:"authentication"`
-	EnableCustomBrand                        *bool    `access:"site"`
-	CustomBrandText                          *string  `access:"site"`
-	CustomDescriptionText                    *string  `access:"site"`
-	RestrictDirectMessage                    *string  `access:"site"`
-	EnableXToLeaveChannelsFromLHS            *bool    `access:"experimental"`
-	UserStatusAwayTimeout                    *int64   `access:"experimental"`
-	MaxChannelsPerTeam                       *int64   `access:"site"`
-	MaxNotificationsPerChannel               *int64   `access:"environment"`
-	EnableConfirmNotificationsToChannel      *bool    `access:"site"`
-	TeammateNameDisplay                      *string  `access:"site"`
-	ExperimentalViewArchivedChannels         *bool    `access:"experimental,site"`
-	ExperimentalEnableAutomaticReplies       *bool    `access:"experimental"`
-	ExperimentalHideTownSquareinLHS          *bool    `access:"experimental"`
-	ExperimentalTownSquareIsReadOnly         *bool    `access:"experimental"`
-	LockTeammateNameDisplay                  *bool    `access:"site"`
-	ExperimentalPrimaryTeam                  *string  `access:"experimental"`
-	ExperimentalDefaultChannels              []string `access:"experimental"`
+	SiteName                                                  *string  `access:"site"`
+	MaxUsersPerTeam                                           *int     `access:"site"`
+	DEPRECATED_DO_NOT_USE_EnableTeamCreation                  *bool    `json:"EnableTeamCreation" mapstructure:"EnableTeamCreation"` // This field is deprecated and must not be used.
+	EnableUserCreation                                        *bool    `access:"authentication"`
+	EnableOpenServer                                          *bool    `access:"authentication"`
+	EnableUserDeactivation                                    *bool    `access:"experimental"`
+	RestrictCreationToDomains                                 *string  `access:"authentication"`
+	EnableCustomBrand                                         *bool    `access:"site"`
+	CustomBrandText                                           *string  `access:"site"`
+	CustomDescriptionText                                     *string  `access:"site"`
+	RestrictDirectMessage                                     *string  `access:"site"`
+	DEPRECATED_DO_NOT_USE_RestrictTeamInvite                  *string  `json:"RestrictTeamInvite" mapstructure:"RestrictTeamInvite"`                                   // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPublicChannelManagement     *string  `json:"RestrictPublicChannelManagement" mapstructure:"RestrictPublicChannelManagement"`         // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManagement    *string  `json:"RestrictPrivateChannelManagement" mapstructure:"RestrictPrivateChannelManagement"`       // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPublicChannelCreation       *string  `json:"RestrictPublicChannelCreation" mapstructure:"RestrictPublicChannelCreation"`             // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPrivateChannelCreation      *string  `json:"RestrictPrivateChannelCreation" mapstructure:"RestrictPrivateChannelCreation"`           // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPublicChannelDeletion       *string  `json:"RestrictPublicChannelDeletion" mapstructure:"RestrictPublicChannelDeletion"`             // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPrivateChannelDeletion      *string  `json:"RestrictPrivateChannelDeletion" mapstructure:"RestrictPrivateChannelDeletion"`           // This field is deprecated and must not be used.
+	DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManageMembers *string  `json:"RestrictPrivateChannelManageMembers" mapstructure:"RestrictPrivateChannelManageMembers"` // This field is deprecated and must not be used.
+	EnableXToLeaveChannelsFromLHS                             *bool    `access:"experimental"`
+	UserStatusAwayTimeout                                     *int64   `access:"experimental"`
+	MaxChannelsPerTeam                                        *int64   `access:"site"`
+	MaxNotificationsPerChannel                                *int64   `access:"environment"`
+	EnableConfirmNotificationsToChannel                       *bool    `access:"site"`
+	TeammateNameDisplay                                       *string  `access:"site"`
+	ExperimentalViewArchivedChannels                          *bool    `access:"experimental,site"`
+	ExperimentalEnableAutomaticReplies                        *bool    `access:"experimental"`
+	ExperimentalHideTownSquareinLHS                           *bool    `access:"experimental"`
+	ExperimentalTownSquareIsReadOnly                          *bool    `access:"experimental"`
+	LockTeammateNameDisplay                                   *bool    `access:"site"`
+	ExperimentalPrimaryTeam                                   *string  `access:"experimental"`
+	ExperimentalDefaultChannels                               []string `access:"experimental"`
 }
 
 func (s *TeamSettings) SetDefaults() {
@@ -1021,6 +1267,10 @@ func (s *TeamSettings) SetDefaults() {
 
 	if s.MaxUsersPerTeam == nil {
 		s.MaxUsersPerTeam = NewInt(TEAM_SETTINGS_DEFAULT_MAX_USERS_PER_TEAM)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_EnableTeamCreation == nil {
+		s.DEPRECATED_DO_NOT_USE_EnableTeamCreation = NewBool(true)
 	}
 
 	if s.EnableUserCreation == nil {
@@ -1053,6 +1303,51 @@ func (s *TeamSettings) SetDefaults() {
 
 	if s.RestrictDirectMessage == nil {
 		s.RestrictDirectMessage = NewString(DIRECT_MESSAGE_ANY)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictTeamInvite == nil {
+		s.DEPRECATED_DO_NOT_USE_RestrictTeamInvite = NewString(PERMISSIONS_ALL)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelManagement == nil {
+		s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelManagement = NewString(PERMISSIONS_ALL)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManagement == nil {
+		s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManagement = NewString(PERMISSIONS_ALL)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelCreation == nil {
+		s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelCreation = new(string)
+		// If this setting does not exist, assume migration from <3.6, so use management setting as default.
+		if *s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelManagement == PERMISSIONS_CHANNEL_ADMIN {
+			*s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelCreation = PERMISSIONS_TEAM_ADMIN
+		} else {
+			*s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelCreation = *s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelManagement
+		}
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelCreation == nil {
+		// If this setting does not exist, assume migration from <3.6, so use management setting as default.
+		if *s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManagement == PERMISSIONS_CHANNEL_ADMIN {
+			s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelCreation = NewString(PERMISSIONS_TEAM_ADMIN)
+		} else {
+			s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelCreation = NewString(*s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManagement)
+		}
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelDeletion == nil {
+		// If this setting does not exist, assume migration from <3.6, so use management setting as default.
+		s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelDeletion = NewString(*s.DEPRECATED_DO_NOT_USE_RestrictPublicChannelManagement)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelDeletion == nil {
+		// If this setting does not exist, assume migration from <3.6, so use management setting as default.
+		s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelDeletion = NewString(*s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManagement)
+	}
+
+	if s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManageMembers == nil {
+		s.DEPRECATED_DO_NOT_USE_RestrictPrivateChannelManageMembers = NewString(PERMISSIONS_ALL)
 	}
 
 	if s.EnableXToLeaveChannelsFromLHS == nil {
@@ -1095,16 +1390,227 @@ func (s *TeamSettings) SetDefaults() {
 		s.ExperimentalDefaultChannels = []string{}
 	}
 
+	if s.DEPRECATED_DO_NOT_USE_EnableTeamCreation == nil {
+		s.DEPRECATED_DO_NOT_USE_EnableTeamCreation = NewBool(true)
+	}
+
 	if s.EnableUserCreation == nil {
 		s.EnableUserCreation = NewBool(true)
 	}
 
 	if s.ExperimentalViewArchivedChannels == nil {
-		s.ExperimentalViewArchivedChannels = NewBool(false)
+		s.ExperimentalViewArchivedChannels = NewBool(true)
 	}
 
 	if s.LockTeammateNameDisplay == nil {
 		s.LockTeammateNameDisplay = NewBool(false)
+	}
+}
+
+type ClientRequirements struct {
+	AndroidLatestVersion string `access:"write_restrictable,cloud_restrictable"`
+	AndroidMinVersion    string `access:"write_restrictable,cloud_restrictable"`
+	DesktopLatestVersion string `access:"write_restrictable,cloud_restrictable"`
+	DesktopMinVersion    string `access:"write_restrictable,cloud_restrictable"`
+	IosLatestVersion     string `access:"write_restrictable,cloud_restrictable"`
+	IosMinVersion        string `access:"write_restrictable,cloud_restrictable"`
+}
+
+type LdapSettings struct {
+	// Basic
+	Enable             *bool   `access:"authentication"`
+	EnableSync         *bool   `access:"authentication"`
+	LdapServer         *string `access:"authentication"`
+	LdapPort           *int    `access:"authentication"`
+	ConnectionSecurity *string `access:"authentication"`
+	BaseDN             *string `access:"authentication"`
+	BindUsername       *string `access:"authentication"`
+	BindPassword       *string `access:"authentication"`
+
+	// Filtering
+	UserFilter        *string `access:"authentication"`
+	GroupFilter       *string `access:"authentication"`
+	GuestFilter       *string `access:"authentication"`
+	EnableAdminFilter *bool
+	AdminFilter       *string
+
+	// Group Mapping
+	GroupDisplayNameAttribute *string `access:"authentication"`
+	GroupIdAttribute          *string `access:"authentication"`
+
+	// User Mapping
+	FirstNameAttribute *string `access:"authentication"`
+	LastNameAttribute  *string `access:"authentication"`
+	EmailAttribute     *string `access:"authentication"`
+	UsernameAttribute  *string `access:"authentication"`
+	NicknameAttribute  *string `access:"authentication"`
+	IdAttribute        *string `access:"authentication"`
+	PositionAttribute  *string `access:"authentication"`
+	LoginIdAttribute   *string `access:"authentication"`
+	PictureAttribute   *string `access:"authentication"`
+
+	// Synchronization
+	SyncIntervalMinutes *int `access:"authentication"`
+
+	// Advanced
+	SkipCertificateVerification *bool   `access:"authentication"`
+	PublicCertificateFile       *string `access:"authentication"`
+	PrivateKeyFile              *string `access:"authentication"`
+	QueryTimeout                *int    `access:"authentication"`
+	MaxPageSize                 *int    `access:"authentication"`
+
+	// Customization
+	LoginFieldName *string `access:"authentication"`
+
+	LoginButtonColor       *string `access:"authentication"`
+	LoginButtonBorderColor *string `access:"authentication"`
+	LoginButtonTextColor   *string `access:"authentication"`
+
+	Trace *bool `access:"authentication"`
+}
+
+func (s *LdapSettings) SetDefaults() {
+	if s.Enable == nil {
+		s.Enable = NewBool(false)
+	}
+
+	// When unset should default to LDAP Enabled
+	if s.EnableSync == nil {
+		s.EnableSync = NewBool(*s.Enable)
+	}
+
+	if s.EnableAdminFilter == nil {
+		s.EnableAdminFilter = NewBool(false)
+	}
+
+	if s.LdapServer == nil {
+		s.LdapServer = NewString("")
+	}
+
+	if s.LdapPort == nil {
+		s.LdapPort = NewInt(389)
+	}
+
+	if s.ConnectionSecurity == nil {
+		s.ConnectionSecurity = NewString("")
+	}
+
+	if s.PublicCertificateFile == nil {
+		s.PublicCertificateFile = NewString("")
+	}
+
+	if s.PrivateKeyFile == nil {
+		s.PrivateKeyFile = NewString("")
+	}
+
+	if s.BaseDN == nil {
+		s.BaseDN = NewString("")
+	}
+
+	if s.BindUsername == nil {
+		s.BindUsername = NewString("")
+	}
+
+	if s.BindPassword == nil {
+		s.BindPassword = NewString("")
+	}
+
+	if s.UserFilter == nil {
+		s.UserFilter = NewString("")
+	}
+
+	if s.GuestFilter == nil {
+		s.GuestFilter = NewString("")
+	}
+
+	if s.AdminFilter == nil {
+		s.AdminFilter = NewString("")
+	}
+
+	if s.GroupFilter == nil {
+		s.GroupFilter = NewString("")
+	}
+
+	if s.GroupDisplayNameAttribute == nil {
+		s.GroupDisplayNameAttribute = NewString(LDAP_SETTINGS_DEFAULT_GROUP_DISPLAY_NAME_ATTRIBUTE)
+	}
+
+	if s.GroupIdAttribute == nil {
+		s.GroupIdAttribute = NewString(LDAP_SETTINGS_DEFAULT_GROUP_ID_ATTRIBUTE)
+	}
+
+	if s.FirstNameAttribute == nil {
+		s.FirstNameAttribute = NewString(LDAP_SETTINGS_DEFAULT_FIRST_NAME_ATTRIBUTE)
+	}
+
+	if s.LastNameAttribute == nil {
+		s.LastNameAttribute = NewString(LDAP_SETTINGS_DEFAULT_LAST_NAME_ATTRIBUTE)
+	}
+
+	if s.EmailAttribute == nil {
+		s.EmailAttribute = NewString(LDAP_SETTINGS_DEFAULT_EMAIL_ATTRIBUTE)
+	}
+
+	if s.UsernameAttribute == nil {
+		s.UsernameAttribute = NewString(LDAP_SETTINGS_DEFAULT_USERNAME_ATTRIBUTE)
+	}
+
+	if s.NicknameAttribute == nil {
+		s.NicknameAttribute = NewString(LDAP_SETTINGS_DEFAULT_NICKNAME_ATTRIBUTE)
+	}
+
+	if s.IdAttribute == nil {
+		s.IdAttribute = NewString(LDAP_SETTINGS_DEFAULT_ID_ATTRIBUTE)
+	}
+
+	if s.PositionAttribute == nil {
+		s.PositionAttribute = NewString(LDAP_SETTINGS_DEFAULT_POSITION_ATTRIBUTE)
+	}
+
+	if s.PictureAttribute == nil {
+		s.PictureAttribute = NewString(LDAP_SETTINGS_DEFAULT_PICTURE_ATTRIBUTE)
+	}
+
+	// For those upgrading to the version when LoginIdAttribute was added
+	// they need IdAttribute == LoginIdAttribute not to break
+	if s.LoginIdAttribute == nil {
+		s.LoginIdAttribute = s.IdAttribute
+	}
+
+	if s.SyncIntervalMinutes == nil {
+		s.SyncIntervalMinutes = NewInt(60)
+	}
+
+	if s.SkipCertificateVerification == nil {
+		s.SkipCertificateVerification = NewBool(false)
+	}
+
+	if s.QueryTimeout == nil {
+		s.QueryTimeout = NewInt(60)
+	}
+
+	if s.MaxPageSize == nil {
+		s.MaxPageSize = NewInt(0)
+	}
+
+	if s.LoginFieldName == nil {
+		s.LoginFieldName = NewString(LDAP_SETTINGS_DEFAULT_LOGIN_FIELD_NAME)
+	}
+
+	if s.LoginButtonColor == nil {
+		s.LoginButtonColor = NewString("#0000")
+	}
+
+	if s.LoginButtonBorderColor == nil {
+		s.LoginButtonBorderColor = NewString("#2389D7")
+	}
+
+	if s.LoginButtonTextColor == nil {
+		s.LoginButtonTextColor = NewString("#2389D7")
+	}
+
+	if s.Trace == nil {
+		s.Trace = NewBool(false)
 	}
 }
 
