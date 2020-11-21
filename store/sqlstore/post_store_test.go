@@ -4,6 +4,7 @@ import (
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/suite"
 	"testing"
+	"time"
 )
 
 type PostStoreTestSuite struct {
@@ -230,6 +231,105 @@ func (s *PostStoreTestSuite) TestPostStoreSavePost_SaveReplies() {
 	p3, err := s.Store().Post().Save(&o3)
 	s.Require().Nil(err, "couldn't save item")
 	s.Equal(int64(1), p3.ReplyCount)
+}
+
+// Try to save existing post
+func (s *PostStoreTestSuite) TestPostStoreSavePost_SaveExistingPost() {
+	o1 := model.Post{}
+	o1.ChannelId = model.NewId()
+	o1.UserId = model.NewId()
+	o1.Message = "zz" + model.NewId() + "b"
+
+	_, err := s.Store().Post().Save(&o1)
+	s.Require().Nil(err, "couldn't save item")
+
+	_, err = s.Store().Post().Save(&o1)
+	s.Require().NotNil(err, "shouldn't be able to update from save")
+}
+
+// Update reply should update the UpdateAt of the root post
+func (s *PostStoreTestSuite) TestPostStoreSavePost_UpdateReplyUpdateRoot() {
+	rootPost := model.Post{}
+	rootPost.ChannelId = model.NewId()
+	rootPost.UserId = model.NewId()
+	rootPost.Message = "zz" + model.NewId() + "b"
+
+	_, err := s.Store().Post().Save(&rootPost)
+	s.Require().NoError(err)
+
+	time.Sleep(2 * time.Millisecond)
+
+	replyPost := model.Post{}
+	replyPost.ChannelId = rootPost.ChannelId
+	replyPost.UserId = model.NewId()
+	replyPost.Message = "zz" + model.NewId() + "b"
+	replyPost.RootId = rootPost.Id
+
+	// We need to sleep here to be sure the post is not created during the same millisecond
+	time.Sleep(time.Millisecond)
+	_, err = s.Store().Post().Save(&replyPost)
+	s.Require().NoError(err)
+
+	rrootPost, err := s.Store().Post().GetSingle(rootPost.Id)
+	s.Require().NoError(err)
+	s.Greater(rrootPost.UpdateAt, rootPost.UpdateAt)
+}
+
+// Create a post should update the channel LastPostAt and the total messages count by one
+func (s *PostStoreTestSuite) TestPostStoreSavePost_CreatePostUpdateChannelLastPostAt() {
+	channel := model.Channel{}
+	channel.Name = "zz" + model.NewId() + "b"
+	channel.DisplayName = "zz" + model.NewId() + "b"
+	channel.Type = model.CHANNEL_OPEN
+
+	_, err := s.Store().Channel().Save(&channel, 100)
+	s.Require().NoError(err)
+
+	post := model.Post{}
+	post.ChannelId = channel.Id
+	post.UserId = model.NewId()
+	post.Message = "zz" + model.NewId() + "b"
+
+	// We need to sleep here to be sure the post is not created during the same millisecond
+	time.Sleep(time.Millisecond)
+	_, err = s.Store().Post().Save(&post)
+	s.Require().NoError(err)
+
+	rchannel, err := s.Store().Channel().Get(channel.Id, false)
+	s.Require().NoError(err)
+	s.Greater(rchannel.LastPostAt, channel.LastPostAt)
+	s.Equal(int64(1), rchannel.TotalMsgCount)
+
+	post = model.Post{}
+	post.ChannelId = channel.Id
+	post.UserId = model.NewId()
+	post.Message = "zz" + model.NewId() + "b"
+	post.CreateAt = 5
+
+	// We need to sleep here to be sure the post is not created during the same millisecond
+	time.Sleep(time.Millisecond)
+	_, err = s.Store().Post().Save(&post)
+	s.Require().NoError(err)
+
+	rchannel2, err := s.Store().Channel().Get(channel.Id, false)
+	s.Require().NoError(err)
+	s.Equal(rchannel.LastPostAt, rchannel2.LastPostAt)
+	s.Equal(int64(2), rchannel2.TotalMsgCount)
+
+	post = model.Post{}
+	post.ChannelId = channel.Id
+	post.UserId = model.NewId()
+	post.Message = "zz" + model.NewId() + "b"
+
+	// We need to sleep here to be sure the post is not created during the same millisecond
+	time.Sleep(time.Millisecond)
+	_, err = s.Store().Post().Save(&post)
+	s.Require().NoError(err)
+
+	rchannel3, err := s.Store().Channel().Get(channel.Id, false)
+	s.Require().NoError(err)
+	s.Greater(rchannel3.LastPostAt, rchannel2.LastPostAt)
+	s.Equal(int64(3), rchannel3.TotalMsgCount)
 }
 
 func (s *PostStoreTestSuite) TestPostStoreGetSingle() {
