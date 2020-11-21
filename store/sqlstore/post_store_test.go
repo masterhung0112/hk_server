@@ -189,6 +189,49 @@ func (s *PostStoreTestSuite) TestPostStoreSaveMultiple_CreateWithLastPostAt() {
 	s.Equal(int64(3), rchannel.TotalMsgCount)
 }
 
+func (s *PostStoreTestSuite) TestPostStoreSavePost_Success() {
+	o1 := model.Post{}
+	o1.ChannelId = model.NewId()
+	o1.UserId = model.NewId()
+	o1.Message = "zz" + model.NewId() + "b"
+
+	p, err := s.Store().Post().Save(&o1)
+	s.Require().Nil(err, "couldn't save item")
+	s.Equal(int64(0), p.ReplyCount)
+}
+
+func (s *PostStoreTestSuite) TestPostStoreSavePost_SaveReplies() {
+	o1 := model.Post{}
+	o1.ChannelId = model.NewId()
+	o1.UserId = model.NewId()
+	o1.RootId = model.NewId()
+	o1.Message = "zz" + model.NewId() + "b"
+
+	o2 := model.Post{}
+	o2.ChannelId = model.NewId()
+	o2.UserId = model.NewId()
+	o2.RootId = o1.RootId
+	o2.Message = "zz" + model.NewId() + "b"
+
+	o3 := model.Post{}
+	o3.ChannelId = model.NewId()
+	o3.UserId = model.NewId()
+	o3.RootId = model.NewId()
+	o3.Message = "zz" + model.NewId() + "b"
+
+	p1, err := s.Store().Post().Save(&o1)
+	s.Require().Nil(err, "couldn't save item")
+	s.Equal(int64(1), p1.ReplyCount)
+
+	p2, err := s.Store().Post().Save(&o2)
+	s.Require().Nil(err, "couldn't save item")
+	s.Equal(int64(2), p2.ReplyCount)
+
+	p3, err := s.Store().Post().Save(&o3)
+	s.Require().Nil(err, "couldn't save item")
+	s.Equal(int64(1), p3.ReplyCount)
+}
+
 func (s *PostStoreTestSuite) TestPostStoreGetSingle() {
 	o1 := &model.Post{}
 	o1.ChannelId = model.NewId()
