@@ -537,39 +537,25 @@ func (s SqlChannelStore) saveChannelT(transaction *gorp.Transaction, channel *mo
 	return channel, nil
 }
 
-func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, *model.AppError) {
+func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, error) {
 	cache_key := userId
 	if includeDeleted {
 		cache_key += "_deleted"
-	}
-
-	//TODO: Open this
+  }
+  //TODO: Open
 	// if allowFromCache {
-	//   var ids map[string]string
-
+	// 	var ids map[string]string
 	// 	if err := allChannelMembersForUserCache.Get(cache_key, &ids); err == nil {
-	// 		// if s.metrics != nil {
-	// 		// 	s.metrics.IncrementMemCacheHitCounter("All Channel Members for User")
-	// 		// }
+	// 		if s.metrics != nil {
+	// 			s.metrics.IncrementMemCacheHitCounter("All Channel Members for User")
+	// 		}
 	// 		return ids, nil
 	// 	}
 	// }
 
-	//TODO: Open this
 	// if s.metrics != nil {
 	// 	s.metrics.IncrementMemCacheMissCounter("All Channel Members for User")
 	// }
-
-	failure := func(err error) *model.AppError {
-		// TODO: This error key would go away once this store method is migrated to return plain errors
-		return model.NewAppError(
-			"SqlChannelStore.GetAllChannelMembersForUser",
-			"app.channel.get_channels.get.app_error",
-			nil,
-			"userId="+userId+", err="+err.Error(),
-			http.StatusInternalServerError,
-		)
-	}
 
 	query := s.getQueryBuilder().
 		Select(`
@@ -593,12 +579,12 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 	}
 	queryString, args, err := query.ToSql()
 	if err != nil {
-		return nil, failure(err)
+		return nil, errors.Wrap(err, "channel_tosql")
 	}
 
 	rows, err := s.GetReplica().Db.Query(queryString, args...)
 	if err != nil {
-		return nil, failure(err)
+		return nil, errors.Wrap(err, "failed to find ChannelMembers, TeamScheme and ChannelScheme data")
 	}
 
 	var data allChannelMembers
@@ -612,16 +598,16 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 			&cm.ChannelSchemeDefaultUserRole, &cm.ChannelSchemeDefaultAdminRole,
 		)
 		if err != nil {
-			return nil, failure(err)
+			return nil, errors.Wrap(err, "unable to scan columns")
 		}
 		data = append(data, cm)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, failure(err)
+		return nil, errors.Wrap(err, "error while iterating over rows")
 	}
 	ids := data.ToMapStringString()
 
-	//TODO: Open this
+  //TODO: Open
 	// if allowFromCache {
 	// 	allChannelMembersForUserCache.SetWithExpiry(cache_key, ids, ALL_CHANNEL_MEMBERS_FOR_USER_CACHE_DURATION)
 	// }
@@ -654,7 +640,7 @@ func (s SqlChannelStore) Get(id string, allowFromCache bool) (*model.Channel, er
 	return s.get(id, false, allowFromCache)
 }
 
-func (s SqlChannelStore) GetMemberForPost(postId string, userId string) (*model.ChannelMember, *model.AppError) {
+func (s SqlChannelStore) GetMemberForPost(postId string, userId string) (*model.ChannelMember, error) {
 	var dbMember channelMemberWithSchemeRoles
 	query := `
 		SELECT
@@ -682,7 +668,7 @@ func (s SqlChannelStore) GetMemberForPost(postId string, userId string) (*model.
 		AND
 			Posts.Id = :PostId`
 	if err := s.GetReplica().SelectOne(&dbMember, query, map[string]interface{}{"UserId": userId, "PostId": postId}); err != nil {
-		return nil, model.NewAppError("SqlChannelStore.GetMemberForPost", "store.sql_channel.get_member_for_post.app_error", nil, "postId="+postId+", err="+err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrapf(err, "failed to get ChannelMember with postId=%s and userId=%s", postId, userId)
 	}
 	return dbMember.ToModel(), nil
 }
@@ -718,15 +704,15 @@ func (s SqlChannelStore) GetMember(channelId string, userId string) (*model.Chan
 	return dbMember.ToModel(), nil
 }
 
-func (s SqlChannelStore) SaveMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError) {
-	newMembers, appErr := s.SaveMultipleMembers([]*model.ChannelMember{member})
-	if appErr != nil {
-		return nil, appErr
+func (s SqlChannelStore) SaveMember(member *model.ChannelMember) (*model.ChannelMember, error) {
+	newMembers, err := s.SaveMultipleMembers([]*model.ChannelMember{member})
+	if err != nil {
+		return nil, err
 	}
 	return newMembers[0], nil
 }
 
-func (s SqlChannelStore) SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError) {
+func (s SqlChannelStore) SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, error) {
 	for _, member := range members {
 		defer s.InvalidateAllChannelMembersForUser(member.UserId)
 	}

@@ -160,17 +160,22 @@ func (a *App) WaitForChannelMembership(channelId string, userId string) {
 }
 
 func (a *App) JoinDefaultChannels(teamId string, user *model.User, shouldBeAdmin bool, userRequestorId string) *model.AppError {
-	//TODO: Open
-	// var requestor *model.User
-	// if userRequestorId != "" {
-	// 	var err *model.AppError
-	// 	requestor, err = a.Srv().Store.User().Get(userRequestorId)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+  var requestor *model.User
+  var nErr error
+	if userRequestorId != "" {
+    requestor, nErr = a.Srv().Store.User().Get(userRequestorId)
+		if nErr != nil {
+			var nfErr *store.ErrNotFound
+			switch {
+			case errors.As(nErr, &nfErr):
+				return model.NewAppError("JoinDefaultChannels", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			default:
+				return model.NewAppError("JoinDefaultChannels", "app.user.get.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+			}
+		}
+	}
 
-	var err *model.AppError
+  var err *model.AppError
 	for _, channelName := range a.DefaultChannelNames() {
 		channel, channelErr := a.Srv().Store.Channel().GetByName(teamId, channelName, true)
 		if channelErr != nil {
@@ -197,7 +202,7 @@ func (a *App) JoinDefaultChannels(teamId string, user *model.User, shouldBeAdmin
 			NotifyProps: model.GetDefaultChannelNotifyProps(),
 		}
 
-		_, err = a.Srv().Store.Channel().SaveMember(cm)
+		_, nErr = a.Srv().Store.Channel().SaveMember(cm)
 		//TODO: Open
 		// if histErr := a.Srv().Store.ChannelMemberHistory().LogJoinEvent(user.Id, channel.Id, model.GetMillis()); histErr != nil {
 		// 	mlog.Error("Failed to update ChannelMemberHistory table", mlog.Err(histErr))
