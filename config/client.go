@@ -205,14 +205,14 @@ func GenerateLimitedClientConfig(c *model.Config, diagnosticID string, license *
 	// props["BuildHashEnterprise"] = model.BuildHashEnterprise
 	// props["BuildEnterpriseReady"] = model.BuildEnterpriseReady
 
-	// props["EnableBotAccountCreation"] = strconv.FormatBool(*c.ServiceSettings.EnableBotAccountCreation)
+	props["EnableBotAccountCreation"] = strconv.FormatBool(*c.ServiceSettings.EnableBotAccountCreation)
 
 	props["SiteName"] = *c.TeamSettings.SiteName
-	// props["WebsocketURL"] = strings.TrimRight(*c.ServiceSettings.WebsocketURL, "/")
-	// props["WebsocketPort"] = fmt.Sprintf("%v", *c.ServiceSettings.WebsocketPort)
-	// props["WebsocketSecurePort"] = fmt.Sprintf("%v", *c.ServiceSettings.WebsocketSecurePort)
-	// props["EnableUserCreation"] = strconv.FormatBool(*c.TeamSettings.EnableUserCreation)
-	// props["EnableOpenServer"] = strconv.FormatBool(*c.TeamSettings.EnableOpenServer)
+	props["WebsocketURL"] = strings.TrimRight(*c.ServiceSettings.WebsocketURL, "/")
+	props["WebsocketPort"] = fmt.Sprintf("%v", *c.ServiceSettings.WebsocketPort)
+	props["WebsocketSecurePort"] = fmt.Sprintf("%v", *c.ServiceSettings.WebsocketSecurePort)
+	props["EnableUserCreation"] = strconv.FormatBool(*c.TeamSettings.EnableUserCreation)
+	props["EnableOpenServer"] = strconv.FormatBool(*c.TeamSettings.EnableOpenServer)
 
 	// props["AndroidLatestVersion"] = c.ClientRequirements.AndroidLatestVersion
 	// props["AndroidMinVersion"] = c.ClientRequirements.AndroidMinVersion
@@ -243,7 +243,7 @@ func GenerateLimitedClientConfig(c *model.Config, diagnosticID string, license *
 
 	props["DefaultClientLocale"] = *c.LocalizationSettings.DefaultClientLocale
 
-	// props["EnableCustomEmoji"] = strconv.FormatBool(*c.ServiceSettings.EnableCustomEmoji)
+	props["EnableCustomEmoji"] = strconv.FormatBool(*c.ServiceSettings.EnableCustomEmoji)
 	// props["AppDownloadLink"] = *c.NativeAppSettings.AppDownloadLink
 	// props["AndroidAppDownloadLink"] = *c.NativeAppSettings.AndroidAppDownloadLink
 	// props["IosAppDownloadLink"] = *c.NativeAppSettings.IosAppDownloadLink
@@ -262,24 +262,24 @@ func GenerateLimitedClientConfig(c *model.Config, diagnosticID string, license *
 	props["PasswordRequireSymbol"] = strconv.FormatBool(*c.PasswordSettings.Symbol)
 
 	// // Set default values for all options that require a license.
-	// props["EnableCustomBrand"] = "false"
-	// props["CustomBrandText"] = ""
-	// props["CustomDescriptionText"] = ""
-	// props["EnableLdap"] = "false"
-	// props["LdapLoginFieldName"] = ""
-	// props["LdapLoginButtonColor"] = ""
-	// props["LdapLoginButtonBorderColor"] = ""
-	// props["LdapLoginButtonTextColor"] = ""
-	// props["EnableSaml"] = "false"
-	// props["SamlLoginButtonText"] = ""
-	// props["SamlLoginButtonColor"] = ""
-	// props["SamlLoginButtonBorderColor"] = ""
-	// props["SamlLoginButtonTextColor"] = ""
-	// props["EnableSignUpWithGoogle"] = "false"
-	// props["EnableSignUpWithOffice365"] = "false"
-	// props["EnableCustomBrand"] = strconv.FormatBool(*c.TeamSettings.EnableCustomBrand)
-	// props["CustomBrandText"] = *c.TeamSettings.CustomBrandText
-	// props["CustomDescriptionText"] = *c.TeamSettings.CustomDescriptionText
+	props["EnableCustomBrand"] = "false"
+	props["CustomBrandText"] = ""
+	props["CustomDescriptionText"] = ""
+	props["EnableLdap"] = "false"
+	props["LdapLoginFieldName"] = ""
+	props["LdapLoginButtonColor"] = ""
+	props["LdapLoginButtonBorderColor"] = ""
+	props["LdapLoginButtonTextColor"] = ""
+	props["EnableSaml"] = "false"
+	props["SamlLoginButtonText"] = ""
+	props["SamlLoginButtonColor"] = ""
+	props["SamlLoginButtonBorderColor"] = ""
+	props["SamlLoginButtonTextColor"] = ""
+	props["EnableSignUpWithGoogle"] = "false"
+	props["EnableSignUpWithOffice365"] = "false"
+	props["EnableCustomBrand"] = strconv.FormatBool(*c.TeamSettings.EnableCustomBrand)
+	props["CustomBrandText"] = *c.TeamSettings.CustomBrandText
+	props["CustomDescriptionText"] = *c.TeamSettings.CustomDescriptionText
 	// props["EnableMultifactorAuthentication"] = strconv.FormatBool(*c.ServiceSettings.EnableMultifactorAuthentication)
 	// props["EnforceMultifactorAuthentication"] = "false"
 	// props["EnableGuestAccounts"] = strconv.FormatBool(*c.GuestAccountsSettings.Enable)

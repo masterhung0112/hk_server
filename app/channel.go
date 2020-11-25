@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
@@ -43,6 +44,14 @@ func (a *App) GetChannel(channelId string) (*model.Channel, *model.AppError) {
 		}
 	}
 	return channel, nil
+}
+
+func (a *App) GetChannelsByNames(channelNames []string, teamId string) ([]*model.Channel, *model.AppError) {
+	channels, err := a.Srv().Store.Channel().GetByNames(teamId, channelNames, true)
+	if err != nil {
+		return nil, model.NewAppError("GetChannelsByNames", "app.channel.get_by_name.existing.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	return channels, nil
 }
 
 func (a *App) addUserToChannel(user *model.User, channel *model.Channel, teamMember *model.TeamMember) (*model.ChannelMember, *model.AppError) {
@@ -160,15 +169,20 @@ func (a *App) WaitForChannelMembership(channelId string, userId string) {
 }
 
 func (a *App) JoinDefaultChannels(teamId string, user *model.User, shouldBeAdmin bool, userRequestorId string) *model.AppError {
-	//TODO: Open
-	// var requestor *model.User
-	// if userRequestorId != "" {
-	// 	var err *model.AppError
-	// 	requestor, err = a.Srv().Store.User().Get(userRequestorId)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	var requestor *model.User
+	var nErr error
+	if userRequestorId != "" {
+		requestor, nErr = a.Srv().Store.User().Get(userRequestorId)
+		if nErr != nil {
+			var nfErr *store.ErrNotFound
+			switch {
+			case errors.As(nErr, &nfErr):
+				return model.NewAppError("JoinDefaultChannels", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			default:
+				return model.NewAppError("JoinDefaultChannels", "app.user.get.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+			}
+		}
+	}
 
 	var err *model.AppError
 	for _, channelName := range a.DefaultChannelNames() {
@@ -197,7 +211,7 @@ func (a *App) JoinDefaultChannels(teamId string, user *model.User, shouldBeAdmin
 			NotifyProps: model.GetDefaultChannelNotifyProps(),
 		}
 
-		_, err = a.Srv().Store.Channel().SaveMember(cm)
+		_, nErr = a.Srv().Store.Channel().SaveMember(cm)
 		//TODO: Open
 		// if histErr := a.Srv().Store.ChannelMemberHistory().LogJoinEvent(user.Id, channel.Id, model.GetMillis()); histErr != nil {
 		// 	mlog.Error("Failed to update ChannelMemberHistory table", mlog.Err(histErr))
@@ -205,9 +219,9 @@ func (a *App) JoinDefaultChannels(teamId string, user *model.User, shouldBeAdmin
 		// }
 
 		//TODO: Open
-		// if *a.Config().ServiceSettings.ExperimentalEnableDefaultChannelLeaveJoinMessages {
-		// 	a.postJoinMessageForDefaultChannel(user, requestor, channel)
-		// }
+		if *a.Config().ServiceSettings.ExperimentalEnableDefaultChannelLeaveJoinMessages {
+			a.postJoinMessageForDefaultChannel(user, requestor, channel)
+		}
 
 		//TODO: Open
 		// a.invalidateCacheForChannelMembers(channel.Id)
@@ -220,7 +234,116 @@ func (a *App) JoinDefaultChannels(teamId string, user *model.User, shouldBeAdmin
 
 	}
 
+	if nErr != nil {
+		var appErr *model.AppError
+		var cErr *store.ErrConflict
+		switch {
+		case errors.As(nErr, &cErr):
+			if cErr.Resource == "ChannelMembers" {
+				return model.NewAppError("JoinDefaultChannels", "app.channel.save_member.exists.app_error", nil, cErr.Error(), http.StatusBadRequest)
+			}
+		case errors.As(nErr, &appErr):
+			return appErr
+		default:
+			return model.NewAppError("JoinDefaultChannels", "app.channel.create_direct_channel.internal_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
 	return err
+}
+
+func (a *App) postJoinMessageForDefaultChannel(user *model.User, requestor *model.User, channel *model.Channel) {
+	if channel.Name == model.DEFAULT_CHANNEL {
+		if requestor == nil {
+			if err := a.postJoinTeamMessage(user, channel); err != nil {
+				mlog.Error("Failed to post join/leave message", mlog.Err(err))
+			}
+		} else {
+			if err := a.postAddToTeamMessage(requestor, user, channel, ""); err != nil {
+				mlog.Error("Failed to post join/leave message", mlog.Err(err))
+			}
+		}
+	} else {
+		if requestor == nil {
+			if err := a.postJoinChannelMessage(user, channel); err != nil {
+				mlog.Error("Failed to post join/leave message", mlog.Err(err))
+			}
+		} else {
+			if err := a.PostAddToChannelMessage(requestor, user, channel, ""); err != nil {
+				mlog.Error("Failed to post join/leave message", mlog.Err(err))
+			}
+		}
+	}
+}
+
+func (a *App) postAddToTeamMessage(user *model.User, addedUser *model.User, channel *model.Channel, postRootId string) *model.AppError {
+	post := &model.Post{
+		ChannelId: channel.Id,
+		Message:   fmt.Sprintf(utils.T("api.team.add_user_to_team.added"), addedUser.Username, user.Username),
+		Type:      model.POST_ADD_TO_TEAM,
+		UserId:    user.Id,
+		RootId:    postRootId,
+		Props: model.StringInterface{
+			"userId":                       user.Id,
+			"username":                     user.Username,
+			model.POST_PROPS_ADDED_USER_ID: addedUser.Id,
+			"addedUsername":                addedUser.Username,
+		},
+	}
+
+	if _, err := a.CreatePost(post, channel, false, true); err != nil {
+		return model.NewAppError("postAddToTeamMessage", "api.channel.post_user_add_remove_message_and_forget.error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+func (a *App) postJoinTeamMessage(user *model.User, channel *model.Channel) *model.AppError {
+	post := &model.Post{
+		ChannelId: channel.Id,
+		Message:   fmt.Sprintf(utils.T("api.team.join_team.post_and_forget"), user.Username),
+		Type:      model.POST_JOIN_TEAM,
+		UserId:    user.Id,
+		Props: model.StringInterface{
+			"username": user.Username,
+		},
+	}
+
+	if _, err := a.CreatePost(post, channel, false, true); err != nil {
+		return model.NewAppError("postJoinTeamMessage", "api.channel.post_user_add_remove_message_and_forget.error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+func (a *App) PostAddToChannelMessage(user *model.User, addedUser *model.User, channel *model.Channel, postRootId string) *model.AppError {
+	message := fmt.Sprintf(utils.T("api.channel.add_member.added"), addedUser.Username, user.Username)
+	postType := model.POST_ADD_TO_CHANNEL
+
+	if addedUser.IsGuest() {
+		message = fmt.Sprintf(utils.T("api.channel.add_guest.added"), addedUser.Username, user.Username)
+		postType = model.POST_ADD_GUEST_TO_CHANNEL
+	}
+
+	post := &model.Post{
+		ChannelId: channel.Id,
+		Message:   message,
+		Type:      postType,
+		UserId:    user.Id,
+		RootId:    postRootId,
+		Props: model.StringInterface{
+			"userId":                       user.Id,
+			"username":                     user.Username,
+			model.POST_PROPS_ADDED_USER_ID: addedUser.Id,
+			"addedUsername":                addedUser.Username,
+		},
+	}
+
+	if _, err := a.CreatePost(post, channel, false, true); err != nil {
+		return model.NewAppError("postAddToChannelMessage", "api.channel.post_user_add_remove_message_and_forget.error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
 }
 
 // DefaultChannelNames returns the list of system-wide default channel names.
@@ -281,7 +404,13 @@ func (a *App) CreateChannel(channel *model.Channel, addMember bool) (*model.Chan
 	if addMember {
 		user, err := a.Srv().Store.User().Get(channel.CreatorId)
 		if err != nil {
-			return nil, err
+			var nfErr *store.ErrNotFound
+			switch {
+			case errors.As(nErr, &nfErr):
+				return nil, model.NewAppError("CreateChannel", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			default:
+				return nil, model.NewAppError("CreateChannel", "app.user.get.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+			}
 		}
 
 		cm := &model.ChannelMember{
@@ -293,8 +422,20 @@ func (a *App) CreateChannel(channel *model.Channel, addMember bool) (*model.Chan
 			NotifyProps: model.GetDefaultChannelNotifyProps(),
 		}
 
-		if _, err := a.Srv().Store.Channel().SaveMember(cm); err != nil {
-			return nil, err
+		if _, nErr := a.Srv().Store.Channel().SaveMember(cm); nErr != nil {
+			var appErr *model.AppError
+			var cErr *store.ErrConflict
+			switch {
+			case errors.As(nErr, &cErr):
+				switch cErr.Resource {
+				case "ChannelMembers":
+					return nil, model.NewAppError("CreateChannel", "app.channel.save_member.exists.app_error", nil, cErr.Error(), http.StatusBadRequest)
+				}
+			case errors.As(nErr, &appErr):
+				return nil, appErr
+			default:
+				return nil, model.NewAppError("CreateChannel", "app.channel.create_direct_channel.internal_error", nil, nErr.Error(), http.StatusInternalServerError)
+			}
 		}
 		//TODO: Open
 		// if err := a.Srv().Store.ChannelMemberHistory().LogJoinEvent(channel.CreatorId, sc.Id, model.GetMillis()); err != nil {
@@ -302,8 +443,7 @@ func (a *App) CreateChannel(channel *model.Channel, addMember bool) (*model.Chan
 		// 	return nil, model.NewAppError("CreateChannel", "app.channel_member_history.log_join_event.internal_error", nil, err.Error(), http.StatusInternalServerError)
 		// }
 
-		//TODO: Open
-		// a.InvalidateCacheForUser(channel.CreatorId)
+		a.InvalidateCacheForUser(channel.CreatorId)
 	}
 
 	//TODO: Open
@@ -617,23 +757,23 @@ func (a *App) createDirectChannel(userId string, otherUserId string) (*model.Cha
 	uc2 := make(chan store.StoreResult, 1)
 	go func() {
 		user, err := a.Srv().Store.User().Get(userId)
-		uc1 <- store.StoreResult{Data: user, Err: err}
+		uc1 <- store.StoreResult{Data: user, NErr: err}
 		close(uc1)
 	}()
 	go func() {
 		user, err := a.Srv().Store.User().Get(otherUserId)
-		uc2 <- store.StoreResult{Data: user, Err: err}
+		uc2 <- store.StoreResult{Data: user, NErr: err}
 		close(uc2)
 	}()
 
 	result := <-uc1
-	if result.Err != nil {
+	if result.NErr != nil {
 		return nil, model.NewAppError("CreateDirectChannel", "api.channel.create_direct_channel.invalid_user.app_error", nil, userId, http.StatusBadRequest)
 	}
 	user := result.Data.(*model.User)
 
 	result = <-uc2
-	if result.Err != nil {
+	if result.NErr != nil {
 		return nil, model.NewAppError("CreateDirectChannel", "api.channel.create_direct_channel.invalid_user.app_error", nil, otherUserId, http.StatusBadRequest)
 	}
 	otherUser := result.Data.(*model.User)

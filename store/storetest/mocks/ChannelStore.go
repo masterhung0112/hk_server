@@ -75,7 +75,7 @@ func (_m *ChannelStore) Get(id string, allowFromCache bool) (*model.Channel, err
 }
 
 // GetAllChannelMembersForUser provides a mock function with given fields: userId, allowFromCache, includeDeleted
-func (_m *ChannelStore) GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, *model.AppError) {
+func (_m *ChannelStore) GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, error) {
 	ret := _m.Called(userId, allowFromCache, includeDeleted)
 
 	var r0 map[string]string
@@ -87,13 +87,11 @@ func (_m *ChannelStore) GetAllChannelMembersForUser(userId string, allowFromCach
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func(string, bool, bool) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, bool, bool) error); ok {
 		r1 = rf(userId, allowFromCache, includeDeleted)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
@@ -215,7 +213,7 @@ func (_m *ChannelStore) GetMember(channelId string, userId string) (*model.Chann
 }
 
 // GetMemberForPost provides a mock function with given fields: postId, userId
-func (_m *ChannelStore) GetMemberForPost(postId string, userId string) (*model.ChannelMember, *model.AppError) {
+func (_m *ChannelStore) GetMemberForPost(postId string, userId string) (*model.ChannelMember, error) {
 	ret := _m.Called(postId, userId)
 
 	var r0 *model.ChannelMember
@@ -227,13 +225,11 @@ func (_m *ChannelStore) GetMemberForPost(postId string, userId string) (*model.C
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func(string, string) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
 		r1 = rf(postId, userId)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
@@ -372,7 +368,7 @@ func (_m *ChannelStore) Save(channel *model.Channel, maxChannelsPerTeam int64) (
 }
 
 // SaveMember provides a mock function with given fields: member
-func (_m *ChannelStore) SaveMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError) {
+func (_m *ChannelStore) SaveMember(member *model.ChannelMember) (*model.ChannelMember, error) {
 	ret := _m.Called(member)
 
 	var r0 *model.ChannelMember
@@ -384,20 +380,18 @@ func (_m *ChannelStore) SaveMember(member *model.ChannelMember) (*model.ChannelM
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func(*model.ChannelMember) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.ChannelMember) error); ok {
 		r1 = rf(member)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
 }
 
 // SaveMultipleMembers provides a mock function with given fields: members
-func (_m *ChannelStore) SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError) {
+func (_m *ChannelStore) SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, error) {
 	ret := _m.Called(members)
 
 	var r0 []*model.ChannelMember
@@ -409,13 +403,11 @@ func (_m *ChannelStore) SaveMultipleMembers(members []*model.ChannelMember) ([]*
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func([]*model.ChannelMember) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.ChannelMember) error); ok {
 		r1 = rf(members)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1

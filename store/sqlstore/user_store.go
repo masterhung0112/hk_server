@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
@@ -104,16 +105,11 @@ func (us SqlUserStore) PermanentDelete(userId string) *model.AppError {
 	return nil
 }
 
-func (us SqlUserStore) Get(id string) (*model.User, *model.AppError) {
-	failure := func(err error, id string, statusCode int) *model.AppError {
-		details := "user_id=" + id + ", " + err.Error()
-		return model.NewAppError("SqlUserStore.Get", id, nil, details, statusCode)
-	}
-
+func (us SqlUserStore) Get(id string) (*model.User, error) {
 	query := us.usersQuery.Where("Id = ?", id)
 	queryString, args, err := query.ToSql()
 	if err != nil {
-		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+		return nil, errors.Wrap(err, "users_get_tosql")
 	}
 	row := us.GetReplica().Db.QueryRow(queryString, args...)
 
@@ -127,19 +123,19 @@ func (us SqlUserStore) Get(id string) (*model.User, *model.AppError) {
 	// &user.IsBot, &user.BotDescription, &user.BotLastIconUpdate)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, failure(err, store.MISSING_ACCOUNT_ERROR, http.StatusNotFound)
+			return nil, store.NewErrNotFound("User", id)
 		}
-		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
-	}
+		return nil, errors.Wrapf(err, "failed to get User with userId=%s", id)
 
+	}
 	if err = json.Unmarshal(props, &user.Props); err != nil {
-		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+		return nil, errors.Wrap(err, "failed to unmarshal user props")
 	}
 	if err = json.Unmarshal(notifyProps, &user.NotifyProps); err != nil {
-		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+		return nil, errors.Wrap(err, "failed to unmarshal user notify props")
 	}
 	if err = json.Unmarshal(timezone, &user.Timezone); err != nil {
-		return nil, failure(err, "store.sql_user.get.app_error", http.StatusInternalServerError)
+		return nil, errors.Wrap(err, "failed to unmarshal user timezone")
 	}
 
 	return &user, nil

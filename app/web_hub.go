@@ -51,3 +51,9 @@ func (a *App) InvalidateCacheForUser(userId string) {
 	// 	a.Cluster().SendClusterMessage(msg)
 	// }
 }
+
+func (a *App) invalidateCacheForChannelPosts(channelId string) {
+	//TODO:
+	// a.Srv().Store.Channel().InvalidatePinnedPostCount(channelId)
+	// a.Srv().Store.Post().InvalidateLastPostTimeCache(channelId)
+}

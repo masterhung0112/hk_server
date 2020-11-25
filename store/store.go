@@ -58,7 +58,7 @@ type PostStore interface {
 	SaveMultiple(posts []*model.Post) ([]*model.Post, int, error)
 	Save(post *model.Post) (*model.Post, error)
 	// Update(newPost *model.Post, oldPost *model.Post) (*model.Post, error)
-	// Get(id string, skipFetchThreads bool) (*model.PostList, error)
+	Get(id string, skipFetchThreads bool) (*model.PostList, error)
 	GetSingle(id string) (*model.Post, error)
 	// Delete(postId string, time int64, deleteByID string) error
 	// PermanentDeleteByUser(userId string) error
@@ -99,7 +99,7 @@ type PostStore interface {
 type UserStore interface {
 	Save(user *model.User) (*model.User, *model.AppError)
 	Update(user *model.User, allowRoleUpdate bool) (*model.UserUpdate, *model.AppError)
-	Get(id string) (*model.User, *model.AppError)
+	Get(id string) (*model.User, error)
 	GetAll() ([]*model.User, *model.AppError)
 	Count(options model.UserCountOptions) (int64, *model.AppError)
 	PermanentDelete(userId string) *model.AppError
@@ -253,19 +253,19 @@ type ChannelStore interface {
 	// GetAll(teamId string) ([]*model.Channel, error)
 	// GetChannelsByIds(channelIds []string, includeDeleted bool) ([]*model.Channel, error)
 	GetForPost(postId string) (*model.Channel, error)
-	SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, *model.AppError)
-	SaveMember(member *model.ChannelMember) (*model.ChannelMember, *model.AppError)
+	SaveMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, error)
+	SaveMember(member *model.ChannelMember) (*model.ChannelMember, error)
 	UpdateMember(member *model.ChannelMember) (*model.ChannelMember, error)
 	UpdateMultipleMembers(members []*model.ChannelMember) ([]*model.ChannelMember, error)
 	// GetMembers(channelId string, offset, limit int) (*model.ChannelMembers, *model.AppError)
 	GetMember(channelId string, userId string) (*model.ChannelMember, error)
 	// GetChannelMembersTimezones(channelId string) ([]model.StringMap, *model.AppError)
-	GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, *model.AppError)
+	GetAllChannelMembersForUser(userId string, allowFromCache bool, includeDeleted bool) (map[string]string, error)
 	InvalidateAllChannelMembersForUser(userId string)
 	// IsUserInChannelUseCache(userId string, channelId string) bool
 	// GetAllChannelMembersNotifyPropsForChannel(channelId string, allowFromCache bool) (map[string]model.StringMap, *model.AppError)
 	// InvalidateCacheForChannelMembersNotifyProps(channelId string)
-	GetMemberForPost(postId string, userId string) (*model.ChannelMember, *model.AppError)
+	GetMemberForPost(postId string, userId string) (*model.ChannelMember, error)
 	// InvalidateMemberCount(channelId string)
 	// GetMemberCountFromCache(channelId string) int64
 	// GetMemberCount(channelId string, allowFromCache bool) (int64, *model.AppError)
