@@ -541,8 +541,8 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 	cache_key := userId
 	if includeDeleted {
 		cache_key += "_deleted"
-  }
-  //TODO: Open
+	}
+	//TODO: Open
 	// if allowFromCache {
 	// 	var ids map[string]string
 	// 	if err := allChannelMembersForUserCache.Get(cache_key, &ids); err == nil {
@@ -607,7 +607,7 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 	}
 	ids := data.ToMapStringString()
 
-  //TODO: Open
+	//TODO: Open
 	// if allowFromCache {
 	// 	allChannelMembersForUserCache.SetWithExpiry(cache_key, ids, ALL_CHANNEL_MEMBERS_FOR_USER_CACHE_DURATION)
 	// }

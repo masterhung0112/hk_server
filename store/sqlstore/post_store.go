@@ -229,6 +229,50 @@ func (s *SqlPostStore) Save(post *model.Post) (*model.Post, error) {
 	return posts[0], nil
 }
 
+func (s *SqlPostStore) Get(id string, skipFetchThreads bool) (*model.PostList, error) {
+	pl := model.NewPostList()
+
+	if len(id) == 0 {
+		return nil, store.NewErrInvalidInput("Post", "id", id)
+	}
+
+	var post model.Post
+	postFetchQuery := "SELECT p.*, (SELECT count(Posts.Id) FROM Posts WHERE Posts.RootId = (CASE WHEN p.RootId = '' THEN p.Id ELSE p.RootId END) AND Posts.DeleteAt = 0) as ReplyCount FROM Posts p WHERE p.Id = :Id AND p.DeleteAt = 0"
+	err := s.GetReplica().SelectOne(&post, postFetchQuery, map[string]interface{}{"Id": id})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.NewErrNotFound("Post", id)
+		}
+
+		return nil, errors.Wrapf(err, "failed to get Post with id=%s", id)
+	}
+	pl.AddPost(&post)
+	pl.AddOrder(id)
+	if !skipFetchThreads {
+		rootId := post.RootId
+
+		if rootId == "" {
+			rootId = post.Id
+		}
+
+		if len(rootId) == 0 {
+			return nil, errors.Wrapf(err, "invalid rootId with value=%s", rootId)
+		}
+
+		var posts []*model.Post
+		_, err = s.GetReplica().Select(&posts, "SELECT *, (SELECT count(Id) FROM Posts WHERE Posts.RootId = (CASE WHEN p.RootId = '' THEN p.Id ELSE p.RootId END) AND Posts.DeleteAt = 0) as ReplyCount FROM Posts p WHERE (Id = :Id OR RootId = :RootId) AND DeleteAt = 0", map[string]interface{}{"Id": rootId, "RootId": rootId})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find Posts")
+		}
+
+		for _, p := range posts {
+			pl.AddPost(p)
+			pl.AddOrder(p.Id)
+		}
+	}
+	return pl, nil
+}
+
 func (s *SqlPostStore) GetSingle(id string) (*model.Post, error) {
 	var post model.Post
 	err := s.GetReplica().SelectOne(&post, "SELECT * FROM Posts WHERE Id = :Id AND DeleteAt = 0", map[string]interface{}{"Id": id})

@@ -167,6 +167,28 @@ func (a *App) HasPermissionToTeam(askingUserId string, teamId string, permission
 	return a.HasPermissionTo(askingUserId, permission)
 }
 
+func (a *App) HasPermissionToChannel(askingUserId string, channelId string, permission *model.Permission) bool {
+	if channelId == "" || askingUserId == "" {
+		return false
+	}
+
+	channelMember, err := a.GetChannelMember(channelId, askingUserId)
+	if err == nil {
+		roles := channelMember.GetRoles()
+		if a.RolesGrantPermission(roles, permission.Id) {
+			return true
+		}
+	}
+
+	var channel *model.Channel
+	channel, err = a.GetChannel(channelId)
+	if err == nil {
+		return a.HasPermissionToTeam(askingUserId, channel.TeamId, permission)
+	}
+
+	return a.HasPermissionTo(askingUserId, permission)
+}
+
 func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool {
 	roles, err := a.GetRolesByNames(roleNames)
 	if err != nil {

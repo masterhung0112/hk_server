@@ -58,7 +58,7 @@ type PostStore interface {
 	SaveMultiple(posts []*model.Post) ([]*model.Post, int, error)
 	Save(post *model.Post) (*model.Post, error)
 	// Update(newPost *model.Post, oldPost *model.Post) (*model.Post, error)
-	// Get(id string, skipFetchThreads bool) (*model.PostList, error)
+	Get(id string, skipFetchThreads bool) (*model.PostList, error)
 	GetSingle(id string) (*model.Post, error)
 	// Delete(postId string, time int64, deleteByID string) error
 	// PermanentDeleteByUser(userId string) error
@@ -99,7 +99,7 @@ type PostStore interface {
 type UserStore interface {
 	Save(user *model.User) (*model.User, *model.AppError)
 	Update(user *model.User, allowRoleUpdate bool) (*model.UserUpdate, *model.AppError)
-	Get(id string) (*model.User, *model.AppError)
+	Get(id string) (*model.User, error)
 	GetAll() ([]*model.User, *model.AppError)
 	Count(options model.UserCountOptions) (int64, *model.AppError)
 	PermanentDelete(userId string) *model.AppError

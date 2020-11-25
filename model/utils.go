@@ -357,6 +357,44 @@ func Etag(parts ...interface{}) string {
 	return etag
 }
 
+var validHashtag = regexp.MustCompile(`^(#\pL[\pL\d\-_.]*[\pL\d])$`)
+var puncStart = regexp.MustCompile(`^[^\pL\d\s#]+`)
+var hashtagStart = regexp.MustCompile(`^#{2,}`)
+var puncEnd = regexp.MustCompile(`[^\pL\d\s]+$`)
+
+func ParseHashtags(text string) (string, string) {
+	words := strings.Fields(text)
+
+	hashtagString := ""
+	plainString := ""
+	for _, word := range words {
+		// trim off surrounding punctuation
+		word = puncStart.ReplaceAllString(word, "")
+		word = puncEnd.ReplaceAllString(word, "")
+
+		// and remove extra pound #s
+		word = hashtagStart.ReplaceAllString(word, "#")
+
+		if validHashtag.MatchString(word) {
+			hashtagString += " " + word
+		} else {
+			plainString += " " + word
+		}
+	}
+
+	if len(hashtagString) > 1000 {
+		hashtagString = hashtagString[:999]
+		lastSpace := strings.LastIndex(hashtagString, " ")
+		if lastSpace > -1 {
+			hashtagString = hashtagString[:lastSpace]
+		} else {
+			hashtagString = ""
+		}
+	}
+
+	return strings.TrimSpace(hashtagString), strings.TrimSpace(plainString)
+}
+
 // MapFromJson will decode the key/value pair map
 func MapFromJson(data io.Reader) map[string]string {
 	decoder := json.NewDecoder(data)
