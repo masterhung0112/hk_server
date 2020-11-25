@@ -20,7 +20,7 @@ func TestMergeTestSuite(t *testing.T) {
 
 func (s *TestMergeStruct) TestMergeMapsWherePatchIsLonger() {
 	m1 := map[string]int{"this": 1, "is": 2, "a map": 3}
-	m2 := map[string]int{"this": 1, "is": 3, "a secnd map": 3, "another key": 4}
+	m2 := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
 
 	expected := map[string]int{"this": 1, "is": 3, "a second map": 3, "another key": 4}
 	merged, err := mergeStringIntMap(m1, m2)

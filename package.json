@@ -5,7 +5,8 @@
   "main": "tasksfile.js",
   "scripts": {
     "task": "node ./tasksfile.js",
-    "fmt": "go fmt ./..."
+    "fmt": "go fmt ./...",
+    "tests": "go test ./..."
   },
   "repository": {
     "type": "git",

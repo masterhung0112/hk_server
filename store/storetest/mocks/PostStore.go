@@ -14,6 +14,29 @@ type PostStore struct {
 	mock.Mock
 }
 
+// Get provides a mock function with given fields: id, skipFetchThreads
+func (_m *PostStore) Get(id string, skipFetchThreads bool) (*model.PostList, error) {
+	ret := _m.Called(id, skipFetchThreads)
+
+	var r0 *model.PostList
+	if rf, ok := ret.Get(0).(func(string, bool) *model.PostList); ok {
+		r0 = rf(id, skipFetchThreads)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.PostList)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, bool) error); ok {
+		r1 = rf(id, skipFetchThreads)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMaxPostSize provides a mock function with given fields:
 func (_m *PostStore) GetMaxPostSize() int {
 	ret := _m.Called()
