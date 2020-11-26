@@ -28,18 +28,18 @@ func sanitized(user *model.User) *model.User {
 // 	StoreTestWithSqlSupplier(t, storetest.TestUserStore)
 // }
 
-type UserStoreCountTS struct {
+type UserStoreTS struct {
 	suite.Suite
 	StoreTestSuite
 }
 
-func TestUserStoreCountTS(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &UserStoreCountTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+func TestUserStoreTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
 		suite.Run(t, testSuite)
 	})
 }
 
-func (s *UserStoreCountTS) TestCount() {
+func (s *UserStoreTS) TestCount() {
 	teamId := model.NewId()
 	channelId := model.NewId()
 	regularUser := &model.User{}
@@ -324,18 +324,7 @@ func (s *UserStoreCountTS) TestCount() {
 	}
 }
 
-type UserStoreSaveTS struct {
-	suite.Suite
-	StoreTestSuite
-}
-
-func TestUserStoreSaveTS(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &UserStoreSaveTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-		suite.Run(t, testSuite)
-	})
-}
-
-func (s *UserStoreSaveTS) TestSave() {
+func (s *UserStoreTS) TestSave() {
 	teamId := model.NewId()
 	maxUsersPerTeam := 50
 
@@ -395,6 +384,68 @@ func (s *UserStoreSaveTS) TestSave() {
 
 	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, maxUsersPerTeam)
 	s.Require().NotNil(nErr, "should be the limit")
+}
+
+func (s *UserStoreTS) TestUpdate() {
+	u1 := &model.User{
+		Email: MakeEmail(),
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2 := &model.User{
+		Email:       MakeEmail(),
+		AuthService: "ldap",
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	_, err = s.Store().User().Update(u1, false)
+	s.Require().Nil(err)
+
+	missing := &model.User{}
+	_, err = s.Store().User().Update(missing, false)
+	s.Require().NotNil(err, "Update should have failed because of missing key")
+
+	newId := &model.User{
+		Id: model.NewId(),
+	}
+	_, err = s.Store().User().Update(newId, false)
+	s.Require().NotNil(err, "Update should have failed because id change")
+
+	u2.Email = MakeEmail()
+	_, err = s.Store().User().Update(u2, false)
+	s.Require().NotNil(err, "Update should have failed because you can't modify AD/LDAP fields")
+
+	u3 := &model.User{
+		Email:       MakeEmail(),
+		AuthService: "gitlab",
+	}
+	oldEmail := u3.Email
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3.Email = MakeEmail()
+	userUpdate, err := s.Store().User().Update(u3, false)
+	s.Require().Nil(err, "Update should not have failed")
+	s.Assert().Equal(oldEmail, userUpdate.New.Email, "Email should not have been updated as the update is not trusted")
+
+	u3.Email = MakeEmail()
+	userUpdate, err = s.Store().User().Update(u3, true)
+	s.Require().Nil(err, "Update should not have failed")
+	s.Assert().NotEqual(oldEmail, userUpdate.New.Email, "Email should have been updated as the update is trusted")
+
+	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
+	s.Require().Nil(err, "Update should not have failed")
 }
 
 type UserStoreGetAllProfilesTS struct {
