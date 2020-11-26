@@ -51,7 +51,6 @@ func testUserStoreSave(t *testing.T, ss store.Store) {
 	}
 	_, err = ss.User().Save(&u2)
 	require.NotNil(t, err, "should be unique email")
-	require.Equal(t, "store.sql_user.save.email_exists.app_error", err.Message)
 
 	u2 = model.User{
 		Email:    MakeEmail(),
@@ -59,7 +58,6 @@ func testUserStoreSave(t *testing.T, ss store.Store) {
 	}
 	_, err = ss.User().Save(&u2)
 	require.NotNil(t, err, "should be unique username")
-	require.Equal(t, "store.sql_user.save.username_exists.app_error", err.Message)
 
 	// Username auto-generated if Username is empty
 	u2 = model.User{

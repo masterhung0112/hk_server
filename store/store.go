@@ -97,35 +97,74 @@ type PostStore interface {
 }
 
 type UserStore interface {
-	Save(user *model.User) (*model.User, *model.AppError)
-	Update(user *model.User, allowRoleUpdate bool) (*model.UserUpdate, *model.AppError)
+	Save(user *model.User) (*model.User, error)
+	Update(user *model.User, allowRoleUpdate bool) (*model.UserUpdate, error)
+	UpdateLastPictureUpdate(userId string) error
+	ResetLastPictureUpdate(userId string) error
+	UpdatePassword(userId, newPassword string) error
+	UpdateUpdateAt(userId string) (int64, error)
+	UpdateAuthData(userId string, service string, authData *string, email string, resetMfa bool) (string, error)
+	UpdateMfaSecret(userId, secret string) error
+	UpdateMfaActive(userId string, active bool) error
 	Get(id string) (*model.User, error)
-	GetAll() ([]*model.User, *model.AppError)
-	Count(options model.UserCountOptions) (int64, *model.AppError)
-	PermanentDelete(userId string) *model.AppError
-	InferSystemInstallDate() (int64, *model.AppError)
-	UpdatePassword(userId, newPassword string) *model.AppError
-
-	UpdateAuthData(userId string, service string, authData *string, email string, resetMfa bool) (string, *model.AppError)
-	UpdateLastPictureUpdate(userId string) *model.AppError
-
-	GetByUsername(username string) (*model.User, *model.AppError)
-	GetByEmail(email string) (*model.User, *model.AppError)
-	GetProfilesWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError)
-	GetProfilesNotInChannel(teamId string, channelId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
-	GetEtagForProfilesNotInTeam(teamId string) string
-	GetProfilesNotInTeam(teamId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	GetAll() ([]*model.User, error)
+	ClearCaches()
+	InvalidateProfilesInChannelCacheByUser(userId string)
+	InvalidateProfilesInChannelCache(channelId string)
+	GetProfilesInChannel(options *model.UserGetOptions) ([]*model.User, error)
+	GetProfilesInChannelByStatus(options *model.UserGetOptions) ([]*model.User, error)
+	GetAllProfilesInChannel(channelId string, allowFromCache bool) (map[string]*model.User, error)
+	GetProfilesNotInChannel(teamId string, channelId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, error)
+	GetProfilesWithoutTeam(options *model.UserGetOptions) ([]*model.User, error)
+	GetProfilesByUsernames(usernames []string, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, error)
+	GetAllProfiles(options *model.UserGetOptions) ([]*model.User, error)
+	GetProfiles(options *model.UserGetOptions) ([]*model.User, error)
+	GetProfileByIds(userIds []string, options *UserGetByIdsOpts, allowFromCache bool) ([]*model.User, error)
+	GetProfileByGroupChannelIdsForUser(userId string, channelIds []string) (map[string][]*model.User, error)
+	InvalidateProfileCacheForUser(userId string)
+	GetByEmail(email string) (*model.User, error)
+	GetByAuth(authData *string, authService string) (*model.User, error)
+	GetAllUsingAuthService(authService string) ([]*model.User, error)
+	GetAllNotInAuthService(authServices []string) ([]*model.User, error)
+	GetByUsername(username string) (*model.User, error)
+	GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, error)
+	VerifyEmail(userId, email string) (string, error)
+	GetEtagForAllProfiles() string
 	GetEtagForProfiles(teamId string) string
-	GetProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
-	GetProfilesInChannel(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
-	GetProfilesInChannelByStatus(channelId string, offset int, limit int) ([]*model.User, *model.AppError)
-	GetAllProfiles(options *model.UserGetOptions) ([]*model.User, *model.AppError)
-	UpdateFailedPasswordAttempts(userId string, attempts int) *model.AppError
-	GetForLogin(loginId string, allowSignInWithUsername, allowSignInWithEmail bool) (*model.User, *model.AppError)
-	GetProfileByIds(userIds []string, options *UserGetByIdsOpts, allowFromCache bool) ([]*model.User, *model.AppError)
-	GetChannelGroupUsers(channelID string) ([]*model.User, *model.AppError)
-	UpdateUpdateAt(userId string) (int64, *model.AppError)
-	GetProfilesByUsernames(usernames []string, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	UpdateFailedPasswordAttempts(userId string, attempts int) error
+	GetSystemAdminProfiles() (map[string]*model.User, error)
+	PermanentDelete(userId string) error
+	AnalyticsActiveCount(time int64, options model.UserCountOptions) (int64, error)
+	AnalyticsActiveCountForPeriod(startTime int64, endTime int64, options model.UserCountOptions) (int64, error)
+	GetUnreadCount(userId string) (int64, error)
+	GetUnreadCountForChannel(userId string, channelId string) (int64, error)
+	GetAnyUnreadPostCountForChannel(userId string, channelId string) (int64, error)
+	GetRecentlyActiveUsersForTeam(teamId string, offset, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, error)
+	GetNewUsersForTeam(teamId string, offset, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, error)
+	Search(teamId string, term string, options *model.UserSearchOptions) ([]*model.User, error)
+	SearchNotInTeam(notInTeamId string, term string, options *model.UserSearchOptions) ([]*model.User, error)
+	SearchInChannel(channelId string, term string, options *model.UserSearchOptions) ([]*model.User, error)
+	SearchNotInChannel(teamId string, channelId string, term string, options *model.UserSearchOptions) ([]*model.User, error)
+	SearchWithoutTeam(term string, options *model.UserSearchOptions) ([]*model.User, error)
+	SearchInGroup(groupID string, term string, options *model.UserSearchOptions) ([]*model.User, error)
+	AnalyticsGetInactiveUsersCount() (int64, error)
+	AnalyticsGetExternalUsers(hostDomain string) (bool, error)
+	AnalyticsGetSystemAdminCount() (int64, error)
+	AnalyticsGetGuestCount() (int64, error)
+	GetProfilesNotInTeam(teamId string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, error)
+	GetEtagForProfilesNotInTeam(teamId string) string
+	ClearAllCustomRoleAssignments() error
+	InferSystemInstallDate() (int64, error)
+	GetAllAfter(limit int, afterId string) ([]*model.User, error)
+	GetUsersBatchForIndexing(startTime, endTime int64, limit int) ([]*model.UserForIndexing, error)
+	Count(options model.UserCountOptions) (int64, error)
+	GetTeamGroupUsers(teamID string) ([]*model.User, error)
+	GetChannelGroupUsers(channelID string) ([]*model.User, error)
+	PromoteGuestToUser(userID string) error
+	DemoteUserToGuest(userID string) error
+	DeactivateGuests() ([]string, error)
+	AutocompleteUsersInChannel(teamId, channelId, term string, options *model.UserSearchOptions) (*model.UserAutocompleteInChannel, error)
+	GetKnownUsers(userID string) ([]string, error)
 }
 
 type SystemStore interface {

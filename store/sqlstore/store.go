@@ -9,6 +9,7 @@ import (
 type SqlStore interface {
 	DriverName() string
 	GetMaster() *gorp.DbMap
+	GetSearchReplica() *gorp.DbMap
 	GetReplica() *gorp.DbMap
 
 	User() store.UserStore

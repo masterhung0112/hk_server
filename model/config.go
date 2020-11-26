@@ -1091,10 +1091,11 @@ func (s *SamlSettings) SetDefaults() {
 }
 
 type SqlSettings struct {
-	DriverName         *string
-	DataSource         *string `restricted:"true"`
-	DataSourceReplicas []string
-	QueryTimeout       *int `restricted:"true"`
+	DriverName               *string
+	DataSource               *string `restricted:"true"`
+	DataSourceReplicas       []string
+	DataSourceSearchReplicas []string `access:"environment,write_restrictable,cloud_restrictable"`
+	QueryTimeout             *int     `restricted:"true"`
 }
 
 func (s *SqlSettings) SetDefaults(isUpdate bool) {
@@ -1108,6 +1109,10 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
 
 	if s.DataSourceReplicas == nil {
 		s.DataSourceReplicas = []string{}
+	}
+
+	if s.DataSourceSearchReplicas == nil {
+		s.DataSourceSearchReplicas = []string{}
 	}
 
 	if s.QueryTimeout == nil {
