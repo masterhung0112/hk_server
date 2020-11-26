@@ -89,9 +89,46 @@ type User struct {
 	TermsOfServiceCreateAt int64     `db:"-" json:"terms_of_service_create_at,omitempty"`
 }
 
+// UserMap is a map from a userId to a user object.
+// It is used to generate methods which can be used for fast serialization/de-serialization.
+type UserMap map[string]*User
+
 type UserUpdate struct {
 	Old *User
 	New *User
+}
+
+type UserPatch struct {
+	Username    *string   `json:"username"`
+	Password    *string   `json:"password,omitempty"`
+	Nickname    *string   `json:"nickname"`
+	FirstName   *string   `json:"first_name"`
+	LastName    *string   `json:"last_name"`
+	Position    *string   `json:"position"`
+	Email       *string   `json:"email"`
+	Props       StringMap `json:"props,omitempty"`
+	NotifyProps StringMap `json:"notify_props,omitempty"`
+	Locale      *string   `json:"locale"`
+	Timezone    StringMap `json:"timezone"`
+}
+
+type UserAuth struct {
+	Password    string  `json:"password,omitempty"`
+	AuthData    *string `json:"auth_data,omitempty"`
+	AuthService string  `json:"auth_service,omitempty"`
+}
+
+type UserForIndexing struct {
+	Id          string   `json:"id"`
+	Username    string   `json:"username"`
+	Nickname    string   `json:"nickname"`
+	FirstName   string   `json:"first_name"`
+	LastName    string   `json:"last_name"`
+	Roles       string   `json:"roles"`
+	CreateAt    int64    `json:"create_at"`
+	DeleteAt    int64    `json:"delete_at"`
+	TeamsIds    []string `json:"team_id"`
+	ChannelsIds []string `json:"channel_id"`
 }
 
 // Options for counting users

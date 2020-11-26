@@ -832,7 +832,7 @@ func (a *App) createGroupChannel(userIds []string, creatorId string) (*model.Cha
 
 	users, err := a.Srv().Store.User().GetProfileByIds(userIds, nil, true)
 	if err != nil {
-		return nil, err
+		return nil, model.NewAppError("createGroupChannel", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	if len(users) != len(userIds) {

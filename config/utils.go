@@ -11,28 +11,28 @@ import (
 func desanitize(actual, target *model.Config) {
 	//TODO: Uncomment out
 
-	// if target.LdapSettings.BindPassword != nil && *target.LdapSettings.BindPassword == model.FAKE_SETTING {
-	// 	*target.LdapSettings.BindPassword = *actual.LdapSettings.BindPassword
-	// }
+	if target.LdapSettings.BindPassword != nil && *target.LdapSettings.BindPassword == model.FAKE_SETTING {
+		*target.LdapSettings.BindPassword = *actual.LdapSettings.BindPassword
+	}
 
-	// if *target.FileSettings.PublicLinkSalt == model.FAKE_SETTING {
-	// 	*target.FileSettings.PublicLinkSalt = *actual.FileSettings.PublicLinkSalt
-	// }
-	// if *target.FileSettings.AmazonS3SecretAccessKey == model.FAKE_SETTING {
-	// 	target.FileSettings.AmazonS3SecretAccessKey = actual.FileSettings.AmazonS3SecretAccessKey
-	// }
+	if *target.FileSettings.PublicLinkSalt == model.FAKE_SETTING {
+		*target.FileSettings.PublicLinkSalt = *actual.FileSettings.PublicLinkSalt
+	}
+	if *target.FileSettings.S3SecretAccessKey == model.FAKE_SETTING {
+		target.FileSettings.S3SecretAccessKey = actual.FileSettings.S3SecretAccessKey
+	}
 
-	// if *target.EmailSettings.SMTPPassword == model.FAKE_SETTING {
-	// 	target.EmailSettings.SMTPPassword = actual.EmailSettings.SMTPPassword
-	// }
+	if *target.EmailSettings.SMTPPassword == model.FAKE_SETTING {
+		target.EmailSettings.SMTPPassword = actual.EmailSettings.SMTPPassword
+	}
 
 	// if *target.GitLabSettings.Secret == model.FAKE_SETTING {
 	// 	target.GitLabSettings.Secret = actual.GitLabSettings.Secret
 	// }
 
-	// if *target.SqlSettings.DataSource == model.FAKE_SETTING {
-	// 	*target.SqlSettings.DataSource = *actual.SqlSettings.DataSource
-	// }
+	if *target.SqlSettings.DataSource == model.FAKE_SETTING {
+		*target.SqlSettings.DataSource = *actual.SqlSettings.DataSource
+	}
 	// if *target.SqlSettings.AtRestEncryptKey == model.FAKE_SETTING {
 	// 	target.SqlSettings.AtRestEncryptKey = actual.SqlSettings.AtRestEncryptKey
 	// }
@@ -41,15 +41,15 @@ func desanitize(actual, target *model.Config) {
 	// 	*target.ElasticsearchSettings.Password = *actual.ElasticsearchSettings.Password
 	// }
 
-	// target.SqlSettings.DataSourceReplicas = make([]string, len(actual.SqlSettings.DataSourceReplicas))
-	// for i := range target.SqlSettings.DataSourceReplicas {
-	// 	target.SqlSettings.DataSourceReplicas[i] = actual.SqlSettings.DataSourceReplicas[i]
-	// }
+	target.SqlSettings.DataSourceReplicas = make([]string, len(actual.SqlSettings.DataSourceReplicas))
+	for i := range target.SqlSettings.DataSourceReplicas {
+		target.SqlSettings.DataSourceReplicas[i] = actual.SqlSettings.DataSourceReplicas[i]
+	}
 
-	// target.SqlSettings.DataSourceSearchReplicas = make([]string, len(actual.SqlSettings.DataSourceSearchReplicas))
-	// for i := range target.SqlSettings.DataSourceSearchReplicas {
-	// 	target.SqlSettings.DataSourceSearchReplicas[i] = actual.SqlSettings.DataSourceSearchReplicas[i]
-	// }
+	target.SqlSettings.DataSourceSearchReplicas = make([]string, len(actual.SqlSettings.DataSourceSearchReplicas))
+	for i := range target.SqlSettings.DataSourceSearchReplicas {
+		target.SqlSettings.DataSourceSearchReplicas[i] = actual.SqlSettings.DataSourceSearchReplicas[i]
+	}
 }
 
 // fixConfig patches invalid or missing data in the configuration, returning true if changed.

@@ -112,7 +112,7 @@ func (a *App) JoinUserToTeam(team *model.Team, user *model.User, userRequestorId
 	// }
 
 	if _, err := a.Srv().Store.User().UpdateUpdateAt(user.Id); err != nil {
-		return err
+		return model.NewAppError("JoinUserToTeam", "app.user.update_update.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	if err := a.createInitialSidebarCategories(user.Id, team.Id); err != nil {

@@ -96,6 +96,22 @@ func (_m *SqlStore) GetReplica() *gorp.DbMap {
 	return r0
 }
 
+// GetSearchReplica provides a mock function with given fields:
+func (_m *SqlStore) GetSearchReplica() *gorp.DbMap {
+	ret := _m.Called()
+
+	var r0 *gorp.DbMap
+	if rf, ok := ret.Get(0).(func() *gorp.DbMap); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gorp.DbMap)
+		}
+	}
+
+	return r0
+}
+
 // Role provides a mock function with given fields:
 func (_m *SqlStore) Role() store.RoleStore {
 	ret := _m.Called()

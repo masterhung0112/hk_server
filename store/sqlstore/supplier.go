@@ -26,6 +26,7 @@ import (
 type SqlSupplierStores struct {
 	team            store.TeamStore
 	user            store.UserStore
+	bot             store.BotStore
 	post            store.PostStore
 	thread          store.ThreadStore
 	system          store.SystemStore
@@ -47,6 +48,7 @@ type SqlSupplier struct {
 
 	master         *gorp.DbMap
 	replicas       []*gorp.DbMap
+	searchReplicas []*gorp.DbMap
 	stores         SqlSupplierStores
 	settings       *model.SqlSettings
 	lockedToMaster bool
@@ -160,6 +162,23 @@ func (ss *SqlSupplier) GetMaster() *gorp.DbMap {
 	return ss.master
 }
 
+func (ss *SqlSupplier) GetSearchReplica() *gorp.DbMap {
+	//TODO: Open
+	// ss.licenseMutex.RLock()
+	license := ss.license
+	// ss.licenseMutex.RUnlock()
+	if license == nil {
+		return ss.GetMaster()
+	}
+
+	if len(ss.settings.DataSourceSearchReplicas) == 0 {
+		return ss.GetReplica()
+	}
+
+	rrNum := atomic.AddInt64(&ss.srCounter, 1) % int64(len(ss.searchReplicas))
+	return ss.searchReplicas[rrNum]
+}
+
 func (ss *SqlSupplier) GetReplica() *gorp.DbMap {
 	if len(ss.settings.DataSourceReplicas) == 0 || ss.lockedToMaster || ss.license == nil {
 		return ss.GetMaster()
@@ -171,6 +190,10 @@ func (ss *SqlSupplier) GetReplica() *gorp.DbMap {
 
 func (ss *SqlSupplier) User() store.UserStore {
 	return ss.stores.user
+}
+
+func (ss *SqlSupplier) Bot() store.BotStore {
+	return ss.stores.bot
 }
 
 func (ss *SqlSupplier) Post() store.PostStore {
@@ -221,6 +244,13 @@ func (ss *SqlSupplier) initConnection() {
 		ss.replicas = make([]*gorp.DbMap, len(ss.settings.DataSourceReplicas))
 		for i, replica := range ss.settings.DataSourceReplicas {
 			ss.replicas[i] = setupConnection(fmt.Sprintf("replica-%v", i), replica, ss.settings)
+		}
+	}
+
+	if len(ss.settings.DataSourceSearchReplicas) > 0 {
+		ss.searchReplicas = make([]*gorp.DbMap, len(ss.settings.DataSourceSearchReplicas))
+		for i, replica := range ss.settings.DataSourceSearchReplicas {
+			ss.searchReplicas[i] = setupConnection(fmt.Sprintf("search-replica-%v", i), replica, ss.settings)
 		}
 	}
 }
@@ -277,6 +307,7 @@ func NewSqlSupplier(settings model.SqlSettings, metrics einterfaces.MetricsInter
 	// Create tables if necessary
 	supplier.stores.team = newSqlTeamStore(supplier)
 	supplier.stores.user = newSqlUserStore(supplier)
+	supplier.stores.bot = newSqlBotStore(supplier, metrics)
 	supplier.stores.post = newSqlPostStore(supplier, metrics)
 	supplier.stores.thread = newSqlThreadStore(supplier)
 	supplier.stores.system = newSqlSystemStore(supplier)
