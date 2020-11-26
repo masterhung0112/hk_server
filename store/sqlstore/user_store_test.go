@@ -364,11 +364,11 @@ func (s *UserStoreSaveTS) TestSave() {
 
 	u2.Email = MakeEmail()
 	u2.Username = u1.Username
-	_, err = s.Store().User().Save(&u1)
+	_, err = s.Store().User().Save(&u2)
 	s.Require().NotNil(err, "should be unique username")
 
 	u2.Username = ""
-	_, err = s.Store().User().Save(&u1)
+	_, err = s.Store().User().Save(&u2)
 	s.Require().NotNil(err, "should be unique username")
 
 	for i := 0; i < 49; i++ {
