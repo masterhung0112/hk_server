@@ -31,14 +31,6 @@ func sanitized(user *model.User) *model.User {
 type UserStoreCountTS struct {
 	suite.Suite
 	StoreTestSuite
-
-	u1 *model.User
-	u2 *model.User
-	u3 *model.User
-	u4 *model.User
-	u5 *model.User
-	u6 *model.User
-	u7 *model.User
 }
 
 func TestUserStoreCountTS(t *testing.T) {
@@ -330,6 +322,79 @@ func (s *UserStoreCountTS) TestCount() {
 			s.Require().Equal(testCase.Expected, count)
 		})
 	}
+}
+
+type UserStoreSaveTS struct {
+	suite.Suite
+	StoreTestSuite
+}
+
+func TestUserStoreSaveTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreSaveTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
+
+func (s *UserStoreSaveTS) TestSave() {
+	teamId := model.NewId()
+	maxUsersPerTeam := 50
+
+	u1 := model.User{
+		Email:    MakeEmail(),
+		Username: model.NewId(),
+	}
+
+	_, err := s.Store().User().Save(&u1)
+	s.Require().Nil(err, "couldn't save user")
+
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, maxUsersPerTeam)
+	s.Require().Nil(nErr)
+
+	_, err = s.Store().User().Save(&u1)
+	s.Require().NotNil(err, "shouldn't be able to update user from save")
+
+	u2 := model.User{
+		Email:    u1.Email,
+		Username: model.NewId(),
+	}
+	_, err = s.Store().User().Save(&u2)
+	s.Require().NotNil(err, "should be unique email")
+
+	u2.Email = MakeEmail()
+	u2.Username = u1.Username
+	_, err = s.Store().User().Save(&u1)
+	s.Require().NotNil(err, "should be unique username")
+
+	u2.Username = ""
+	_, err = s.Store().User().Save(&u1)
+	s.Require().NotNil(err, "should be unique username")
+
+	for i := 0; i < 49; i++ {
+		u := model.User{
+			Email:    MakeEmail(),
+			Username: model.NewId(),
+		}
+		_, err = s.Store().User().Save(&u)
+		s.Require().Nil(err, "couldn't save item")
+
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u.Id)) }()
+
+		_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u.Id}, maxUsersPerTeam)
+		s.Require().Nil(nErr)
+	}
+
+	u2.Id = ""
+	u2.Email = MakeEmail()
+	u2.Username = model.NewId()
+	_, err = s.Store().User().Save(&u2)
+	s.Require().Nil(err, "couldn't save item")
+
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, maxUsersPerTeam)
+	s.Require().NotNil(nErr, "should be the limit")
 }
 
 type UserStoreGetAllProfilesTS struct {
