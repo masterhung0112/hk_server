@@ -14,6 +14,22 @@ type Store struct {
 	mock.Mock
 }
 
+// Bot provides a mock function with given fields:
+func (_m *Store) Bot() store.BotStore {
+	ret := _m.Called()
+
+	var r0 store.BotStore
+	if rf, ok := ret.Get(0).(func() store.BotStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.BotStore)
+		}
+	}
+
+	return r0
+}
+
 // Channel provides a mock function with given fields:
 func (_m *Store) Channel() store.ChannelStore {
 	ret := _m.Called()

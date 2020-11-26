@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 
 	"github.com/masterhung0112/hk_server/model"
@@ -22,14 +23,14 @@ func TestGetConfig(t *testing.T) {
 
 		require.NotEqual(t, "", cfg.TeamSettings.SiteName)
 
-		// if *cfg.LdapSettings.BindPassword != model.FAKE_SETTING && len(*cfg.LdapSettings.BindPassword) != 0 {
-		// 	require.FailNow(t, "did not sanitize properly")
-		// }
-		// require.Equal(t, model.FAKE_SETTING, *cfg.FileSettings.PublicLinkSalt, "did not sanitize properly")
+		if *cfg.LdapSettings.BindPassword != model.FAKE_SETTING && len(*cfg.LdapSettings.BindPassword) != 0 {
+			require.FailNow(t, "did not sanitize properly")
+		}
+		require.Equal(t, model.FAKE_SETTING, *cfg.FileSettings.PublicLinkSalt, "did not sanitize properly")
 
-		// if *cfg.FileSettings.AmazonS3SecretAccessKey != model.FAKE_SETTING && len(*cfg.FileSettings.AmazonS3SecretAccessKey) != 0 {
-		// 	require.FailNow(t, "did not sanitize properly")
-		// }
+		if *cfg.FileSettings.S3SecretAccessKey != model.FAKE_SETTING && len(*cfg.FileSettings.S3SecretAccessKey) != 0 {
+			require.FailNow(t, "did not sanitize properly")
+		}
 		if *cfg.EmailSettings.SMTPPassword != model.FAKE_SETTING && len(*cfg.EmailSettings.SMTPPassword) != 0 {
 			require.FailNow(t, "did not sanitize properly")
 		}
@@ -38,12 +39,12 @@ func TestGetConfig(t *testing.T) {
 		// }
 		require.Equal(t, model.FAKE_SETTING, *cfg.SqlSettings.DataSource, "did not sanitize properly")
 		// require.Equal(t, model.FAKE_SETTING, *cfg.SqlSettings.AtRestEncryptKey, "did not sanitize properly")
-		// if !strings.Contains(strings.Join(cfg.SqlSettings.DataSourceReplicas, " "), model.FAKE_SETTING) && len(cfg.SqlSettings.DataSourceReplicas) != 0 {
-		// 	require.FailNow(t, "did not sanitize properly")
-		// }
-		// if !strings.Contains(strings.Join(cfg.SqlSettings.DataSourceSearchReplicas, " "), model.FAKE_SETTING) && len(cfg.SqlSettings.DataSourceSearchReplicas) != 0 {
-		// 	require.FailNow(t, "did not sanitize properly")
-		// }
+		if !strings.Contains(strings.Join(cfg.SqlSettings.DataSourceReplicas, " "), model.FAKE_SETTING) && len(cfg.SqlSettings.DataSourceReplicas) != 0 {
+			require.FailNow(t, "did not sanitize properly")
+		}
+		if !strings.Contains(strings.Join(cfg.SqlSettings.DataSourceSearchReplicas, " "), model.FAKE_SETTING) && len(cfg.SqlSettings.DataSourceSearchReplicas) != 0 {
+			require.FailNow(t, "did not sanitize properly")
+		}
 	})
 }
 

@@ -18,6 +18,7 @@ type Store interface {
 	Post() PostStore
 	Thread() ThreadStore
 	User() UserStore
+	Bot() BotStore
 	System() SystemStore
 	Role() RoleStore
 	Scheme() SchemeStore
@@ -376,6 +377,14 @@ type SchemeStore interface {
 	// PermanentDeleteAll() error
 	// CountByScope(scope string) (int64, error)
 	// CountWithoutPermission(scope, permissionID string, roleScope model.RoleScope, roleType model.RoleType) (int64, error)
+}
+
+type BotStore interface {
+	// Get(userId string, includeDeleted bool) (*model.Bot, error)
+	// GetAll(options *model.BotGetOptions) ([]*model.Bot, error)
+	// Save(bot *model.Bot) (*model.Bot, error)
+	// Update(bot *model.Bot) (*model.Bot, error)
+	// PermanentDelete(userId string) error
 }
 
 type SessionStore interface {

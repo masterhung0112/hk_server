@@ -1843,15 +1843,15 @@ func (s *GuestAccountsSettings) SetDefaults() {
 }
 
 func (o *Config) Sanitize() {
-	// if o.LdapSettings.BindPassword != nil && len(*o.LdapSettings.BindPassword) > 0 {
-	// 	*o.LdapSettings.BindPassword = FAKE_SETTING
-	// }
+	if o.LdapSettings.BindPassword != nil && len(*o.LdapSettings.BindPassword) > 0 {
+		*o.LdapSettings.BindPassword = FAKE_SETTING
+	}
 
-	// *o.FileSettings.PublicLinkSalt = FAKE_SETTING
+	*o.FileSettings.PublicLinkSalt = FAKE_SETTING
 
-	// if len(*o.FileSettings.AmazonS3SecretAccessKey) > 0 {
-	// 	*o.FileSettings.AmazonS3SecretAccessKey = FAKE_SETTING
-	// }
+	if len(*o.FileSettings.S3SecretAccessKey) > 0 {
+		*o.FileSettings.S3SecretAccessKey = FAKE_SETTING
+	}
 
 	if o.EmailSettings.SMTPPassword != nil && len(*o.EmailSettings.SMTPPassword) > 0 {
 		*o.EmailSettings.SMTPPassword = FAKE_SETTING

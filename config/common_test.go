@@ -10,57 +10,60 @@ var emptyConfig, readOnlyConfig, minimalConfig, invalidConfig, fixesRequiredConf
 func init() {
 	emptyConfig = &model.Config{}
 	readOnlyConfig = &model.Config{
+		//TODO
 		// ClusterSettings: model.ClusterSettings{
 		//   Enable:         bToP(true),
 		//   ReadOnlyConfig: bToP(true),
 		// },
 	}
 	minimalConfig = &model.Config{
-		// ServiceSettings: model.ServiceSettings{
-		//   SiteURL: sToP("http://minimal"),
-		// },
-		// SqlSettings: model.SqlSettings{
-		//   AtRestEncryptKey: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
-		// },
-		// FileSettings: model.FileSettings{
-		//   PublicLinkSalt: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
-		// },
-		// LocalizationSettings: model.LocalizationSettings{
-		//   DefaultServerLocale: sToP("en"),
-		//   DefaultClientLocale: sToP("en"),
-		// },
+		ServiceSettings: model.ServiceSettings{
+			SiteURL: sToP("http://minimal"),
+		},
+		SqlSettings: model.SqlSettings{
+			//TODO
+			// AtRestEncryptKey: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
+		},
+		FileSettings: model.FileSettings{
+			PublicLinkSalt: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
+		},
+		LocalizationSettings: model.LocalizationSettings{
+			DefaultServerLocale: sToP("en"),
+			DefaultClientLocale: sToP("en"),
+		},
 	}
 	invalidConfig = &model.Config{
-		// ServiceSettings: model.ServiceSettings{
-		//   SiteURL: sToP("invalid"),
-		// },
+		ServiceSettings: model.ServiceSettings{
+			SiteURL: sToP("invalid"),
+		},
 	}
 	fixesRequiredConfig = &model.Config{
-		// ServiceSettings: model.ServiceSettings{
-		//   SiteURL: sToP("http://trailingslash/"),
-		// },
-		// SqlSettings: model.SqlSettings{
-		//   AtRestEncryptKey: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
-		// },
-		// FileSettings: model.FileSettings{
-		//   DriverName:     sToP(model.IMAGE_DRIVER_LOCAL),
-		//   Directory:      sToP("/path/to/directory"),
-		//   PublicLinkSalt: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
-		// },
-		// LocalizationSettings: model.LocalizationSettings{
-		//   DefaultServerLocale: sToP("garbage"),
-		//   DefaultClientLocale: sToP("garbage"),
-		// },
+		ServiceSettings: model.ServiceSettings{
+			SiteURL: sToP("http://trailingslash/"),
+		},
+		SqlSettings: model.SqlSettings{
+			//TODO
+			// AtRestEncryptKey: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
+		},
+		FileSettings: model.FileSettings{
+			DriverName:     sToP(model.IMAGE_DRIVER_LOCAL),
+			Directory:      sToP("/path/to/directory"),
+			PublicLinkSalt: sToP("abcdefghijklmnopqrstuvwxyz0123456789"),
+		},
+		LocalizationSettings: model.LocalizationSettings{
+			DefaultServerLocale: sToP("garbage"),
+			DefaultClientLocale: sToP("garbage"),
+		},
 	}
 	ldapConfig = &model.Config{
-		// LdapSettings: model.LdapSettings{
-		//   BindPassword: sToP("password"),
-		// },
+		LdapSettings: model.LdapSettings{
+			BindPassword: sToP("password"),
+		},
 	}
 	testConfig = &model.Config{
-		// ServiceSettings: model.ServiceSettings{
-		//   SiteURL: sToP("http://TestStoreNew"),
-		// },
+		ServiceSettings: model.ServiceSettings{
+			SiteURL: sToP("http://TestStoreNew"),
+		},
 	}
 }
 

@@ -26,6 +26,7 @@ import (
 type SqlSupplierStores struct {
 	team            store.TeamStore
 	user            store.UserStore
+	bot             store.BotStore
 	post            store.PostStore
 	thread          store.ThreadStore
 	system          store.SystemStore
@@ -191,6 +192,10 @@ func (ss *SqlSupplier) User() store.UserStore {
 	return ss.stores.user
 }
 
+func (ss *SqlSupplier) Bot() store.BotStore {
+	return ss.stores.bot
+}
+
 func (ss *SqlSupplier) Post() store.PostStore {
 	return ss.stores.post
 }
@@ -302,6 +307,7 @@ func NewSqlSupplier(settings model.SqlSettings, metrics einterfaces.MetricsInter
 	// Create tables if necessary
 	supplier.stores.team = newSqlTeamStore(supplier)
 	supplier.stores.user = newSqlUserStore(supplier)
+	supplier.stores.bot = newSqlBotStore(supplier, metrics)
 	supplier.stores.post = newSqlPostStore(supplier, metrics)
 	supplier.stores.thread = newSqlThreadStore(supplier)
 	supplier.stores.system = newSqlSystemStore(supplier)

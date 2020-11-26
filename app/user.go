@@ -176,8 +176,7 @@ func (app *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *m
 func (a *App) createUser(user *model.User) (*model.User, *model.AppError) {
 	user.MakeNonNil()
 
-	// if err := a.IsPasswordValid(user.Password); user.AuthService == "" && err != nil {
-	if err := a.IsPasswordValid(user.Password); err != nil {
+	if err := a.IsPasswordValid(user.Password); user.AuthService == "" && err != nil {
 		return nil, err
 	}
 
