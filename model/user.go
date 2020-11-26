@@ -659,3 +659,39 @@ func (u *User) IsSAMLUser() bool {
 func (u *User) GetPreferredTimezone() string {
 	return GetPreferredTimezone(u.Timezone)
 }
+
+func (u *User) GetFullName() string {
+	if len(u.FirstName) > 0 && len(u.LastName) > 0 {
+		return u.FirstName + " " + u.LastName
+	} else if len(u.FirstName) > 0 {
+		return u.FirstName
+	} else if len(u.LastName) > 0 {
+		return u.LastName
+	} else {
+		return ""
+	}
+}
+
+func (u *User) getDisplayName(baseName, nameFormat string) string {
+	displayName := baseName
+
+	if nameFormat == SHOW_NICKNAME_FULLNAME {
+		if len(u.Nickname) > 0 {
+			displayName = u.Nickname
+		} else if fullName := u.GetFullName(); len(fullName) > 0 {
+			displayName = fullName
+		}
+	} else if nameFormat == SHOW_FULLNAME {
+		if fullName := u.GetFullName(); len(fullName) > 0 {
+			displayName = fullName
+		}
+	}
+
+	return displayName
+}
+
+func (u *User) GetDisplayName(nameFormat string) string {
+	displayName := u.Username
+
+	return u.getDisplayName(displayName, nameFormat)
+}

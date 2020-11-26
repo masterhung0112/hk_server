@@ -28,6 +28,310 @@ func sanitized(user *model.User) *model.User {
 // 	StoreTestWithSqlSupplier(t, storetest.TestUserStore)
 // }
 
+type UserStoreCountTS struct {
+	suite.Suite
+	StoreTestSuite
+
+	u1 *model.User
+	u2 *model.User
+	u3 *model.User
+	u4 *model.User
+	u5 *model.User
+	u6 *model.User
+	u7 *model.User
+}
+
+func TestUserStoreCountTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreCountTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
+
+func (s *UserStoreCountTS) TestCount() {
+	teamId := model.NewId()
+	channelId := model.NewId()
+	regularUser := &model.User{}
+	regularUser.Email = MakeEmail()
+	regularUser.Roles = model.SYSTEM_USER_ROLE_ID
+	_, err := s.Store().User().Save(regularUser)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(regularUser.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: regularUser.Id, SchemeAdmin: false, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: regularUser.Id, ChannelId: channelId, SchemeAdmin: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	guestUser := &model.User{}
+	guestUser.Email = MakeEmail()
+	guestUser.Roles = model.SYSTEM_GUEST_ROLE_ID
+	_, err = s.Store().User().Save(guestUser)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(guestUser.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: guestUser.Id, SchemeAdmin: false, SchemeUser: false, SchemeGuest: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: guestUser.Id, ChannelId: channelId, SchemeAdmin: false, SchemeUser: false, SchemeGuest: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	teamAdmin := &model.User{}
+	teamAdmin.Email = MakeEmail()
+	teamAdmin.Roles = model.SYSTEM_USER_ROLE_ID
+	_, err = s.Store().User().Save(teamAdmin)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(teamAdmin.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: teamAdmin.Id, SchemeAdmin: true, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: teamAdmin.Id, ChannelId: channelId, SchemeAdmin: true, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	sysAdmin := &model.User{}
+	sysAdmin.Email = MakeEmail()
+	sysAdmin.Roles = model.SYSTEM_ADMIN_ROLE_ID + " " + model.SYSTEM_USER_ROLE_ID
+	_, err = s.Store().User().Save(sysAdmin)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(sysAdmin.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: sysAdmin.Id, SchemeAdmin: false, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: sysAdmin.Id, ChannelId: channelId, SchemeAdmin: true, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	// Deleted
+	deletedUser := &model.User{}
+	deletedUser.Email = MakeEmail()
+	deletedUser.DeleteAt = model.GetMillis()
+	_, err = s.Store().User().Save(deletedUser)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(deletedUser.Id)) }()
+
+	// Bot
+	botUser, err := s.Store().User().Save(&model.User{
+		Email: MakeEmail(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(botUser.Id)) }()
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   botUser.Id,
+		Username: botUser.Username,
+		OwnerId:  regularUser.Id,
+	})
+	s.Require().Nil(nErr)
+	botUser.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(botUser.Id)) }()
+
+	testCases := []struct {
+		Description string
+		Options     model.UserCountOptions
+		Expected    int64
+	}{
+		{
+			"No bot accounts no deleted accounts and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: false,
+				IncludeDeleted:     false,
+				TeamId:             "",
+			},
+			4,
+		},
+		{
+			"Include bot accounts no deleted accounts and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     false,
+				TeamId:             "",
+			},
+			5,
+		},
+		{
+			"Include delete accounts no bots and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: false,
+				IncludeDeleted:     true,
+				TeamId:             "",
+			},
+			5,
+		},
+		{
+			"Include bot accounts and deleted accounts and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             "",
+			},
+			6,
+		},
+		{
+			"Include bot accounts, deleted accounts, exclude regular users with no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts:  true,
+				IncludeDeleted:      true,
+				ExcludeRegularUsers: true,
+				TeamId:              "",
+			},
+			1,
+		},
+		{
+			"Include bot accounts and deleted accounts with existing team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             teamId,
+			},
+			4,
+		},
+		{
+			"Include bot accounts and deleted accounts with fake team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             model.NewId(),
+			},
+			0,
+		},
+		{
+			"Include bot accounts and deleted accounts with existing team id and view restrictions allowing team",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             teamId,
+				ViewRestrictions:   &model.ViewUsersRestrictions{Teams: []string{teamId}},
+			},
+			4,
+		},
+		{
+			"Include bot accounts and deleted accounts with existing team id and view restrictions not allowing current team",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             teamId,
+				ViewRestrictions:   &model.ViewUsersRestrictions{Teams: []string{model.NewId()}},
+			},
+			0,
+		},
+		{
+			"Filter by system admins only",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_ADMIN_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by system users only",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_USER_ROLE_ID},
+			},
+			2,
+		},
+		{
+			"Filter by system guests only",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_GUEST_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by system admins and system users",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_ADMIN_ROLE_ID, model.SYSTEM_USER_ROLE_ID},
+			},
+			3,
+		},
+		{
+			"Filter by system admins, system user and system guests",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_ADMIN_ROLE_ID, model.SYSTEM_USER_ROLE_ID, model.SYSTEM_GUEST_ROLE_ID},
+			},
+			4,
+		},
+		{
+			"Filter by team admins",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_ADMIN_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by team members",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_USER_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by team guests",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_GUEST_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by team guests and any system role",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_GUEST_ROLE_ID},
+				Roles:     []string{model.SYSTEM_ADMIN_ROLE_ID},
+			},
+			2,
+		},
+		{
+			"Filter by channel members",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				ChannelRoles: []string{model.CHANNEL_USER_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by channel members and system admins",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				Roles:        []string{model.SYSTEM_ADMIN_ROLE_ID},
+				ChannelRoles: []string{model.CHANNEL_USER_ROLE_ID},
+			},
+			2,
+		},
+		{
+			"Filter by channel members and system admins and channel admins",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				Roles:        []string{model.SYSTEM_ADMIN_ROLE_ID},
+				ChannelRoles: []string{model.CHANNEL_USER_ROLE_ID, model.CHANNEL_ADMIN_ROLE_ID},
+			},
+			3,
+		},
+		{
+			"Filter by channel guests",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				ChannelRoles: []string{model.CHANNEL_GUEST_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by channel guests and any system role",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				ChannelRoles: []string{model.CHANNEL_GUEST_ROLE_ID},
+				Roles:        []string{model.SYSTEM_ADMIN_ROLE_ID},
+			},
+			2,
+		},
+	}
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			count, err := s.Store().User().Count(testCase.Options)
+			s.Require().Nil(err)
+			s.Require().Equal(testCase.Expected, count)
+		})
+	}
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
