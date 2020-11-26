@@ -112,11 +112,10 @@ func (a *App) CheckPasswordAndAllCriteria(user *model.User, password string, mfa
 
 	if err := a.checkUserPassword(user, password); err != nil {
 		if passErr := a.Srv().Store.User().UpdateFailedPasswordAttempts(user.Id, user.FailedAttempts+1); passErr != nil {
-			return passErr
+			return model.NewAppError("CheckPasswordAndAllCriteria", "app.user.update_failed_pwd_attempts.app_error", nil, passErr.Error(), http.StatusInternalServerError)
 		}
 
-		//TODO: Open
-		// a.InvalidateCacheForUser(user.Id)
+		a.InvalidateCacheForUser(user.Id)
 
 		return err
 	}
@@ -131,18 +130,16 @@ func (a *App) CheckPasswordAndAllCriteria(user *model.User, password string, mfa
 	// 		}
 	// 	}
 
-	//   //TODO: Open
-	// 	// a.InvalidateCacheForUser(user.Id)
+	// a.InvalidateCacheForUser(user.Id)
 
 	// 	return err
 	// }
 
 	if passErr := a.Srv().Store.User().UpdateFailedPasswordAttempts(user.Id, 0); passErr != nil {
-		return passErr
+		return model.NewAppError("CheckPasswordAndAllCriteria", "app.user.update_failed_pwd_attempts.app_error", nil, passErr.Error(), http.StatusInternalServerError)
 	}
 
-	//TODO: Open
-	// a.InvalidateCacheForUser(user.Id)
+	a.InvalidateCacheForUser(user.Id)
 
 	if err := a.CheckUserPostflightAuthenticationCriteria(user); err != nil {
 		return err
