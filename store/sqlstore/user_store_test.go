@@ -1,10 +1,10 @@
 package sqlstore
 
 import (
-	"time"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/suite"
 	"testing"
+	"time"
 
 	"github.com/masterhung0112/hk_server/store/storetest"
 )

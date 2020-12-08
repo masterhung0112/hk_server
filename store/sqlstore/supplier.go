@@ -29,8 +29,8 @@ type SqlSupplierStores struct {
 	bot             store.BotStore
 	post            store.PostStore
 	thread          store.ThreadStore
-  system          store.SystemStore
-  status          store.StatusStore
+	system          store.SystemStore
+	status          store.StatusStore
 	role            store.RoleStore
 	scheme          store.SchemeStore
 	channel         store.ChannelStore
@@ -311,8 +311,8 @@ func NewSqlSupplier(settings model.SqlSettings, metrics einterfaces.MetricsInter
 	supplier.stores.bot = newSqlBotStore(supplier, metrics)
 	supplier.stores.post = newSqlPostStore(supplier, metrics)
 	supplier.stores.thread = newSqlThreadStore(supplier)
-  supplier.stores.system = newSqlSystemStore(supplier)
-  supplier.stores.status = newSqlStatusStore(supplier)
+	supplier.stores.system = newSqlSystemStore(supplier)
+	supplier.stores.status = newSqlStatusStore(supplier)
 	supplier.stores.role = newSqlRoleStore(supplier)
 	supplier.stores.scheme = newSqlSchemeStore(supplier)
 	supplier.stores.channel = newSqlChannelStore(supplier)

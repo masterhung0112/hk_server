@@ -19,8 +19,8 @@ type Store interface {
 	Thread() ThreadStore
 	User() UserStore
 	Bot() BotStore
-  System() SystemStore
-  Status() StatusStore
+	System() SystemStore
+	Status() StatusStore
 	Role() RoleStore
 	Scheme() SchemeStore
 	Session() SessionStore

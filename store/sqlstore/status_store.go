@@ -1,10 +1,10 @@
 package sqlstore
 
 import (
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/model"
 	"database/sql"
 	"fmt"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
