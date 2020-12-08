@@ -911,6 +911,73 @@ func (s *UserStoreTS) TestProfilesInChannelByStatus() {
 	})
 }
 
+func (s *UserStoreTS) TestGetProfilesWithoutTeam() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+		DeleteAt: 1,
+		Roles:    "system_admin",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get, page 0, per_page 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 0, PerPage: 100})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u2), sanitized(u3)}, users)
+	})
+
+	s.T().Run("get, page 1, per_page 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 1, PerPage: 1})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u3)}, users)
+	})
+
+	s.T().Run("get, page 2, per_page 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 2, PerPage: 1})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{}, users)
+	})
+
+	s.T().Run("get, page 0, per_page 100, inactive", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 0, PerPage: 100, Inactive: true})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u3)}, users)
+	})
+
+	s.T().Run("get, page 0, per_page 100, role", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 0, PerPage: 100, Role: "system_admin"})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u3)}, users)
+	})
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
