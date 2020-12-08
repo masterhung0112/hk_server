@@ -19,7 +19,8 @@ type Store interface {
 	Thread() ThreadStore
 	User() UserStore
 	Bot() BotStore
-	System() SystemStore
+  System() SystemStore
+  Status() StatusStore
 	Role() RoleStore
 	Scheme() SchemeStore
 	Session() SessionStore
@@ -176,6 +177,15 @@ type SystemStore interface {
 	GetByName(name string) (*model.System, error)
 	PermanentDeleteByName(name string) (*model.System, error)
 	InsertIfExists(system *model.System) (*model.System, error)
+}
+
+type StatusStore interface {
+	SaveOrUpdate(status *model.Status) error
+	Get(userId string) (*model.Status, error)
+	GetByIds(userIds []string) ([]*model.Status, error)
+	ResetAll() error
+	GetTotalActiveUsersCount() (int64, error)
+	UpdateLastActivityAt(userId string, lastActivityAt int64) error
 }
 
 type RoleStore interface {
