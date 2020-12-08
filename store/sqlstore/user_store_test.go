@@ -521,6 +521,30 @@ func (s *UserStoreTS) TestUpdateUpdateAt() {
 	s.Require().Less(u1.UpdateAt, user.UpdateAt, "UpdateAt not updated correctly")
 }
 
+func (s *UserStoreTS) TestUpdateAuthData() {
+	teamId := model.NewId()
+
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	service := "someservice"
+	authData := model.NewId()
+
+	_, err = s.Store().User().UpdateAuthData(u1.Id, service, &authData, "", true)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().GetByEmail(u1.Email)
+	s.Require().Nil(err)
+	s.Require().Equal(service, user.AuthService, "AuthService was not updated correctly")
+	s.Require().Equal(authData, *user.AuthData, "AuthData was not updated correctly")
+	s.Require().Equal("", user.Password, "Password was not cleared properly")
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
