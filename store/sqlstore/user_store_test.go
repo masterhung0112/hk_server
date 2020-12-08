@@ -580,6 +580,170 @@ func (s *UserStoreTS) TestUpdateMfaActive() {
 	s.Require().Nil(err)
 }
 
+func (s *UserStoreTS) TestGetProfilesInChannel() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u4.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u4.Id}, -1)
+	s.Require().Nil(nErr)
+
+	ch1 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in channel",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_OPEN,
+	}
+	c1, nErr := s.Store().Channel().Save(ch1, -1)
+	s.Require().Nil(nErr)
+
+	ch2 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in private",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_PRIVATE,
+	}
+	c2, nErr := s.Store().Channel().Save(ch2, -1)
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u3.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u4.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	u4.DeleteAt = 1
+	_, err = s.Store().User().Update(u4, true)
+	s.Require().Nil(err)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	s.T().Run("get all users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1), sanitized(u2), sanitized(u3), sanitized(u4)}, users)
+	})
+
+	s.T().Run("get only active users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+			Active:      true,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1), sanitized(u2), sanitized(u3)}, users)
+	})
+
+	s.T().Run("get inactive users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+			Inactive:    true,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u4)}, users)
+	})
+
+	s.T().Run("get in channel 1, offset 1, limit 2", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        1,
+			PerPage:     1,
+		})
+		s.Require().Nil(err)
+		users_p2, err2 := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        2,
+			PerPage:     1,
+		})
+		s.Require().Nil(err2)
+		users = append(users, users_p2...)
+		s.Assert().Equal([]*model.User{sanitized(u2), sanitized(u3)}, users)
+	})
+
+	s.T().Run("get in channel 2, offset 0, limit 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c2.Id,
+			Page:        0,
+			PerPage:     1,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1)}, users)
+	})
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
