@@ -560,6 +560,26 @@ func (s *UserStoreTS) TestUpdateMfaSecret() {
 	s.Require().Nil(err)
 }
 
+func (s *UserStoreTS) TestUpdateMfaActive() {
+	u1 := model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(&u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	time.Sleep(time.Millisecond)
+
+	err = s.Store().User().UpdateMfaActive(u1.Id, true)
+	s.Require().Nil(err)
+
+	err = s.Store().User().UpdateMfaActive(u1.Id, false)
+	s.Require().Nil(err)
+
+	// should pass, no update will occur though
+	err = s.Store().User().UpdateMfaActive("junk", true)
+	s.Require().Nil(err)
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
