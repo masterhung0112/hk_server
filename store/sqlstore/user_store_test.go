@@ -545,6 +545,21 @@ func (s *UserStoreTS) TestUpdateAuthData() {
 	s.Require().Equal("", user.Password, "Password was not cleared properly")
 }
 
+func (s *UserStoreTS) TestUpdateMfaSecret() {
+	u1 := model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(&u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	err = s.Store().User().UpdateMfaSecret(u1.Id, "12345")
+	s.Require().Nil(err)
+
+	// should pass, no update will occur though
+	err = s.Store().User().UpdateMfaSecret("junk", "12345")
+	s.Require().Nil(err)
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
