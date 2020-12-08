@@ -504,6 +504,23 @@ func (s *UserStoreTS) TestUpdatePassword() {
 	s.Require().Equal(user.Password, hashedPassword, "Password was not updated correctly")
 }
 
+func (s *UserStoreTS) TestUpdateUpdateAt() {
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	_, err = s.Store().User().UpdateUpdateAt(u1.Id)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+	s.Require().Less(u1.UpdateAt, user.UpdateAt, "UpdateAt not updated correctly")
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
