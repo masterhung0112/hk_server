@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"time"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -446,6 +447,40 @@ func (s *UserStoreTS) TestUpdate() {
 
 	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
 	s.Require().Nil(err, "Update should not have failed")
+}
+
+func (s *UserStoreTS) TestResetLastPictureUpdate() {
+
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+
+	s.Assert().NotZero(user.LastPictureUpdate)
+	s.Assert().NotZero(user.UpdateAt)
+
+	// Ensure update at timestamp changes
+	time.Sleep(time.Millisecond)
+
+	err = s.Store().User().ResetLastPictureUpdate(u1.Id)
+	s.Require().Nil(err)
+
+	s.Store().User().InvalidateProfileCacheForUser(u1.Id)
+
+	user2, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+
+	s.Assert().True(user2.UpdateAt > user.UpdateAt)
+	s.Assert().Zero(user2.LastPictureUpdate)
 }
 
 type UserStoreGetAllProfilesTS struct {
