@@ -483,6 +483,27 @@ func (s *UserStoreTS) TestResetLastPictureUpdate() {
 	s.Assert().Zero(user2.LastPictureUpdate)
 }
 
+func (s *UserStoreTS) TestUpdatePassword() {
+	teamId := model.NewId()
+
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	hashedPassword := model.HashPassword("newpwd")
+
+	err = s.Store().User().UpdatePassword(u1.Id, hashedPassword)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().GetByEmail(u1.Email)
+	s.Require().Nil(err)
+	s.Require().Equal(user.Password, hashedPassword, "Password was not updated correctly")
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
