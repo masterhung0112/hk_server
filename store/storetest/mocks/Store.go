@@ -162,6 +162,22 @@ func (_m *Store) Session() store.SessionStore {
 	return r0
 }
 
+// Status provides a mock function with given fields:
+func (_m *Store) Status() store.StatusStore {
+	ret := _m.Called()
+
+	var r0 store.StatusStore
+	if rf, ok := ret.Get(0).(func() store.StatusStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.StatusStore)
+		}
+	}
+
+	return r0
+}
+
 // System provides a mock function with given fields:
 func (_m *Store) System() store.SystemStore {
 	ret := _m.Called()

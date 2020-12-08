@@ -4,6 +4,7 @@ import (
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/suite"
 	"testing"
+	"time"
 
 	"github.com/masterhung0112/hk_server/store/storetest"
 )
@@ -27,6 +28,955 @@ func sanitized(user *model.User) *model.User {
 // func TestUserStore(t *testing.T) {
 // 	StoreTestWithSqlSupplier(t, storetest.TestUserStore)
 // }
+
+type UserStoreTS struct {
+	suite.Suite
+	StoreTestSuite
+}
+
+func TestUserStoreTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
+
+func (s *UserStoreTS) cleanupStatusStore() {
+	_, execerr := s.SqlSupplier().GetMaster().ExecNoTimeout(` DELETE FROM Status `)
+	s.Require().Nil(execerr)
+}
+
+func (s *UserStoreTS) TestCount() {
+	teamId := model.NewId()
+	channelId := model.NewId()
+	regularUser := &model.User{}
+	regularUser.Email = MakeEmail()
+	regularUser.Roles = model.SYSTEM_USER_ROLE_ID
+	_, err := s.Store().User().Save(regularUser)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(regularUser.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: regularUser.Id, SchemeAdmin: false, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: regularUser.Id, ChannelId: channelId, SchemeAdmin: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	guestUser := &model.User{}
+	guestUser.Email = MakeEmail()
+	guestUser.Roles = model.SYSTEM_GUEST_ROLE_ID
+	_, err = s.Store().User().Save(guestUser)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(guestUser.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: guestUser.Id, SchemeAdmin: false, SchemeUser: false, SchemeGuest: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: guestUser.Id, ChannelId: channelId, SchemeAdmin: false, SchemeUser: false, SchemeGuest: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	teamAdmin := &model.User{}
+	teamAdmin.Email = MakeEmail()
+	teamAdmin.Roles = model.SYSTEM_USER_ROLE_ID
+	_, err = s.Store().User().Save(teamAdmin)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(teamAdmin.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: teamAdmin.Id, SchemeAdmin: true, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: teamAdmin.Id, ChannelId: channelId, SchemeAdmin: true, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	sysAdmin := &model.User{}
+	sysAdmin.Email = MakeEmail()
+	sysAdmin.Roles = model.SYSTEM_ADMIN_ROLE_ID + " " + model.SYSTEM_USER_ROLE_ID
+	_, err = s.Store().User().Save(sysAdmin)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(sysAdmin.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: sysAdmin.Id, SchemeAdmin: false, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{UserId: sysAdmin.Id, ChannelId: channelId, SchemeAdmin: true, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+	s.Require().Nil(nErr)
+
+	// Deleted
+	deletedUser := &model.User{}
+	deletedUser.Email = MakeEmail()
+	deletedUser.DeleteAt = model.GetMillis()
+	_, err = s.Store().User().Save(deletedUser)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(deletedUser.Id)) }()
+
+	// Bot
+	botUser, err := s.Store().User().Save(&model.User{
+		Email: MakeEmail(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(botUser.Id)) }()
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   botUser.Id,
+		Username: botUser.Username,
+		OwnerId:  regularUser.Id,
+	})
+	s.Require().Nil(nErr)
+	botUser.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(botUser.Id)) }()
+
+	testCases := []struct {
+		Description string
+		Options     model.UserCountOptions
+		Expected    int64
+	}{
+		{
+			"No bot accounts no deleted accounts and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: false,
+				IncludeDeleted:     false,
+				TeamId:             "",
+			},
+			4,
+		},
+		{
+			"Include bot accounts no deleted accounts and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     false,
+				TeamId:             "",
+			},
+			5,
+		},
+		{
+			"Include delete accounts no bots and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: false,
+				IncludeDeleted:     true,
+				TeamId:             "",
+			},
+			5,
+		},
+		{
+			"Include bot accounts and deleted accounts and no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             "",
+			},
+			6,
+		},
+		{
+			"Include bot accounts, deleted accounts, exclude regular users with no team id",
+			model.UserCountOptions{
+				IncludeBotAccounts:  true,
+				IncludeDeleted:      true,
+				ExcludeRegularUsers: true,
+				TeamId:              "",
+			},
+			1,
+		},
+		{
+			"Include bot accounts and deleted accounts with existing team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             teamId,
+			},
+			4,
+		},
+		{
+			"Include bot accounts and deleted accounts with fake team id",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             model.NewId(),
+			},
+			0,
+		},
+		{
+			"Include bot accounts and deleted accounts with existing team id and view restrictions allowing team",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             teamId,
+				ViewRestrictions:   &model.ViewUsersRestrictions{Teams: []string{teamId}},
+			},
+			4,
+		},
+		{
+			"Include bot accounts and deleted accounts with existing team id and view restrictions not allowing current team",
+			model.UserCountOptions{
+				IncludeBotAccounts: true,
+				IncludeDeleted:     true,
+				TeamId:             teamId,
+				ViewRestrictions:   &model.ViewUsersRestrictions{Teams: []string{model.NewId()}},
+			},
+			0,
+		},
+		{
+			"Filter by system admins only",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_ADMIN_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by system users only",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_USER_ROLE_ID},
+			},
+			2,
+		},
+		{
+			"Filter by system guests only",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_GUEST_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by system admins and system users",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_ADMIN_ROLE_ID, model.SYSTEM_USER_ROLE_ID},
+			},
+			3,
+		},
+		{
+			"Filter by system admins, system user and system guests",
+			model.UserCountOptions{
+				TeamId: teamId,
+				Roles:  []string{model.SYSTEM_ADMIN_ROLE_ID, model.SYSTEM_USER_ROLE_ID, model.SYSTEM_GUEST_ROLE_ID},
+			},
+			4,
+		},
+		{
+			"Filter by team admins",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_ADMIN_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by team members",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_USER_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by team guests",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_GUEST_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by team guests and any system role",
+			model.UserCountOptions{
+				TeamId:    teamId,
+				TeamRoles: []string{model.TEAM_GUEST_ROLE_ID},
+				Roles:     []string{model.SYSTEM_ADMIN_ROLE_ID},
+			},
+			2,
+		},
+		{
+			"Filter by channel members",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				ChannelRoles: []string{model.CHANNEL_USER_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by channel members and system admins",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				Roles:        []string{model.SYSTEM_ADMIN_ROLE_ID},
+				ChannelRoles: []string{model.CHANNEL_USER_ROLE_ID},
+			},
+			2,
+		},
+		{
+			"Filter by channel members and system admins and channel admins",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				Roles:        []string{model.SYSTEM_ADMIN_ROLE_ID},
+				ChannelRoles: []string{model.CHANNEL_USER_ROLE_ID, model.CHANNEL_ADMIN_ROLE_ID},
+			},
+			3,
+		},
+		{
+			"Filter by channel guests",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				ChannelRoles: []string{model.CHANNEL_GUEST_ROLE_ID},
+			},
+			1,
+		},
+		{
+			"Filter by channel guests and any system role",
+			model.UserCountOptions{
+				ChannelId:    channelId,
+				ChannelRoles: []string{model.CHANNEL_GUEST_ROLE_ID},
+				Roles:        []string{model.SYSTEM_ADMIN_ROLE_ID},
+			},
+			2,
+		},
+	}
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			count, err := s.Store().User().Count(testCase.Options)
+			s.Require().Nil(err)
+			s.Require().Equal(testCase.Expected, count)
+		})
+	}
+}
+
+func (s *UserStoreTS) TestSave() {
+	teamId := model.NewId()
+	maxUsersPerTeam := 50
+
+	u1 := model.User{
+		Email:    MakeEmail(),
+		Username: model.NewId(),
+	}
+
+	_, err := s.Store().User().Save(&u1)
+	s.Require().Nil(err, "couldn't save user")
+
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, maxUsersPerTeam)
+	s.Require().Nil(nErr)
+
+	_, err = s.Store().User().Save(&u1)
+	s.Require().NotNil(err, "shouldn't be able to update user from save")
+
+	u2 := model.User{
+		Email:    u1.Email,
+		Username: model.NewId(),
+	}
+	_, err = s.Store().User().Save(&u2)
+	s.Require().NotNil(err, "should be unique email")
+
+	u2.Email = MakeEmail()
+	u2.Username = u1.Username
+	_, err = s.Store().User().Save(&u2)
+	s.Require().NotNil(err, "should be unique username")
+
+	u2.Username = ""
+	_, err = s.Store().User().Save(&u2)
+	s.Require().NotNil(err, "should be unique username")
+
+	for i := 0; i < 49; i++ {
+		u := model.User{
+			Email:    MakeEmail(),
+			Username: model.NewId(),
+		}
+		_, err = s.Store().User().Save(&u)
+		s.Require().Nil(err, "couldn't save item")
+
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u.Id)) }()
+
+		_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u.Id}, maxUsersPerTeam)
+		s.Require().Nil(nErr)
+	}
+
+	u2.Id = ""
+	u2.Email = MakeEmail()
+	u2.Username = model.NewId()
+	_, err = s.Store().User().Save(&u2)
+	s.Require().Nil(err, "couldn't save item")
+
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, maxUsersPerTeam)
+	s.Require().NotNil(nErr, "should be the limit")
+}
+
+func (s *UserStoreTS) TestUpdate() {
+	u1 := &model.User{
+		Email: MakeEmail(),
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2 := &model.User{
+		Email:       MakeEmail(),
+		AuthService: "ldap",
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	_, err = s.Store().User().Update(u1, false)
+	s.Require().Nil(err)
+
+	missing := &model.User{}
+	_, err = s.Store().User().Update(missing, false)
+	s.Require().NotNil(err, "Update should have failed because of missing key")
+
+	newId := &model.User{
+		Id: model.NewId(),
+	}
+	_, err = s.Store().User().Update(newId, false)
+	s.Require().NotNil(err, "Update should have failed because id change")
+
+	u2.Email = MakeEmail()
+	_, err = s.Store().User().Update(u2, false)
+	s.Require().NotNil(err, "Update should have failed because you can't modify AD/LDAP fields")
+
+	u3 := &model.User{
+		Email:       MakeEmail(),
+		AuthService: "gitlab",
+	}
+	oldEmail := u3.Email
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3.Email = MakeEmail()
+	userUpdate, err := s.Store().User().Update(u3, false)
+	s.Require().Nil(err, "Update should not have failed")
+	s.Assert().Equal(oldEmail, userUpdate.New.Email, "Email should not have been updated as the update is not trusted")
+
+	u3.Email = MakeEmail()
+	userUpdate, err = s.Store().User().Update(u3, true)
+	s.Require().Nil(err, "Update should not have failed")
+	s.Assert().NotEqual(oldEmail, userUpdate.New.Email, "Email should have been updated as the update is trusted")
+
+	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
+	s.Require().Nil(err, "Update should not have failed")
+}
+
+func (s *UserStoreTS) TestResetLastPictureUpdate() {
+
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+
+	s.Assert().NotZero(user.LastPictureUpdate)
+	s.Assert().NotZero(user.UpdateAt)
+
+	// Ensure update at timestamp changes
+	time.Sleep(time.Millisecond)
+
+	err = s.Store().User().ResetLastPictureUpdate(u1.Id)
+	s.Require().Nil(err)
+
+	s.Store().User().InvalidateProfileCacheForUser(u1.Id)
+
+	user2, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+
+	s.Assert().True(user2.UpdateAt > user.UpdateAt)
+	s.Assert().Zero(user2.LastPictureUpdate)
+}
+
+func (s *UserStoreTS) TestUpdatePassword() {
+	teamId := model.NewId()
+
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	hashedPassword := model.HashPassword("newpwd")
+
+	err = s.Store().User().UpdatePassword(u1.Id, hashedPassword)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().GetByEmail(u1.Email)
+	s.Require().Nil(err)
+	s.Require().Equal(user.Password, hashedPassword, "Password was not updated correctly")
+}
+
+func (s *UserStoreTS) TestUpdateUpdateAt() {
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	_, err = s.Store().User().UpdateUpdateAt(u1.Id)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+	s.Require().Less(u1.UpdateAt, user.UpdateAt, "UpdateAt not updated correctly")
+}
+
+func (s *UserStoreTS) TestUpdateAuthData() {
+	teamId := model.NewId()
+
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	service := "someservice"
+	authData := model.NewId()
+
+	_, err = s.Store().User().UpdateAuthData(u1.Id, service, &authData, "", true)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().GetByEmail(u1.Email)
+	s.Require().Nil(err)
+	s.Require().Equal(service, user.AuthService, "AuthService was not updated correctly")
+	s.Require().Equal(authData, *user.AuthData, "AuthData was not updated correctly")
+	s.Require().Equal("", user.Password, "Password was not cleared properly")
+}
+
+func (s *UserStoreTS) TestUpdateMfaSecret() {
+	u1 := model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(&u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	err = s.Store().User().UpdateMfaSecret(u1.Id, "12345")
+	s.Require().Nil(err)
+
+	// should pass, no update will occur though
+	err = s.Store().User().UpdateMfaSecret("junk", "12345")
+	s.Require().Nil(err)
+}
+
+func (s *UserStoreTS) TestUpdateMfaActive() {
+	u1 := model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(&u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	time.Sleep(time.Millisecond)
+
+	err = s.Store().User().UpdateMfaActive(u1.Id, true)
+	s.Require().Nil(err)
+
+	err = s.Store().User().UpdateMfaActive(u1.Id, false)
+	s.Require().Nil(err)
+
+	// should pass, no update will occur though
+	err = s.Store().User().UpdateMfaActive("junk", true)
+	s.Require().Nil(err)
+}
+
+func (s *UserStoreTS) TestGetProfilesInChannel() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u4.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u4.Id}, -1)
+	s.Require().Nil(nErr)
+
+	ch1 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in channel",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_OPEN,
+	}
+	c1, nErr := s.Store().Channel().Save(ch1, -1)
+	s.Require().Nil(nErr)
+
+	ch2 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in private",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_PRIVATE,
+	}
+	c2, nErr := s.Store().Channel().Save(ch2, -1)
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u3.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u4.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	u4.DeleteAt = 1
+	_, err = s.Store().User().Update(u4, true)
+	s.Require().Nil(err)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	s.T().Run("get all users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1), sanitized(u2), sanitized(u3), sanitized(u4)}, users)
+	})
+
+	s.T().Run("get only active users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+			Active:      true,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1), sanitized(u2), sanitized(u3)}, users)
+	})
+
+	s.T().Run("get inactive users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+			Inactive:    true,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u4)}, users)
+	})
+
+	s.T().Run("get in channel 1, offset 1, limit 2", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        1,
+			PerPage:     1,
+		})
+		s.Require().Nil(err)
+		users_p2, err2 := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        2,
+			PerPage:     1,
+		})
+		s.Require().Nil(err2)
+		users = append(users, users_p2...)
+		s.Assert().Equal([]*model.User{sanitized(u2), sanitized(u3)}, users)
+	})
+
+	s.T().Run("get in channel 2, offset 0, limit 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c2.Id,
+			Page:        0,
+			PerPage:     1,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1)}, users)
+	})
+}
+
+func (s *UserStoreTS) TestProfilesInChannelByStatus() {
+
+	s.cleanupStatusStore()
+
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u4.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u4.Id}, -1)
+	s.Require().Nil(nErr)
+
+	ch1 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in channel",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_OPEN,
+	}
+	c1, nErr := s.Store().Channel().Save(ch1, -1)
+	s.Require().Nil(nErr)
+
+	ch2 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in private",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_PRIVATE,
+	}
+	c2, nErr := s.Store().Channel().Save(ch2, -1)
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u3.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u4.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	u4.DeleteAt = 1
+	_, err = s.Store().User().Update(u4, true)
+	s.Require().Nil(err)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{
+		UserId: u1.Id,
+		Status: model.STATUS_DND,
+	}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{
+		UserId: u2.Id,
+		Status: model.STATUS_AWAY,
+	}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{
+		UserId: u3.Id,
+		Status: model.STATUS_ONLINE,
+	}))
+
+	s.T().Run("get all users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1), sanitized(u2), sanitized(u3), sanitized(u4)}, users)
+	})
+
+	s.T().Run("get active in channel 1 by status, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannelByStatus(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+			Active:      true,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u3), sanitized(u2), sanitized(u1)}, users)
+	})
+
+	s.T().Run("get inactive users in channel 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannel(&model.UserGetOptions{
+			InChannelId: c1.Id,
+			Page:        0,
+			PerPage:     100,
+			Inactive:    true,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u4)}, users)
+	})
+
+	s.T().Run("get in channel 2 by status, offset 0, limit 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesInChannelByStatus(&model.UserGetOptions{
+			InChannelId: c2.Id,
+			Page:        0,
+			PerPage:     1,
+		})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u1)}, users)
+	})
+}
+
+func (s *UserStoreTS) TestGetProfilesWithoutTeam() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+		DeleteAt: 1,
+		Roles:    "system_admin",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get, page 0, per_page 100", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 0, PerPage: 100})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u2), sanitized(u3)}, users)
+	})
+
+	s.T().Run("get, page 1, per_page 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 1, PerPage: 1})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u3)}, users)
+	})
+
+	s.T().Run("get, page 2, per_page 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 2, PerPage: 1})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{}, users)
+	})
+
+	s.T().Run("get, page 0, per_page 100, inactive", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 0, PerPage: 100, Inactive: true})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u3)}, users)
+	})
+
+	s.T().Run("get, page 0, per_page 100, role", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesWithoutTeam(&model.UserGetOptions{Page: 0, PerPage: 100, Role: "system_admin"})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{sanitized(u3)}, users)
+	})
+}
 
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite

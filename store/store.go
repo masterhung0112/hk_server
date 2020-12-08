@@ -20,6 +20,7 @@ type Store interface {
 	User() UserStore
 	Bot() BotStore
 	System() SystemStore
+	Status() StatusStore
 	Role() RoleStore
 	Scheme() SchemeStore
 	Session() SessionStore
@@ -176,6 +177,15 @@ type SystemStore interface {
 	GetByName(name string) (*model.System, error)
 	PermanentDeleteByName(name string) (*model.System, error)
 	InsertIfExists(system *model.System) (*model.System, error)
+}
+
+type StatusStore interface {
+	SaveOrUpdate(status *model.Status) error
+	Get(userId string) (*model.Status, error)
+	GetByIds(userIds []string) ([]*model.Status, error)
+	ResetAll() error
+	GetTotalActiveUsersCount() (int64, error)
+	UpdateLastActivityAt(userId string, lastActivityAt int64) error
 }
 
 type RoleStore interface {
@@ -380,11 +390,11 @@ type SchemeStore interface {
 }
 
 type BotStore interface {
-	// Get(userId string, includeDeleted bool) (*model.Bot, error)
+	Get(userId string, includeDeleted bool) (*model.Bot, error)
 	// GetAll(options *model.BotGetOptions) ([]*model.Bot, error)
-	// Save(bot *model.Bot) (*model.Bot, error)
+	Save(bot *model.Bot) (*model.Bot, error)
 	// Update(bot *model.Bot) (*model.Bot, error)
-	// PermanentDelete(userId string) error
+	PermanentDelete(userId string) error
 }
 
 type SessionStore interface {

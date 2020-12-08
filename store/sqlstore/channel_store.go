@@ -725,20 +725,7 @@ func (s SqlChannelStore) SaveMultipleMembers(members []*model.ChannelMember) ([]
 
 	newMembers, err := s.saveMultipleMembersT(transaction, members)
 	if err != nil { // TODO: this will go away once SaveMultipleMembers is migrated too.
-		var cErr *store.ErrConflict
-		var appErr *model.AppError
-		switch {
-		case errors.As(err, &cErr):
-			switch cErr.Resource {
-			case "ChannelMembers":
-				return nil, model.NewAppError("CreateChannel", "store.sql_channel.save_member.exists.app_error", nil, cErr.Error(), http.StatusBadRequest)
-			}
-		case errors.As(err, &appErr): // in case we haven't converted to plain error.
-			return nil, appErr
-		default: // last fallback in case it doesn't map to an existing app error.
-			// TODO: This error key would go away once this store method is migrated to return plain errors
-			return nil, model.NewAppError("CreateDirectChannel", "app.channel.create_direct_channel.internal_error", nil, err.Error(), http.StatusInternalServerError)
-		}
+		return nil, err
 	}
 
 	if err := transaction.Commit(); err != nil {

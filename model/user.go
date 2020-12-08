@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/masterhung0112/hk_server/services/timezones"
 	"io"
 	"math/rand"
 	"net/http"
@@ -211,14 +212,14 @@ func (u *User) PreSave() {
 		u.Username = NewId()
 	}
 
-	// if u.AuthData != nil && *u.AuthData == "" {
-	// 	u.AuthData = nil
-	// }
+	if u.AuthData != nil && *u.AuthData == "" {
+		u.AuthData = nil
+	}
 
 	u.Username = SanitizeUnicode(u.Username)
 	u.FirstName = SanitizeUnicode(u.FirstName)
 	u.LastName = SanitizeUnicode(u.LastName)
-	// u.Nickname = SanitizeUnicode(u.Nickname)
+	u.Nickname = SanitizeUnicode(u.Nickname)
 
 	u.Username = NormalizeUsername(u.Username)
 	u.Email = NormalizeEmail(u.Email)
@@ -226,25 +227,25 @@ func (u *User) PreSave() {
 	u.CreateAt = GetMillis()
 	u.UpdateAt = u.CreateAt
 
-	// u.LastPasswordUpdate = u.CreateAt
+	u.LastPasswordUpdate = u.CreateAt
 
-	// u.MfaActive = false
+	u.MfaActive = false
 
-	// if u.Locale == "" {
-	// 	u.Locale = DEFAULT_LOCALE
-	// }
+	if u.Locale == "" {
+		u.Locale = DEFAULT_LOCALE
+	}
 
-	// if u.Props == nil {
-	// 	u.Props = make(map[string]string)
-	// }
+	if u.Props == nil {
+		u.Props = make(map[string]string)
+	}
 
-	// if u.NotifyProps == nil || len(u.NotifyProps) == 0 {
-	// 	u.SetDefaultNotifications()
-	// }
+	if u.NotifyProps == nil || len(u.NotifyProps) == 0 {
+		u.SetDefaultNotifications()
+	}
 
-	// if u.Timezone == nil {
-	// 	u.Timezone = timezones.DefaultUserTimezone()
-	// }
+	if u.Timezone == nil {
+		u.Timezone = timezones.DefaultUserTimezone()
+	}
 
 	if len(u.Password) > 0 {
 		u.Password = HashPassword(u.Password)
@@ -658,4 +659,40 @@ func (u *User) IsSAMLUser() bool {
 
 func (u *User) GetPreferredTimezone() string {
 	return GetPreferredTimezone(u.Timezone)
+}
+
+func (u *User) GetFullName() string {
+	if len(u.FirstName) > 0 && len(u.LastName) > 0 {
+		return u.FirstName + " " + u.LastName
+	} else if len(u.FirstName) > 0 {
+		return u.FirstName
+	} else if len(u.LastName) > 0 {
+		return u.LastName
+	} else {
+		return ""
+	}
+}
+
+func (u *User) getDisplayName(baseName, nameFormat string) string {
+	displayName := baseName
+
+	if nameFormat == SHOW_NICKNAME_FULLNAME {
+		if len(u.Nickname) > 0 {
+			displayName = u.Nickname
+		} else if fullName := u.GetFullName(); len(fullName) > 0 {
+			displayName = fullName
+		}
+	} else if nameFormat == SHOW_FULLNAME {
+		if fullName := u.GetFullName(); len(fullName) > 0 {
+			displayName = fullName
+		}
+	}
+
+	return displayName
+}
+
+func (u *User) GetDisplayName(nameFormat string) string {
+	displayName := u.Username
+
+	return u.getDisplayName(displayName, nameFormat)
 }
