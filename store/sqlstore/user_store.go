@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"github.com/masterhung0112/hk_server/einterfaces"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -26,7 +27,9 @@ var (
 )
 
 type SqlUserStore struct {
-	SqlStore
+  *SqlStore
+  metrics einterfaces.MetricsInterface
+
 
 	// usersQuery is a starting point for all queries that return one or more Users.
 	usersQuery sq.SelectBuilder
@@ -36,9 +39,10 @@ func (us SqlUserStore) ClearCaches() {}
 
 func (us SqlUserStore) InvalidateProfileCacheForUser(userId string) {}
 
-func newSqlUserStore(sqlStore SqlStore) store.UserStore {
+func newSqlUserStore(sqlStore *SqlStore, metrics einterfaces.MetricsInterface) store.UserStore {
 	us := &SqlUserStore{
 		SqlStore: sqlStore,
+		metrics:  metrics,
 	}
 
 	// note: we are providing field names explicitly here to maintain order of columns (needed when using raw queries)
