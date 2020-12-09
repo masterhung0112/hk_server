@@ -19,24 +19,25 @@ type StoreTestBaseSuite interface {
 	SetStore(store store.Store)
 	Store() store.Store
 
-	SetSqlSupplier(sqlSupplier storetest.SqlSupplier)
-	SqlSupplier() storetest.SqlSupplier
+	SetSqlStore(sqlStore storetest.SqlStore)
+	SqlStore() storetest.SqlStore
 }
 
 type StoreTestSuite struct {
 	// suite.Suite
 
-	store       store.Store
-	sqlSupplier storetest.SqlSupplier
+  store       store.Store
+  SqlStore    *SqlStore
+	// sqlSupplier storetest.SqlSupplier
 }
 
 /***
  * StoreTestSuite implements interface StoreTestBaseSuite
  ***/
 func (s *StoreTestSuite) InitInitializeStore() {
-	if len(StoreTypes) >= 1 && (s.Store() == nil || s.SqlSupplier() == nil) {
+	if len(StoreTypes) >= 1 && (s.Store() == nil || s.SqlStore() == nil) {
 		s.SetStore(StoreTypes[0].Store)
-		s.SetSqlSupplier(StoreTypes[0].SqlSupplier)
+		s.SetSqlStore(StoreTypes[0].SqlSupplier)
 	}
 }
 
@@ -48,12 +49,12 @@ func (s *StoreTestSuite) Store() store.Store {
 	return s.store
 }
 
-func (s *StoreTestSuite) SetSqlSupplier(sqlSupplier storetest.SqlSupplier) {
-	s.sqlSupplier = sqlSupplier
+func (s *StoreTestSuite) SetSqlStore(sqlStore storetest.SqlStore) {
+	s.sqlStore = sqlSupplier
 }
 
-func (s *StoreTestSuite) SqlSupplier() storetest.SqlSupplier {
-	return s.sqlSupplier
+func (s *StoreTestSuite) SqlStore() storetest.SqlStore {
+	return s.sqlStore
 }
 
 type storeType struct {
@@ -99,7 +100,7 @@ func initStores() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			st.SqlSupplier = NewSqlSupplier(*st.SqlSettings, nil)
+			st.SqlSupplier = New(*st.SqlSettings, nil)
 			st.Store = st.SqlSupplier
 			st.Store.DropAllTables()
 			st.Store.MarkSystemRanUnitTests()
