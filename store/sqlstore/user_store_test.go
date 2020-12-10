@@ -2031,3 +2031,64 @@ func (s *UserStoreTS) TestGetForLogin() {
 		s.Require().Equal("sign in with username and email are disabled", err.Error())
 	})
 }
+
+func (s *UserStoreTS) TestGetAllUsingAuthService() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u1" + model.NewId(),
+		AuthService: "service",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u2" + model.NewId(),
+		AuthService: "service",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u3" + model.NewId(),
+		AuthService: "service2",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get by unknown auth service", func(t *testing.T) {
+		users, err := s.Store().User().GetAllUsingAuthService("unknown")
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{}, users)
+	})
+
+	s.T().Run("get by auth service", func(t *testing.T) {
+		users, err := s.Store().User().GetAllUsingAuthService("service")
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{u1, u2}, users)
+	})
+
+	s.T().Run("get by other auth service", func(t *testing.T) {
+		users, err := s.Store().User().GetAllUsingAuthService("service2")
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{u3}, users)
+	})
+}
