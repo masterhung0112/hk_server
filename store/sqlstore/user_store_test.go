@@ -2555,3 +2555,80 @@ func (s *UserStoreTS) TestUserUnreadCount() {
 	s.Require().Nil(unreadCountErr)
 	s.Require().Equal(int64(2), badge, "should have 2 unread messages for that channel")
 }
+
+func (s *UserStoreTS) TestGetRecentlyActiveUsersForTeam() {
+
+	s.cleanupStatusStore()
+
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	millis := model.GetMillis()
+	u3.LastActivityAt = millis
+	u2.LastActivityAt = millis - 1
+	u1.LastActivityAt = millis - 1
+
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u1.Id, Status: model.STATUS_ONLINE, Manual: false, LastActivityAt: u1.LastActivityAt, ActiveChannel: ""}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u2.Id, Status: model.STATUS_ONLINE, Manual: false, LastActivityAt: u2.LastActivityAt, ActiveChannel: ""}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u3.Id, Status: model.STATUS_ONLINE, Manual: false, LastActivityAt: u3.LastActivityAt, ActiveChannel: ""}))
+
+	s.T().Run("get team 1, offset 0, limit 100", func(t *testing.T) {
+		users, err := s.Store().User().GetRecentlyActiveUsersForTeam(teamId, 0, 100, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{
+			sanitized(u3),
+			sanitized(u1),
+			sanitized(u2),
+		}, users)
+	})
+
+	s.T().Run("get team 1, offset 0, limit 1", func(t *testing.T) {
+		users, err := s.Store().User().GetRecentlyActiveUsersForTeam(teamId, 0, 1, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{
+			sanitized(u3),
+		}, users)
+	})
+
+	s.T().Run("get team 1, offset 2, limit 1", func(t *testing.T) {
+		users, err := s.Store().User().GetRecentlyActiveUsersForTeam(teamId, 2, 1, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{
+			sanitized(u2),
+		}, users)
+	})
+}
