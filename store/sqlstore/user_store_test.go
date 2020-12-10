@@ -1586,3 +1586,125 @@ func (s *UserStoreGetProfilesByIdsTS) TestReturnUsersUpdateAtGreater() {
 	s.Require().Nil(err)
 	s.Assert().Equal([]*model.User{s.u3, s.u4}, users)
 }
+
+func (s *UserStoreTS) TestGetProfileByGroupChannelIdsForUser() {
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u4.Id)) }()
+
+	gc1, nErr := s.Store().Channel().Save(&model.Channel{
+		DisplayName: "Profiles in private",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_GROUP,
+	}, -1)
+	s.Require().Nil(nErr)
+
+	for _, uId := range []string{u1.Id, u2.Id, u3.Id} {
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+			ChannelId:   gc1.Id,
+			UserId:      uId,
+			NotifyProps: model.GetDefaultChannelNotifyProps(),
+		})
+		s.Require().Nil(nErr)
+	}
+
+	gc2, nErr := s.Store().Channel().Save(&model.Channel{
+		DisplayName: "Profiles in private",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_GROUP,
+	}, -1)
+	s.Require().Nil(nErr)
+
+	for _, uId := range []string{u1.Id, u3.Id, u4.Id} {
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+			ChannelId:   gc2.Id,
+			UserId:      uId,
+			NotifyProps: model.GetDefaultChannelNotifyProps(),
+		})
+		s.Require().Nil(nErr)
+	}
+
+	testCases := []struct {
+		Name                       string
+		UserId                     string
+		ChannelIds                 []string
+		ExpectedUserIdsByChannel   map[string][]string
+		EnsureChannelsNotInResults []string
+	}{
+		{
+			Name:       "Get group 1 as user 1",
+			UserId:     u1.Id,
+			ChannelIds: []string{gc1.Id},
+			ExpectedUserIdsByChannel: map[string][]string{
+				gc1.Id: {u2.Id, u3.Id},
+			},
+			EnsureChannelsNotInResults: []string{},
+		},
+		{
+			Name:       "Get groups 1 and 2 as user 1",
+			UserId:     u1.Id,
+			ChannelIds: []string{gc1.Id, gc2.Id},
+			ExpectedUserIdsByChannel: map[string][]string{
+				gc1.Id: {u2.Id, u3.Id},
+				gc2.Id: {u3.Id, u4.Id},
+			},
+			EnsureChannelsNotInResults: []string{},
+		},
+		{
+			Name:       "Get groups 1 and 2 as user 2",
+			UserId:     u2.Id,
+			ChannelIds: []string{gc1.Id, gc2.Id},
+			ExpectedUserIdsByChannel: map[string][]string{
+				gc1.Id: {u1.Id, u3.Id},
+			},
+			EnsureChannelsNotInResults: []string{gc2.Id},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.Name, func(t *testing.T) {
+			res, err := s.Store().User().GetProfileByGroupChannelIdsForUser(tc.UserId, tc.ChannelIds)
+			s.Require().Nil(err)
+
+			for channelId, expectedUsers := range tc.ExpectedUserIdsByChannel {
+				users, ok := res[channelId]
+				s.Require().True(ok)
+
+				var userIds []string
+				for _, user := range users {
+					userIds = append(userIds, user.Id)
+				}
+				s.Require().ElementsMatch(expectedUsers, userIds)
+			}
+
+			for _, channelId := range tc.EnsureChannelsNotInResults {
+				_, ok := res[channelId]
+				s.Require().False(ok)
+			}
+		})
+	}
+}
