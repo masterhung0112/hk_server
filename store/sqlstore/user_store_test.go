@@ -970,6 +970,76 @@ func (s *UserStoreTS) TestGetProfilesWithoutTeam() {
 	})
 }
 
+func (s *UserStoreTS) TestGetProfilesByUsernames() {
+	teamId := model.NewId()
+	team2Id := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: team2Id, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get by u1 and u2 usernames, team id 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesByUsernames([]string{u1.Username, u2.Username}, &model.ViewUsersRestrictions{Teams: []string{teamId}})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{u1, u2}, users)
+	})
+
+	s.T().Run("get by u1 username, team id 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesByUsernames([]string{u1.Username}, &model.ViewUsersRestrictions{Teams: []string{teamId}})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{u1}, users)
+	})
+
+	s.T().Run("get by u1 and u3 usernames, no team id", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesByUsernames([]string{u1.Username, u3.Username}, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{u1, u3}, users)
+	})
+
+	s.T().Run("get by u1 and u3 usernames, team id 1", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesByUsernames([]string{u1.Username, u3.Username}, &model.ViewUsersRestrictions{Teams: []string{teamId}})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{u1}, users)
+	})
+
+	s.T().Run("get by u1 and u3 usernames, team id 2", func(t *testing.T) {
+		users, err := s.Store().User().GetProfilesByUsernames([]string{u1.Username, u3.Username}, &model.ViewUsersRestrictions{Teams: []string{team2Id}})
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{u3}, users)
+	})
+}
+
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
@@ -1020,14 +1090,13 @@ func (s *UserStoreGetAllProfilesTS) SetupSuite() {
 	s.Require().Nil(err)
 	s.u3 = u3
 
-	//TODO: Open this
-	// _, nErr := s.Store().Bot().Save(&model.Bot{
-	// 	UserId:   u3.Id,
-	// 	Username: u3.Username,
-	// 	OwnerId:  u1.Id,
-	// })
-	// s.Require().Nil(nErr)
-	// u3.IsBot = true
+	_, nErr := s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
 
 	u4, err := s.Store().User().Save(&model.User{
 		Email:    storetest.MakeEmail(),
@@ -1114,19 +1183,19 @@ func (s *UserStoreGetAllProfilesTS) TestGetAll() {
 	}, actual)
 }
 
-//   //TODO: Open
-// 	// s.T().Run("etag changes for all after user creation", func(t *testing.T) {
-// 	// 	etag := s.Store().User().GetEtagForAllProfiles()
+// etag changes for all after user creation
+func (s *UserStoreGetAllProfilesTS) TestEtagChangesForAllAfterUserCreation() {
+		etag := s.Store().User().GetEtagForAllProfiles()
 
-// 	// 	uNew := &model.User{}
-// 	// 	uNew.Email = storetest.MakeEmail()
-// 	// 	_, err := s.Store().User().Save(uNew)
-// 	// 	s.Require().Nil(err)
-// 	// 	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(uNew.Id)) }()
+		uNew := &model.User{}
+		uNew.Email = storetest.MakeEmail()
+		_, err := s.Store().User().Save(uNew)
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(uNew.Id)) }()
 
-// 	// 	updatedEtag := s.Store().User().GetEtagForAllProfiles()
-// 	// 	s.Require().NotEqual(t, etag, updatedEtag)
-// 	// })
+		updatedEtag := s.Store().User().GetEtagForAllProfiles()
+		s.Require().NotEqual(etag, updatedEtag)
+}
 
 func (s *UserStoreGetAllProfilesTS) TestFilterToSystemAdminRole() {
 	actual, err := s.Store().User().GetAllProfiles(&model.UserGetOptions{
