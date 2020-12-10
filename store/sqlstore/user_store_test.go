@@ -12,6 +12,11 @@ import (
 	"github.com/masterhung0112/hk_server/store/storetest"
 )
 
+const (
+	DAY_MILLISECONDS   = 24 * 60 * 60 * 1000
+	MONTH_MILLISECONDS = 31 * DAY_MILLISECONDS
+)
+
 // type UserStoreTestSuite struct {
 // 	suite.Suite
 // 	StoreTestSuite
@@ -2091,4 +2096,362 @@ func (s *UserStoreTS) TestGetAllUsingAuthService() {
 		s.Require().Nil(err)
 		s.Assert().Equal([]*model.User{u3}, users)
 	})
+}
+
+func (s *UserStoreTS) TestUpdateFailedPasswordAttempts() {
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	err = s.Store().User().UpdateFailedPasswordAttempts(u1.Id, 3)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+	s.Require().Equal(3, user.FailedAttempts, "FailedAttempts not updated correctly")
+}
+
+func (s *UserStoreTS) TestUserStoreGetSystemAdminProfiles() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Roles:    model.SYSTEM_USER_ROLE_ID + " " + model.SYSTEM_ADMIN_ROLE_ID,
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Roles:    model.SYSTEM_USER_ROLE_ID + " " + model.SYSTEM_ADMIN_ROLE_ID,
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("all system admin profiles", func(t *testing.T) {
+		result, userError := s.Store().User().GetSystemAdminProfiles()
+		s.Require().Nil(userError)
+		s.Assert().Equal(map[string]*model.User{
+			u1.Id: sanitized(u1),
+			u3.Id: sanitized(u3),
+		}, result)
+	})
+}
+
+func (s *UserStoreTS) TestAnalyticsActiveCount() {
+	s.cleanupStatusStore()
+
+	// Create 5 users statuses u0, u1, u2, u3, u4.
+	// u4 is also a bot
+	u0, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u0" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() {
+		s.Require().Nil(s.Store().User().PermanentDelete(u0.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u1.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u2.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u3.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u4.Id))
+	}()
+
+	_, nErr := s.Store().Bot().Save(&model.Bot{
+		UserId:   u4.Id,
+		Username: u4.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+
+	millis := model.GetMillis()
+	millisTwoDaysAgo := model.GetMillis() - (2 * DAY_MILLISECONDS)
+	millisTwoMonthsAgo := model.GetMillis() - (2 * MONTH_MILLISECONDS)
+
+	// u0 last activity status is two months ago.
+	// u1 last activity status is two days ago.
+	// u2, u3, u4 last activity is within last day
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u0.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millisTwoMonthsAgo}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u1.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millisTwoDaysAgo}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u2.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millis}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u3.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millis}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u4.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millis}))
+
+	// Daily counts (without bots)
+	count, err := s.Store().User().AnalyticsActiveCount(DAY_MILLISECONDS, model.UserCountOptions{IncludeBotAccounts: false, IncludeDeleted: true})
+	s.Require().Nil(err)
+	s.Assert().Equal(int64(2), count)
+
+	// Daily counts (with bots)
+	count, err = s.Store().User().AnalyticsActiveCount(DAY_MILLISECONDS, model.UserCountOptions{IncludeBotAccounts: true, IncludeDeleted: true})
+	s.Require().Nil(err)
+	s.Assert().Equal(int64(3), count)
+
+	// Monthly counts (without bots)
+	count, err = s.Store().User().AnalyticsActiveCount(MONTH_MILLISECONDS, model.UserCountOptions{IncludeBotAccounts: false, IncludeDeleted: true})
+	s.Require().Nil(err)
+	s.Assert().Equal(int64(3), count)
+
+	// Monthly counts - (with bots)
+	count, err = s.Store().User().AnalyticsActiveCount(MONTH_MILLISECONDS, model.UserCountOptions{IncludeBotAccounts: true, IncludeDeleted: true})
+	s.Require().Nil(err)
+	s.Assert().Equal(int64(4), count)
+
+	// Monthly counts - (with bots, excluding deleted)
+	count, err = s.Store().User().AnalyticsActiveCount(MONTH_MILLISECONDS, model.UserCountOptions{IncludeBotAccounts: true, IncludeDeleted: false})
+	s.Require().Nil(err)
+	s.Assert().Equal(int64(4), count)
+}
+
+func (s *UserStoreTS) TestAnalyticsActiveCountForPeriod() {
+
+	s.cleanupStatusStore()
+
+	// Create 5 users statuses u0, u1, u2, u3, u4.
+	// u4 is also a bot
+	u0, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u0" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() {
+		s.Require().Nil(s.Store().User().PermanentDelete(u0.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u1.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u2.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u3.Id))
+		s.Require().Nil(s.Store().User().PermanentDelete(u4.Id))
+	}()
+
+	_, nErr := s.Store().Bot().Save(&model.Bot{
+		UserId:   u4.Id,
+		Username: u4.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+
+	millis := model.GetMillis()
+	millisTwoDaysAgo := model.GetMillis() - (2 * DAY_MILLISECONDS)
+	millisTwoMonthsAgo := model.GetMillis() - (2 * MONTH_MILLISECONDS)
+
+	// u0 last activity status is two months ago.
+	// u1 last activity status is one month ago
+	// u2 last activiy is two days ago
+	// u2 last activity is one day ago
+	// u3 last activity is within last day
+	// u4 last activity is within last day
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u0.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millisTwoMonthsAgo}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u1.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millisTwoMonthsAgo + MONTH_MILLISECONDS}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u2.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millisTwoDaysAgo}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u3.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millisTwoDaysAgo + DAY_MILLISECONDS}))
+	s.Require().Nil(s.Store().Status().SaveOrUpdate(&model.Status{UserId: u4.Id, Status: model.STATUS_OFFLINE, LastActivityAt: millis}))
+
+	// Two months to two days (without bots)
+	count, nerr := s.Store().User().AnalyticsActiveCountForPeriod(millisTwoMonthsAgo, millisTwoDaysAgo, model.UserCountOptions{IncludeBotAccounts: false, IncludeDeleted: false})
+	s.Require().Nil(nerr)
+	s.Assert().Equal(int64(2), count)
+
+	// Two months to two days (without bots)
+	count, nerr = s.Store().User().AnalyticsActiveCountForPeriod(millisTwoMonthsAgo, millisTwoDaysAgo, model.UserCountOptions{IncludeBotAccounts: false, IncludeDeleted: true})
+	s.Require().Nil(nerr)
+	s.Assert().Equal(int64(2), count)
+
+	// Two days to present - (with bots)
+	count, nerr = s.Store().User().AnalyticsActiveCountForPeriod(millisTwoDaysAgo, millis, model.UserCountOptions{IncludeBotAccounts: true, IncludeDeleted: false})
+	s.Require().Nil(nerr)
+	s.Assert().Equal(int64(2), count)
+
+	// Two days to present - (with bots, excluding deleted)
+	count, nerr = s.Store().User().AnalyticsActiveCountForPeriod(millisTwoDaysAgo, millis, model.UserCountOptions{IncludeBotAccounts: true, IncludeDeleted: true})
+	s.Require().Nil(nerr)
+	s.Assert().Equal(int64(2), count)
+}
+
+func (s *UserStoreTS) TestAnalyticsGetInactiveUsersCount() {
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	count, err := s.Store().User().AnalyticsGetInactiveUsersCount()
+	s.Require().Nil(err)
+
+	u2 := &model.User{}
+	u2.Email = MakeEmail()
+	u2.DeleteAt = model.GetMillis()
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	newCount, err := s.Store().User().AnalyticsGetInactiveUsersCount()
+	s.Require().Nil(err)
+	s.Require().Equal(count, newCount-1, "Expected 1 more inactive users but found otherwise.")
+}
+
+func (s *UserStoreTS) TestAnalyticsGetSystemAdminCount() {
+	countBefore, err := s.Store().User().AnalyticsGetSystemAdminCount()
+	s.Require().Nil(err)
+
+	u1 := model.User{}
+	u1.Email = MakeEmail()
+	u1.Username = model.NewId()
+	u1.Roles = "system_user system_admin"
+
+	u2 := model.User{}
+	u2.Email = MakeEmail()
+	u2.Username = model.NewId()
+
+	_, nErr := s.Store().User().Save(&u1)
+	s.Require().Nil(nErr, "couldn't save user")
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	_, nErr = s.Store().User().Save(&u2)
+	s.Require().Nil(nErr, "couldn't save user")
+
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	result, err := s.Store().User().AnalyticsGetSystemAdminCount()
+	s.Require().Nil(err)
+	s.Require().Equal(countBefore+1, result, "Did not get the expected number of system admins.")
+
+}
+
+func (s *UserStoreTS) TestAnalyticsGetGuestCount() {
+	countBefore, err := s.Store().User().AnalyticsGetGuestCount()
+	s.Require().Nil(err)
+
+	u1 := model.User{}
+	u1.Email = MakeEmail()
+	u1.Username = model.NewId()
+	u1.Roles = "system_user system_admin"
+
+	u2 := model.User{}
+	u2.Email = MakeEmail()
+	u2.Username = model.NewId()
+	u2.Roles = "system_user"
+
+	u3 := model.User{}
+	u3.Email = MakeEmail()
+	u3.Username = model.NewId()
+	u3.Roles = "system_guest"
+
+	_, nErr := s.Store().User().Save(&u1)
+	s.Require().Nil(nErr, "couldn't save user")
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	_, nErr = s.Store().User().Save(&u2)
+	s.Require().Nil(nErr, "couldn't save user")
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	_, nErr = s.Store().User().Save(&u3)
+	s.Require().Nil(nErr, "couldn't save user")
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+
+	result, err := s.Store().User().AnalyticsGetGuestCount()
+	s.Require().Nil(err)
+	s.Require().Equal(countBefore+1, result, "Did not get the expected number of guests.")
+}
+
+func (s *UserStoreTS) TestAnalyticsGetExternalUsers() {
+	localHostDomain := "mattermost.com"
+	result, err := s.Store().User().AnalyticsGetExternalUsers(localHostDomain)
+	s.Require().Nil(err)
+	s.Assert().False(result)
+
+	u1 := model.User{}
+	u1.Email = "a@mattermost.com"
+	u1.Username = model.NewId()
+	u1.Roles = "system_user system_admin"
+
+	u2 := model.User{}
+	u2.Email = "b@example.com"
+	u2.Username = model.NewId()
+	u2.Roles = "system_user"
+
+	u3 := model.User{}
+	u3.Email = "c@test.com"
+	u3.Username = model.NewId()
+	u3.Roles = "system_guest"
+
+	_, err = s.Store().User().Save(&u1)
+	s.Require().Nil(err, "couldn't save user")
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	_, err = s.Store().User().Save(&u2)
+	s.Require().Nil(err, "couldn't save user")
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	_, err = s.Store().User().Save(&u3)
+	s.Require().Nil(err, "couldn't save user")
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+
+	result, err = s.Store().User().AnalyticsGetExternalUsers(localHostDomain)
+	s.Require().Nil(err)
+	s.Assert().True(result)
 }
