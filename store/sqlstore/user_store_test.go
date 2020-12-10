@@ -1708,3 +1708,70 @@ func (s *UserStoreTS) TestGetProfileByGroupChannelIdsForUser() {
 		})
 	}
 }
+
+func (s *UserStoreTS) TestGetByEmail() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get u1 by email", func(t *testing.T) {
+		u, err := s.Store().User().GetByEmail(u1.Email)
+		s.Require().Nil(err)
+		s.Assert().Equal(u1, u)
+	})
+
+	s.T().Run("get u2 by email", func(t *testing.T) {
+		u, err := s.Store().User().GetByEmail(u2.Email)
+		s.Require().Nil(err)
+		s.Assert().Equal(u2, u)
+	})
+
+	s.T().Run("get u3 by email", func(t *testing.T) {
+		u, err := s.Store().User().GetByEmail(u3.Email)
+		s.Require().Nil(err)
+		s.Assert().Equal(u3, u)
+	})
+
+	s.T().Run("get by empty email", func(t *testing.T) {
+		_, err := s.Store().User().GetByEmail("")
+		s.Require().NotNil(err)
+	})
+
+	s.T().Run("get by unknown", func(t *testing.T) {
+		_, err := s.Store().User().GetByEmail("unknown")
+		s.Require().NotNil(err)
+	})
+}
