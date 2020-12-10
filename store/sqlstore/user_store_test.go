@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store"
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"time"
@@ -1467,4 +1468,121 @@ func (s *UserStoreGetProfilesTS) TestFilterToActiveAndInactive() {
 	s.Require().Equal([]*model.User{
 		sanitized(s.u5),
 	}, actual)
+}
+
+type UserStoreGetProfilesByIdsTS struct {
+	suite.Suite
+	StoreTestSuite
+
+	u1     *model.User
+	u2     *model.User
+	u3     *model.User
+	u4     *model.User
+	u5     *model.User
+	u6     *model.User
+	u7     *model.User
+	teamId string
+}
+
+func TestUserStoreGetProfilesByIdsTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesByIdsTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
+
+func (s *UserStoreGetProfilesByIdsTS) SetupSuite() {
+	teamId := model.NewId()
+	s.teamId = teamId
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+	s.u1 = u1
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+	s.u2 = u2
+
+	time.Sleep(time.Millisecond)
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	s.u3 = u3
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	s.u4 = u4
+}
+
+func (s *UserStoreGetProfilesByIdsTS) TearDownSuite() {
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u1.Id))
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u2.Id))
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u3.Id))
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u4.Id))
+}
+
+// get u1 by id, no caching
+func (s *UserStoreGetProfilesByIdsTS) TestGetU1ByIdNoCaching() {
+	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id}, nil, false)
+	s.Require().Nil(err)
+	s.Assert().Equal([]*model.User{s.u1}, users)
+}
+
+func (s *UserStoreGetProfilesByIdsTS) TestGetU1ByIdCaching() {
+	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id}, nil, true)
+	s.Require().Nil(err)
+	s.Assert().Equal([]*model.User{s.u1}, users)
+}
+
+// get u1, u2, u3 by id, no caching
+func (s *UserStoreGetProfilesByIdsTS) TestGetU1U2U3ByIdNoCaching() {
+	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id, s.u2.Id, s.u3.Id}, nil, false)
+	s.Require().Nil(err)
+	s.Assert().Equal([]*model.User{s.u1, s.u2, s.u3}, users)
+}
+
+// get u1, u2, u3 by id, caching
+func (s *UserStoreGetProfilesByIdsTS) TestGetU1U2U3ByIdCaching() {
+	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id, s.u2.Id, s.u3.Id}, nil, true)
+	s.Require().Nil(err)
+	s.Assert().Equal([]*model.User{s.u1, s.u2, s.u3}, users)
+}
+
+// get unknown id, caching
+func (s *UserStoreGetProfilesByIdsTS) TestGetUnknownByIdCaching() {
+	users, err := s.Store().User().GetProfileByIds([]string{"123"}, nil, true)
+	s.Require().Nil(err)
+	s.Assert().Equal([]*model.User{}, users)
+}
+
+// should only return users with UpdateAt greater than the since time
+func (s *UserStoreGetProfilesByIdsTS) TestReturnUsersUpdateAtGreater() {
+	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id, s.u2.Id, s.u3.Id, s.u4.Id}, &store.UserGetByIdsOpts{
+		Since: s.u2.CreateAt,
+	}, true)
+	s.Require().Nil(err)
+	s.Assert().Equal([]*model.User{s.u3, s.u4}, users)
 }
