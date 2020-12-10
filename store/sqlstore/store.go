@@ -1,17 +1,26 @@
 package sqlstore
 
 import (
-	"sync"
 	"context"
-	"github.com/lib/pq"
-	"github.com/pkg/errors"
+	dbsql "database/sql"
+	"encoding/json"
+	"fmt"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/go-sql-driver/mysql"
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/lib/pq"
 	"github.com/masterhung0112/hk_server/einterfaces"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
-  "github.com/mattermost/gorp"
-  sq "github.com/Masterminds/squirrel"
+	"github.com/masterhung0112/hk_server/utils"
+	"github.com/mattermost/gorp"
+	"github.com/pkg/errors"
+	"os"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 const (
@@ -58,46 +67,46 @@ const (
 )
 
 type SqlStoreStores struct {
-	team                 store.TeamStore
-	channel              store.ChannelStore
-	post                 store.PostStore
-	thread               store.ThreadStore
-	user                 store.UserStore
-	bot                  store.BotStore
+	team    store.TeamStore
+	channel store.ChannelStore
+	post    store.PostStore
+	thread  store.ThreadStore
+	user    store.UserStore
+	bot     store.BotStore
 	// audit                store.AuditStore
 	// cluster              store.ClusterDiscoveryStore
 	// compliance           store.ComplianceStore
-	session              store.SessionStore
+	session store.SessionStore
 	// oauth                store.OAuthStore
-	system               store.SystemStore
+	system store.SystemStore
 	// webhook              store.WebhookStore
 	// command              store.CommandStore
 	// commandWebhook       store.CommandWebhookStore
-	preference           store.PreferenceStore
+	preference store.PreferenceStore
 	// license              store.LicenseStore
-	token                store.TokenStore
+	token store.TokenStore
 	// emoji                store.EmojiStore
-	status               store.StatusStore
+	status store.StatusStore
 	// fileInfo             store.FileInfoStore
 	// uploadSession        store.UploadSessionStore
 	// reaction             store.ReactionStore
 	// job                  store.JobStore
-	userAccessToken      store.UserAccessTokenStore
+	userAccessToken store.UserAccessTokenStore
 	// plugin               store.PluginStore
 	// channelMemberHistory store.ChannelMemberHistoryStore
-	role                 store.RoleStore
-	scheme               store.SchemeStore
+	role   store.RoleStore
+	scheme store.SchemeStore
 	// TermsOfService       store.TermsOfServiceStore
 	// productNotices       store.ProductNoticesStore
-	group                store.GroupStore
+	group store.GroupStore
 	// UserTermsOfService   store.UserTermsOfServiceStore
 	// linkMetadata         store.LinkMetadataStore
 }
 
 type SqlStore struct {
-  // rrCounter and srCounter should be kept first.
+	// rrCounter and srCounter should be kept first.
 	// See https://github.com/mattermost/mattermost-server/v5/pull/7281
-  rrCounter      int64
+	rrCounter      int64
 	srCounter      int64
 	master         *gorp.DbMap
 	replicas       []*gorp.DbMap
@@ -297,8 +306,6 @@ func (ss *SqlStore) GetReplica() *gorp.DbMap {
 	rrNum := atomic.AddInt64(&ss.rrCounter, 1) % int64(len(ss.replicas))
 	return ss.replicas[rrNum]
 }
-
-
 
 func (ss *SqlStore) Close() {
 	ss.master.Db.Close()

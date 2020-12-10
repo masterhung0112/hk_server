@@ -11,11 +11,13 @@ import (
 )
 
 type SqlPreferenceStore struct {
-	SqlStore
+	*SqlStore
 }
 
-func newSqlPreferenceStore(sqlStore SqlStore) store.PreferenceStore {
-	s := &SqlPreferenceStore{sqlStore}
+func newSqlPreferenceStore(sqlStore *SqlStore) store.PreferenceStore {
+	s := &SqlPreferenceStore{
+		SqlStore: sqlStore,
+	}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Preference{}, "Preferences").SetKeys(false, "UserId", "Category", "Name")

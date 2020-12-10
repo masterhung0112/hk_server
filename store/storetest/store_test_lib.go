@@ -4,7 +4,7 @@ import (
 	"github.com/mattermost/gorp"
 )
 
-type SqlSupplier interface {
+type SqlStore interface {
 	GetMaster() *gorp.DbMap
 	DriverName() string
 }

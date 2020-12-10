@@ -9,11 +9,13 @@ import (
 )
 
 type SqlSystemStore struct {
-	SqlStore
+	*SqlStore
 }
 
-func newSqlSystemStore(sqlStore SqlStore) store.SystemStore {
-	s := &SqlSystemStore{sqlStore}
+func newSqlSystemStore(sqlStore *SqlStore) store.SystemStore {
+	s := &SqlSystemStore{
+		SqlStore: sqlStore,
+	}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.System{}, "Systems").SetKeys(false, "Name")

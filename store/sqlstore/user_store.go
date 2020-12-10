@@ -1,10 +1,10 @@
 package sqlstore
 
 import (
-	"github.com/masterhung0112/hk_server/einterfaces"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/masterhung0112/hk_server/einterfaces"
 	"sort"
 	"strings"
 
@@ -27,9 +27,8 @@ var (
 )
 
 type SqlUserStore struct {
-  *SqlStore
-  metrics einterfaces.MetricsInterface
-
+	*SqlStore
+	metrics einterfaces.MetricsInterface
 
 	// usersQuery is a starting point for all queries that return one or more Users.
 	usersQuery sq.SelectBuilder

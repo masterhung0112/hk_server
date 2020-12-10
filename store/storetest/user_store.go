@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUserStore(t *testing.T, ss store.Store, s SqlSupplier) {
+func TestUserStore(t *testing.T, ss store.Store, s SqlStore) {
 	users, err := ss.User().GetAll()
 	require.Nil(t, err, "failed cleaning up test users")
 

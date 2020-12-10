@@ -21,14 +21,6 @@ func sanitized(user *model.User) *model.User {
 	return clonedUser
 }
 
-// func TestUserStoreTestSuite(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &UserStoreTestSuite{})
-// }
-
-// func TestUserStore(t *testing.T) {
-// 	StoreTestWithSqlSupplier(t, storetest.TestUserStore)
-// }
-
 type UserStoreTS struct {
 	suite.Suite
 	StoreTestSuite
@@ -41,7 +33,7 @@ func TestUserStoreTS(t *testing.T) {
 }
 
 func (s *UserStoreTS) cleanupStatusStore() {
-	_, execerr := s.SqlSupplier().GetMaster().ExecNoTimeout(` DELETE FROM Status `)
+	_, execerr := s.SqlStore().GetMaster().ExecNoTimeout(` DELETE FROM Status `)
 	s.Require().Nil(execerr)
 }
 

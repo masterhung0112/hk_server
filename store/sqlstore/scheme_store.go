@@ -10,11 +10,13 @@ import (
 )
 
 type SqlSchemeStore struct {
-	SqlStore
+	*SqlStore
 }
 
-func newSqlSchemeStore(sqlStore SqlStore) store.SchemeStore {
-	s := &SqlSchemeStore{sqlStore}
+func newSqlSchemeStore(sqlStore *SqlStore) store.SchemeStore {
+	s := &SqlSchemeStore{
+		SqlStore: sqlStore,
+	}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Scheme{}, "Schemes").SetKeys(false, "Id")
