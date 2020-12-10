@@ -3,7 +3,9 @@ package sqlstore
 import (
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/suite"
+	"strings"
 	"testing"
 	"time"
 
@@ -1773,5 +1775,259 @@ func (s *UserStoreTS) TestGetByEmail() {
 	s.T().Run("get by unknown", func(t *testing.T) {
 		_, err := s.Store().User().GetByEmail("unknown")
 		s.Require().NotNil(err)
+	})
+}
+
+func (s *UserStoreTS) TestGetByAuthData() {
+	teamId := model.NewId()
+	auth1 := model.NewId()
+	auth3 := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u1" + model.NewId(),
+		AuthData:    &auth1,
+		AuthService: "service",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u3" + model.NewId(),
+		AuthData:    &auth3,
+		AuthService: "service2",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get by u1 auth", func(t *testing.T) {
+		u, err := s.Store().User().GetByAuth(u1.AuthData, u1.AuthService)
+		s.Require().Nil(err)
+		s.Assert().Equal(u1, u)
+	})
+
+	s.T().Run("get by u3 auth", func(t *testing.T) {
+		u, err := s.Store().User().GetByAuth(u3.AuthData, u3.AuthService)
+		s.Require().Nil(err)
+		s.Assert().Equal(u3, u)
+	})
+
+	s.T().Run("get by u1 auth, unknown service", func(t *testing.T) {
+		_, err := s.Store().User().GetByAuth(u1.AuthData, "unknown")
+		s.Require().NotNil(err)
+		var nfErr *store.ErrNotFound
+		s.Require().True(errors.As(err, &nfErr))
+	})
+
+	s.T().Run("get by unknown auth, u1 service", func(t *testing.T) {
+		unknownAuth := ""
+		_, err := s.Store().User().GetByAuth(&unknownAuth, u1.AuthService)
+		s.Require().NotNil(err)
+		var invErr *store.ErrInvalidInput
+		s.Require().True(errors.As(err, &invErr))
+	})
+
+	s.T().Run("get by unknown auth, unknown service", func(t *testing.T) {
+		unknownAuth := ""
+		_, err := s.Store().User().GetByAuth(&unknownAuth, "unknown")
+		s.Require().NotNil(err)
+		var invErr *store.ErrInvalidInput
+		s.Require().True(errors.As(err, &invErr))
+	})
+}
+
+func (s *UserStoreTS) TestGetByUsername() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get u1 by username", func(t *testing.T) {
+		result, err := s.Store().User().GetByUsername(u1.Username)
+		s.Require().Nil(err)
+		s.Assert().Equal(u1, result)
+	})
+
+	s.T().Run("get u2 by username", func(t *testing.T) {
+		result, err := s.Store().User().GetByUsername(u2.Username)
+		s.Require().Nil(err)
+		s.Assert().Equal(u2, result)
+	})
+
+	s.T().Run("get u3 by username", func(t *testing.T) {
+		result, err := s.Store().User().GetByUsername(u3.Username)
+		s.Require().Nil(err)
+		s.Assert().Equal(u3, result)
+	})
+
+	s.T().Run("get by empty username", func(t *testing.T) {
+		_, err := s.Store().User().GetByUsername("")
+		s.Require().NotNil(err)
+		var nfErr *store.ErrNotFound
+		s.Require().True(errors.As(err, &nfErr))
+	})
+
+	s.T().Run("get by unknown", func(t *testing.T) {
+		_, err := s.Store().User().GetByUsername("unknown")
+		s.Require().NotNil(err)
+		var nfErr *store.ErrNotFound
+		s.Require().True(errors.As(err, &nfErr))
+	})
+}
+
+func (s *UserStoreTS) TestGetForLogin() {
+	teamId := model.NewId()
+	auth := model.NewId()
+	auth2 := model.NewId()
+	auth3 := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u1" + model.NewId(),
+		AuthService: model.USER_AUTH_SERVICE_GITLAB,
+		AuthData:    &auth,
+	})
+
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u2" + model.NewId(),
+		AuthService: model.USER_AUTH_SERVICE_LDAP,
+		AuthData:    &auth2,
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:       MakeEmail(),
+		Username:    "u3" + model.NewId(),
+		AuthService: model.USER_AUTH_SERVICE_LDAP,
+		AuthData:    &auth3,
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	s.T().Run("get u1 by username, allow both", func(t *testing.T) {
+		user, err := s.Store().User().GetForLogin(u1.Username, true, true)
+		s.Require().Nil(err)
+		s.Assert().Equal(u1, user)
+	})
+
+	s.T().Run("get u1 by username, check for case issues", func(t *testing.T) {
+		user, err := s.Store().User().GetForLogin(strings.ToUpper(u1.Username), true, true)
+		s.Require().Nil(err)
+		s.Assert().Equal(u1, user)
+	})
+
+	s.T().Run("get u1 by username, allow only email", func(t *testing.T) {
+		_, err := s.Store().User().GetForLogin(u1.Username, false, true)
+		s.Require().NotNil(err)
+		s.Require().Equal("user not found", err.Error())
+	})
+
+	s.T().Run("get u1 by email, allow both", func(t *testing.T) {
+		user, err := s.Store().User().GetForLogin(u1.Email, true, true)
+		s.Require().Nil(err)
+		s.Assert().Equal(u1, user)
+	})
+
+	s.T().Run("get u1 by email, check for case issues", func(t *testing.T) {
+		user, err := s.Store().User().GetForLogin(strings.ToUpper(u1.Email), true, true)
+		s.Require().Nil(err)
+		s.Assert().Equal(u1, user)
+	})
+
+	s.T().Run("get u1 by email, allow only username", func(t *testing.T) {
+		_, err := s.Store().User().GetForLogin(u1.Email, true, false)
+		s.Require().NotNil(err)
+		s.Require().Equal("user not found", err.Error())
+	})
+
+	s.T().Run("get u2 by username, allow both", func(t *testing.T) {
+		user, err := s.Store().User().GetForLogin(u2.Username, true, true)
+		s.Require().Nil(err)
+		s.Assert().Equal(u2, user)
+	})
+
+	s.T().Run("get u2 by email, allow both", func(t *testing.T) {
+		user, err := s.Store().User().GetForLogin(u2.Email, true, true)
+		s.Require().Nil(err)
+		s.Assert().Equal(u2, user)
+	})
+
+	s.T().Run("get u2 by username, allow neither", func(t *testing.T) {
+		_, err := s.Store().User().GetForLogin(u2.Username, false, false)
+		s.Require().NotNil(err)
+		s.Require().Equal("sign in with username and email are disabled", err.Error())
 	})
 }
