@@ -3775,3 +3775,138 @@ func (s *UserStoreTS) TestSearchInGroup() {
 		})
 	}
 }
+
+func (s *UserStoreTS) TestGetUsersBatchForIndexing() {
+	// Set up all the objects needed
+	t1, err := s.Store().Team().Save(&model.Team{
+		DisplayName: "Team1",
+		Name:        "zz" + model.NewId(),
+		Type:        model.TEAM_OPEN,
+	})
+	s.Require().Nil(err)
+
+	ch1 := &model.Channel{
+		Name: model.NewId(),
+		Type: model.CHANNEL_OPEN,
+	}
+	cPub1, nErr := s.Store().Channel().Save(ch1, -1)
+	s.Require().Nil(nErr)
+
+	ch2 := &model.Channel{
+		Name: model.NewId(),
+		Type: model.CHANNEL_OPEN,
+	}
+	cPub2, nErr := s.Store().Channel().Save(ch2, -1)
+	s.Require().Nil(nErr)
+
+	ch3 := &model.Channel{
+		Name: model.NewId(),
+		Type: model.CHANNEL_PRIVATE,
+	}
+
+	cPriv, nErr := s.Store().Channel().Save(ch3, -1)
+	s.Require().Nil(nErr)
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: model.NewId(),
+		CreateAt: model.GetMillis(),
+	})
+	s.Require().Nil(err)
+
+	time.Sleep(time.Millisecond)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: model.NewId(),
+		CreateAt: model.GetMillis(),
+	})
+	s.Require().Nil(err)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{
+		UserId: u2.Id,
+		TeamId: t1.Id,
+	}, 100)
+	s.Require().Nil(nErr)
+	_, err = s.Store().Channel().SaveMember(&model.ChannelMember{
+		UserId:      u2.Id,
+		ChannelId:   cPub1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(err)
+	_, err = s.Store().Channel().SaveMember(&model.ChannelMember{
+		UserId:      u2.Id,
+		ChannelId:   cPub2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(err)
+
+	startTime := u2.CreateAt
+	time.Sleep(time.Millisecond)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: model.NewId(),
+		CreateAt: model.GetMillis(),
+	})
+	s.Require().Nil(err)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{
+		UserId:   u3.Id,
+		TeamId:   t1.Id,
+		DeleteAt: model.GetMillis(),
+	}, 100)
+	s.Require().Nil(nErr)
+	_, err = s.Store().Channel().SaveMember(&model.ChannelMember{
+		UserId:      u3.Id,
+		ChannelId:   cPub2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(err)
+	_, err = s.Store().Channel().SaveMember(&model.ChannelMember{
+		UserId:      u3.Id,
+		ChannelId:   cPriv.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(err)
+
+	endTime := u3.CreateAt
+
+	// First and last user should be outside the range
+	res1List, err := s.Store().User().GetUsersBatchForIndexing(startTime, endTime, 100)
+	s.Require().Nil(err)
+
+	s.Assert().Len(res1List, 1)
+	s.Assert().Equal(res1List[0].Username, u2.Username)
+	s.Assert().ElementsMatch(res1List[0].TeamsIds, []string{t1.Id})
+	s.Assert().ElementsMatch(res1List[0].ChannelsIds, []string{cPub1.Id, cPub2.Id})
+
+	// Update startTime to include first user
+	startTime = u1.CreateAt
+	res2List, err := s.Store().User().GetUsersBatchForIndexing(startTime, endTime, 100)
+	s.Require().Nil(err)
+
+	s.Assert().Len(res2List, 2)
+	s.Assert().Equal(res2List[0].Username, u1.Username)
+	s.Assert().Equal(res2List[0].ChannelsIds, []string{})
+	s.Assert().Equal(res2List[0].TeamsIds, []string{})
+	s.Assert().Equal(res2List[1].Username, u2.Username)
+
+	// Update endTime to include last user
+	endTime = model.GetMillis()
+	res3List, err := s.Store().User().GetUsersBatchForIndexing(startTime, endTime, 100)
+	s.Require().Nil(err)
+
+	s.Assert().Len(res3List, 3)
+	s.Assert().Equal(res3List[0].Username, u1.Username)
+	s.Assert().Equal(res3List[1].Username, u2.Username)
+	s.Assert().Equal(res3List[2].Username, u3.Username)
+	s.Assert().ElementsMatch(res3List[2].TeamsIds, []string{})
+	s.Assert().ElementsMatch(res3List[2].ChannelsIds, []string{cPub2.Id})
+
+	// Testing the limit
+	res4List, err := s.Store().User().GetUsersBatchForIndexing(startTime, endTime, 2)
+	s.Require().Nil(err)
+
+	s.Assert().Len(res4List, 2)
+	s.Assert().Equal(res4List[0].Username, u1.Username)
+	s.Assert().Equal(res4List[1].Username, u2.Username)
+}
