@@ -3910,3 +3910,1118 @@ func (s *UserStoreTS) TestGetUsersBatchForIndexing() {
 	s.Assert().Equal(res4List[0].Username, u1.Username)
 	s.Assert().Equal(res4List[1].Username, u2.Username)
 }
+
+
+func (s *UserStoreTS) TestGetTeamGroupUsers() {
+	// create team
+	id := model.NewId()
+	team, err := s.Store().Team().Save(&model.Team{
+		DisplayName: "dn_" + id,
+		Name:        "n-" + id,
+		Email:       id + "@test.com",
+		Type:        model.TEAM_INVITE,
+	})
+	s.Require().Nil(err)
+	s.Require().NotNil(team)
+
+	// create users
+	var testUsers []*model.User
+	for i := 0; i < 3; i++ {
+		id = model.NewId()
+		user, userErr := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+		})
+		s.Require().Nil(userErr)
+		s.Require().NotNil(user)
+		testUsers = append(testUsers, user)
+	}
+	s.Require().Len(testUsers, 3, "testUsers length doesn't meet required length")
+	userGroupA, userGroupB, userNoGroup := testUsers[0], testUsers[1], testUsers[2]
+
+	// add non-group-member to the team (to prove that the query isn't just returning all members)
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{
+		TeamId: team.Id,
+		UserId: userNoGroup.Id,
+	}, 999)
+	s.Require().Nil(nErr)
+
+	// create groups
+	var testGroups []*model.Group
+	for i := 0; i < 2; i++ {
+		id = model.NewId()
+
+		var group *model.Group
+		group, err = s.Store().Group().Create(&model.Group{
+			Name:        model.NewString("n_" + id),
+			DisplayName: "dn_" + id,
+			Source:      model.GroupSourceLdap,
+			RemoteId:    "ri_" + id,
+		})
+		s.Require().Nil(err)
+		s.Require().NotNil(group)
+		testGroups = append(testGroups, group)
+	}
+	s.Require().Len(testGroups, 2, "testGroups length doesn't meet required length")
+	groupA, groupB := testGroups[0], testGroups[1]
+
+	// add members to groups
+	_, err = s.Store().Group().UpsertMember(groupA.Id, userGroupA.Id)
+	s.Require().Nil(err)
+	_, err = s.Store().Group().UpsertMember(groupB.Id, userGroupB.Id)
+	s.Require().Nil(err)
+
+	// association one group to team
+	_, err = s.Store().Group().CreateGroupSyncable(&model.GroupSyncable{
+		GroupId:    groupA.Id,
+		SyncableId: team.Id,
+		Type:       model.GroupSyncableTypeTeam,
+	})
+	s.Require().Nil(err)
+
+	var users []*model.User
+
+	requireNUsers := func(n int) {
+		users, err = s.Store().User().GetTeamGroupUsers(team.Id)
+		s.Require().Nil(err)
+		s.Require().NotNil(users)
+		s.Require().Len(users, n)
+	}
+
+	// team not group constrained returns users
+	requireNUsers(1)
+
+	// update team to be group-constrained
+	team.GroupConstrained = model.NewBool(true)
+	team, err = s.Store().Team().Update(team)
+	s.Require().Nil(err)
+
+	// still returns user (being group-constrained has no effect)
+	requireNUsers(1)
+
+	// associate other group to team
+	_, err = s.Store().Group().CreateGroupSyncable(&model.GroupSyncable{
+		GroupId:    groupB.Id,
+		SyncableId: team.Id,
+		Type:       model.GroupSyncableTypeTeam,
+	})
+	s.Require().Nil(err)
+
+	// should return users from all groups
+	// 2 users now that both groups have been associated to the team
+	requireNUsers(2)
+
+	// add team membership of allowed user
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{
+		TeamId: team.Id,
+		UserId: userGroupA.Id,
+	}, 999)
+	s.Require().Nil(nErr)
+
+	// ensure allowed member still returned by query
+	requireNUsers(2)
+
+	// delete team membership of allowed user
+	err = s.Store().Team().RemoveMember(team.Id, userGroupA.Id)
+	s.Require().Nil(err)
+
+	// ensure removed allowed member still returned by query
+	requireNUsers(2)
+}
+
+func (s *UserStoreTS) TestGetChannelGroupUsers() {
+	// create channel
+	id := model.NewId()
+	channel, nErr := s.Store().Channel().Save(&model.Channel{
+		DisplayName: "dn_" + id,
+		Name:        "n-" + id,
+		Type:        model.CHANNEL_PRIVATE,
+	}, 999)
+	s.Require().Nil(nErr)
+	s.Require().NotNil(channel)
+
+	// create users
+	var testUsers []*model.User
+	for i := 0; i < 3; i++ {
+		id = model.NewId()
+		user, userErr := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+		})
+		s.Require().Nil(userErr)
+		s.Require().NotNil(user)
+		testUsers = append(testUsers, user)
+	}
+	s.Require().Len(testUsers, 3, "testUsers length doesn't meet required length")
+	userGroupA, userGroupB, userNoGroup := testUsers[0], testUsers[1], testUsers[2]
+
+	// add non-group-member to the channel (to prove that the query isn't just returning all members)
+	_, err := s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   channel.Id,
+		UserId:      userNoGroup.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(err)
+
+	// create groups
+	var testGroups []*model.Group
+	for i := 0; i < 2; i++ {
+		id = model.NewId()
+		var group *model.Group
+		group, err = s.Store().Group().Create(&model.Group{
+			Name:        model.NewString("n_" + id),
+			DisplayName: "dn_" + id,
+			Source:      model.GroupSourceLdap,
+			RemoteId:    "ri_" + id,
+		})
+		s.Require().Nil(err)
+		s.Require().NotNil(group)
+		testGroups = append(testGroups, group)
+	}
+	s.Require().Len(testGroups, 2, "testGroups length doesn't meet required length")
+	groupA, groupB := testGroups[0], testGroups[1]
+
+	// add members to groups
+	_, err = s.Store().Group().UpsertMember(groupA.Id, userGroupA.Id)
+	s.Require().Nil(err)
+	_, err = s.Store().Group().UpsertMember(groupB.Id, userGroupB.Id)
+	s.Require().Nil(err)
+
+	// association one group to channel
+	_, err = s.Store().Group().CreateGroupSyncable(&model.GroupSyncable{
+		GroupId:    groupA.Id,
+		SyncableId: channel.Id,
+		Type:       model.GroupSyncableTypeChannel,
+	})
+	s.Require().Nil(err)
+
+	var users []*model.User
+
+	requireNUsers := func(n int) {
+		users, err = s.Store().User().GetChannelGroupUsers(channel.Id)
+		s.Require().Nil(err)
+		s.Require().NotNil(users)
+		s.Require().Len(users, n)
+	}
+
+	// channel not group constrained returns users
+	requireNUsers(1)
+
+	// update team to be group-constrained
+	channel.GroupConstrained = model.NewBool(true)
+	_, nErr = s.Store().Channel().Update(channel)
+	s.Require().Nil(nErr)
+
+	// still returns user (being group-constrained has no effect)
+	requireNUsers(1)
+
+	// associate other group to team
+	_, err = s.Store().Group().CreateGroupSyncable(&model.GroupSyncable{
+		GroupId:    groupB.Id,
+		SyncableId: channel.Id,
+		Type:       model.GroupSyncableTypeChannel,
+	})
+	s.Require().Nil(err)
+
+	// should return users from all groups
+	// 2 users now that both groups have been associated to the team
+	requireNUsers(2)
+
+	// add team membership of allowed user
+	_, err = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   channel.Id,
+		UserId:      userGroupA.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(err)
+
+	// ensure allowed member still returned by query
+	requireNUsers(2)
+
+	// delete team membership of allowed user
+	err = s.Store().Channel().RemoveMember(channel.Id, userGroupA.Id)
+	s.Require().Nil(err)
+
+	// ensure removed allowed member still returned by query
+	requireNUsers(2)
+}
+
+func (s *UserStoreTS) TestPromoteGuestToUser() {
+	// create users
+	s.T().Run("Must do nothing with regular user", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().PromoteGuestToUser(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user", updatedUser.Roles)
+		s.Require().True(user.UpdateAt < updatedUser.UpdateAt)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedTeamMember.SchemeGuest)
+		s.Require().True(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedChannelMember.SchemeGuest)
+		s.Require().True(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must do nothing with admin user", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user system_admin",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().PromoteGuestToUser(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user system_admin", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedTeamMember.SchemeGuest)
+		s.Require().True(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedChannelMember.SchemeGuest)
+		s.Require().True(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must work with guest user without teams or channels", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		err = s.Store().User().PromoteGuestToUser(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user", updatedUser.Roles)
+	})
+
+	s.T().Run("Must work with guest user with teams but no channels", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().PromoteGuestToUser(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedTeamMember.SchemeGuest)
+		s.Require().True(updatedTeamMember.SchemeUser)
+	})
+
+	s.T().Run("Must work with guest user with teams and channels", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().PromoteGuestToUser(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedTeamMember.SchemeGuest)
+		s.Require().True(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedChannelMember.SchemeGuest)
+		s.Require().True(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must work with guest user with teams and channels and custom role", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_guest custom_role",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().PromoteGuestToUser(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user custom_role", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedTeamMember.SchemeGuest)
+		s.Require().True(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedChannelMember.SchemeGuest)
+		s.Require().True(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must no change any other user guest role", func(t *testing.T) {
+		id := model.NewId()
+		user1, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user1.Id)) }()
+
+		teamId1 := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId1, UserId: user1.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId1,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user1.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		id = model.NewId()
+		user2, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user2.Id)) }()
+
+		teamId2 := model.NewId()
+		_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId2, UserId: user2.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user2.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().PromoteGuestToUser(user1.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user1.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId1, user1.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedTeamMember.SchemeGuest)
+		s.Require().True(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user1.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(updatedChannelMember.SchemeGuest)
+		s.Require().True(updatedChannelMember.SchemeUser)
+
+		notUpdatedUser, err := s.Store().User().Get(user2.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest", notUpdatedUser.Roles)
+
+		notUpdatedTeamMember, nErr := s.Store().Team().GetMember(teamId2, user2.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(notUpdatedTeamMember.SchemeGuest)
+		s.Require().False(notUpdatedTeamMember.SchemeUser)
+
+		notUpdatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user2.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(notUpdatedChannelMember.SchemeGuest)
+		s.Require().False(notUpdatedChannelMember.SchemeUser)
+	})
+}
+
+func (s *UserStoreTS) TestDemoteUserToGuest() {
+	// create users
+	s.T().Run("Must do nothing with guest", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: false, SchemeUser: true}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest", updatedUser.Roles)
+		s.Require().True(user.UpdateAt < updatedUser.UpdateAt)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedTeamMember.SchemeGuest)
+		s.Require().False(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedChannelMember.SchemeGuest)
+		s.Require().False(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must demote properly an admin user", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user system_admin",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: true, SchemeUser: false}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedTeamMember.SchemeGuest)
+		s.Require().False(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedChannelMember.SchemeGuest)
+		s.Require().False(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must work with user without teams or channels", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		err = s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest", updatedUser.Roles)
+	})
+
+	s.T().Run("Must work with user with teams but no channels", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: false, SchemeUser: true}, 999)
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedTeamMember.SchemeGuest)
+		s.Require().False(updatedTeamMember.SchemeUser)
+	})
+
+	s.T().Run("Must work with user with teams and channels", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: false, SchemeUser: true}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedTeamMember.SchemeGuest)
+		s.Require().False(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedChannelMember.SchemeGuest)
+		s.Require().False(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must work with user with teams and channels and custom role", func(t *testing.T) {
+		id := model.NewId()
+		user, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user custom_role",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
+
+		teamId := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: false, SchemeUser: true}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest custom_role", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedTeamMember.SchemeGuest)
+		s.Require().False(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedChannelMember.SchemeGuest)
+		s.Require().False(updatedChannelMember.SchemeUser)
+	})
+
+	s.T().Run("Must no change any other user role", func(t *testing.T) {
+		id := model.NewId()
+		user1, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user1.Id)) }()
+
+		teamId1 := model.NewId()
+		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId1, UserId: user1.Id, SchemeGuest: false, SchemeUser: true}, 999)
+		s.Require().Nil(nErr)
+
+		channel, nErr := s.Store().Channel().Save(&model.Channel{
+			TeamId:      teamId1,
+			DisplayName: "Channel name",
+			Name:        "channel-" + model.NewId(),
+			Type:        model.CHANNEL_OPEN,
+		}, -1)
+		s.Require().Nil(nErr)
+
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user1.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		id = model.NewId()
+		user2, err := s.Store().User().Save(&model.User{
+			Email:     id + "@test.com",
+			Username:  "un_" + id,
+			Nickname:  "nn_" + id,
+			FirstName: "f_" + id,
+			LastName:  "l_" + id,
+			Password:  "Password1",
+			Roles:     "system_user",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user2.Id)) }()
+
+		teamId2 := model.NewId()
+		_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId2, UserId: user2.Id, SchemeGuest: false, SchemeUser: true}, 999)
+		s.Require().Nil(nErr)
+
+		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user2.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
+		s.Require().Nil(nErr)
+
+		err = s.Store().User().DemoteUserToGuest(user1.Id)
+		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().Get(user1.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_guest", updatedUser.Roles)
+
+		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId1, user1.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedTeamMember.SchemeGuest)
+		s.Require().False(updatedTeamMember.SchemeUser)
+
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user1.Id)
+		s.Require().Nil(nErr)
+		s.Require().True(updatedChannelMember.SchemeGuest)
+		s.Require().False(updatedChannelMember.SchemeUser)
+
+		notUpdatedUser, err := s.Store().User().Get(user2.Id)
+		s.Require().Nil(err)
+		s.Require().Equal("system_user", notUpdatedUser.Roles)
+
+		notUpdatedTeamMember, nErr := s.Store().Team().GetMember(teamId2, user2.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(notUpdatedTeamMember.SchemeGuest)
+		s.Require().True(notUpdatedTeamMember.SchemeUser)
+
+		notUpdatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user2.Id)
+		s.Require().Nil(nErr)
+		s.Require().False(notUpdatedChannelMember.SchemeGuest)
+		s.Require().True(notUpdatedChannelMember.SchemeUser)
+	})
+}
+
+func (s *UserStoreTS) TestDeactivateGuests() {
+	// create users
+	s.T().Run("Must disable all guests and no regular user or already deactivated users", func(t *testing.T) {
+		guest1Random := model.NewId()
+		guest1, err := s.Store().User().Save(&model.User{
+			Email:     guest1Random + "@test.com",
+			Username:  "un_" + guest1Random,
+			Nickname:  "nn_" + guest1Random,
+			FirstName: "f_" + guest1Random,
+			LastName:  "l_" + guest1Random,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(guest1.Id)) }()
+
+		guest2Random := model.NewId()
+		guest2, err := s.Store().User().Save(&model.User{
+			Email:     guest2Random + "@test.com",
+			Username:  "un_" + guest2Random,
+			Nickname:  "nn_" + guest2Random,
+			FirstName: "f_" + guest2Random,
+			LastName:  "l_" + guest2Random,
+			Password:  "Password1",
+			Roles:     "system_guest",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(guest2.Id)) }()
+
+		guest3Random := model.NewId()
+		guest3, err := s.Store().User().Save(&model.User{
+			Email:     guest3Random + "@test.com",
+			Username:  "un_" + guest3Random,
+			Nickname:  "nn_" + guest3Random,
+			FirstName: "f_" + guest3Random,
+			LastName:  "l_" + guest3Random,
+			Password:  "Password1",
+			Roles:     "system_guest",
+			DeleteAt:  10,
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(guest3.Id)) }()
+
+		regularUserRandom := model.NewId()
+		regularUser, err := s.Store().User().Save(&model.User{
+			Email:     regularUserRandom + "@test.com",
+			Username:  "un_" + regularUserRandom,
+			Nickname:  "nn_" + regularUserRandom,
+			FirstName: "f_" + regularUserRandom,
+			LastName:  "l_" + regularUserRandom,
+			Password:  "Password1",
+			Roles:     "system_user",
+		})
+		s.Require().Nil(err)
+		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(regularUser.Id)) }()
+
+		ids, err := s.Store().User().DeactivateGuests()
+		s.Require().Nil(err)
+		s.Assert().ElementsMatch([]string{guest1.Id, guest2.Id}, ids)
+
+		u, err := s.Store().User().Get(guest1.Id)
+		s.Require().Nil(err)
+		s.Assert().NotEqual(u.DeleteAt, int64(0))
+
+		u, err = s.Store().User().Get(guest2.Id)
+		s.Require().Nil(err)
+		s.Assert().NotEqual(u.DeleteAt, int64(0))
+
+		u, err = s.Store().User().Get(guest3.Id)
+		s.Require().Nil(err)
+		s.Assert().Equal(u.DeleteAt, int64(10))
+
+		u, err = s.Store().User().Get(regularUser.Id)
+		s.Require().Nil(err)
+		s.Assert().Equal(u.DeleteAt, int64(0))
+	})
+}
+
+func (s *UserStoreTS) TestUserStoreResetLastPictureUpdate() {
+	u1 := &model.User{}
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
+	s.Require().Nil(err)
+
+	user, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+
+	s.Assert().NotZero(user.LastPictureUpdate)
+	s.Assert().NotZero(user.UpdateAt)
+
+	// Ensure update at timestamp changes
+	time.Sleep(time.Millisecond)
+
+	err = s.Store().User().ResetLastPictureUpdate(u1.Id)
+	s.Require().Nil(err)
+
+	s.Store().User().InvalidateProfileCacheForUser(u1.Id)
+
+	user2, err := s.Store().User().Get(u1.Id)
+	s.Require().Nil(err)
+
+	s.Assert().True(user2.UpdateAt > user.UpdateAt)
+	s.Assert().Zero(user2.LastPictureUpdate)
+}
+
+func (s *UserStoreTS) testGetKnownUsers() {
+	teamId := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u4.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u4.Id}, -1)
+	s.Require().Nil(nErr)
+
+	ch1 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in channel",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_OPEN,
+	}
+	c1, nErr := s.Store().Channel().Save(ch1, -1)
+	s.Require().Nil(nErr)
+
+	ch2 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in private",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_PRIVATE,
+	}
+	c2, nErr := s.Store().Channel().Save(ch2, -1)
+	s.Require().Nil(nErr)
+
+	ch3 := &model.Channel{
+		TeamId:      teamId,
+		DisplayName: "Profiles in private",
+		Name:        "profiles-" + model.NewId(),
+		Type:        model.CHANNEL_PRIVATE,
+	}
+	c3, nErr := s.Store().Channel().Save(ch3, -1)
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u3.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c3.Id,
+		UserId:      u4.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	s.T().Run("get know users sharing no channels", func(t *testing.T) {
+		userIds, err := s.Store().User().GetKnownUsers(u4.Id)
+		s.Require().Nil(err)
+		s.Assert().Empty(userIds)
+	})
+
+	s.T().Run("get know users sharing one channel", func(t *testing.T) {
+		userIds, err := s.Store().User().GetKnownUsers(u3.Id)
+		s.Require().Nil(err)
+		s.Assert().Len(userIds, 1)
+		s.Assert().Equal(userIds[0], u1.Id)
+	})
+
+	s.T().Run("get know users sharing multiple channels", func(t *testing.T) {
+		userIds, err := s.Store().User().GetKnownUsers(u1.Id)
+		s.Require().Nil(err)
+		s.Assert().Len(userIds, 2)
+		s.Assert().ElementsMatch(userIds, []string{u2.Id, u3.Id})
+	})
+}
