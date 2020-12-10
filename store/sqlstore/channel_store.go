@@ -673,6 +673,36 @@ func (s SqlChannelStore) GetMemberForPost(postId string, userId string) (*model.
 	return dbMember.ToModel(), nil
 }
 
+func (s SqlChannelStore) IncrementMentionCount(channelId string, userId string, updateThreads bool) error {
+	now := model.GetMillis()
+	var threadsToUpdate []string
+	if updateThreads {
+		var err error
+		threadsToUpdate, err = s.Thread().CollectThreadsWithNewerReplies(userId, []string{channelId}, now)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := s.GetMaster().Exec(
+		`UPDATE
+			ChannelMembers
+		SET
+			MentionCount = MentionCount + 1,
+			LastUpdateAt = :LastUpdateAt
+		WHERE
+			UserId = :UserId
+				AND ChannelId = :ChannelId`,
+		map[string]interface{}{"ChannelId": channelId, "UserId": userId, "LastUpdateAt": now})
+	if err != nil {
+		return errors.Wrapf(err, "failed to Update ChannelMembers with channelId=%s and userId=%s", channelId, userId)
+	}
+	if updateThreads {
+		s.Thread().UpdateUnreadsByChannel(userId, threadsToUpdate, now, false)
+	}
+	return nil
+}
+
 func (s SqlChannelStore) GetForPost(postId string) (*model.Channel, error) {
 	channel := &model.Channel{}
 	if err := s.GetReplica().SelectOne(
@@ -1229,6 +1259,7 @@ func (s SqlChannelStore) SaveDirectChannel(directchannel *model.Channel, member1
 	}
 
 	return newChannel, nil
+
 }
 
 func (s SqlChannelStore) saveMemberT(transaction *gorp.Transaction, member *model.ChannelMember) (*model.ChannelMember, error) {

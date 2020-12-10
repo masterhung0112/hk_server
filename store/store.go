@@ -40,20 +40,21 @@ type ThreadStore interface {
 	// Save(thread *model.Thread) (*model.Thread, error)
 	// Update(thread *model.Thread) (*model.Thread, error)
 	// Get(id string) (*model.Thread, error)
-	// GetThreadsForUser(userId string, opts model.GetUserThreadsOpts) (*model.Threads, error)
+	// GetThreadsForUser(userId, teamId string, opts model.GetUserThreadsOpts) (*model.Threads, error)
 	// Delete(postId string) error
+	// GetPosts(threadId string, since int64) ([]*model.Post, error)
 
-	// MarkAllAsRead(userId string, timestamp int64) error
+	// MarkAllAsRead(userId, teamId string) error
 	// MarkAsRead(userId, threadId string, timestamp int64) error
 
 	// SaveMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
 	// UpdateMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
-	// GetMembershipsForUser(userId string) ([]*model.ThreadMembership, error)
+	// GetMembershipsForUser(userId, teamId string) ([]*model.ThreadMembership, error)
 	// GetMembershipForUser(userId, postId string) (*model.ThreadMembership, error)
 	// DeleteMembershipForUser(userId, postId string) error
-	// CreateMembershipIfNeeded(userId, postId string, following bool) error
-	// CollectThreadsWithNewerReplies(userId string, channelIds []string, timestamp int64) ([]string, error)
-	// UpdateUnreadsByChannel(userId string, changedThreads []string, timestamp int64) error
+	// CreateMembershipIfNeeded(userId, postId string, following, incrementMentions, updateFollowing bool) error
+	CollectThreadsWithNewerReplies(userId string, channelIds []string, timestamp int64) ([]string, error)
+	UpdateUnreadsByChannel(userId string, changedThreads []string, timestamp int64, updateViewedTimestamp bool) error
 }
 
 type PostStore interface {
@@ -273,7 +274,7 @@ type TeamStore interface {
 type ChannelStore interface {
 	Save(channel *model.Channel, maxChannelsPerTeam int64) (*model.Channel, error)
 	CreateDirectChannel(userId *model.User, otherUserId *model.User) (*model.Channel, error)
-	// SaveDirectChannel(channel *model.Channel, member1 *model.ChannelMember, member2 *model.ChannelMember) (*model.Channel, error)
+	SaveDirectChannel(channel *model.Channel, member1 *model.ChannelMember, member2 *model.ChannelMember) (*model.Channel, error)
 	Update(channel *model.Channel) (*model.Channel, error)
 	// UpdateSidebarChannelCategoryOnMove(channel *model.Channel, newTeamId string) error
 	// ClearSidebarOnTeamLeave(userId, teamId string) error
@@ -332,8 +333,8 @@ type ChannelStore interface {
 	// UpdateLastViewedAt(channelIds []string, userId string) (map[string]int64, *model.AppError)
 	// UpdateLastViewedAtPost(unreadPost *model.Post, userID string, mentionCount int) (*model.ChannelUnreadAt, *model.AppError)
 	// CountPostsAfter(channelId string, timestamp int64, userId string) (int, *model.AppError)
-	// IncrementMentionCount(channelId string, userId string) *model.AppError
-	// AnalyticsTypeCount(teamId string, channelType string) (int64, *model.AppError)
+	IncrementMentionCount(channelId string, userId string, updateThreads bool) error
+	// AnalyticsTypeCount(teamId string, channelType string) (int64, error)
 	GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, error)
 	GetMembersForUserWithPagination(teamId, userId string, page, perPage int) (*model.ChannelMembers, error)
 	// AutocompleteInTeam(teamId string, term string, includeDeleted bool) (*model.ChannelList, *model.AppError)

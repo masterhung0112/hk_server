@@ -2455,3 +2455,103 @@ func (s *UserStoreTS) TestAnalyticsGetExternalUsers() {
 	s.Require().Nil(err)
 	s.Assert().True(result)
 }
+
+func (s *UserStoreTS) TestUserUnreadCount() {
+	teamId := model.NewId()
+
+	c1 := model.Channel{}
+	c1.TeamId = teamId
+	c1.DisplayName = "Unread Messages"
+	c1.Name = "unread-messages-" + model.NewId()
+	c1.Type = model.CHANNEL_OPEN
+
+	c2 := model.Channel{}
+	c2.TeamId = teamId
+	c2.DisplayName = "Unread Direct"
+	c2.Name = "unread-direct-" + model.NewId()
+	c2.Type = model.CHANNEL_DIRECT
+
+	u1 := &model.User{}
+	u1.Username = "user1" + model.NewId()
+	u1.Email = MakeEmail()
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2 := &model.User{}
+	u2.Email = MakeEmail()
+	u2.Username = "user2" + model.NewId()
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().Save(&c1, -1)
+	s.Require().Nil(nErr, "couldn't save item")
+
+	m1 := model.ChannelMember{}
+	m1.ChannelId = c1.Id
+	m1.UserId = u1.Id
+	m1.NotifyProps = model.GetDefaultChannelNotifyProps()
+
+	m2 := model.ChannelMember{}
+	m2.ChannelId = c1.Id
+	m2.UserId = u2.Id
+	m2.NotifyProps = model.GetDefaultChannelNotifyProps()
+
+	_, nErr = s.Store().Channel().SaveMember(&m2)
+	s.Require().Nil(nErr)
+
+	m1.ChannelId = c2.Id
+	m2.ChannelId = c2.Id
+
+	_, nErr = s.Store().Channel().SaveDirectChannel(&c2, &m1, &m2)
+	s.Require().Nil(nErr, "couldn't save direct channel")
+
+	p1 := model.Post{}
+	p1.ChannelId = c1.Id
+	p1.UserId = u1.Id
+	p1.Message = "this is a message for @" + u2.Username
+
+	// Post one message with mention to open channel
+	_, nErr = s.Store().Post().Save(&p1)
+	s.Require().Nil(nErr)
+	nErr = s.Store().Channel().IncrementMentionCount(c1.Id, u2.Id, false)
+	s.Require().Nil(nErr)
+
+	// Post 2 messages without mention to direct channel
+	p2 := model.Post{}
+	p2.ChannelId = c2.Id
+	p2.UserId = u1.Id
+	p2.Message = "first message"
+
+	_, nErr = s.Store().Post().Save(&p2)
+	s.Require().Nil(nErr)
+	nErr = s.Store().Channel().IncrementMentionCount(c2.Id, u2.Id, false)
+	s.Require().Nil(nErr)
+
+	p3 := model.Post{}
+	p3.ChannelId = c2.Id
+	p3.UserId = u1.Id
+	p3.Message = "second message"
+	_, nErr = s.Store().Post().Save(&p3)
+	s.Require().Nil(nErr)
+
+	nErr = s.Store().Channel().IncrementMentionCount(c2.Id, u2.Id, false)
+	s.Require().Nil(nErr)
+
+	badge, unreadCountErr := s.Store().User().GetUnreadCount(u2.Id)
+	s.Require().Nil(unreadCountErr)
+	s.Require().Equal(int64(3), badge, "should have 3 unread messages")
+
+	badge, unreadCountErr = s.Store().User().GetUnreadCountForChannel(u2.Id, c1.Id)
+	s.Require().Nil(unreadCountErr)
+	s.Require().Equal(int64(1), badge, "should have 1 unread messages for that channel")
+
+	badge, unreadCountErr = s.Store().User().GetUnreadCountForChannel(u2.Id, c2.Id)
+	s.Require().Nil(unreadCountErr)
+	s.Require().Equal(int64(2), badge, "should have 2 unread messages for that channel")
+}

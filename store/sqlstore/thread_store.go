@@ -1,8 +1,10 @@
 package sqlstore
 
 import (
+	sq "github.com/Masterminds/squirrel"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
+	"github.com/pkg/errors"
 )
 
 type SqlThreadStore struct {
@@ -32,4 +34,47 @@ func newSqlThreadStore(sqlStore *SqlStore) store.ThreadStore {
 
 func threadSliceColumns() []string {
 	return []string{"PostId", "ChannelId", "LastReplyAt", "ReplyCount", "Participants"}
+}
+
+func (s *SqlThreadStore) CollectThreadsWithNewerReplies(userId string, channelIds []string, timestamp int64) ([]string, error) {
+	var changedThreads []string
+	query, args, _ := s.getQueryBuilder().
+		Select("Threads.PostId").
+		From("Threads").
+		LeftJoin("ChannelMembers ON ChannelMembers.ChannelId=Threads.ChannelId").
+		Where(sq.And{
+			sq.Eq{"Threads.ChannelId": channelIds},
+			sq.Eq{"ChannelMembers.UserId": userId},
+			sq.Or{
+				sq.Expr("Threads.LastReplyAt >= ChannelMembers.LastViewedAt"),
+				sq.GtOrEq{"Threads.LastReplyAt": timestamp},
+			},
+		}).
+		ToSql()
+	if _, err := s.GetReplica().Select(&changedThreads, query, args...); err != nil {
+		return nil, errors.Wrap(err, "failed to fetch threads")
+	}
+	return changedThreads, nil
+}
+
+func (s *SqlThreadStore) UpdateUnreadsByChannel(userId string, changedThreads []string, timestamp int64, updateViewedTimestamp bool) error {
+	if len(changedThreads) == 0 {
+		return nil
+	}
+
+	qb := s.getQueryBuilder().
+		Update("ThreadMemberships").
+		Where(sq.Eq{"UserId": userId, "PostId": changedThreads}).
+		Set("LastUpdated", timestamp)
+
+	if updateViewedTimestamp {
+		qb = qb.Set("LastViewed", timestamp)
+	}
+	updateQuery, updateArgs, _ := qb.ToSql()
+
+	if _, err := s.GetMaster().Exec(updateQuery, updateArgs...); err != nil {
+		return errors.Wrap(err, "failed to update thread membership")
+	}
+
+	return nil
 }
