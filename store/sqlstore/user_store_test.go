@@ -1185,16 +1185,16 @@ func (s *UserStoreGetAllProfilesTS) TestGetAll() {
 
 // etag changes for all after user creation
 func (s *UserStoreGetAllProfilesTS) TestEtagChangesForAllAfterUserCreation() {
-		etag := s.Store().User().GetEtagForAllProfiles()
+	etag := s.Store().User().GetEtagForAllProfiles()
 
-		uNew := &model.User{}
-		uNew.Email = storetest.MakeEmail()
-		_, err := s.Store().User().Save(uNew)
-		s.Require().Nil(err)
-		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(uNew.Id)) }()
+	uNew := &model.User{}
+	uNew.Email = storetest.MakeEmail()
+	_, err := s.Store().User().Save(uNew)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(uNew.Id)) }()
 
-		updatedEtag := s.Store().User().GetEtagForAllProfiles()
-		s.Require().NotEqual(etag, updatedEtag)
+	updatedEtag := s.Store().User().GetEtagForAllProfiles()
+	s.Require().NotEqual(etag, updatedEtag)
 }
 
 func (s *UserStoreGetAllProfilesTS) TestFilterToSystemAdminRole() {
@@ -1263,5 +1263,208 @@ func (s *UserStoreGetAllProfilesTS) TestTryToFilterToActiveAndInactive() {
 	s.Require().Equal([]*model.User{
 		sanitized(s.u6),
 		sanitized(s.u7),
+	}, actual)
+}
+
+type UserStoreGetProfilesTS struct {
+	suite.Suite
+	StoreTestSuite
+
+	u1     *model.User
+	u2     *model.User
+	u3     *model.User
+	u4     *model.User
+	u5     *model.User
+	u6     *model.User
+	u7     *model.User
+	teamId string
+}
+
+func TestUserStoreGetProfilesTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
+
+func (s *UserStoreGetProfilesTS) SetupSuite() {
+	teamId := model.NewId()
+	s.teamId = teamId
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u1" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+	s.u1 = u1
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u2" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+	s.u2 = u2
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u3" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	s.u3 = u3
+	s.u3.IsBot = true
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+		Roles:    "system_admin",
+	})
+	s.Require().Nil(err)
+	defer func() {}()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u4.Id}, -1)
+	s.Require().Nil(nErr)
+	s.u4 = u4
+
+	u5, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u5" + model.NewId(),
+		DeleteAt: model.GetMillis(),
+	})
+	s.Require().Nil(err)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u5.Id}, -1)
+	s.Require().Nil(nErr)
+	s.u5 = u5
+}
+
+func (s *UserStoreGetProfilesTS) TearDownSuite() {
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u1.Id))
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u2.Id))
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u3.Id))
+	s.Require().Nil(s.Store().Bot().PermanentDelete(s.u3.Id))
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u4.Id))
+	s.Require().Nil(s.Store().User().PermanentDelete(s.u5.Id))
+}
+
+// get page 0, perPage 100
+func (s *UserStoreGetProfilesTS) TestGetPage0PerPage100() {
+	actual, err := s.Store().User().GetProfiles(&model.UserGetOptions{
+		InTeamId: s.teamId,
+		Page:     0,
+		PerPage:  100,
+	})
+	s.Require().Nil(err)
+
+	s.Require().Equal([]*model.User{
+		sanitized(s.u1),
+		sanitized(s.u2),
+		sanitized(s.u3),
+		sanitized(s.u4),
+		sanitized(s.u5),
+	}, actual)
+}
+
+// get page 0, perPage 1
+func (s *UserStoreGetProfilesTS) TestGetPage0PerPage1() {
+	actual, err := s.Store().User().GetProfiles(&model.UserGetOptions{
+		InTeamId: s.teamId,
+		Page:     0,
+		PerPage:  1,
+	})
+	s.Require().Nil(err)
+	s.Require().Equal([]*model.User{sanitized(s.u1)}, actual)
+}
+
+// get unknown team id
+func (s *UserStoreGetProfilesTS) TestGetUnknownTeamId() {
+	actual, err := s.Store().User().GetProfiles(&model.UserGetOptions{
+		InTeamId: "123",
+		Page:     0,
+		PerPage:  100,
+	})
+	s.Require().Nil(err)
+	s.Require().Equal([]*model.User{}, actual)
+}
+
+// etag changes for all after user creation
+func (s *UserStoreGetProfilesTS) TestEtagChangesForAllAfterUserCreation() {
+	etag := s.Store().User().GetEtagForProfiles(s.teamId)
+	uNew := &model.User{}
+	uNew.Email = MakeEmail()
+	_, err := s.Store().User().Save(uNew)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(uNew.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: s.teamId, UserId: uNew.Id}, -1)
+	s.Require().Nil(nErr)
+	updatedEtag := s.Store().User().GetEtagForProfiles(s.teamId)
+	s.Require().NotEqual(etag, updatedEtag)
+}
+
+// filter to system_admin role
+func (s *UserStoreGetProfilesTS) TestFilterToSystemAdminRole() {
+	actual, err := s.Store().User().GetProfiles(&model.UserGetOptions{
+		InTeamId: s.teamId,
+		Page:     0,
+		PerPage:  10,
+		Role:     "system_admin",
+	})
+	s.Require().Nil(err)
+	s.Require().Equal([]*model.User{
+		sanitized(s.u4),
+	}, actual)
+}
+
+// filter to inactive
+func (s *UserStoreGetProfilesTS) TestFilterToInActive() {
+	actual, err := s.Store().User().GetProfiles(&model.UserGetOptions{
+		InTeamId: s.teamId,
+		Page:     0,
+		PerPage:  10,
+		Inactive: true,
+	})
+	s.Require().Nil(err)
+	s.Require().Equal([]*model.User{
+		sanitized(s.u5),
+	}, actual)
+}
+
+// filter to active
+func (s *UserStoreGetProfilesTS) TestFilterToActive() {
+	actual, err := s.Store().User().GetProfiles(&model.UserGetOptions{
+		InTeamId: s.teamId,
+		Page:     0,
+		PerPage:  10,
+		Active:   true,
+	})
+	s.Require().Nil(err)
+	s.Require().Equal([]*model.User{
+		sanitized(s.u1),
+		sanitized(s.u2),
+		sanitized(s.u3),
+		sanitized(s.u4),
+	}, actual)
+}
+
+// try to filter to active and inactive
+func (s *UserStoreGetProfilesTS) TestFilterToActiveAndInactive() {
+	actual, err := s.Store().User().GetProfiles(&model.UserGetOptions{
+		InTeamId: s.teamId,
+		Page:     0,
+		PerPage:  10,
+		Inactive: true,
+		Active:   true,
+	})
+	s.Require().Nil(err)
+	s.Require().Equal([]*model.User{
+		sanitized(s.u5),
 	}, actual)
 }
