@@ -21,8 +21,8 @@ type MainHelper struct {
 	Settings *model.SqlSettings
 	Store    store.Store
 
-	SQLSupplier *sqlstore.SqlSupplier
-	status      int
+	SqlStore *sqlstore.SqlStore
+	status   int
 }
 
 type HelperOptions struct {
@@ -72,9 +72,9 @@ func (h *MainHelper) setupStore() {
 	config.SetDefaults()
 
 	// Create SQL Store
-	h.SQLSupplier = sqlstore.NewSqlSupplier(*h.Settings, nil)
+	h.SqlStore = sqlstore.New(*h.Settings, nil)
 	h.Store = &TestStore{
-		h.SQLSupplier,
+		h.SqlStore,
 	}
 	// searchlayer.NewSearchLayer(&TestStore{
 	// 	h.SQLSupplier,
@@ -86,8 +86,8 @@ func (h *MainHelper) Main(m *testing.M) {
 }
 
 func (h *MainHelper) Close() error {
-	if h.SQLSupplier != nil {
-		h.SQLSupplier.Close()
+	if h.SqlStore != nil {
+		h.SqlStore.Close()
 	}
 	if h.Settings != nil {
 		storetest.CleanupSqlSettings(h.Settings)
@@ -114,12 +114,12 @@ func (h *MainHelper) GetStore() store.Store {
 	return h.Store
 }
 
-func (h *MainHelper) GetSQLSupplier() *sqlstore.SqlSupplier {
-	if h.SQLSupplier == nil {
-		panic("MainHelper not initialized with sql supplier.")
+func (h *MainHelper) GetSqlStore() *sqlstore.SqlStore {
+	if h.SqlStore == nil {
+		panic("MainHelper not initialized with sql store.")
 	}
 
-	return h.SQLSupplier
+	return h.SqlStore
 }
 
 func (h *MainHelper) GetSQLSettings() *model.SqlSettings {

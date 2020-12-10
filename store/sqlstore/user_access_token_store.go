@@ -9,11 +9,13 @@ import (
 )
 
 type SqlUserAccessTokenStore struct {
-	SqlStore
+	*SqlStore
 }
 
-func newSqlUserAccessTokenStore(sqlStore SqlStore) store.UserAccessTokenStore {
-	s := &SqlUserAccessTokenStore{sqlStore}
+func newSqlUserAccessTokenStore(sqlStore *SqlStore) store.UserAccessTokenStore {
+	s := &SqlUserAccessTokenStore{
+		SqlStore: sqlStore,
+	}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.UserAccessToken{}, "UserAccessTokens").SetKeys(false, "Id")

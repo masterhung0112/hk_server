@@ -18,7 +18,7 @@ const (
 )
 
 type SqlTeamStore struct {
-	SqlStore
+	*SqlStore
 
 	teamsQuery sq.SelectBuilder
 }
@@ -88,7 +88,7 @@ type rolesInfo struct {
 	schemeAdmin   bool
 }
 
-func newSqlTeamStore(sqlStore SqlStore) store.TeamStore {
+func newSqlTeamStore(sqlStore *SqlStore) store.TeamStore {
 	s := &SqlTeamStore{
 		SqlStore: sqlStore,
 	}

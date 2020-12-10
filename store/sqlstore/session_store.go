@@ -13,11 +13,13 @@ const (
 )
 
 type SqlSessionStore struct {
-	SqlStore
+	*SqlStore
 }
 
-func newSqlSessionStore(sqlStore SqlStore) store.SessionStore {
-	us := &SqlSessionStore{sqlStore}
+func newSqlSessionStore(sqlStore *SqlStore) store.SessionStore {
+	us := &SqlSessionStore{
+		SqlStore: sqlStore,
+	}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Session{}, "Sessions").SetKeys(false, "Id")

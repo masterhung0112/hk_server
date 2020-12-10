@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/masterhung0112/hk_server/einterfaces"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/mattermost/gorp"
@@ -45,8 +46,8 @@ const (
 )
 
 type SqlChannelStore struct {
-	SqlStore
-	// metrics einterfaces.MetricsInterface
+	*SqlStore
+	metrics einterfaces.MetricsInterface
 }
 
 type channelMember struct {
@@ -357,12 +358,11 @@ type publicChannel struct {
 // 	Size: model.CHANNEL_CACHE_SIZE,
 // })
 
-// func newSqlChannelStore(sqlStore SqlStore, metrics einterfaces.MetricsInterface) store.ChannelStore {
-func newSqlChannelStore(sqlStore SqlStore) store.ChannelStore {
+func newSqlChannelStore(sqlStore *SqlStore, metrics einterfaces.MetricsInterface) store.ChannelStore {
 
 	s := &SqlChannelStore{
 		SqlStore: sqlStore,
-		// metrics:  metrics,
+		metrics:  metrics,
 	}
 
 	for _, db := range sqlStore.GetAllConns() {

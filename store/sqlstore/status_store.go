@@ -12,11 +12,13 @@ import (
 )
 
 type SqlStatusStore struct {
-	SqlStore
+	*SqlStore
 }
 
-func newSqlStatusStore(sqlStore SqlStore) store.StatusStore {
-	s := &SqlStatusStore{sqlStore}
+func newSqlStatusStore(sqlStore *SqlStore) store.StatusStore {
+	s := &SqlStatusStore{
+		SqlStore: sqlStore,
+	}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Status{}, "Status").SetKeys(false, "UserId")

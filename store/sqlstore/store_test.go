@@ -19,24 +19,25 @@ type StoreTestBaseSuite interface {
 	SetStore(store store.Store)
 	Store() store.Store
 
-	SetSqlSupplier(sqlSupplier storetest.SqlSupplier)
-	SqlSupplier() storetest.SqlSupplier
+	SetSqlStore(sqlStore *SqlStore)
+	SqlStore() *SqlStore
 }
 
 type StoreTestSuite struct {
 	// suite.Suite
 
-	store       store.Store
-	sqlSupplier storetest.SqlSupplier
+	store    store.Store
+	sqlStore *SqlStore
+	// sqlSupplier storetest.SqlSupplier
 }
 
 /***
  * StoreTestSuite implements interface StoreTestBaseSuite
  ***/
 func (s *StoreTestSuite) InitInitializeStore() {
-	if len(StoreTypes) >= 1 && (s.Store() == nil || s.SqlSupplier() == nil) {
+	if len(StoreTypes) >= 1 && (s.Store() == nil || s.SqlStore() == nil) {
 		s.SetStore(StoreTypes[0].Store)
-		s.SetSqlSupplier(StoreTypes[0].SqlSupplier)
+		s.SetSqlStore(StoreTypes[0].SqlStore)
 	}
 }
 
@@ -48,18 +49,18 @@ func (s *StoreTestSuite) Store() store.Store {
 	return s.store
 }
 
-func (s *StoreTestSuite) SetSqlSupplier(sqlSupplier storetest.SqlSupplier) {
-	s.sqlSupplier = sqlSupplier
+func (s *StoreTestSuite) SetSqlStore(sqlStore *SqlStore) {
+	s.sqlStore = sqlStore
 }
 
-func (s *StoreTestSuite) SqlSupplier() storetest.SqlSupplier {
-	return s.sqlSupplier
+func (s *StoreTestSuite) SqlStore() *SqlStore {
+	return s.sqlStore
 }
 
 type storeType struct {
 	Name        string
 	SqlSettings *model.SqlSettings
-	SqlSupplier *SqlSupplier
+	SqlStore    *SqlStore
 	Store       store.Store
 }
 
@@ -99,8 +100,8 @@ func initStores() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			st.SqlSupplier = NewSqlSupplier(*st.SqlSettings, nil)
-			st.Store = st.SqlSupplier
+			st.SqlStore = New(*st.SqlSettings, nil)
+			st.Store = st.SqlStore
 			st.Store.DropAllTables()
 			st.Store.MarkSystemRanUnitTests()
 		}()
@@ -131,18 +132,6 @@ func tearDownStores() {
 	})
 }
 
-func StoreTestWithSqlSupplier(t *testing.T, f func(*testing.T, store.Store, storetest.SqlSupplier)) {
-	for _, st := range StoreTypes {
-		st := st
-		t.Run(st.Name, func(t *testing.T) {
-			if testing.Short() {
-				t.SkipNow()
-			}
-			f(t, st.Store, st.SqlSupplier)
-		})
-	}
-}
-
 func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, executeFunc func(t *testing.T, testSuite StoreTestBaseSuite)) {
 	for _, st := range StoreTypes {
 		st := st
@@ -151,7 +140,7 @@ func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, e
 				t.SkipNow()
 			}
 			testSuite.SetStore(st.Store)
-			testSuite.SetSqlSupplier(st.SqlSupplier)
+			testSuite.SetSqlStore(st.SqlStore)
 			// suite.Run(t, testSuite)
 			executeFunc(t, testSuite)
 		})
