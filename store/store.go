@@ -465,29 +465,29 @@ type GroupStore interface {
 	Create(group *model.Group) (*model.Group, *model.AppError)
 	Get(groupID string) (*model.Group, *model.AppError)
 	GetByName(name string, opts model.GroupSearchOpts) (*model.Group, *model.AppError)
-	// GetByIDs(groupIDs []string) ([]*model.Group, *model.AppError)
-	// GetByRemoteID(remoteID string, groupSource model.GroupSource) (*model.Group, *model.AppError)
-	// GetAllBySource(groupSource model.GroupSource) ([]*model.Group, *model.AppError)
-	// GetByUser(userId string) ([]*model.Group, *model.AppError)
-	// Update(group *model.Group) (*model.Group, *model.AppError)
-	// Delete(groupID string) (*model.Group, *model.AppError)
+	// GetByIDs(groupIDs []string) ([]*model.Group, error)
+	// GetByRemoteID(remoteID string, groupSource model.GroupSource) (*model.Group, error)
+	// GetAllBySource(groupSource model.GroupSource) ([]*model.Group, error)
+	// GetByUser(userId string) ([]*model.Group, error)
+	// Update(group *model.Group) (*model.Group, error)
+	// Delete(groupID string) (*model.Group, error)
 
-	// GetMemberUsers(groupID string) ([]*model.User, *model.AppError)
-	// GetMemberUsersPage(groupID string, page int, perPage int) ([]*model.User, *model.AppError)
-	// GetMemberCount(groupID string) (int64, *model.AppError)
+	// GetMemberUsers(groupID string) ([]*model.User, error)
+	// GetMemberUsersPage(groupID string, page int, perPage int) ([]*model.User, error)
+	// GetMemberCount(groupID string) (int64, error)
 
-	// GetMemberUsersInTeam(groupID string, teamID string) ([]*model.User, *model.AppError)
-	// GetMemberUsersNotInChannel(groupID string, channelID string) ([]*model.User, *model.AppError)
+	// GetMemberUsersInTeam(groupID string, teamID string) ([]*model.User, error)
+	// GetMemberUsersNotInChannel(groupID string, channelID string) ([]*model.User, error)
 
-	// UpsertMember(groupID string, userID string) (*model.GroupMember, *model.AppError)
-	// DeleteMember(groupID string, userID string) (*model.GroupMember, *model.AppError)
-	// PermanentDeleteMembersByUser(userId string) *model.AppError
+	UpsertMember(groupID string, userID string) (*model.GroupMember, error)
+	// DeleteMember(groupID string, userID string) (*model.GroupMember, error)
+	// PermanentDeleteMembersByUser(userId string) error
 
-	// CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, *model.AppError)
-	// GetGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, *model.AppError)
-	// GetAllGroupSyncablesByGroupId(groupID string, syncableType model.GroupSyncableType) ([]*model.GroupSyncable, *model.AppError)
-	// UpdateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, *model.AppError)
-	// DeleteGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, *model.AppError)
+	// CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, error)
+	// GetGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error)
+	// GetAllGroupSyncablesByGroupId(groupID string, syncableType model.GroupSyncableType) ([]*model.GroupSyncable, error)
+	// UpdateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, error)
+	// DeleteGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error)
 
 	// // TeamMembersToAdd returns a slice of UserTeamIDPair that need newly created memberships
 	// // based on the groups configurations. The returned list can be optionally scoped to a single given team.

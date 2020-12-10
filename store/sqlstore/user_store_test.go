@@ -2632,3 +2632,1146 @@ func (s *UserStoreTS) TestGetRecentlyActiveUsersForTeam() {
 		}, users)
 	})
 }
+
+func (s *UserStoreTS) TestGetNewUsersForTeam() {
+	teamId := model.NewId()
+	teamId2 := model.NewId()
+
+	u1, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "Yuka",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u2, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "Leia",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+
+	u3, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "Ali",
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	u4, err := s.Store().User().Save(&model.User{
+		Email:    MakeEmail(),
+		Username: "u4" + model.NewId(),
+	})
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u4.Id)) }()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId2, UserId: u4.Id}, -1)
+	s.Require().Nil(nErr)
+
+	s.T().Run("get team 1, offset 0, limit 100", func(t *testing.T) {
+		result, err := s.Store().User().GetNewUsersForTeam(teamId, 0, 100, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{
+			sanitized(u3),
+			sanitized(u2),
+			sanitized(u1),
+		}, result)
+	})
+
+	s.T().Run("get team 1, offset 0, limit 1", func(t *testing.T) {
+		result, err := s.Store().User().GetNewUsersForTeam(teamId, 0, 1, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{
+			sanitized(u3),
+		}, result)
+	})
+
+	s.T().Run("get team 1, offset 2, limit 1", func(t *testing.T) {
+		result, err := s.Store().User().GetNewUsersForTeam(teamId, 2, 1, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{
+			sanitized(u1),
+		}, result)
+	})
+
+	s.T().Run("get team 2, offset 0, limit 100", func(t *testing.T) {
+		result, err := s.Store().User().GetNewUsersForTeam(teamId2, 0, 100, nil)
+		s.Require().Nil(err)
+		s.Assert().Equal([]*model.User{
+			sanitized(u4),
+		}, result)
+	})
+}
+
+func (s *UserStoreTS) assertUsers(expected, actual []*model.User) {
+	expectedUsernames := make([]string, 0, len(expected))
+	for _, user := range expected {
+		expectedUsernames = append(expectedUsernames, user.Username)
+	}
+
+	actualUsernames := make([]string, 0, len(actual))
+	for _, user := range actual {
+		actualUsernames = append(actualUsernames, user.Username)
+	}
+
+	if s.Assert().Equal(expectedUsernames, actualUsernames) {
+		s.Assert().Equal(expected, actual)
+	}
+}
+
+func (s *UserStoreTS) TestSearch() {
+	u1 := &model.User{
+		Username:  "jimbo1" + model.NewId(),
+		FirstName: "Tim",
+		LastName:  "Bill",
+		Nickname:  "Rob",
+		Email:     "harold" + model.NewId() + "@simulator.amazonses.com",
+		Roles:     "system_user system_admin",
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	u2 := &model.User{
+		Username: "jim2-bobby" + model.NewId(),
+		Email:    MakeEmail(),
+		Roles:    "system_user system_user_manager",
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3 := &model.User{
+		Username: "jimbo3" + model.NewId(),
+		Email:    MakeEmail(),
+		Roles:    "system_guest",
+	}
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+
+	// The users returned from the database will have AuthData as an empty string.
+	nilAuthData := new(string)
+	*nilAuthData = ""
+	u1.AuthData = nilAuthData
+	u2.AuthData = nilAuthData
+	u3.AuthData = nilAuthData
+
+	t1id := model.NewId()
+	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: t1id, UserId: u1.Id, SchemeAdmin: true, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: t1id, UserId: u2.Id, SchemeAdmin: true, SchemeUser: true}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: t1id, UserId: u3.Id, SchemeAdmin: false, SchemeUser: false, SchemeGuest: true}, -1)
+	s.Require().Nil(nErr)
+
+	testCases := []struct {
+		Description string
+		TeamId      string
+		Term        string
+		Options     *model.UserSearchOptions
+		Expected    []*model.User
+	}{
+		{
+			"search jimb, team 1",
+			t1id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1, u3},
+		},
+		{
+			"search jimb, team 1 with team guest and team admin filters without sys admin filter",
+			t1id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				TeamRoles:      []string{model.TEAM_GUEST_ROLE_ID, model.TEAM_ADMIN_ROLE_ID},
+			},
+			[]*model.User{u3},
+		},
+		{
+			"search jimb, team 1 with team admin filter and sys admin filter",
+			t1id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				Roles:          []string{model.SYSTEM_ADMIN_ROLE_ID},
+				TeamRoles:      []string{model.TEAM_ADMIN_ROLE_ID},
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jim, team 1 with team admin filter",
+			t1id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				TeamRoles:      []string{model.TEAM_ADMIN_ROLE_ID},
+			},
+			[]*model.User{u2},
+		},
+		{
+			"search jim, team 1 with team admin and team guest filter",
+			t1id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				TeamRoles:      []string{model.TEAM_ADMIN_ROLE_ID, model.TEAM_GUEST_ROLE_ID},
+			},
+			[]*model.User{u2, u3},
+		},
+		{
+			"search jim, team 1 with team admin and system admin filters",
+			t1id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				Roles:          []string{model.SYSTEM_ADMIN_ROLE_ID},
+				TeamRoles:      []string{model.TEAM_ADMIN_ROLE_ID},
+			},
+			[]*model.User{u2, u1},
+		},
+		{
+			"search jim, team 1 with system guest filter",
+			t1id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				Roles:          []string{model.SYSTEM_GUEST_ROLE_ID},
+				TeamRoles:      []string{},
+			},
+			[]*model.User{u3},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			users, err := s.Store().User().Search(
+				testCase.TeamId,
+				testCase.Term,
+				testCase.Options,
+			)
+			s.Require().Nil(err)
+			s.assertUsers(testCase.Expected, users)
+		})
+	}
+}
+
+func (s *UserStoreTS) TestSearchNotInChannel() {
+	u1 := &model.User{
+		Username:  "jimbo1" + model.NewId(),
+		FirstName: "Tim",
+		LastName:  "Bill",
+		Nickname:  "Rob",
+		Email:     "harold" + model.NewId() + "@simulator.amazonses.com",
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	u2 := &model.User{
+		Username: "jim2-bobby" + model.NewId(),
+		Email:    MakeEmail(),
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3 := &model.User{
+		Username: "jimbo3" + model.NewId(),
+		Email:    MakeEmail(),
+		DeleteAt: 1,
+	}
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr := s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	tid := model.NewId()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: tid, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: tid, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: tid, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+
+	// The users returned from the database will have AuthData as an empty string.
+	nilAuthData := new(string)
+	*nilAuthData = ""
+
+	u1.AuthData = nilAuthData
+	u2.AuthData = nilAuthData
+	u3.AuthData = nilAuthData
+
+	ch1 := model.Channel{
+		TeamId:      tid,
+		DisplayName: "NameName",
+		Name:        "zz" + model.NewId() + "b",
+		Type:        model.CHANNEL_OPEN,
+	}
+	c1, nErr := s.Store().Channel().Save(&ch1, -1)
+	s.Require().Nil(nErr)
+
+	ch2 := model.Channel{
+		TeamId:      tid,
+		DisplayName: "NameName",
+		Name:        "zz" + model.NewId() + "b",
+		Type:        model.CHANNEL_OPEN,
+	}
+	c2, nErr := s.Store().Channel().Save(&ch2, -1)
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u3.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+	})
+	s.Require().Nil(nErr)
+
+	testCases := []struct {
+		Description string
+		TeamId      string
+		ChannelId   string
+		Term        string
+		Options     *model.UserSearchOptions
+		Expected    []*model.User
+	}{
+		{
+			"search jimb, channel 1",
+			tid,
+			c1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, allow inactive, channel 1",
+			tid,
+			c1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, channel 1, no team id",
+			"",
+			c1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, channel 1, junk team id",
+			"junk",
+			c1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jimb, channel 2",
+			tid,
+			c2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jimb, allow inactive, channel 2",
+			tid,
+			c2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u3},
+		},
+		{
+			"search jimb, channel 2, no team id",
+			"",
+			c2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jimb, channel 2, junk team id",
+			"junk",
+			c2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jim, channel 1",
+			tid,
+			c1.Id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u2, u1},
+		},
+		{
+			"search jim, channel 1, limit 1",
+			tid,
+			c1.Id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          1,
+			},
+			[]*model.User{u2},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			users, err := s.Store().User().SearchNotInChannel(
+				testCase.TeamId,
+				testCase.ChannelId,
+				testCase.Term,
+				testCase.Options,
+			)
+			s.Require().Nil(err)
+			s.assertUsers(testCase.Expected, users)
+		})
+	}
+}
+
+func (s *UserStoreTS) TestSearchInChannel() {
+	u1 := &model.User{
+		Username:  "jimbo1" + model.NewId(),
+		FirstName: "Tim",
+		LastName:  "Bill",
+		Nickname:  "Rob",
+		Email:     "harold" + model.NewId() + "@simulator.amazonses.com",
+		Roles:     "system_user system_admin",
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	u2 := &model.User{
+		Username: "jim-bobby" + model.NewId(),
+		Email:    MakeEmail(),
+		Roles:    "system_user",
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3 := &model.User{
+		Username: "jimbo3" + model.NewId(),
+		Email:    MakeEmail(),
+		DeleteAt: 1,
+		Roles:    "system_user",
+	}
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr := s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	tid := model.NewId()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: tid, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: tid, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: tid, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+
+	// The users returned from the database will have AuthData as an empty string.
+	nilAuthData := new(string)
+	*nilAuthData = ""
+
+	u1.AuthData = nilAuthData
+	u2.AuthData = nilAuthData
+	u3.AuthData = nilAuthData
+
+	ch1 := model.Channel{
+		TeamId:      tid,
+		DisplayName: "NameName",
+		Name:        "zz" + model.NewId() + "b",
+		Type:        model.CHANNEL_OPEN,
+	}
+	c1, nErr := s.Store().Channel().Save(&ch1, -1)
+	s.Require().Nil(nErr)
+
+	ch2 := model.Channel{
+		TeamId:      tid,
+		DisplayName: "NameName",
+		Name:        "zz" + model.NewId() + "b",
+		Type:        model.CHANNEL_OPEN,
+	}
+	c2, nErr := s.Store().Channel().Save(&ch2, -1)
+	s.Require().Nil(nErr)
+
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u1.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+		SchemeAdmin: true,
+		SchemeUser:  true,
+	})
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c2.Id,
+		UserId:      u2.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+		SchemeAdmin: false,
+		SchemeUser:  true,
+	})
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{
+		ChannelId:   c1.Id,
+		UserId:      u3.Id,
+		NotifyProps: model.GetDefaultChannelNotifyProps(),
+		SchemeAdmin: false,
+		SchemeUser:  true,
+	})
+	s.Require().Nil(nErr)
+
+	testCases := []struct {
+		Description string
+		ChannelId   string
+		Term        string
+		Options     *model.UserSearchOptions
+		Expected    []*model.User
+	}{
+		{
+			"search jimb, channel 1",
+			c1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, allow inactive, channel 1",
+			c1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1, u3},
+		},
+		{
+			"search jimb, allow inactive, channel 1, limit 1",
+			c1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          1,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, channel 2",
+			c2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jimb, allow inactive, channel 2",
+			c2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jim, allow inactive, channel 1 with system admin filter",
+			c1.Id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				Roles:          []string{model.SYSTEM_ADMIN_ROLE_ID},
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jim, allow inactive, channel 1 with system admin and system user filter",
+			c1.Id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				Roles:          []string{model.SYSTEM_ADMIN_ROLE_ID, model.SYSTEM_USER_ROLE_ID},
+			},
+			[]*model.User{u1, u3},
+		},
+		{
+			"search jim, allow inactive, channel 1 with channel user filter",
+			c1.Id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				ChannelRoles:   []string{model.CHANNEL_USER_ROLE_ID},
+			},
+			[]*model.User{u3},
+		},
+		{
+			"search jim, allow inactive, channel 1 with channel user and channel admin filter",
+			c1.Id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				ChannelRoles:   []string{model.CHANNEL_USER_ROLE_ID, model.CHANNEL_ADMIN_ROLE_ID},
+			},
+			[]*model.User{u3},
+		},
+		{
+			"search jim, allow inactive, channel 2 with channel user filter",
+			c2.Id,
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+				ChannelRoles:   []string{model.CHANNEL_USER_ROLE_ID},
+			},
+			[]*model.User{u2},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			users, err := s.Store().User().SearchInChannel(
+				testCase.ChannelId,
+				testCase.Term,
+				testCase.Options,
+			)
+			s.Require().Nil(err)
+			s.assertUsers(testCase.Expected, users)
+		})
+	}
+}
+
+func (s *UserStoreTS) TestSearchNotInTeam() {
+	u1 := &model.User{
+		Username:  "jimbo1" + model.NewId(),
+		FirstName: "Tim",
+		LastName:  "Bill",
+		Nickname:  "Rob",
+		Email:     "harold" + model.NewId() + "@simulator.amazonses.com",
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	u2 := &model.User{
+		Username: "jim-bobby" + model.NewId(),
+		Email:    MakeEmail(),
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3 := &model.User{
+		Username: "jimbo3" + model.NewId(),
+		Email:    MakeEmail(),
+		DeleteAt: 1,
+	}
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr := s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	u4 := &model.User{
+		Username: "simon" + model.NewId(),
+		Email:    MakeEmail(),
+		DeleteAt: 0,
+	}
+	_, err = s.Store().User().Save(u4)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u4.Id)) }()
+
+	u5 := &model.User{
+		Username:  "yu" + model.NewId(),
+		FirstName: "En",
+		LastName:  "Yu",
+		Nickname:  "enyu",
+		Email:     MakeEmail(),
+	}
+	_, err = s.Store().User().Save(u5)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u5.Id)) }()
+
+	u6 := &model.User{
+		Username:  "underscore" + model.NewId(),
+		FirstName: "Du_",
+		LastName:  "_DE",
+		Nickname:  "lodash",
+		Email:     MakeEmail(),
+	}
+	_, err = s.Store().User().Save(u6)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u6.Id)) }()
+
+	teamId1 := model.NewId()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId1, UserId: u1.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId1, UserId: u2.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId1, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+	// u4 is not in team 1
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId1, UserId: u5.Id}, -1)
+	s.Require().Nil(nErr)
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId1, UserId: u6.Id}, -1)
+	s.Require().Nil(nErr)
+
+	teamId2 := model.NewId()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId2, UserId: u4.Id}, -1)
+	s.Require().Nil(nErr)
+
+	// The users returned from the database will have AuthData as an empty string.
+	nilAuthData := new(string)
+	*nilAuthData = ""
+
+	u1.AuthData = nilAuthData
+	u2.AuthData = nilAuthData
+	u3.AuthData = nilAuthData
+	u4.AuthData = nilAuthData
+	u5.AuthData = nilAuthData
+	u6.AuthData = nilAuthData
+
+	testCases := []struct {
+		Description string
+		TeamId      string
+		Term        string
+		Options     *model.UserSearchOptions
+		Expected    []*model.User
+	}{
+		{
+			"search simo, team 1",
+			teamId1,
+			"simo",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u4},
+		},
+
+		{
+			"search jimb, team 1",
+			teamId1,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jimb, allow inactive, team 1",
+			teamId1,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search simo, team 2",
+			teamId2,
+			"simo",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jimb, team2",
+			teamId2,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, allow inactive, team 2",
+			teamId2,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1, u3},
+		},
+		{
+			"search jimb, allow inactive, team 2, limit 1",
+			teamId2,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          1,
+			},
+			[]*model.User{u1},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			users, err := s.Store().User().SearchNotInTeam(
+				testCase.TeamId,
+				testCase.Term,
+				testCase.Options,
+			)
+			s.Require().Nil(err)
+			s.assertUsers(testCase.Expected, users)
+		})
+	}
+}
+
+func (s *UserStoreTS) TestSearchWithoutTeam() {
+	u1 := &model.User{
+		Username:  "jimbo1" + model.NewId(),
+		FirstName: "Tim",
+		LastName:  "Bill",
+		Nickname:  "Rob",
+		Email:     "harold" + model.NewId() + "@simulator.amazonses.com",
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	u2 := &model.User{
+		Username: "jim2-bobby" + model.NewId(),
+		Email:    MakeEmail(),
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3 := &model.User{
+		Username: "jimbo3" + model.NewId(),
+		Email:    MakeEmail(),
+		DeleteAt: 1,
+	}
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+	_, nErr := s.Store().Bot().Save(&model.Bot{
+		UserId:   u3.Id,
+		Username: u3.Username,
+		OwnerId:  u1.Id,
+	})
+	s.Require().Nil(nErr)
+	u3.IsBot = true
+	defer func() { s.Require().Nil(s.Store().Bot().PermanentDelete(u3.Id)) }()
+
+	tid := model.NewId()
+	_, nErr = s.Store().Team().SaveMember(&model.TeamMember{TeamId: tid, UserId: u3.Id}, -1)
+	s.Require().Nil(nErr)
+
+	// The users returned from the database will have AuthData as an empty string.
+	nilAuthData := new(string)
+	*nilAuthData = ""
+
+	u1.AuthData = nilAuthData
+	u2.AuthData = nilAuthData
+	u3.AuthData = nilAuthData
+
+	testCases := []struct {
+		Description string
+		Term        string
+		Options     *model.UserSearchOptions
+		Expected    []*model.User
+	}{
+		{
+			"empty string",
+			"",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u2, u1},
+		},
+		{
+			"jim",
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u2, u1},
+		},
+		{
+			"PLT-8354",
+			"* ",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u2, u1},
+		},
+		{
+			"jim, limit 1",
+			"jim",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          1,
+			},
+			[]*model.User{u2},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			users, err := s.Store().User().SearchWithoutTeam(
+				testCase.Term,
+				testCase.Options,
+			)
+			s.Require().Nil(err)
+			s.assertUsers(testCase.Expected, users)
+		})
+	}
+}
+
+func (s *UserStoreTS) TestSearchInGroup() {
+	u1 := &model.User{
+		Username:  "jimbo1" + model.NewId(),
+		FirstName: "Tim",
+		LastName:  "Bill",
+		Nickname:  "Rob",
+		Email:     "harold" + model.NewId() + "@simulator.amazonses.com",
+	}
+	_, err := s.Store().User().Save(u1)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+
+	u2 := &model.User{
+		Username: "jim-bobby" + model.NewId(),
+		Email:    MakeEmail(),
+	}
+	_, err = s.Store().User().Save(u2)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u2.Id)) }()
+
+	u3 := &model.User{
+		Username: "jimbo3" + model.NewId(),
+		Email:    MakeEmail(),
+		DeleteAt: 1,
+	}
+	_, err = s.Store().User().Save(u3)
+	s.Require().Nil(err)
+	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u3.Id)) }()
+
+	// The users returned from the database will have AuthData as an empty string.
+	nilAuthData := model.NewString("")
+
+	u1.AuthData = nilAuthData
+	u2.AuthData = nilAuthData
+	u3.AuthData = nilAuthData
+
+	g1 := &model.Group{
+		Name:        model.NewString(model.NewId()),
+		DisplayName: model.NewId(),
+		Description: model.NewId(),
+		Source:      model.GroupSourceLdap,
+		RemoteId:    model.NewId(),
+	}
+	_, err = s.Store().Group().Create(g1)
+	s.Require().Nil(err)
+
+	g2 := &model.Group{
+		Name:        model.NewString(model.NewId()),
+		DisplayName: model.NewId(),
+		Description: model.NewId(),
+		Source:      model.GroupSourceLdap,
+		RemoteId:    model.NewId(),
+	}
+	_, err = s.Store().Group().Create(g2)
+	s.Require().Nil(err)
+
+	_, err = s.Store().Group().UpsertMember(g1.Id, u1.Id)
+	s.Require().Nil(err)
+
+	_, err = s.Store().Group().UpsertMember(g2.Id, u2.Id)
+	s.Require().Nil(err)
+
+	_, err = s.Store().Group().UpsertMember(g1.Id, u3.Id)
+	s.Require().Nil(err)
+
+	testCases := []struct {
+		Description string
+		GroupId     string
+		Term        string
+		Options     *model.UserSearchOptions
+		Expected    []*model.User
+	}{
+		{
+			"search jimb, group 1",
+			g1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, group 1, allow inactive",
+			g1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{u1, u3},
+		},
+		{
+			"search jimb, group 1, limit 1",
+			g1.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          1,
+			},
+			[]*model.User{u1},
+		},
+		{
+			"search jimb, group 2",
+			g2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+		{
+			"search jimb, allow inactive, group 2",
+			g2.Id,
+			"jimb",
+			&model.UserSearchOptions{
+				AllowFullNames: true,
+				AllowInactive:  true,
+				Limit:          model.USER_SEARCH_DEFAULT_LIMIT,
+			},
+			[]*model.User{},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.Description, func(t *testing.T) {
+			users, err := s.Store().User().SearchInGroup(
+				testCase.GroupId,
+				testCase.Term,
+				testCase.Options,
+			)
+			s.Require().Nil(err)
+			s.assertUsers(testCase.Expected, users)
+		})
+	}
+}
