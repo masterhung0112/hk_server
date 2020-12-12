@@ -1004,6 +1004,52 @@ func (s SqlChannelStore) InvalidateChannelByName(teamId, name string) {
 	// }
 }
 
+// SetDeleteAt records the given deleted and updated timestamp to the channel in question.
+func (s SqlChannelStore) SetDeleteAt(channelId string, deleteAt, updateAt int64) error {
+	defer s.InvalidateChannel(channelId)
+
+	transaction, err := s.GetMaster().Begin()
+	if err != nil {
+		return errors.Wrap(err, "SetDeleteAt: begin_transaction")
+	}
+	defer finalizeTransaction(transaction)
+
+	err = s.setDeleteAtT(transaction, channelId, deleteAt, updateAt)
+	if err != nil {
+		return errors.Wrap(err, "setDeleteAtT")
+	}
+
+	// Additionally propagate the write to the PublicChannels table.
+	if _, err := transaction.Exec(`
+			UPDATE
+			    PublicChannels
+			SET
+			    DeleteAt = :DeleteAt
+			WHERE
+			    Id = :ChannelId
+		`, map[string]interface{}{
+		"DeleteAt":  deleteAt,
+		"ChannelId": channelId,
+	}); err != nil {
+		return errors.Wrapf(err, "failed to delete public channels with id=%s", channelId)
+	}
+
+	if err := transaction.Commit(); err != nil {
+		return errors.Wrapf(err, "SetDeleteAt: commit_transaction")
+	}
+
+	return nil
+}
+
+func (s SqlChannelStore) setDeleteAtT(transaction *gorp.Transaction, channelId string, deleteAt, updateAt int64) error {
+	_, err := transaction.Exec("Update Channels SET DeleteAt = :DeleteAt, UpdateAt = :UpdateAt WHERE Id = :ChannelId", map[string]interface{}{"DeleteAt": deleteAt, "UpdateAt": updateAt, "ChannelId": channelId})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete channel with id=%s", channelId)
+	}
+
+	return nil
+}
+
 func (s SqlChannelStore) GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, error) {
 	var dbMembers channelMemberWithSchemeRolesList
 	_, err := s.GetReplica().Select(&dbMembers, CHANNEL_MEMBERS_WITH_SCHEME_SELECT_QUERY+"WHERE ChannelMembers.UserId = :UserId AND (Teams.Id = :TeamId OR Teams.Id = '' OR Teams.Id IS NULL)", map[string]interface{}{"TeamId": teamId, "UserId": userId})
