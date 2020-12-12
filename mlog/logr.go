@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package mlog
 
 import (
@@ -25,7 +28,7 @@ type LogLevel struct {
 }
 
 type LogTarget struct {
-	Type         string // one of "console", "file", "tcp", "syslog".
+	Type         string // one of "console", "file", "tcp", "syslog", "none".
 	Format       string // one of "json", "plain"
 	Levels       []LogLevel
 	Options      json.RawMessage
@@ -35,31 +38,39 @@ type LogTarget struct {
 type LogTargetCfg map[string]*LogTarget
 type LogrCleanup func() error
 
-func newLogr(targets LogTargetCfg) (*logr.Logger, error) {
-	var errs error
-
-	lgr := logr.Logr{}
-
+func newLogr() *logr.Logger {
+	lgr := &logr.Logr{}
 	lgr.OnExit = func(int) {}
 	lgr.OnPanic = func(interface{}) {}
-
 	lgr.OnLoggerError = onLoggerError
 	lgr.OnQueueFull = onQueueFull
 	lgr.OnTargetQueueFull = onTargetQueueFull
 
+	logger := lgr.NewLogger()
+	return &logger
+}
+
+func logrAddTargets(logger *logr.Logger, targets LogTargetCfg) error {
+	lgr := logger.Logr()
+	var errs error
 	for name, t := range targets {
-		target, err := newLogrTarget(name, t)
+		target, err := NewLogrTarget(name, t)
 		if err != nil {
 			errs = multierror.Append(err)
 			continue
 		}
-		lgr.AddTarget(target)
+		if target != nil {
+			target.SetName(name)
+			lgr.AddTarget(target)
+		}
 	}
-	logger := lgr.NewLogger()
-	return &logger, errs
+	return errs
 }
 
-func newLogrTarget(name string, t *LogTarget) (logr.Target, error) {
+// NewLogrTarget creates a `logr.Target` based on a target config.
+// Can be used when parsing custom config files, or when programmatically adding
+// built-in targets. Use `mlog.AddTarget` to add custom targets.
+func NewLogrTarget(name string, t *LogTarget) (logr.Target, error) {
 	formatter, err := newFormatter(name, t.Format)
 	if err != nil {
 		return nil, err
@@ -78,10 +89,12 @@ func newLogrTarget(name string, t *LogTarget) (logr.Target, error) {
 		return newConsoleTarget(name, t, filter, formatter)
 	case "file":
 		return newFileTarget(name, t, filter, formatter)
-		// case "syslog":
-		//   return newSyslogTarget(name, t, filter, formatter)
-		// case "tcp":
-		//   return newTCPTarget(name, t, filter, formatter)
+	case "syslog":
+		return newSyslogTarget(name, t, filter, formatter)
+	case "tcp":
+		return newTCPTarget(name, t, filter, formatter)
+	case "none":
+		return nil, nil
 	}
 	return nil, fmt.Errorf("invalid type '%s' for target %s", t.Type, name)
 }
@@ -140,47 +153,50 @@ func newFileTarget(name string, t *LogTarget, filter logr.Filter, formatter logr
 	if err := json.Unmarshal(t.Options, options); err != nil {
 		return nil, err
 	}
+	return newFileTargetWithOpts(name, t, target.FileOptions(*options), filter, formatter)
+}
 
-	if options.Filename == "" {
+func newFileTargetWithOpts(name string, t *LogTarget, opts target.FileOptions, filter logr.Filter, formatter logr.Formatter) (logr.Target, error) {
+	if opts.Filename == "" {
 		return nil, fmt.Errorf("missing 'Filename' option for target %s", name)
 	}
-	if err := checkFileWritable(options.Filename); err != nil {
+	if err := checkFileWritable(opts.Filename); err != nil {
 		return nil, fmt.Errorf("error writing to 'Filename' for target %s: %w", name, err)
 	}
 
-	newTarget := target.NewFileTarget(filter, formatter, target.FileOptions(*options), t.MaxQueueSize)
+	newTarget := target.NewFileTarget(filter, formatter, opts, t.MaxQueueSize)
 	return newTarget, nil
 }
 
-// func newSyslogTarget(name string, t *LogTarget, filter logr.Filter, formatter logr.Formatter) (logr.Target, error) {
-//   options := &SyslogParams{}
-//   if err := json.Unmarshal(t.Options, options); err != nil {
-//     return nil, err
-//   }
+func newSyslogTarget(name string, t *LogTarget, filter logr.Filter, formatter logr.Formatter) (logr.Target, error) {
+	options := &SyslogParams{}
+	if err := json.Unmarshal(t.Options, options); err != nil {
+		return nil, err
+	}
 
-//   if options.IP == "" {
-//     return nil, fmt.Errorf("missing 'IP' option for target %s", name)
-//   }
-//   if options.Port == 0 {
-//     options.Port = DefaultSysLogPort
-//   }
-//   return NewSyslogTarget(filter, formatter, options, t.MaxQueueSize)
-// }
+	if options.IP == "" {
+		return nil, fmt.Errorf("missing 'IP' option for target %s", name)
+	}
+	if options.Port == 0 {
+		options.Port = DefaultSysLogPort
+	}
+	return NewSyslogTarget(filter, formatter, options, t.MaxQueueSize)
+}
 
-// func newTCPTarget(name string, t *LogTarget, filter logr.Filter, formatter logr.Formatter) (logr.Target, error) {
-//   options := &TcpParams{}
-//   if err := json.Unmarshal(t.Options, options); err != nil {
-//     return nil, err
-//   }
+func newTCPTarget(name string, t *LogTarget, filter logr.Filter, formatter logr.Formatter) (logr.Target, error) {
+	options := &TcpParams{}
+	if err := json.Unmarshal(t.Options, options); err != nil {
+		return nil, err
+	}
 
-//   if options.IP == "" {
-//     return nil, fmt.Errorf("missing 'IP' option for target %s", name)
-//   }
-//   if options.Port == 0 {
-//     return nil, fmt.Errorf("missing 'Port' option for target %s", name)
-//   }
-//   return NewTcpTarget(filter, formatter, options, t.MaxQueueSize)
-// }
+	if options.IP == "" {
+		return nil, fmt.Errorf("missing 'IP' option for target %s", name)
+	}
+	if options.Port == 0 {
+		return nil, fmt.Errorf("missing 'Port' option for target %s", name)
+	}
+	return NewTcpTarget(filter, formatter, options, t.MaxQueueSize)
+}
 
 func checkFileWritable(filename string) error {
 	// try opening/creating the file for writing
@@ -193,6 +209,10 @@ func checkFileWritable(filename string) error {
 }
 
 func isLevelEnabled(logger *logr.Logger, level logr.Level) bool {
+	if logger == nil || logger.Logr() == nil {
+		return false
+	}
+
 	status := logger.Logr().IsLevelEnabled(level)
 	return status.Enabled
 }
@@ -205,4 +225,23 @@ func zapToLogr(zapFields []Field) logr.Fields {
 		zapField.AddTo(encoder)
 	}
 	return logr.Fields(encoder.Fields)
+}
+
+// mlogLevelToLogrLevel converts a mlog logger level to
+// an array of discrete Logr levels.
+func mlogLevelToLogrLevels(level string) []LogLevel {
+	levels := make([]LogLevel, 0)
+	levels = append(levels, LvlError, LvlPanic, LvlFatal, LvlStdLog)
+
+	switch level {
+	case LevelDebug:
+		levels = append(levels, LvlDebug)
+		fallthrough
+	case LevelInfo:
+		levels = append(levels, LvlInfo)
+		fallthrough
+	case LevelWarn:
+		levels = append(levels, LvlWarn)
+	}
+	return levels
 }

@@ -6,6 +6,7 @@ require (
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/cespare/xxhash/v2 v2.1.1
 	github.com/corpix/uarand v0.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2
@@ -15,7 +16,9 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
+	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c
 	github.com/hashicorp/go-multierror v1.1.0
+	github.com/hashicorp/go-plugin v1.4.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/jmoiron/sqlx v1.2.0
@@ -33,9 +36,12 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tinylib/msgp v1.1.5
 	github.com/vmihailenco/msgpack/v5 v5.1.0
+	github.com/wiggin77/merror v1.0.2
+	github.com/wiggin77/srslog v1.0.1
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	golang.org/x/text v0.3.3
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
