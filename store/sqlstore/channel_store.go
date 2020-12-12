@@ -673,6 +673,41 @@ func (s SqlChannelStore) GetMemberForPost(postId string, userId string) (*model.
 	return dbMember.ToModel(), nil
 }
 
+func (s SqlChannelStore) RemoveMembers(channelId string, userIds []string) error {
+	builder := s.getQueryBuilder().
+		Delete("ChannelMembers").
+		Where(sq.Eq{"ChannelId": channelId}).
+		Where(sq.Eq{"UserId": userIds})
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return errors.Wrap(err, "channel_tosql")
+	}
+	_, err = s.GetMaster().Exec(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete ChannelMembers")
+	}
+
+	// cleanup sidebarchannels table if the user is no longer a member of that channel
+	query, args, err = s.getQueryBuilder().
+		Delete("SidebarChannels").
+		Where(sq.And{
+			sq.Eq{"ChannelId": channelId},
+			sq.Eq{"UserId": userIds},
+		}).ToSql()
+	if err != nil {
+		return errors.Wrap(err, "channel_tosql")
+	}
+	_, err = s.GetMaster().Exec(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete SidebarChannels")
+	}
+	return nil
+}
+
+func (s SqlChannelStore) RemoveMember(channelId string, userId string) error {
+	return s.RemoveMembers(channelId, []string{userId})
+}
+
 func (s SqlChannelStore) IncrementMentionCount(channelId string, userId string, updateThreads bool) error {
 	now := model.GetMillis()
 	var threadsToUpdate []string

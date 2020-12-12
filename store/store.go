@@ -246,8 +246,8 @@ type TeamStore interface {
 	// GetTeamsForUserWithPagination(userId string, page, perPage int) ([]*model.TeamMember, *model.AppError)
 	// GetChannelUnreadsForAllTeams(excludeTeamId, userId string) ([]*model.ChannelUnread, *model.AppError)
 	// GetChannelUnreadsForTeam(teamId, userId string) ([]*model.ChannelUnread, *model.AppError)
-	// RemoveMember(teamId string, userId string) *model.AppError
-	// RemoveMembers(teamId string, userIds []string) *model.AppError
+	RemoveMember(teamId string, userId string) error
+	RemoveMembers(teamId string, userIds []string) error
 	// RemoveAllMembersByTeam(teamId string) *model.AppError
 	// RemoveAllMembersByUser(userId string) *model.AppError
 	// UpdateLastTeamIconUpdate(teamId string, curTime int64) *model.AppError
@@ -316,23 +316,23 @@ type ChannelStore interface {
 	// IsUserInChannelUseCache(userId string, channelId string) bool
 	// GetAllChannelMembersNotifyPropsForChannel(channelId string, allowFromCache bool) (map[string]model.StringMap, *model.AppError)
 	// InvalidateCacheForChannelMembersNotifyProps(channelId string)
-	GetMemberForPost(postId string, userId string) (*model.ChannelMember, error)
+	// GetMemberForPost(postId string, userId string) (*model.ChannelMember, error)
 	// InvalidateMemberCount(channelId string)
 	// GetMemberCountFromCache(channelId string) int64
-	// GetMemberCount(channelId string, allowFromCache bool) (int64, *model.AppError)
-	// GetMemberCountsByGroup(channelID string, includeTimezones bool) ([]*model.ChannelMemberCountByGroup, *model.AppError)
+	// GetMemberCount(channelId string, allowFromCache bool) (int64, error)
+	// GetMemberCountsByGroup(channelID string, includeTimezones bool) ([]*model.ChannelMemberCountByGroup, error)
 	// InvalidatePinnedPostCount(channelId string)
-	// GetPinnedPostCount(channelId string, allowFromCache bool) (int64, *model.AppError)
+	// GetPinnedPostCount(channelId string, allowFromCache bool) (int64, error)
 	// InvalidateGuestCount(channelId string)
-	// GetGuestCount(channelId string, allowFromCache bool) (int64, *model.AppError)
-	// GetPinnedPosts(channelId string) (*model.PostList, *model.AppError)
-	// RemoveMember(channelId string, userId string) *model.AppError
-	// RemoveMembers(channelId string, userIds []string) *model.AppError
-	// PermanentDeleteMembersByUser(userId string) *model.AppError
-	// PermanentDeleteMembersByChannel(channelId string) *model.AppError
-	// UpdateLastViewedAt(channelIds []string, userId string) (map[string]int64, *model.AppError)
-	// UpdateLastViewedAtPost(unreadPost *model.Post, userID string, mentionCount int) (*model.ChannelUnreadAt, *model.AppError)
-	// CountPostsAfter(channelId string, timestamp int64, userId string) (int, *model.AppError)
+	// GetGuestCount(channelId string, allowFromCache bool) (int64, error)
+	// GetPinnedPosts(channelId string) (*model.PostList, error)
+	RemoveMember(channelId string, userId string) error
+	RemoveMembers(channelId string, userIds []string) error
+	// PermanentDeleteMembersByUser(userId string) error
+	// PermanentDeleteMembersByChannel(channelId string) error
+	// UpdateLastViewedAt(channelIds []string, userId string, updateThreads bool) (map[string]int64, error)
+	// UpdateLastViewedAtPost(unreadPost *model.Post, userID string, mentionCount int, updateThreads bool) (*model.ChannelUnreadAt, error)
+	// CountPostsAfter(channelId string, timestamp int64, userId string) (int, error)
 	IncrementMentionCount(channelId string, userId string, updateThreads bool) error
 	// AnalyticsTypeCount(teamId string, channelType string) (int64, error)
 	GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, error)
@@ -483,8 +483,8 @@ type GroupStore interface {
 	// DeleteMember(groupID string, userID string) (*model.GroupMember, error)
 	// PermanentDeleteMembersByUser(userId string) error
 
-	// CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, error)
-	// GetGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error)
+	CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, error)
+	GetGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error)
 	// GetAllGroupSyncablesByGroupId(groupID string, syncableType model.GroupSyncableType) ([]*model.GroupSyncable, error)
 	// UpdateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, error)
 	// DeleteGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error)

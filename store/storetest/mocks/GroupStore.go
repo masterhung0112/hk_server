@@ -64,6 +64,29 @@ func (_m *GroupStore) Create(group *model.Group) (*model.Group, *model.AppError)
 	return r0, r1
 }
 
+// CreateGroupSyncable provides a mock function with given fields: groupSyncable
+func (_m *GroupStore) CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, error) {
+	ret := _m.Called(groupSyncable)
+
+	var r0 *model.GroupSyncable
+	if rf, ok := ret.Get(0).(func(*model.GroupSyncable) *model.GroupSyncable); ok {
+		r0 = rf(groupSyncable)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.GroupSyncable)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.GroupSyncable) error); ok {
+		r1 = rf(groupSyncable)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Get provides a mock function with given fields: groupID
 func (_m *GroupStore) Get(groupID string) (*model.Group, *model.AppError) {
 	ret := _m.Called(groupID)
@@ -109,6 +132,29 @@ func (_m *GroupStore) GetByName(name string, opts model.GroupSearchOpts) (*model
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*model.AppError)
 		}
+	}
+
+	return r0, r1
+}
+
+// GetGroupSyncable provides a mock function with given fields: groupID, syncableID, syncableType
+func (_m *GroupStore) GetGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error) {
+	ret := _m.Called(groupID, syncableID, syncableType)
+
+	var r0 *model.GroupSyncable
+	if rf, ok := ret.Get(0).(func(string, string, model.GroupSyncableType) *model.GroupSyncable); ok {
+		r0 = rf(groupID, syncableID, syncableType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.GroupSyncable)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, model.GroupSyncableType) error); ok {
+		r1 = rf(groupID, syncableID, syncableType)
+	} else {
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1

@@ -568,6 +568,28 @@ func (s SqlTeamStore) GetTeamsForUser(userId string) ([]*model.TeamMember, *mode
 	return dbMembers.ToModel(), nil
 }
 
+func (s SqlTeamStore) RemoveMembers(teamId string, userIds []string) error {
+	builder := s.getQueryBuilder().
+		Delete("TeamMembers").
+		Where(sq.Eq{"TeamId": teamId}).
+		Where(sq.Eq{"UserId": userIds})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return errors.Wrap(err, "team_tosql")
+	}
+	_, err = s.GetMaster().Exec(query, args...)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete TeamMembers with teamId=%s and userId in %v", teamId, userIds)
+	}
+	return nil
+}
+
+// RemoveMember remove from the database the team members that match the userId and teamId passed as parameter.
+func (s SqlTeamStore) RemoveMember(teamId string, userId string) error {
+	return s.RemoveMembers(teamId, []string{userId})
+}
+
 func (s SqlTeamStore) GetActiveMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError) {
 	query := s.getQueryBuilder().
 		Select("count(DISTINCT TeamMembers.UserId)").

@@ -211,6 +211,34 @@ func (_m *TeamStore) InvalidateAllTeamIdsForUser(userId string) {
 	_m.Called(userId)
 }
 
+// RemoveMember provides a mock function with given fields: teamId, userId
+func (_m *TeamStore) RemoveMember(teamId string, userId string) error {
+	ret := _m.Called(teamId, userId)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(teamId, userId)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RemoveMembers provides a mock function with given fields: teamId, userIds
+func (_m *TeamStore) RemoveMembers(teamId string, userIds []string) error {
+	ret := _m.Called(teamId, userIds)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, []string) error); ok {
+		r0 = rf(teamId, userIds)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Save provides a mock function with given fields: team
 func (_m *TeamStore) Save(team *model.Team) (*model.Team, error) {
 	ret := _m.Called(team)
