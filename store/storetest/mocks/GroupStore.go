@@ -113,3 +113,26 @@ func (_m *GroupStore) GetByName(name string, opts model.GroupSearchOpts) (*model
 
 	return r0, r1
 }
+
+// UpsertMember provides a mock function with given fields: groupID, userID
+func (_m *GroupStore) UpsertMember(groupID string, userID string) (*model.GroupMember, error) {
+	ret := _m.Called(groupID, userID)
+
+	var r0 *model.GroupMember
+	if rf, ok := ret.Get(0).(func(string, string) *model.GroupMember); ok {
+		r0 = rf(groupID, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.GroupMember)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(groupID, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

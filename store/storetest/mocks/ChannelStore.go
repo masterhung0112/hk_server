@@ -329,6 +329,20 @@ func (_m *ChannelStore) GetTeamChannels(teamId string) (*model.ChannelList, erro
 	return r0, r1
 }
 
+// IncrementMentionCount provides a mock function with given fields: channelId, userId, updateThreads
+func (_m *ChannelStore) IncrementMentionCount(channelId string, userId string, updateThreads bool) error {
+	ret := _m.Called(channelId, userId, updateThreads)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string, bool) error); ok {
+		r0 = rf(channelId, userId, updateThreads)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InvalidateAllChannelMembersForUser provides a mock function with given fields: userId
 func (_m *ChannelStore) InvalidateAllChannelMembersForUser(userId string) {
 	_m.Called(userId)
@@ -360,6 +374,29 @@ func (_m *ChannelStore) Save(channel *model.Channel, maxChannelsPerTeam int64) (
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*model.Channel, int64) error); ok {
 		r1 = rf(channel, maxChannelsPerTeam)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SaveDirectChannel provides a mock function with given fields: channel, member1, member2
+func (_m *ChannelStore) SaveDirectChannel(channel *model.Channel, member1 *model.ChannelMember, member2 *model.ChannelMember) (*model.Channel, error) {
+	ret := _m.Called(channel, member1, member2)
+
+	var r0 *model.Channel
+	if rf, ok := ret.Get(0).(func(*model.Channel, *model.ChannelMember, *model.ChannelMember) *model.Channel); ok {
+		r0 = rf(channel, member1, member2)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Channel)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.Channel, *model.ChannelMember, *model.ChannelMember) error); ok {
+		r1 = rf(channel, member1, member2)
 	} else {
 		r1 = ret.Error(1)
 	}

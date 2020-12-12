@@ -457,6 +457,32 @@ func IsValidNumberString(value string) bool {
 	return true
 }
 
+// PadDateStringZeros is a convenience method to pad 2 digit date parts with zeros to meet ISO 8601 format
+func PadDateStringZeros(dateString string) string {
+	parts := strings.Split(dateString, "-")
+	for index, part := range parts {
+		if len(part) == 1 {
+			parts[index] = "0" + part
+		}
+	}
+	dateString = strings.Join(parts[:], "-")
+	return dateString
+}
+
+// GetStartOfDayMillis is a convenience method to get milliseconds since epoch for provided date's start of day
+func GetStartOfDayMillis(thisTime time.Time, timeZoneOffset int) int64 {
+	localSearchTimeZone := time.FixedZone("Local Search Time Zone", timeZoneOffset)
+	resultTime := time.Date(thisTime.Year(), thisTime.Month(), thisTime.Day(), 0, 0, 0, 0, localSearchTimeZone)
+	return GetMillisForTime(resultTime)
+}
+
+// GetEndOfDayMillis is a convenience method to get milliseconds since epoch for provided date's end of day
+func GetEndOfDayMillis(thisTime time.Time, timeZoneOffset int) int64 {
+	localSearchTimeZone := time.FixedZone("Local Search Time Zone", timeZoneOffset)
+	resultTime := time.Date(thisTime.Year(), thisTime.Month(), thisTime.Day(), 23, 59, 59, 999999999, localSearchTimeZone)
+	return GetMillisForTime(resultTime)
+}
+
 func CopyStringMap(originalMap map[string]string) map[string]string {
 	copyMap := make(map[string]string)
 	for k, v := range originalMap {

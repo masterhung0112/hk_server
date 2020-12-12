@@ -135,7 +135,7 @@ func (me *TestHelper) InitBasic() *TestHelper {
 	me.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
 	me.BasicUser = userCache.BasicUser.DeepCopy()
 	me.BasicUser2 = userCache.BasicUser2.DeepCopy()
-	mainHelper.GetSQLSupplier().GetMaster().Insert(me.SystemAdminUser, me.BasicUser, me.BasicUser2)
+	mainHelper.GetSQLStore().GetMaster().Insert(me.SystemAdminUser, me.BasicUser, me.BasicUser2)
 
 	me.BasicTeam = me.CreateTeam()
 
@@ -213,8 +213,8 @@ func SetupWithStoreMock(tb testing.TB) *TestHelper {
 	return th
 }
 
-func (me *TestHelper) GetSqlSupplier() *sqlstore.SqlSupplier {
-	return mainHelper.GetSQLSupplier()
+func (me *TestHelper) GetSQLStore() *sqlstore.SqlStore {
+	return mainHelper.GetSQLStore()
 }
 
 func (me *TestHelper) CreateUser() *model.User {

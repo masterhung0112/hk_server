@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+	"github.com/pkg/errors"
 	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
@@ -131,6 +132,51 @@ func (s *SqlGroupStore) GetByName(name string, opts model.GroupSearchOpts) (*mod
 	}
 
 	return group, nil
+}
+
+func (s *SqlGroupStore) UpsertMember(groupID string, userID string) (*model.GroupMember, error) {
+	member := &model.GroupMember{
+		GroupId:  groupID,
+		UserId:   userID,
+		CreateAt: model.GetMillis(),
+	}
+
+	if err := member.IsValid(); err != nil {
+		return nil, err
+	}
+
+	var retrievedGroup *model.Group
+	if err := s.GetReplica().SelectOne(&retrievedGroup, "SELECT * FROM UserGroups WHERE Id = :Id", map[string]interface{}{"Id": groupID}); err != nil {
+		return nil, errors.Wrapf(err, "failed to get UserGroup with groupId=%s and userId=%s", groupID, userID)
+	}
+
+	var retrievedMember *model.GroupMember
+	if err := s.GetReplica().SelectOne(&retrievedMember, "SELECT * FROM GroupMembers WHERE GroupId = :GroupId AND UserId = :UserId", map[string]interface{}{"GroupId": member.GroupId, "UserId": member.UserId}); err != nil {
+		if err != sql.ErrNoRows {
+			return nil, errors.Wrapf(err, "failed to get GroupMember with groupId=%s and userId=%s", groupID, userID)
+		}
+	}
+
+	if retrievedMember == nil {
+		if err := s.GetMaster().Insert(member); err != nil {
+			if IsUniqueConstraintError(err, []string{"GroupId", "UserId", "groupmembers_pkey", "PRIMARY"}) {
+				return nil, store.NewErrInvalidInput("Member", "<groupId, userId>", fmt.Sprintf("<%s, %s>", groupID, userID))
+			}
+			return nil, errors.Wrap(err, "failed to save Member")
+		}
+	} else {
+		member.DeleteAt = 0
+		var rowsChanged int64
+		var err error
+		if rowsChanged, err = s.GetMaster().Update(member); err != nil {
+			return nil, errors.Wrapf(err, "failed to update GroupMember with groupId=%s and userId=%s", groupID, userID)
+		}
+		if rowsChanged > 1 {
+			return nil, errors.Wrapf(err, "multiple GroupMembers were updated: %d", rowsChanged)
+		}
+	}
+
+	return member, nil
 }
 
 func (s *SqlGroupStore) AdminRoleGroupsForSyncableMember(userID, syncableID string, syncableType model.GroupSyncableType) ([]string, *model.AppError) {

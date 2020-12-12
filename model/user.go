@@ -366,9 +366,8 @@ func (u *User) MakeNonNil() {
 // Remove any private data from the user object
 func (u *User) Sanitize(options map[string]bool) {
 	u.Password = ""
-	//TODO: Open
-	// u.AuthData = NewString("")
-	// u.MfaSecret = ""
+	u.AuthData = NewString("")
+	u.MfaSecret = ""
 
 	if len(options) != 0 && !options["email"] {
 		u.Email = ""
@@ -392,13 +391,12 @@ func (u *User) GetRoles() []string {
 
 func (u *User) ClearNonProfileFields() {
 	u.Password = ""
-	//TODO: Open this
 	u.AuthData = NewString("")
-	// u.MfaSecret = ""
+	u.MfaSecret = ""
 	u.EmailVerified = false
-	// u.AllowMarketing = false
-	// u.NotifyProps = StringMap{}
-	// u.LastPasswordUpdate = 0
+	u.AllowMarketing = false
+	u.NotifyProps = StringMap{}
+	u.LastPasswordUpdate = 0
 	u.FailedAttempts = 0
 }
 
@@ -433,27 +431,27 @@ func (u *User) PreUpdate() {
 	u.UpdateAt = GetMillis()
 
 	u.FirstName = SanitizeUnicode(u.FirstName)
-	// u.LastName = SanitizeUnicode(u.LastName)
-	// u.Nickname = SanitizeUnicode(u.Nickname)
-	// u.BotDescription = SanitizeUnicode(u.BotDescription)
+	u.LastName = SanitizeUnicode(u.LastName)
+	u.Nickname = SanitizeUnicode(u.Nickname)
+	u.BotDescription = SanitizeUnicode(u.BotDescription)
 
-	// if u.AuthData != nil && *u.AuthData == "" {
-	// 	u.AuthData = nil
-	// }
+	if u.AuthData != nil && *u.AuthData == "" {
+		u.AuthData = nil
+	}
 
-	// if u.NotifyProps == nil || len(u.NotifyProps) == 0 {
-	// 	u.SetDefaultNotifications()
-	// } else if _, ok := u.NotifyProps[MENTION_KEYS_NOTIFY_PROP]; ok {
-	// 	// Remove any blank mention keys
-	// 	splitKeys := strings.Split(u.NotifyProps[MENTION_KEYS_NOTIFY_PROP], ",")
-	// 	goodKeys := []string{}
-	// 	for _, key := range splitKeys {
-	// 		if len(key) > 0 {
-	// 			goodKeys = append(goodKeys, strings.ToLower(key))
-	// 		}
-	// 	}
-	// 	u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] = strings.Join(goodKeys, ",")
-	// }
+	if u.NotifyProps == nil || len(u.NotifyProps) == 0 {
+		u.SetDefaultNotifications()
+	} else if _, ok := u.NotifyProps[MENTION_KEYS_NOTIFY_PROP]; ok {
+		// Remove any blank mention keys
+		splitKeys := strings.Split(u.NotifyProps[MENTION_KEYS_NOTIFY_PROP], ",")
+		goodKeys := []string{}
+		for _, key := range splitKeys {
+			if len(key) > 0 {
+				goodKeys = append(goodKeys, strings.ToLower(key))
+			}
+		}
+		u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] = strings.Join(goodKeys, ",")
+	}
 }
 
 func (u *User) DeepCopy() *User {
