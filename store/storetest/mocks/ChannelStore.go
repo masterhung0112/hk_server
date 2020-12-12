@@ -212,29 +212,6 @@ func (_m *ChannelStore) GetMember(channelId string, userId string) (*model.Chann
 	return r0, r1
 }
 
-// GetMemberForPost provides a mock function with given fields: postId, userId
-func (_m *ChannelStore) GetMemberForPost(postId string, userId string) (*model.ChannelMember, error) {
-	ret := _m.Called(postId, userId)
-
-	var r0 *model.ChannelMember
-	if rf, ok := ret.Get(0).(func(string, string) *model.ChannelMember); ok {
-		r0 = rf(postId, userId)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ChannelMember)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(postId, userId)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetMembersForUser provides a mock function with given fields: teamId, userId
 func (_m *ChannelStore) GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, error) {
 	ret := _m.Called(teamId, userId)
@@ -358,6 +335,34 @@ func (_m *ChannelStore) InvalidateChannelByName(teamId string, name string) {
 	_m.Called(teamId, name)
 }
 
+// RemoveMember provides a mock function with given fields: channelId, userId
+func (_m *ChannelStore) RemoveMember(channelId string, userId string) error {
+	ret := _m.Called(channelId, userId)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(channelId, userId)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RemoveMembers provides a mock function with given fields: channelId, userIds
+func (_m *ChannelStore) RemoveMembers(channelId string, userIds []string) error {
+	ret := _m.Called(channelId, userIds)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, []string) error); ok {
+		r0 = rf(channelId, userIds)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Save provides a mock function with given fields: channel, maxChannelsPerTeam
 func (_m *ChannelStore) Save(channel *model.Channel, maxChannelsPerTeam int64) (*model.Channel, error) {
 	ret := _m.Called(channel, maxChannelsPerTeam)
@@ -448,6 +453,20 @@ func (_m *ChannelStore) SaveMultipleMembers(members []*model.ChannelMember) ([]*
 	}
 
 	return r0, r1
+}
+
+// SetDeleteAt provides a mock function with given fields: channelId, deleteAt, updateAt
+func (_m *ChannelStore) SetDeleteAt(channelId string, deleteAt int64, updateAt int64) error {
+	ret := _m.Called(channelId, deleteAt, updateAt)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, int64, int64) error); ok {
+		r0 = rf(channelId, deleteAt, updateAt)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Update provides a mock function with given fields: channel

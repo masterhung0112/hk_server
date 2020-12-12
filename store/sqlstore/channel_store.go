@@ -673,6 +673,41 @@ func (s SqlChannelStore) GetMemberForPost(postId string, userId string) (*model.
 	return dbMember.ToModel(), nil
 }
 
+func (s SqlChannelStore) RemoveMembers(channelId string, userIds []string) error {
+	builder := s.getQueryBuilder().
+		Delete("ChannelMembers").
+		Where(sq.Eq{"ChannelId": channelId}).
+		Where(sq.Eq{"UserId": userIds})
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return errors.Wrap(err, "channel_tosql")
+	}
+	_, err = s.GetMaster().Exec(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete ChannelMembers")
+	}
+
+	// cleanup sidebarchannels table if the user is no longer a member of that channel
+	query, args, err = s.getQueryBuilder().
+		Delete("SidebarChannels").
+		Where(sq.And{
+			sq.Eq{"ChannelId": channelId},
+			sq.Eq{"UserId": userIds},
+		}).ToSql()
+	if err != nil {
+		return errors.Wrap(err, "channel_tosql")
+	}
+	_, err = s.GetMaster().Exec(query, args...)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete SidebarChannels")
+	}
+	return nil
+}
+
+func (s SqlChannelStore) RemoveMember(channelId string, userId string) error {
+	return s.RemoveMembers(channelId, []string{userId})
+}
+
 func (s SqlChannelStore) IncrementMentionCount(channelId string, userId string, updateThreads bool) error {
 	now := model.GetMillis()
 	var threadsToUpdate []string
@@ -1002,6 +1037,52 @@ func (s SqlChannelStore) InvalidateChannelByName(teamId, name string) {
 	// if s.metrics != nil {
 	// 	s.metrics.IncrementMemCacheInvalidationCounter("Channel by Name - Remove by TeamId and Name")
 	// }
+}
+
+// SetDeleteAt records the given deleted and updated timestamp to the channel in question.
+func (s SqlChannelStore) SetDeleteAt(channelId string, deleteAt, updateAt int64) error {
+	defer s.InvalidateChannel(channelId)
+
+	transaction, err := s.GetMaster().Begin()
+	if err != nil {
+		return errors.Wrap(err, "SetDeleteAt: begin_transaction")
+	}
+	defer finalizeTransaction(transaction)
+
+	err = s.setDeleteAtT(transaction, channelId, deleteAt, updateAt)
+	if err != nil {
+		return errors.Wrap(err, "setDeleteAtT")
+	}
+
+	// Additionally propagate the write to the PublicChannels table.
+	if _, err := transaction.Exec(`
+			UPDATE
+			    PublicChannels
+			SET
+			    DeleteAt = :DeleteAt
+			WHERE
+			    Id = :ChannelId
+		`, map[string]interface{}{
+		"DeleteAt":  deleteAt,
+		"ChannelId": channelId,
+	}); err != nil {
+		return errors.Wrapf(err, "failed to delete public channels with id=%s", channelId)
+	}
+
+	if err := transaction.Commit(); err != nil {
+		return errors.Wrapf(err, "SetDeleteAt: commit_transaction")
+	}
+
+	return nil
+}
+
+func (s SqlChannelStore) setDeleteAtT(transaction *gorp.Transaction, channelId string, deleteAt, updateAt int64) error {
+	_, err := transaction.Exec("Update Channels SET DeleteAt = :DeleteAt, UpdateAt = :UpdateAt WHERE Id = :ChannelId", map[string]interface{}{"DeleteAt": deleteAt, "UpdateAt": updateAt, "ChannelId": channelId})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete channel with id=%s", channelId)
+	}
+
+	return nil
 }
 
 func (s SqlChannelStore) GetMembersForUser(teamId string, userId string) (*model.ChannelMembers, error) {

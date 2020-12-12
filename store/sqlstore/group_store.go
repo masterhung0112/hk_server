@@ -179,6 +179,114 @@ func (s *SqlGroupStore) UpsertMember(groupID string, userID string) (*model.Grou
 	return member, nil
 }
 
+func groupSyncableToGroupTeam(groupSyncable *model.GroupSyncable) *groupTeam {
+	return &groupTeam{
+		GroupSyncable: *groupSyncable,
+		TeamId:        groupSyncable.SyncableId,
+	}
+}
+
+func groupSyncableToGroupChannel(groupSyncable *model.GroupSyncable) *groupChannel {
+	return &groupChannel{
+		GroupSyncable: *groupSyncable,
+		ChannelId:     groupSyncable.SyncableId,
+	}
+}
+
+func (s *SqlGroupStore) CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*model.GroupSyncable, error) {
+	if err := groupSyncable.IsValid(); err != nil {
+		return nil, err
+	}
+
+	// Reset values that shouldn't be updatable by parameter
+	groupSyncable.DeleteAt = 0
+	groupSyncable.CreateAt = model.GetMillis()
+	groupSyncable.UpdateAt = groupSyncable.CreateAt
+
+	var insertErr error
+
+	switch groupSyncable.Type {
+	case model.GroupSyncableTypeTeam:
+		if _, err := s.Team().Get(groupSyncable.SyncableId); err != nil {
+			return nil, err
+		}
+
+		insertErr = s.GetMaster().Insert(groupSyncableToGroupTeam(groupSyncable))
+	case model.GroupSyncableTypeChannel:
+		if _, err := s.Channel().Get(groupSyncable.SyncableId, false); err != nil {
+			return nil, err
+		}
+
+		insertErr = s.GetMaster().Insert(groupSyncableToGroupChannel(groupSyncable))
+	default:
+		return nil, fmt.Errorf("invalid GroupSyncableType: %s", groupSyncable.Type)
+	}
+
+	if insertErr != nil {
+		return nil, errors.Wrap(insertErr, "unable to insert GroupSyncable")
+	}
+
+	return groupSyncable, nil
+}
+
+func (s *SqlGroupStore) GetGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error) {
+	groupSyncable, err := s.getGroupSyncable(groupID, syncableID, syncableType)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.NewErrNotFound("GroupSyncable", fmt.Sprintf("groupId=%s, syncableId=%s, syncableType=%s", groupID, syncableID, syncableType))
+		}
+		return nil, errors.Wrapf(err, "failed to find GroupSyncable with groupId=%s, syncableId=%s, syncableType=%s", groupID, syncableID, syncableType)
+	}
+
+	return groupSyncable, nil
+}
+
+func (s *SqlGroupStore) getGroupSyncable(groupID string, syncableID string, syncableType model.GroupSyncableType) (*model.GroupSyncable, error) {
+	var err error
+	var result interface{}
+
+	switch syncableType {
+	case model.GroupSyncableTypeTeam:
+		result, err = s.GetReplica().Get(groupTeam{}, groupID, syncableID)
+	case model.GroupSyncableTypeChannel:
+		result, err = s.GetReplica().Get(groupChannel{}, groupID, syncableID)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, sql.ErrNoRows
+	}
+
+	groupSyncable := model.GroupSyncable{}
+	switch syncableType {
+	case model.GroupSyncableTypeTeam:
+		groupTeam := result.(*groupTeam)
+		groupSyncable.SyncableId = groupTeam.TeamId
+		groupSyncable.GroupId = groupTeam.GroupId
+		groupSyncable.AutoAdd = groupTeam.AutoAdd
+		groupSyncable.CreateAt = groupTeam.CreateAt
+		groupSyncable.DeleteAt = groupTeam.DeleteAt
+		groupSyncable.UpdateAt = groupTeam.UpdateAt
+		groupSyncable.Type = syncableType
+	case model.GroupSyncableTypeChannel:
+		groupChannel := result.(*groupChannel)
+		groupSyncable.SyncableId = groupChannel.ChannelId
+		groupSyncable.GroupId = groupChannel.GroupId
+		groupSyncable.AutoAdd = groupChannel.AutoAdd
+		groupSyncable.CreateAt = groupChannel.CreateAt
+		groupSyncable.DeleteAt = groupChannel.DeleteAt
+		groupSyncable.UpdateAt = groupChannel.UpdateAt
+		groupSyncable.Type = syncableType
+	default:
+		return nil, fmt.Errorf("unable to convert syncableType: %s", syncableType.String())
+	}
+
+	return &groupSyncable, nil
+}
+
 func (s *SqlGroupStore) AdminRoleGroupsForSyncableMember(userID, syncableID string, syncableType model.GroupSyncableType) ([]string, *model.AppError) {
 	var groupIds []string
 
