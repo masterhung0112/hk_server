@@ -1,6 +1,8 @@
 package model
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -59,45 +61,51 @@ type ChannelMemberForExport struct {
 	Username    string
 }
 
-func (o *ChannelMember) GetRoles() []string {
-	return strings.Fields(o.Roles)
-}
-
-func GetDefaultChannelNotifyProps() StringMap {
-	return StringMap{
-		DESKTOP_NOTIFY_PROP:                 CHANNEL_NOTIFY_DEFAULT,
-		MARK_UNREAD_NOTIFY_PROP:             CHANNEL_MARK_UNREAD_ALL,
-		PUSH_NOTIFY_PROP:                    CHANNEL_NOTIFY_DEFAULT,
-		EMAIL_NOTIFY_PROP:                   CHANNEL_NOTIFY_DEFAULT,
-		IGNORE_CHANNEL_MENTIONS_NOTIFY_PROP: IGNORE_CHANNEL_MENTIONS_DEFAULT,
+func (o *ChannelMembers) ToJson() string {
+	if b, err := json.Marshal(o); err != nil {
+		return "[]"
+	} else {
+		return string(b)
 	}
 }
 
-func (o *ChannelMember) PreSave() {
-	o.LastUpdateAt = GetMillis()
+func (o *ChannelUnread) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
-func (o *ChannelMember) PreUpdate() {
-	o.LastUpdateAt = GetMillis()
+func (o *ChannelUnreadAt) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
-func IsChannelNotifyLevelValid(notifyLevel string) bool {
-	return notifyLevel == CHANNEL_NOTIFY_DEFAULT ||
-		notifyLevel == CHANNEL_NOTIFY_ALL ||
-		notifyLevel == CHANNEL_NOTIFY_MENTION ||
-		notifyLevel == CHANNEL_NOTIFY_NONE
+func ChannelMembersFromJson(data io.Reader) *ChannelMembers {
+	var o *ChannelMembers
+	json.NewDecoder(data).Decode(&o)
+	return o
 }
 
-func IsChannelMarkUnreadLevelValid(markUnreadLevel string) bool {
-	return markUnreadLevel == CHANNEL_MARK_UNREAD_ALL || markUnreadLevel == CHANNEL_MARK_UNREAD_MENTION
+func ChannelUnreadFromJson(data io.Reader) *ChannelUnread {
+	var o *ChannelUnread
+	json.NewDecoder(data).Decode(&o)
+	return o
 }
 
-func IsSendEmailValid(sendEmail string) bool {
-	return sendEmail == CHANNEL_NOTIFY_DEFAULT || sendEmail == "true" || sendEmail == "false"
+func ChannelUnreadAtFromJson(data io.Reader) *ChannelUnreadAt {
+	var o *ChannelUnreadAt
+	json.NewDecoder(data).Decode(&o)
+	return o
 }
 
-func IsIgnoreChannelMentionsValid(ignoreChannelMentions string) bool {
-	return ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_ON || ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_OFF || ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_DEFAULT
+func (o *ChannelMember) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}
+
+func ChannelMemberFromJson(data io.Reader) *ChannelMember {
+	var o *ChannelMember
+	json.NewDecoder(data).Decode(&o)
+	return o
 }
 
 func (o *ChannelMember) IsValid() *AppError {
@@ -139,4 +147,57 @@ func (o *ChannelMember) IsValid() *AppError {
 	}
 
 	return nil
+}
+
+func (o *ChannelMember) PreSave() {
+	o.LastUpdateAt = GetMillis()
+}
+
+func (o *ChannelMember) PreUpdate() {
+	o.LastUpdateAt = GetMillis()
+}
+
+func (o *ChannelMember) GetRoles() []string {
+	return strings.Fields(o.Roles)
+}
+
+func (o *ChannelMember) SetChannelMuted(muted bool) {
+	if o.IsChannelMuted() {
+		o.NotifyProps[MARK_UNREAD_NOTIFY_PROP] = CHANNEL_MARK_UNREAD_ALL
+	} else {
+		o.NotifyProps[MARK_UNREAD_NOTIFY_PROP] = CHANNEL_MARK_UNREAD_MENTION
+	}
+}
+
+func (o *ChannelMember) IsChannelMuted() bool {
+	return o.NotifyProps[MARK_UNREAD_NOTIFY_PROP] == CHANNEL_MARK_UNREAD_MENTION
+}
+
+func IsChannelNotifyLevelValid(notifyLevel string) bool {
+	return notifyLevel == CHANNEL_NOTIFY_DEFAULT ||
+		notifyLevel == CHANNEL_NOTIFY_ALL ||
+		notifyLevel == CHANNEL_NOTIFY_MENTION ||
+		notifyLevel == CHANNEL_NOTIFY_NONE
+}
+
+func IsChannelMarkUnreadLevelValid(markUnreadLevel string) bool {
+	return markUnreadLevel == CHANNEL_MARK_UNREAD_ALL || markUnreadLevel == CHANNEL_MARK_UNREAD_MENTION
+}
+
+func IsSendEmailValid(sendEmail string) bool {
+	return sendEmail == CHANNEL_NOTIFY_DEFAULT || sendEmail == "true" || sendEmail == "false"
+}
+
+func IsIgnoreChannelMentionsValid(ignoreChannelMentions string) bool {
+	return ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_ON || ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_OFF || ignoreChannelMentions == IGNORE_CHANNEL_MENTIONS_DEFAULT
+}
+
+func GetDefaultChannelNotifyProps() StringMap {
+	return StringMap{
+		DESKTOP_NOTIFY_PROP:                 CHANNEL_NOTIFY_DEFAULT,
+		MARK_UNREAD_NOTIFY_PROP:             CHANNEL_MARK_UNREAD_ALL,
+		PUSH_NOTIFY_PROP:                    CHANNEL_NOTIFY_DEFAULT,
+		EMAIL_NOTIFY_PROP:                   CHANNEL_NOTIFY_DEFAULT,
+		IGNORE_CHANNEL_MENTIONS_NOTIFY_PROP: IGNORE_CHANNEL_MENTIONS_DEFAULT,
+	}
 }

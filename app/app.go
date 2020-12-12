@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/masterhung0112/hk_server/einterfaces"
 	"net/http"
 	"strconv"
 
@@ -61,4 +62,8 @@ func (s *Server) getSystemInstallDate() (int64, *model.AppError) {
 		return 0, model.NewAppError("getSystemInstallDate", "app.system_install_date.parse_int.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 	return value, nil
+}
+
+func (a *App) Cluster() einterfaces.ClusterInterface {
+	return a.srv.Cluster
 }

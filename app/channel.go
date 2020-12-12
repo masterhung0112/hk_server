@@ -131,11 +131,10 @@ func (a *App) AddUserToChannel(user *model.User, channel *model.Channel) (*model
 		return nil, err
 	}
 
-	//TODO: Open
-	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_USER_ADDED, "", channel.Id, "", nil)
-	// message.Add("user_id", user.Id)
-	// message.Add("team_id", channel.TeamId)
-	// a.Publish(message)
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_USER_ADDED, "", channel.Id, "", nil)
+	message.Add("user_id", user.Id)
+	message.Add("team_id", channel.TeamId)
+	a.Publish(message)
 
 	return newMember, nil
 }
@@ -218,19 +217,16 @@ func (a *App) JoinDefaultChannels(teamId string, user *model.User, shouldBeAdmin
 		// 	return model.NewAppError("JoinDefaultChannels", "app.channel_member_history.log_join_event.internal_error", nil, histErr.Error(), http.StatusInternalServerError)
 		// }
 
-		//TODO: Open
 		if *a.Config().ServiceSettings.ExperimentalEnableDefaultChannelLeaveJoinMessages {
 			a.postJoinMessageForDefaultChannel(user, requestor, channel)
 		}
 
-		//TODO: Open
-		// a.invalidateCacheForChannelMembers(channel.Id)
+		a.invalidateCacheForChannelMembers(channel.Id)
 
-		//TODO: Open
-		// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_USER_ADDED, "", channel.Id, "", nil)
-		// message.Add("user_id", user.Id)
-		// message.Add("team_id", channel.TeamId)
-		// a.Publish(message)
+		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_USER_ADDED, "", channel.Id, "", nil)
+		message.Add("user_id", user.Id)
+		message.Add("team_id", channel.TeamId)
+		a.Publish(message)
 
 	}
 
@@ -493,11 +489,10 @@ func (a *App) CreateChannelWithUser(channel *model.Channel, userId string) (*mod
 
 	a.postJoinChannelMessage(user, channel)
 
-	//TODO: Open
-	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", userId, nil)
-	// message.Add("channel_id", channel.Id)
-	// message.Add("team_id", channel.TeamId)
-	// a.Publish(message)
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", userId, nil)
+	message.Add("channel_id", channel.Id)
+	message.Add("team_id", channel.TeamId)
+	a.Publish(message)
 
 	return rchannel, nil
 }
@@ -562,10 +557,9 @@ func (a *App) UpdateChannel(channel *model.Channel) (*model.Channel, *model.AppE
 
 	a.invalidateCacheForChannel(channel)
 
-	//TODO: Open
-	// messageWs := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_UPDATED, "", channel.Id, "", nil)
-	// messageWs.Add("channel", channel.ToJson())
-	// a.Publish(messageWs)
+	messageWs := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_UPDATED, "", channel.Id, "", nil)
+	messageWs.Add("channel", channel.ToJson())
+	a.Publish(messageWs)
 
 	return channel, nil
 }
@@ -677,11 +671,10 @@ func (a *App) UpdateChannelMemberSchemeRoles(channelId string, userId string, is
 		}
 	}
 
-	//TODO: Open
 	// Notify the clients that the member notify props changed
-	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_MEMBER_UPDATED, "", "", userId, nil)
-	// message.Add("channelMember", member.ToJson())
-	// a.Publish(message)
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_MEMBER_UPDATED, "", "", userId, nil)
+	message.Add("channelMember", member.ToJson())
+	a.Publish(message)
 
 	a.InvalidateCacheForUser(userId)
 	return member, nil
@@ -904,4 +897,57 @@ func (a *App) createGroupChannel(userIds []string, creatorId string) (*model.Cha
 	}
 
 	return channel, nil
+}
+
+func (a *App) setChannelsMuted(channelIds []string, userId string, muted bool) ([]*model.ChannelMember, *model.AppError) {
+	members, nErr := a.Srv().Store.Channel().GetMembersByChannelIds(channelIds, userId)
+	if nErr != nil {
+		var appErr *model.AppError
+		switch {
+		case errors.As(nErr, &appErr):
+			return nil, appErr
+		default:
+			return nil, model.NewAppError("setChannelsMuted", "app.channel.get_member.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	var membersToUpdate []*model.ChannelMember
+	for _, member := range *members {
+		if muted == member.IsChannelMuted() {
+			continue
+		}
+
+		updatedMember := member
+		updatedMember.SetChannelMuted(muted)
+
+		membersToUpdate = append(membersToUpdate, &updatedMember)
+	}
+
+	if len(membersToUpdate) == 0 {
+		return nil, nil
+	}
+
+	updated, nErr := a.Srv().Store.Channel().UpdateMultipleMembers(membersToUpdate)
+	if nErr != nil {
+		var appErr *model.AppError
+		var nfErr *store.ErrNotFound
+		switch {
+		case errors.As(nErr, &appErr):
+			return nil, appErr
+		case errors.As(nErr, &nfErr):
+			return nil, model.NewAppError("setChannelsMuted", MISSING_CHANNEL_MEMBER_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+		default:
+			return nil, model.NewAppError("setChannelsMuted", "app.channel.get_member.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	for _, member := range updated {
+		a.invalidateCacheForChannelMembersNotifyProps(member.ChannelId)
+
+		evt := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_MEMBER_UPDATED, "", "", member.UserId, nil)
+		evt.Add("channelMember", member.ToJson())
+		a.Publish(evt)
+	}
+
+	return updated, nil
 }
