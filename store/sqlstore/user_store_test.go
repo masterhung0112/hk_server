@@ -3911,7 +3911,6 @@ func (s *UserStoreTS) TestGetUsersBatchForIndexing() {
 	s.Assert().Equal(res4List[1].Username, u2.Username)
 }
 
-
 func (s *UserStoreTS) TestGetTeamGroupUsers() {
 	// create team
 	id := model.NewId()

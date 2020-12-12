@@ -23,7 +23,7 @@ import (
 
 type Server struct {
 	newStore    func() store.Store
-	sqlStore    *sqlstore.SqlSupplier
+	sqlStore    *sqlstore.SqlStore
 	Store       store.Store
 	configStore config.Store
 
@@ -100,7 +100,7 @@ func NewServer(options ...Option) (*Server, error) {
 
 	if s.newStore == nil {
 		s.newStore = func() store.Store {
-			s.sqlStore = sqlstore.NewSqlSupplier(s.Config().SqlSettings, s.Metrics)
+			s.sqlStore = sqlstore.New(s.Config().SqlSettings, s.Metrics)
 			return s.sqlStore
 		}
 	}

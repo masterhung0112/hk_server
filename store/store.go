@@ -38,8 +38,8 @@ type Store interface {
 type ThreadStore interface {
 	// SaveMultiple(thread []*model.Thread) ([]*model.Thread, int, error)
 	// Save(thread *model.Thread) (*model.Thread, error)
-	// Update(thread *model.Thread) (*model.Thread, error)
-	// Get(id string) (*model.Thread, error)
+	Update(thread *model.Thread) (*model.Thread, error)
+	Get(id string) (*model.Thread, error)
 	// GetThreadsForUser(userId, teamId string, opts model.GetUserThreadsOpts) (*model.Threads, error)
 	// Delete(postId string) error
 	// GetPosts(threadId string, since int64) ([]*model.Post, error)
@@ -60,43 +60,43 @@ type ThreadStore interface {
 type PostStore interface {
 	SaveMultiple(posts []*model.Post) ([]*model.Post, int, error)
 	Save(post *model.Post) (*model.Post, error)
-	// Update(newPost *model.Post, oldPost *model.Post) (*model.Post, error)
+	Update(newPost *model.Post, oldPost *model.Post) (*model.Post, error)
 	Get(id string, skipFetchThreads bool) (*model.PostList, error)
 	GetSingle(id string) (*model.Post, error)
-	// Delete(postId string, time int64, deleteByID string) error
-	// PermanentDeleteByUser(userId string) error
-	// PermanentDeleteByChannel(channelId string) error
-	// GetPosts(options model.GetPostsOptions, allowFromCache bool) (*model.PostList, error)
-	// GetFlaggedPosts(userId string, offset int, limit int) (*model.PostList, error)
-	// // @openTracingParams userId, teamId, offset, limit
-	// GetFlaggedPostsForTeam(userId, teamId string, offset int, limit int) (*model.PostList, error)
-	// GetFlaggedPostsForChannel(userId, channelId string, offset int, limit int) (*model.PostList, error)
-	// GetPostsBefore(options model.GetPostsOptions) (*model.PostList, error)
-	// GetPostsAfter(options model.GetPostsOptions) (*model.PostList, error)
-	// GetPostsSince(options model.GetPostsSinceOptions, allowFromCache bool) (*model.PostList, error)
-	// GetPostAfterTime(channelId string, time int64) (*model.Post, error)
-	// GetPostIdAfterTime(channelId string, time int64) (string, error)
-	// GetPostIdBeforeTime(channelId string, time int64) (string, error)
-	// GetEtag(channelId string, allowFromCache bool) string
-	// Search(teamId string, userId string, params *model.SearchParams) (*model.PostList, error)
-	// AnalyticsUserCountsWithPostsByDay(teamId string) (model.AnalyticsRows, error)
-	// AnalyticsPostCountsByDay(options *model.AnalyticsPostCountsOptions) (model.AnalyticsRows, error)
-	// AnalyticsPostCount(teamId string, mustHaveFile bool, mustHaveHashtag bool) (int64, error)
-	// ClearCaches()
-	// InvalidateLastPostTimeCache(channelId string)
-	// GetPostsCreatedAt(channelId string, time int64) ([]*model.Post, error)
-	// Overwrite(post *model.Post) (*model.Post, error)
-	// OverwriteMultiple(posts []*model.Post) ([]*model.Post, int, error)
-	// GetPostsByIds(postIds []string) ([]*model.Post, error)
-	// GetPostsBatchForIndexing(startTime int64, endTime int64, limit int) ([]*model.PostForIndexing, error)
-	// PermanentDeleteBatch(endTime int64, limit int64) (int64, error)
-	// GetOldest() (*model.Post, error)
+	Delete(postId string, time int64, deleteByID string) error
+	PermanentDeleteByUser(userId string) error
+	PermanentDeleteByChannel(channelId string) error
+	GetPosts(options model.GetPostsOptions, allowFromCache bool) (*model.PostList, error)
+	GetFlaggedPosts(userId string, offset int, limit int) (*model.PostList, error)
+	// @openTracingParams userId, teamId, offset, limit
+	GetFlaggedPostsForTeam(userId, teamId string, offset int, limit int) (*model.PostList, error)
+	GetFlaggedPostsForChannel(userId, channelId string, offset int, limit int) (*model.PostList, error)
+	GetPostsBefore(options model.GetPostsOptions) (*model.PostList, error)
+	GetPostsAfter(options model.GetPostsOptions) (*model.PostList, error)
+	GetPostsSince(options model.GetPostsSinceOptions, allowFromCache bool) (*model.PostList, error)
+	GetPostAfterTime(channelId string, time int64) (*model.Post, error)
+	GetPostIdAfterTime(channelId string, time int64) (string, error)
+	GetPostIdBeforeTime(channelId string, time int64) (string, error)
+	GetEtag(channelId string, allowFromCache bool) string
+	Search(teamId string, userId string, params *model.SearchParams) (*model.PostList, error)
+	AnalyticsUserCountsWithPostsByDay(teamId string) (model.AnalyticsRows, error)
+	AnalyticsPostCountsByDay(options *model.AnalyticsPostCountsOptions) (model.AnalyticsRows, error)
+	AnalyticsPostCount(teamId string, mustHaveFile bool, mustHaveHashtag bool) (int64, error)
+	ClearCaches()
+	InvalidateLastPostTimeCache(channelId string)
+	GetPostsCreatedAt(channelId string, time int64) ([]*model.Post, error)
+	Overwrite(post *model.Post) (*model.Post, error)
+	OverwriteMultiple(posts []*model.Post) ([]*model.Post, int, error)
+	GetPostsByIds(postIds []string) ([]*model.Post, error)
+	GetPostsBatchForIndexing(startTime int64, endTime int64, limit int) ([]*model.PostForIndexing, error)
+	PermanentDeleteBatch(endTime int64, limit int64) (int64, error)
+	GetOldest() (*model.Post, error)
 	GetMaxPostSize() int
-	// GetParentsForExportAfter(limit int, afterId string) ([]*model.PostForExport, error)
-	// GetRepliesForExport(parentId string) ([]*model.ReplyForExport, error)
-	// GetDirectPostParentsForExportAfter(limit int, afterId string) ([]*model.DirectPostForExport, error)
-	// SearchPostsInTeamForUser(paramsList []*model.SearchParams, userId, teamId string, page, perPage int) (*model.PostSearchResults, error)
-	// GetOldestEntityCreationTime() (int64, error)
+	GetParentsForExportAfter(limit int, afterId string) ([]*model.PostForExport, error)
+	GetRepliesForExport(parentId string) ([]*model.ReplyForExport, error)
+	GetDirectPostParentsForExportAfter(limit int, afterId string) ([]*model.DirectPostForExport, error)
+	SearchPostsInTeamForUser(paramsList []*model.SearchParams, userId, teamId string, page, perPage int) (*model.PostSearchResults, error)
+	GetOldestEntityCreationTime() (int64, error)
 }
 
 type UserStore interface {

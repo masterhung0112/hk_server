@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
@@ -30,6 +31,28 @@ func newSqlThreadStore(sqlStore *SqlStore) store.ThreadStore {
 	}
 
 	return s
+}
+
+func (s *SqlThreadStore) Update(thread *model.Thread) (*model.Thread, error) {
+	if _, err := s.GetMaster().Update(thread); err != nil {
+		return nil, errors.Wrapf(err, "failed to update thread with id=%s", thread.PostId)
+	}
+
+	return thread, nil
+}
+
+func (s *SqlThreadStore) Get(id string) (*model.Thread, error) {
+	var thread model.Thread
+	query, args, _ := s.getQueryBuilder().Select("*").From("Threads").Where(sq.Eq{"PostId": id}).ToSql()
+	err := s.GetReplica().SelectOne(&thread, query, args...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.NewErrNotFound("Thread", id)
+		}
+
+		return nil, errors.Wrapf(err, "failed to get thread with id=%s", id)
+	}
+	return &thread, nil
 }
 
 func threadSliceColumns() []string {
