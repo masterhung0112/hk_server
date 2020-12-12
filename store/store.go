@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"github.com/masterhung0112/hk_server/model"
 )
 
@@ -216,59 +217,59 @@ type TeamStore interface {
 	Get(id string) (*model.Team, error)
 	GetByName(name string) (*model.Team, error)
 	GetByNames(name []string) ([]*model.Team, error)
-	// SearchAll(term string, opts *model.TeamSearch) ([]*model.Team, error)
-	// SearchAllPaged(term string, opts *model.TeamSearch) ([]*model.Team, int64, error)
-	// SearchOpen(term string) ([]*model.Team, error)
-	// SearchPrivate(term string) ([]*model.Team, error)
-	// GetAll() ([]*model.Team, error)
-	// GetAllPage(offset int, limit int) ([]*model.Team, error)
-	// GetAllPrivateTeamListing() ([]*model.Team, error)
-	// GetAllPrivateTeamPageListing(offset int, limit int) ([]*model.Team, error)
-	// GetAllPublicTeamPageListing(offset int, limit int) ([]*model.Team, error)
-	// GetAllTeamListing() ([]*model.Team, error)
-	// GetAllTeamPageListing(offset int, limit int) ([]*model.Team, error)
-	// GetTeamsByUserId(userId string) ([]*model.Team, error)
-	// GetByInviteId(inviteId string) (*model.Team, error)
-	// PermanentDelete(teamId string) error
-	// AnalyticsTeamCount(includeDeleted bool) (int64, error)
-	// AnalyticsPublicTeamCount() (int64, error)
-	// AnalyticsPrivateTeamCount() (int64, error)
+	SearchAll(term string, opts *model.TeamSearch) ([]*model.Team, error)
+	SearchAllPaged(term string, opts *model.TeamSearch) ([]*model.Team, int64, error)
+	SearchOpen(term string) ([]*model.Team, error)
+	SearchPrivate(term string) ([]*model.Team, error)
+	GetAll() ([]*model.Team, error)
+	GetAllPage(offset int, limit int) ([]*model.Team, error)
+	GetAllPrivateTeamListing() ([]*model.Team, error)
+	GetAllPrivateTeamPageListing(offset int, limit int) ([]*model.Team, error)
+	GetAllPublicTeamPageListing(offset int, limit int) ([]*model.Team, error)
+	GetAllTeamListing() ([]*model.Team, error)
+	GetAllTeamPageListing(offset int, limit int) ([]*model.Team, error)
+	GetTeamsByUserId(userId string) ([]*model.Team, error)
+	GetByInviteId(inviteId string) (*model.Team, error)
+	PermanentDelete(teamId string) error
+	AnalyticsTeamCount(includeDeleted bool) (int64, error)
+	AnalyticsPublicTeamCount() (int64, error)
+	AnalyticsPrivateTeamCount() (int64, error)
 	SaveMultipleMembers(members []*model.TeamMember, maxUsersPerTeam int) ([]*model.TeamMember, error)
 	SaveMember(member *model.TeamMember, maxUsersPerTeam int) (*model.TeamMember, error)
-	UpdateMember(member *model.TeamMember) (*model.TeamMember, *model.AppError)
-	UpdateMultipleMembers(members []*model.TeamMember) ([]*model.TeamMember, *model.AppError)
-	GetMember(teamId string, userId string) (*model.TeamMember, *model.AppError)
-	GetMembers(teamId string, offset int, limit int, teamMembersGetOptions *model.TeamMembersGetOptions) ([]*model.TeamMember, *model.AppError)
-	// GetMembersByIds(teamId string, userIds []string, restrictions *model.ViewUsersRestrictions) ([]*model.TeamMember, *model.AppError)
-	// GetTotalMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError)
-	GetActiveMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, *model.AppError)
-	GetTeamsForUser(userId string) ([]*model.TeamMember, *model.AppError)
-	// GetTeamsForUserWithPagination(userId string, page, perPage int) ([]*model.TeamMember, *model.AppError)
-	// GetChannelUnreadsForAllTeams(excludeTeamId, userId string) ([]*model.ChannelUnread, *model.AppError)
-	// GetChannelUnreadsForTeam(teamId, userId string) ([]*model.ChannelUnread, *model.AppError)
+	UpdateMember(member *model.TeamMember) (*model.TeamMember, error)
+	UpdateMultipleMembers(members []*model.TeamMember) ([]*model.TeamMember, error)
+	GetMember(teamId string, userId string) (*model.TeamMember, error)
+	GetMembers(teamId string, offset int, limit int, teamMembersGetOptions *model.TeamMembersGetOptions) ([]*model.TeamMember, error)
+	GetMembersByIds(teamId string, userIds []string, restrictions *model.ViewUsersRestrictions) ([]*model.TeamMember, error)
+	GetTotalMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, error)
+	GetActiveMemberCount(teamId string, restrictions *model.ViewUsersRestrictions) (int64, error)
+	GetTeamsForUser(ctx context.Context, userId string) ([]*model.TeamMember, error)
+	GetTeamsForUserWithPagination(userId string, page, perPage int) ([]*model.TeamMember, error)
+	GetChannelUnreadsForAllTeams(excludeTeamId, userId string) ([]*model.ChannelUnread, error)
+	GetChannelUnreadsForTeam(teamId, userId string) ([]*model.ChannelUnread, error)
 	RemoveMember(teamId string, userId string) error
 	RemoveMembers(teamId string, userIds []string) error
-	// RemoveAllMembersByTeam(teamId string) *model.AppError
-	// RemoveAllMembersByUser(userId string) *model.AppError
-	// UpdateLastTeamIconUpdate(teamId string, curTime int64) *model.AppError
-	// GetTeamsByScheme(schemeId string, offset int, limit int) ([]*model.Team, *model.AppError)
-	// MigrateTeamMembers(fromTeamId string, fromUserId string) (map[string]string, *model.AppError)
-	// ResetAllTeamSchemes() *model.AppError
-	// ClearAllCustomRoleAssignments() *model.AppError
-	// AnalyticsGetTeamCountForScheme(schemeId string) (int64, *model.AppError)
-	// GetAllForExportAfter(limit int, afterId string) ([]*model.TeamForExport, *model.AppError)
-	// GetTeamMembersForExport(userId string) ([]*model.TeamMemberForExport, *model.AppError)
-	UserBelongsToTeams(userId string, teamIds []string) (bool, *model.AppError)
-	GetUserTeamIds(userId string, allowFromCache bool) ([]string, *model.AppError)
+	RemoveAllMembersByTeam(teamId string) error
+	RemoveAllMembersByUser(userId string) error
+	UpdateLastTeamIconUpdate(teamId string, curTime int64) error
+	GetTeamsByScheme(schemeId string, offset int, limit int) ([]*model.Team, error)
+	MigrateTeamMembers(fromTeamId string, fromUserId string) (map[string]string, error)
+	ResetAllTeamSchemes() error
+	ClearAllCustomRoleAssignments() error
+	AnalyticsGetTeamCountForScheme(schemeId string) (int64, error)
+	GetAllForExportAfter(limit int, afterId string) ([]*model.TeamForExport, error)
+	GetTeamMembersForExport(userId string) ([]*model.TeamMemberForExport, error)
+	UserBelongsToTeams(userId string, teamIds []string) (bool, error)
+	GetUserTeamIds(userId string, allowFromCache bool) ([]string, error)
 	InvalidateAllTeamIdsForUser(userId string)
-	// ClearCaches()
+	ClearCaches()
 
-	// // UpdateMembersRole sets all of the given team members to admins and all of the other members of the team to
-	// // non-admin members.
-	// UpdateMembersRole(teamID string, userIDs []string) *model.AppError
+	// UpdateMembersRole sets all of the given team members to admins and all of the other members of the team to
+	// non-admin members.
+	UpdateMembersRole(teamID string, userIDs []string) error
 
-	// // GroupSyncedTeamCount returns the count of non-deleted group-constrained teams.
-	// GroupSyncedTeamCount() (int64, *model.AppError)
+	// GroupSyncedTeamCount returns the count of non-deleted group-constrained teams.
+	GroupSyncedTeamCount() (int64, error)
 }
 
 type ChannelStore interface {
@@ -403,19 +404,19 @@ type SessionStore interface {
 	Get(sessionIdOrToken string) (*model.Session, error)
 	Save(session *model.Session) (*model.Session, error)
 	GetSessions(userId string) ([]*model.Session, error)
-	// GetSessionsWithActiveDeviceIds(userId string) ([]*model.Session, error)
-	// GetSessionsExpired(thresholdMillis int64, mobileOnly bool, unnotifiedOnly bool) ([]*model.Session, error)
-	// UpdateExpiredNotify(sessionid string, notified bool) error
+	GetSessionsWithActiveDeviceIds(userId string) ([]*model.Session, error)
+	GetSessionsExpired(thresholdMillis int64, mobileOnly bool, unnotifiedOnly bool) ([]*model.Session, error)
+	UpdateExpiredNotify(sessionid string, notified bool) error
 	Remove(sessionIdOrToken string) error
-	// RemoveAllSessions() error
-	// PermanentDeleteSessionsByUser(teamId string) error
-	// UpdateExpiresAt(sessionId string, time int64) error
-	// UpdateLastActivityAt(sessionId string, time int64) error
+	RemoveAllSessions() error
+	PermanentDeleteSessionsByUser(teamId string) error
+	UpdateExpiresAt(sessionId string, time int64) error
+	UpdateLastActivityAt(sessionId string, time int64) error
 	UpdateRoles(userId string, roles string) (string, error)
-	// UpdateDeviceId(id string, deviceId string, expiresAt int64) (string, error)
-	// UpdateProps(session *model.Session) error
-	// AnalyticsSessionCount() (int64, error)
-	// Cleanup(expiryTime int64, batchSize int64)
+	UpdateDeviceId(id string, deviceId string, expiresAt int64) (string, error)
+	UpdateProps(session *model.Session) error
+	AnalyticsSessionCount() (int64, error)
+	Cleanup(expiryTime int64, batchSize int64)
 }
 
 type UserAccessTokenStore interface {
