@@ -105,7 +105,7 @@ type SqlStoreStores struct {
 
 type SqlStore struct {
 	// rrCounter and srCounter should be kept first.
-	// See https://github.com/mattermost/mattermost-server/v5/pull/7281
+	// See https://github.com/masterhung0112/hk_server/pull/7281
 	rrCounter      int64
 	srCounter      int64
 	master         *gorp.DbMap
@@ -539,4 +539,162 @@ func (me mattermConverter) FromDb(target interface{}) (gorp.CustomScanner, bool)
 	}
 
 	return gorp.CustomScanner{}, false
+}
+
+func (ss *SqlStore) CreateUniqueIndexIfNotExists(indexName string, tableName string, columnName string) bool {
+	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, INDEX_TYPE_DEFAULT, true)
+}
+
+func (ss *SqlStore) CreateIndexIfNotExists(indexName string, tableName string, columnName string) bool {
+	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, INDEX_TYPE_DEFAULT, false)
+}
+
+func (ss *SqlStore) CreateCompositeIndexIfNotExists(indexName string, tableName string, columnNames []string) bool {
+	return ss.createIndexIfNotExists(indexName, tableName, columnNames, INDEX_TYPE_DEFAULT, false)
+}
+
+func (ss *SqlStore) CreateUniqueCompositeIndexIfNotExists(indexName string, tableName string, columnNames []string) bool {
+	return ss.createIndexIfNotExists(indexName, tableName, columnNames, INDEX_TYPE_DEFAULT, true)
+}
+
+func (ss *SqlStore) CreateFullTextIndexIfNotExists(indexName string, tableName string, columnName string) bool {
+	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, INDEX_TYPE_FULL_TEXT, false)
+}
+
+func convertMySQLFullTextColumnsToPostgres(columnNames string) string {
+	columns := strings.Split(columnNames, ", ")
+	concatenatedColumnNames := ""
+	for i, c := range columns {
+		concatenatedColumnNames += c
+		if i < len(columns)-1 {
+			concatenatedColumnNames += " || ' ' || "
+		}
+	}
+
+	return concatenatedColumnNames
+}
+
+func (ss *SqlStore) createIndexIfNotExists(indexName string, tableName string, columnNames []string, indexType string, unique bool) bool {
+
+	uniqueStr := ""
+	if unique {
+		uniqueStr = "UNIQUE "
+	}
+
+	if ss.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, errExists := ss.GetMaster().SelectStr("SELECT $1::regclass", indexName)
+		// It should fail if the index does not exist
+		if errExists == nil {
+			return false
+		}
+
+		query := ""
+		if indexType == INDEX_TYPE_FULL_TEXT {
+			if len(columnNames) != 1 {
+				mlog.Critical("Unable to create multi column full text index")
+				os.Exit(EXIT_CREATE_INDEX_POSTGRES)
+			}
+			columnName := columnNames[0]
+			postgresColumnNames := convertMySQLFullTextColumnsToPostgres(columnName)
+			query = "CREATE INDEX " + indexName + " ON " + tableName + " USING gin(to_tsvector('english', " + postgresColumnNames + "))"
+		} else {
+			query = "CREATE " + uniqueStr + "INDEX " + indexName + " ON " + tableName + " (" + strings.Join(columnNames, ", ") + ")"
+		}
+
+		_, err := ss.GetMaster().ExecNoTimeout(query)
+		if err != nil {
+			mlog.Critical("Failed to create index", mlog.Err(errExists), mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_CREATE_INDEX_POSTGRES)
+		}
+	} else if ss.DriverName() == model.DATABASE_DRIVER_MYSQL {
+
+		count, err := ss.GetMaster().SelectInt("SELECT COUNT(0) AS index_exists FROM information_schema.statistics WHERE TABLE_SCHEMA = DATABASE() and table_name = ? AND index_name = ?", tableName, indexName)
+		if err != nil {
+			mlog.Critical("Failed to check index", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_CREATE_INDEX_MYSQL)
+		}
+
+		if count > 0 {
+			return false
+		}
+
+		fullTextIndex := ""
+		if indexType == INDEX_TYPE_FULL_TEXT {
+			fullTextIndex = " FULLTEXT "
+		}
+
+		_, err = ss.GetMaster().ExecNoTimeout("CREATE  " + uniqueStr + fullTextIndex + " INDEX " + indexName + " ON " + tableName + " (" + strings.Join(columnNames, ", ") + ")")
+		if err != nil {
+			mlog.Critical("Failed to create index", mlog.String("table", tableName), mlog.String("index_name", indexName), mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_CREATE_INDEX_FULL_MYSQL)
+		}
+	} else if ss.DriverName() == model.DATABASE_DRIVER_SQLITE {
+		_, err := ss.GetMaster().ExecNoTimeout("CREATE INDEX IF NOT EXISTS " + indexName + " ON " + tableName + " (" + strings.Join(columnNames, ", ") + ")")
+		if err != nil {
+			mlog.Critical("Failed to create index", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_CREATE_INDEX_SQLITE)
+		}
+	} else {
+		mlog.Critical("Failed to create index because of missing driver")
+		time.Sleep(time.Second)
+		os.Exit(EXIT_CREATE_INDEX_MISSING)
+	}
+
+	return true
+}
+
+func (ss *SqlStore) RemoveIndexIfExists(indexName string, tableName string) bool {
+
+	if ss.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := ss.GetMaster().SelectStr("SELECT $1::regclass", indexName)
+		// It should fail if the index does not exist
+		if err != nil {
+			return false
+		}
+
+		_, err = ss.GetMaster().ExecNoTimeout("DROP INDEX " + indexName)
+		if err != nil {
+			mlog.Critical("Failed to remove index", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_REMOVE_INDEX_POSTGRES)
+		}
+
+		return true
+	} else if ss.DriverName() == model.DATABASE_DRIVER_MYSQL {
+
+		count, err := ss.GetMaster().SelectInt("SELECT COUNT(0) AS index_exists FROM information_schema.statistics WHERE TABLE_SCHEMA = DATABASE() and table_name = ? AND index_name = ?", tableName, indexName)
+		if err != nil {
+			mlog.Critical("Failed to check index", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_REMOVE_INDEX_MYSQL)
+		}
+
+		if count <= 0 {
+			return false
+		}
+
+		_, err = ss.GetMaster().ExecNoTimeout("DROP INDEX " + indexName + " ON " + tableName)
+		if err != nil {
+			mlog.Critical("Failed to remove index", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_REMOVE_INDEX_MYSQL)
+		}
+	} else if ss.DriverName() == model.DATABASE_DRIVER_SQLITE {
+		_, err := ss.GetMaster().ExecNoTimeout("DROP INDEX IF EXISTS " + indexName)
+		if err != nil {
+			mlog.Critical("Failed to remove index", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_REMOVE_INDEX_SQLITE)
+		}
+	} else {
+		mlog.Critical("Failed to create index because of missing driver")
+		time.Sleep(time.Second)
+		os.Exit(EXIT_REMOVE_INDEX_MISSING)
+	}
+
+	return true
 }

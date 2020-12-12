@@ -58,6 +58,7 @@ type Server struct {
 
 	phase2PermissionsMigrationComplete bool
 
+	Cluster einterfaces.ClusterInterface
 	Metrics einterfaces.MetricsInterface
 }
 

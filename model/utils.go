@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -216,6 +217,42 @@ func StringFromJson(data io.Reader) string {
 	} else {
 		return s
 	}
+}
+
+func GetServerIpAddress(iface string) string {
+	var addrs []net.Addr
+	if len(iface) == 0 {
+		var err error
+		addrs, err = net.InterfaceAddrs()
+		if err != nil {
+			return ""
+		}
+	} else {
+		interfaces, err := net.Interfaces()
+		if err != nil {
+			return ""
+		}
+		for _, i := range interfaces {
+			if i.Name == iface {
+				addrs, err = i.Addrs()
+				if err != nil {
+					return ""
+				}
+				break
+			}
+		}
+	}
+
+	for _, addr := range addrs {
+
+		if ip, ok := addr.(*net.IPNet); ok && !ip.IP.IsLoopback() && !ip.IP.IsLinkLocalUnicast() && !ip.IP.IsLinkLocalMulticast() {
+			if ip.IP.To4() != nil {
+				return ip.IP.String()
+			}
+		}
+	}
+
+	return ""
 }
 
 func IsLower(s string) bool {

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/pkg/errors"
-	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
 
@@ -77,9 +76,9 @@ func newSqlGroupStore(sqlStore *SqlStore) store.GroupStore {
 	return s
 }
 
-func (s *SqlGroupStore) Create(group *model.Group) (*model.Group, *model.AppError) {
+func (s *SqlGroupStore) Create(group *model.Group) (*model.Group, error) {
 	if len(group.Id) != 0 {
-		return nil, model.NewAppError("SqlGroupStore.GroupCreate", "model.group.id.app_error", nil, "", http.StatusBadRequest)
+		return nil, store.NewErrInvalidInput("Group", "id", group.Id)
 	}
 
 	if err := group.IsValidForCreate(); err != nil {
@@ -92,27 +91,27 @@ func (s *SqlGroupStore) Create(group *model.Group) (*model.Group, *model.AppErro
 
 	if err := s.GetMaster().Insert(group); err != nil {
 		if IsUniqueConstraintError(err, []string{"Name", "groups_name_key"}) {
-			return nil, model.NewAppError("SqlGroupStore.GroupCreate", "store.sql_group.unique_constraint", nil, err.Error(), http.StatusInternalServerError)
+			return nil, errors.Wrapf(err, "Group with name %s already exists", *group.Name)
 		}
-		return nil, model.NewAppError("SqlGroupStore.GroupCreate", "store.insert_error", nil, err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrap(err, "failed to save Group")
 	}
 
 	return group, nil
 }
 
-func (s *SqlGroupStore) Get(groupId string) (*model.Group, *model.AppError) {
+func (s *SqlGroupStore) Get(groupId string) (*model.Group, error) {
 	var group *model.Group
 	if err := s.GetReplica().SelectOne(&group, "SELECT * from UserGroups WHERE Id = :Id", map[string]interface{}{"Id": groupId}); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, model.NewAppError("SqlGroupStore.GroupGet", "store.sql_group.no_rows", nil, err.Error(), http.StatusNotFound)
+			return nil, store.NewErrNotFound("Group", groupId)
 		}
-		return nil, model.NewAppError("SqlGroupStore.GroupGet", "store.select_error", nil, err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrapf(err, "failed to get Group with id=%s", groupId)
 	}
 
 	return group, nil
 }
 
-func (s *SqlGroupStore) GetByName(name string, opts model.GroupSearchOpts) (*model.Group, *model.AppError) {
+func (s *SqlGroupStore) GetByName(name string, opts model.GroupSearchOpts) (*model.Group, error) {
 	var group *model.Group
 	query := s.getQueryBuilder().Select("*").From("UserGroups").Where(sq.Eq{"Name": name})
 	if opts.FilterAllowReference {
@@ -122,13 +121,13 @@ func (s *SqlGroupStore) GetByName(name string, opts model.GroupSearchOpts) (*mod
 	queryString, args, err := query.ToSql()
 
 	if err != nil {
-		return nil, model.NewAppError("SqlGroupStore.GetByName", "store.sql_group.app_error", nil, err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrap(err, "get_by_name_tosql")
 	}
 	if err := s.GetReplica().SelectOne(&group, queryString, args...); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, model.NewAppError("SqlGroupStore.GroupGetByName", "store.sql_group.no_rows", nil, err.Error(), http.StatusNotFound)
+			return nil, store.NewErrNotFound("Group", fmt.Sprintf("name=%s", name))
 		}
-		return nil, model.NewAppError("SqlGroupStore.GroupGetByName", "store.select_error", nil, err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrapf(err, "failed to get Group with name=%s", name)
 	}
 
 	return group, nil
@@ -287,10 +286,10 @@ func (s *SqlGroupStore) getGroupSyncable(groupID string, syncableID string, sync
 	return &groupSyncable, nil
 }
 
-func (s *SqlGroupStore) AdminRoleGroupsForSyncableMember(userID, syncableID string, syncableType model.GroupSyncableType) ([]string, *model.AppError) {
+func (s *SqlGroupStore) AdminRoleGroupsForSyncableMember(userID, syncableID string, syncableType model.GroupSyncableType) ([]string, error) {
 	var groupIds []string
 
-	sql := fmt.Sprintf(`
+	query := fmt.Sprintf(`
 		SELECT
 			GroupMembers.GroupId
 		FROM
@@ -304,9 +303,9 @@ func (s *SqlGroupStore) AdminRoleGroupsForSyncableMember(userID, syncableID stri
 			AND Group%[1]ss.DeleteAt = 0
 			AND Group%[1]ss.SchemeAdmin = TRUE`, syncableType)
 
-	_, err := s.GetReplica().Select(&groupIds, sql, map[string]interface{}{"UserId": userID, fmt.Sprintf("%sId", syncableType): syncableID})
+	_, err := s.GetReplica().Select(&groupIds, query, map[string]interface{}{"UserId": userID, fmt.Sprintf("%sId", syncableType): syncableID})
 	if err != nil {
-		return nil, model.NewAppError("SqlGroupStore AdminRoleGroupsForSyncableMember", "store.select_error", nil, err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrap(err, "failed to find Group ids")
 	}
 
 	return groupIds, nil

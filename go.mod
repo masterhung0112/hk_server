@@ -6,6 +6,7 @@ require (
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
+	github.com/cespare/xxhash/v2 v2.1.1
 	github.com/corpix/uarand v0.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2
 	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8
@@ -24,12 +25,14 @@ require (
 	github.com/mattermost/logr v1.0.13
 	github.com/mattermost/viper v1.0.4
 	github.com/minio/minio-go/v7 v7.0.4
-	github.com/pborman/uuid v1.2.0
+	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
+	github.com/tinylib/msgp v1.1.5
+	github.com/vmihailenco/msgpack/v5 v5.1.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	golang.org/x/text v0.3.3
