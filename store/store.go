@@ -452,9 +452,9 @@ type PreferenceStore interface {
 }
 
 type GroupStore interface {
-	Create(group *model.Group) (*model.Group, *model.AppError)
-	Get(groupID string) (*model.Group, *model.AppError)
-	GetByName(name string, opts model.GroupSearchOpts) (*model.Group, *model.AppError)
+	Create(group *model.Group) (*model.Group, error)
+	Get(groupID string) (*model.Group, error)
+	GetByName(name string, opts model.GroupSearchOpts) (*model.Group, error)
 	// GetByIDs(groupIDs []string) ([]*model.Group, error)
 	// GetByRemoteID(remoteID string, groupSource model.GroupSource) (*model.Group, error)
 	// GetAllBySource(groupSource model.GroupSource) ([]*model.Group, error)
@@ -513,7 +513,7 @@ type GroupStore interface {
 
 	// AdminRoleGroupsForSyncableMember returns the IDs of all of the groups that the user is a member of that are
 	// configured as SchemeAdmin: true for the given syncable.
-	AdminRoleGroupsForSyncableMember(userID, syncableID string, syncableType model.GroupSyncableType) ([]string, *model.AppError)
+	AdminRoleGroupsForSyncableMember(userID, syncableID string, syncableType model.GroupSyncableType) ([]string, error)
 
 	// // PermittedSyncableAdmins returns the IDs of all of the user who are permitted by the group syncable to have
 	// // the admin role for the given syncable.

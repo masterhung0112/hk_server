@@ -1,6 +1,10 @@
 package model
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -45,4 +49,129 @@ func (syncable *GroupSyncable) IsValid() *AppError {
 		return NewAppError("GroupSyncable.SyncableIsValid", "model.group_syncable.syncable_id.app_error", nil, "", http.StatusBadRequest)
 	}
 	return nil
+}
+
+func (syncable *GroupSyncable) UnmarshalJSON(b []byte) error {
+	var kvp map[string]interface{}
+	err := json.Unmarshal(b, &kvp)
+	if err != nil {
+		return err
+	}
+	for key, value := range kvp {
+		switch key {
+		case "team_id":
+			syncable.SyncableId = value.(string)
+			syncable.Type = GroupSyncableTypeTeam
+		case "channel_id":
+			syncable.SyncableId = value.(string)
+			syncable.Type = GroupSyncableTypeChannel
+		case "group_id":
+			syncable.GroupId = value.(string)
+		case "auto_add":
+			syncable.AutoAdd = value.(bool)
+		default:
+		}
+	}
+	return nil
+}
+
+func (syncable *GroupSyncable) MarshalJSON() ([]byte, error) {
+	type Alias GroupSyncable
+
+	switch syncable.Type {
+	case GroupSyncableTypeTeam:
+		return json.Marshal(&struct {
+			TeamID          string `json:"team_id"`
+			TeamDisplayName string `json:"team_display_name,omitempty"`
+			TeamType        string `json:"team_type,omitempty"`
+			*Alias
+		}{
+			TeamDisplayName: syncable.TeamDisplayName,
+			TeamType:        syncable.TeamType,
+			TeamID:          syncable.SyncableId,
+			Alias:           (*Alias)(syncable),
+		})
+	case GroupSyncableTypeChannel:
+		return json.Marshal(&struct {
+			ChannelID          string `json:"channel_id"`
+			ChannelDisplayName string `json:"channel_display_name,omitempty"`
+			ChannelType        string `json:"channel_type,omitempty"`
+
+			TeamID          string `json:"team_id,omitempty"`
+			TeamDisplayName string `json:"team_display_name,omitempty"`
+			TeamType        string `json:"team_type,omitempty"`
+
+			*Alias
+		}{
+			ChannelID:          syncable.SyncableId,
+			ChannelDisplayName: syncable.ChannelDisplayName,
+			ChannelType:        syncable.ChannelType,
+
+			TeamID:          syncable.TeamID,
+			TeamDisplayName: syncable.TeamDisplayName,
+			TeamType:        syncable.TeamType,
+
+			Alias: (*Alias)(syncable),
+		})
+	default:
+		return nil, &json.MarshalerError{
+			Err: fmt.Errorf("unknown syncable type: %s", syncable.Type),
+		}
+	}
+}
+
+type GroupSyncablePatch struct {
+	AutoAdd     *bool `json:"auto_add"`
+	SchemeAdmin *bool `json:"scheme_admin"`
+}
+
+func (syncable *GroupSyncable) Patch(patch *GroupSyncablePatch) {
+	if patch.AutoAdd != nil {
+		syncable.AutoAdd = *patch.AutoAdd
+	}
+	if patch.SchemeAdmin != nil {
+		syncable.SchemeAdmin = *patch.SchemeAdmin
+	}
+}
+
+type UserTeamIDPair struct {
+	UserID string
+	TeamID string
+}
+
+type UserChannelIDPair struct {
+	UserID    string
+	ChannelID string
+}
+
+func GroupSyncableFromJson(data io.Reader) *GroupSyncable {
+	groupSyncable := &GroupSyncable{}
+	bodyBytes, _ := ioutil.ReadAll(data)
+	json.Unmarshal(bodyBytes, groupSyncable)
+	return groupSyncable
+}
+
+func GroupSyncablesFromJson(data io.Reader) []*GroupSyncable {
+	groupSyncables := []*GroupSyncable{}
+	bodyBytes, _ := ioutil.ReadAll(data)
+	json.Unmarshal(bodyBytes, &groupSyncables)
+	return groupSyncables
+}
+
+func NewGroupTeam(groupID, teamID string, autoAdd bool) *GroupSyncable {
+	return &GroupSyncable{
+		GroupId:    groupID,
+		SyncableId: teamID,
+		Type:       GroupSyncableTypeTeam,
+		AutoAdd:    autoAdd,
+	}
+}
+
+func NewGroupChannel(groupID, channelID string, autoAdd bool) *GroupSyncable {
+	return &GroupSyncable{
+		GroupId:    groupID,
+		SyncableId: channelID,
+		Type:       GroupSyncableTypeChannel,
+		AutoAdd:    autoAdd,
+	}
 }

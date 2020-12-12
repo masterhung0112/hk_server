@@ -15,7 +15,7 @@ type GroupStore struct {
 }
 
 // AdminRoleGroupsForSyncableMember provides a mock function with given fields: userID, syncableID, syncableType
-func (_m *GroupStore) AdminRoleGroupsForSyncableMember(userID string, syncableID string, syncableType model.GroupSyncableType) ([]string, *model.AppError) {
+func (_m *GroupStore) AdminRoleGroupsForSyncableMember(userID string, syncableID string, syncableType model.GroupSyncableType) ([]string, error) {
 	ret := _m.Called(userID, syncableID, syncableType)
 
 	var r0 []string
@@ -27,20 +27,18 @@ func (_m *GroupStore) AdminRoleGroupsForSyncableMember(userID string, syncableID
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func(string, string, model.GroupSyncableType) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, model.GroupSyncableType) error); ok {
 		r1 = rf(userID, syncableID, syncableType)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
 }
 
 // Create provides a mock function with given fields: group
-func (_m *GroupStore) Create(group *model.Group) (*model.Group, *model.AppError) {
+func (_m *GroupStore) Create(group *model.Group) (*model.Group, error) {
 	ret := _m.Called(group)
 
 	var r0 *model.Group
@@ -52,13 +50,11 @@ func (_m *GroupStore) Create(group *model.Group) (*model.Group, *model.AppError)
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func(*model.Group) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.Group) error); ok {
 		r1 = rf(group)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
@@ -88,7 +84,7 @@ func (_m *GroupStore) CreateGroupSyncable(groupSyncable *model.GroupSyncable) (*
 }
 
 // Get provides a mock function with given fields: groupID
-func (_m *GroupStore) Get(groupID string) (*model.Group, *model.AppError) {
+func (_m *GroupStore) Get(groupID string) (*model.Group, error) {
 	ret := _m.Called(groupID)
 
 	var r0 *model.Group
@@ -100,20 +96,18 @@ func (_m *GroupStore) Get(groupID string) (*model.Group, *model.AppError) {
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func(string) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(groupID)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
 }
 
 // GetByName provides a mock function with given fields: name, opts
-func (_m *GroupStore) GetByName(name string, opts model.GroupSearchOpts) (*model.Group, *model.AppError) {
+func (_m *GroupStore) GetByName(name string, opts model.GroupSearchOpts) (*model.Group, error) {
 	ret := _m.Called(name, opts)
 
 	var r0 *model.Group
@@ -125,13 +119,11 @@ func (_m *GroupStore) GetByName(name string, opts model.GroupSearchOpts) (*model
 		}
 	}
 
-	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func(string, model.GroupSearchOpts) *model.AppError); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, model.GroupSearchOpts) error); ok {
 		r1 = rf(name, opts)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*model.AppError)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
