@@ -2,9 +2,13 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
+
 	"github.com/masterhung0112/hk_server/einterfaces"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
+
 	"github.com/pkg/errors"
 )
 
@@ -56,6 +60,10 @@ func newSqlBotStore(sqlStore *SqlStore, metrics einterfaces.MetricsInterface) st
 	return us
 }
 
+func (us SqlBotStore) createIndexesIfNotExists() {
+}
+
+// Get fetches the given bot in the database.
 func (us SqlBotStore) Get(botUserId string, includeDeleted bool) (*model.Bot, error) {
 	var excludeDeletedSql = "AND b.DeleteAt = 0"
 	if includeDeleted {
@@ -92,6 +100,67 @@ func (us SqlBotStore) Get(botUserId string, includeDeleted bool) (*model.Bot, er
 	return bot, nil
 }
 
+// GetAll fetches from all bots in the database.
+func (us SqlBotStore) GetAll(options *model.BotGetOptions) ([]*model.Bot, error) {
+	params := map[string]interface{}{
+		"offset": options.Page * options.PerPage,
+		"limit":  options.PerPage,
+	}
+
+	var conditions []string
+	var conditionsSql string
+	var additionalJoin string
+
+	if !options.IncludeDeleted {
+		conditions = append(conditions, "b.DeleteAt = 0")
+	}
+	if options.OwnerId != "" {
+		conditions = append(conditions, "b.OwnerId = :creator_id")
+		params["creator_id"] = options.OwnerId
+	}
+	if options.OnlyOrphaned {
+		additionalJoin = "JOIN Users o ON (o.Id = b.OwnerId)"
+		conditions = append(conditions, "o.DeleteAt != 0")
+	}
+
+	if len(conditions) > 0 {
+		conditionsSql = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	sql := `
+			SELECT
+			    b.UserId,
+			    u.Username,
+			    u.FirstName AS DisplayName,
+			    b.Description,
+			    b.OwnerId,
+			    COALESCE(b.LastIconUpdate, 0) AS LastIconUpdate,
+			    b.CreateAt,
+			    b.UpdateAt,
+			    b.DeleteAt
+			FROM
+			    Bots b
+			JOIN
+			    Users u ON (u.Id = b.UserId)
+			` + additionalJoin + `
+			` + conditionsSql + `
+			ORDER BY
+			    b.CreateAt ASC,
+			    u.Username ASC
+			LIMIT
+			    :limit
+			OFFSET
+			    :offset
+		`
+
+	var bots []*model.Bot
+	if _, err := us.GetReplica().Select(&bots, sql, params); err != nil {
+		return nil, errors.Wrap(err, "select")
+	}
+
+	return bots, nil
+}
+
 // Save persists a new bot to the database.
 // It assumes the corresponding user was saved via the user store.
 func (us SqlBotStore) Save(bot *model.Bot) (*model.Bot, error) {
@@ -104,6 +173,37 @@ func (us SqlBotStore) Save(bot *model.Bot) (*model.Bot, error) {
 
 	if err := us.GetMaster().Insert(botFromModel(bot)); err != nil {
 		return nil, errors.Wrapf(err, "insert: user_id=%s", bot.UserId)
+	}
+
+	return bot, nil
+}
+
+// Update persists an updated bot to the database.
+// It assumes the corresponding user was updated via the user store.
+func (us SqlBotStore) Update(bot *model.Bot) (*model.Bot, error) {
+	bot = bot.Clone()
+
+	bot.PreUpdate()
+	if err := bot.IsValid(); err != nil { // TODO: needs to return error in v6
+		return nil, err
+	}
+
+	oldBot, err := us.Get(bot.UserId, true)
+	if err != nil {
+		return nil, err
+	}
+
+	oldBot.Description = bot.Description
+	oldBot.OwnerId = bot.OwnerId
+	oldBot.LastIconUpdate = bot.LastIconUpdate
+	oldBot.UpdateAt = bot.UpdateAt
+	oldBot.DeleteAt = bot.DeleteAt
+	bot = oldBot
+
+	if count, err := us.GetMaster().Update(botFromModel(bot)); err != nil {
+		return nil, errors.Wrapf(err, "update: user_id=%s", bot.UserId)
+	} else if count > 1 {
+		return nil, fmt.Errorf("unexpected count while updating bot: count=%d, userId=%s", count, bot.UserId)
 	}
 
 	return bot, nil

@@ -1,11 +1,14 @@
 package model
 
-import ()
-import "strings"
-import "net/http"
-import "unicode/utf8"
-import "io"
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"regexp"
+	"strings"
+	"unicode/utf8"
+)
 
 const (
 	TEAM_OPEN                       = "O"
@@ -61,10 +64,23 @@ type TeamsWithCount struct {
 	TotalCount int64   `json:"total_count"`
 }
 
-func TeamFromJson(data io.Reader) *Team {
-	var o *Team
+func InvitesFromJson(data io.Reader) *Invites {
+	var o *Invites
 	json.NewDecoder(data).Decode(&o)
 	return o
+}
+
+func (o *Invites) ToEmailList() []string {
+	emailList := make([]string, len(o.Invites))
+	for _, invite := range o.Invites {
+		emailList = append(emailList, invite["email"])
+	}
+	return emailList
+}
+
+func (o *Invites) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 func (o *Team) ToJson() string {
@@ -72,22 +88,47 @@ func (o *Team) ToJson() string {
 	return string(b)
 }
 
-func (o *Team) PreSave() {
-	if o.Id == "" {
-		o.Id = NewId()
-	}
+func TeamFromJson(data io.Reader) *Team {
+	var o *Team
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
 
-	o.CreateAt = GetMillis()
-	o.UpdateAt = o.CreateAt
+func TeamMapToJson(u map[string]*Team) string {
+	b, _ := json.Marshal(u)
+	return string(b)
+}
 
-	o.Name = SanitizeUnicode(o.Name)
-	o.DisplayName = SanitizeUnicode(o.DisplayName)
-	o.Description = SanitizeUnicode(o.Description)
-	o.CompanyName = SanitizeUnicode(o.CompanyName)
+func TeamMapFromJson(data io.Reader) map[string]*Team {
+	var teams map[string]*Team
+	json.NewDecoder(data).Decode(&teams)
+	return teams
+}
 
-	if len(o.InviteId) == 0 {
-		o.InviteId = NewId()
-	}
+func TeamListToJson(t []*Team) string {
+	b, _ := json.Marshal(t)
+	return string(b)
+}
+
+func TeamsWithCountToJson(tlc *TeamsWithCount) []byte {
+	b, _ := json.Marshal(tlc)
+	return b
+}
+
+func TeamsWithCountFromJson(data io.Reader) *TeamsWithCount {
+	var twc *TeamsWithCount
+	json.NewDecoder(data).Decode(&twc)
+	return twc
+}
+
+func TeamListFromJson(data io.Reader) []*Team {
+	var teams []*Team
+	json.NewDecoder(data).Decode(&teams)
+	return teams
+}
+
+func (o *Team) Etag() string {
+	return Etag(o.Id, o.UpdateAt)
 }
 
 func (o *Team) IsValid() *AppError {
@@ -151,6 +192,32 @@ func (o *Team) IsValid() *AppError {
 	return nil
 }
 
+func (o *Team) PreSave() {
+	if o.Id == "" {
+		o.Id = NewId()
+	}
+
+	o.CreateAt = GetMillis()
+	o.UpdateAt = o.CreateAt
+
+	o.Name = SanitizeUnicode(o.Name)
+	o.DisplayName = SanitizeUnicode(o.DisplayName)
+	o.Description = SanitizeUnicode(o.Description)
+	o.CompanyName = SanitizeUnicode(o.CompanyName)
+
+	if len(o.InviteId) == 0 {
+		o.InviteId = NewId()
+	}
+}
+
+func (o *Team) PreUpdate() {
+	o.UpdateAt = GetMillis()
+	o.Name = SanitizeUnicode(o.Name)
+	o.DisplayName = SanitizeUnicode(o.DisplayName)
+	o.Description = SanitizeUnicode(o.Description)
+	o.CompanyName = SanitizeUnicode(o.CompanyName)
+}
+
 func IsReservedTeamName(s string) bool {
 	s = strings.ToLower(s)
 
@@ -175,10 +242,86 @@ func IsValidTeamName(s string) bool {
 	return true
 }
 
-func (o *Team) PreUpdate() {
-	o.UpdateAt = GetMillis()
-	o.Name = SanitizeUnicode(o.Name)
-	o.DisplayName = SanitizeUnicode(o.DisplayName)
-	o.Description = SanitizeUnicode(o.Description)
-	o.CompanyName = SanitizeUnicode(o.CompanyName)
+var validTeamNameCharacter = regexp.MustCompile(`^[a-z0-9-]$`)
+
+func CleanTeamName(s string) string {
+	s = strings.ToLower(strings.Replace(s, " ", "-", -1))
+
+	for _, value := range reservedName {
+		if strings.Index(s, value) == 0 {
+			s = strings.Replace(s, value, "", -1)
+		}
+	}
+
+	s = strings.TrimSpace(s)
+
+	for _, c := range s {
+		char := fmt.Sprintf("%c", c)
+		if !validTeamNameCharacter.MatchString(char) {
+			s = strings.Replace(s, char, "", -1)
+		}
+	}
+
+	s = strings.Trim(s, "-")
+
+	if !IsValidTeamName(s) {
+		s = NewId()
+	}
+
+	return s
+}
+
+func (o *Team) Sanitize() {
+	o.Email = ""
+	o.InviteId = ""
+}
+
+func (o *Team) Patch(patch *TeamPatch) {
+	if patch.DisplayName != nil {
+		o.DisplayName = *patch.DisplayName
+	}
+
+	if patch.Description != nil {
+		o.Description = *patch.Description
+	}
+
+	if patch.CompanyName != nil {
+		o.CompanyName = *patch.CompanyName
+	}
+
+	if patch.AllowedDomains != nil {
+		o.AllowedDomains = *patch.AllowedDomains
+	}
+
+	if patch.AllowOpenInvite != nil {
+		o.AllowOpenInvite = *patch.AllowOpenInvite
+	}
+
+	if patch.GroupConstrained != nil {
+		o.GroupConstrained = patch.GroupConstrained
+	}
+}
+
+func (o *Team) IsGroupConstrained() bool {
+	return o.GroupConstrained != nil && *o.GroupConstrained
+}
+
+func (t *TeamPatch) ToJson() string {
+	b, err := json.Marshal(t)
+	if err != nil {
+		return ""
+	}
+
+	return string(b)
+}
+
+func TeamPatchFromJson(data io.Reader) *TeamPatch {
+	decoder := json.NewDecoder(data)
+	var team TeamPatch
+	err := decoder.Decode(&team)
+	if err != nil {
+		return nil
+	}
+
+	return &team
 }

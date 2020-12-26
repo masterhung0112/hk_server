@@ -1,15 +1,19 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package config
 
 import (
-	"bytes"
-	"github.com/masterhung0112/hk_server/model"
+	"fmt"
+
 	"github.com/pkg/errors"
-	"io/ioutil"
+
+	"github.com/masterhung0112/hk_server/model"
 )
 
+// MemoryStore implements the Store interface. It is meant primarily for testing.
+// Not to be used directly. Only to be used as a backing store for config.Store
 type MemoryStore struct {
-	commonStore
-
 	allowEnvironmentOverrides bool
 	validate                  bool
 	files                     map[string][]byte
@@ -49,24 +53,12 @@ func NewMemoryStoreWithOptions(options *MemoryStoreOptions) (*MemoryStore, error
 		savedConfig:               savedConfig,
 	}
 
-	ms.commonStore.config = &model.Config{}
-	ms.commonStore.config.SetDefaults()
-
-	if err := ms.Load(); err != nil {
-		return nil, err
-	}
-
 	return ms, nil
 }
 
 // Set replaces the current configuration in its entirety.
-func (ms *MemoryStore) Set(newCfg *model.Config) (*model.Config, error) {
-	validate := ms.commonStore.validate
-	if !ms.validate {
-		validate = nil
-	}
-
-	return ms.commonStore.set(newCfg, ms.allowEnvironmentOverrides, validate, ms.persist)
+func (ms *MemoryStore) Set(newCfg *model.Config) error {
+	return ms.persist(newCfg)
 }
 
 // persist copies the active config to the saved config.
@@ -77,19 +69,57 @@ func (ms *MemoryStore) persist(cfg *model.Config) error {
 }
 
 // Load applies environment overrides to the default config as if a re-load had occurred.
-func (ms *MemoryStore) Load() (err error) {
-	var cfgBytes []byte
-	cfgBytes, err = marshalConfig(ms.savedConfig)
+func (ms *MemoryStore) Load() ([]byte, error) {
+	cfgBytes, err := marshalConfig(ms.savedConfig)
 	if err != nil {
-		return errors.Wrap(err, "failed to serialize config")
+		return nil, errors.Wrap(err, "failed to serialize config")
 	}
 
-	f := ioutil.NopCloser(bytes.NewReader(cfgBytes))
+	return cfgBytes, nil
 
-	validate := ms.commonStore.validate
-	if !ms.validate {
-		validate = nil
+}
+
+// GetFile fetches the contents of a previously persisted configuration file.
+func (ms *MemoryStore) GetFile(name string) ([]byte, error) {
+	data, ok := ms.files[name]
+	if !ok {
+		return nil, fmt.Errorf("file %s not stored", name)
 	}
 
-	return ms.commonStore.load(f, false, validate, ms.persist)
+	return data, nil
+}
+
+// SetFile sets or replaces the contents of a configuration file.
+func (ms *MemoryStore) SetFile(name string, data []byte) error {
+	ms.files[name] = data
+
+	return nil
+}
+
+// HasFile returns true if the given file was previously persisted.
+func (ms *MemoryStore) HasFile(name string) (bool, error) {
+	_, ok := ms.files[name]
+	return ok, nil
+}
+
+// RemoveFile removes a previously persisted configuration file.
+func (ms *MemoryStore) RemoveFile(name string) error {
+	delete(ms.files, name)
+
+	return nil
+}
+
+// String returns a hard-coded description, as there is no backing store.
+func (ms *MemoryStore) String() string {
+	return "memory://"
+}
+
+// Close does nothing for a memory store.
+func (ms *MemoryStore) Close() error {
+	return nil
+}
+
+// Watch nothing on memory store
+func (ms *MemoryStore) Watch(_ func()) error {
+	return nil
 }

@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -28,23 +29,6 @@ const (
 	NUMBERS           = "0123456789"
 	SYMBOLS           = " !\"\\#$%&'()*+,-./:;<=>?@[]^_`|~"
 )
-
-var reservedName = []string{
-	"admin",
-	"api",
-	"channel",
-	"claim",
-	"error",
-	"help",
-	"landing",
-	"login",
-	"mfa",
-	"oauth",
-	"plug",
-	"plugins",
-	"post",
-	"signup",
-}
 
 type StringInterface map[string]interface{}
 type StringMap map[string]string
@@ -70,7 +54,6 @@ func (sa StringArray) Contains(input string) bool {
 
 	return false
 }
-
 func (sa StringArray) Equals(input StringArray) bool {
 
 	if len(sa) != len(input) {
@@ -87,6 +70,87 @@ func (sa StringArray) Equals(input StringArray) bool {
 	return true
 }
 
+var translateFunc goi18n.TranslateFunc
+var translateFuncOnce sync.Once
+
+func AppErrorInit(t goi18n.TranslateFunc) {
+	translateFuncOnce.Do(func() {
+		translateFunc = t
+	})
+}
+
+type AppError struct {
+	Id            string `json:"id"`
+	Message       string `json:"message"`               // Message to be display to the end user without debugging information
+	DetailedError string `json:"detailed_error"`        // Internal error string to help the developer
+	RequestId     string `json:"request_id,omitempty"`  // The RequestId that's also set in the header
+	StatusCode    int    `json:"status_code,omitempty"` // The http status code
+	Where         string `json:"-"`                     // The function where it happened in the form of Struct.Func
+	IsOAuth       bool   `json:"is_oauth,omitempty"`    // Whether the error is OAuth specific
+	params        map[string]interface{}
+}
+
+func (er *AppError) Error() string {
+	return er.Where + ": " + er.Message + ", " + er.DetailedError
+}
+
+func (er *AppError) Translate(T goi18n.TranslateFunc) {
+	if T == nil {
+		er.Message = er.Id
+		return
+	}
+
+	if er.params == nil {
+		er.Message = T(er.Id)
+	} else {
+		er.Message = T(er.Id, er.params)
+	}
+}
+
+func (er *AppError) SystemMessage(T goi18n.TranslateFunc) string {
+	if er.params == nil {
+		return T(er.Id)
+	}
+	return T(er.Id, er.params)
+}
+
+func (er *AppError) ToJson() string {
+	b, _ := json.Marshal(er)
+	return string(b)
+}
+
+// AppErrorFromJson will decode the input and return an AppError
+func AppErrorFromJson(data io.Reader) *AppError {
+	str := ""
+	bytes, rerr := ioutil.ReadAll(data)
+	if rerr != nil {
+		str = rerr.Error()
+	} else {
+		str = string(bytes)
+	}
+
+	decoder := json.NewDecoder(strings.NewReader(str))
+	var er AppError
+	err := decoder.Decode(&er)
+	if err != nil {
+		return NewAppError("AppErrorFromJson", "model.utils.decode_json.app_error", nil, "body: "+str, http.StatusInternalServerError)
+	}
+	return &er
+}
+
+func NewAppError(where string, id string, params map[string]interface{}, details string, status int) *AppError {
+	ap := &AppError{}
+	ap.Id = id
+	ap.params = params
+	ap.Message = id
+	ap.Where = where
+	ap.DetailedError = details
+	ap.StatusCode = status
+	ap.IsOAuth = false
+	ap.Translate(translateFunc)
+	return ap
+}
+
 var encoding = base32.NewEncoding("ybndrfg8ejkmcpqxot1uwisza345h769")
 
 // NewId is a globally unique identifier.  It is a [A-Z0-9] string 26
@@ -101,25 +165,32 @@ func NewId() string {
 	return b.String()
 }
 
-func NewAppError(where string, id string, params map[string]interface{}, details string, status int) *AppError {
-	ap := &AppError{}
-	ap.Id = id
-	// ap.params = params
-	ap.Message = id
-	ap.Where = where
-	ap.DetailedError = details
-	ap.StatusCode = status
-	// ap.IsOAuth = false
-	// ap.Translate(translateFunc)
-	return ap
+// NewRandomTeamName is a NewId that will be a valid team name.
+func NewRandomTeamName() string {
+	teamName := NewId()
+	for IsReservedTeamName(teamName) {
+		teamName = NewId()
+	}
+	return teamName
 }
 
+// NewRandomString returns a random string of the given length.
+// The resulting entropy will be (5 * length) bits.
 func NewRandomString(length int) string {
 	data := make([]byte, 1+(length*5/8))
 	rand.Read(data)
 	return encoding.EncodeToString(data)[:length]
 }
 
+// NewRandomBase32String returns a base32 encoded string of a random slice
+// of bytes of the given size. The resulting entropy will be (8 * size) bits.
+func NewRandomBase32String(size int) string {
+	data := make([]byte, size)
+	rand.Read(data)
+	return base32.StdEncoding.EncodeToString(data)
+}
+
+// GetMillis is a convenience method to get milliseconds since epoch.
 func GetMillis() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
@@ -129,29 +200,72 @@ func GetMillisForTime(thisTime time.Time) int64 {
 	return thisTime.UnixNano() / int64(time.Millisecond)
 }
 
+// PadDateStringZeros is a convenience method to pad 2 digit date parts with zeros to meet ISO 8601 format
+func PadDateStringZeros(dateString string) string {
+	parts := strings.Split(dateString, "-")
+	for index, part := range parts {
+		if len(part) == 1 {
+			parts[index] = "0" + part
+		}
+	}
+	dateString = strings.Join(parts[:], "-")
+	return dateString
+}
+
+// GetStartOfDayMillis is a convenience method to get milliseconds since epoch for provided date's start of day
+func GetStartOfDayMillis(thisTime time.Time, timeZoneOffset int) int64 {
+	localSearchTimeZone := time.FixedZone("Local Search Time Zone", timeZoneOffset)
+	resultTime := time.Date(thisTime.Year(), thisTime.Month(), thisTime.Day(), 0, 0, 0, 0, localSearchTimeZone)
+	return GetMillisForTime(resultTime)
+}
+
+// GetEndOfDayMillis is a convenience method to get milliseconds since epoch for provided date's end of day
+func GetEndOfDayMillis(thisTime time.Time, timeZoneOffset int) int64 {
+	localSearchTimeZone := time.FixedZone("Local Search Time Zone", timeZoneOffset)
+	resultTime := time.Date(thisTime.Year(), thisTime.Month(), thisTime.Day(), 23, 59, 59, 999999999, localSearchTimeZone)
+	return GetMillisForTime(resultTime)
+}
+
+func CopyStringMap(originalMap map[string]string) map[string]string {
+	copyMap := make(map[string]string)
+	for k, v := range originalMap {
+		copyMap[k] = v
+	}
+	return copyMap
+}
+
 // MapToJson converts a map to a json string
 func MapToJson(objmap map[string]string) string {
 	b, _ := json.Marshal(objmap)
 	return string(b)
 }
 
-func AppErrorFromJson(data io.Reader) *AppError {
-	str := ""
-	bytes, rerr := ioutil.ReadAll(data)
-	if rerr != nil {
-		str = rerr.Error()
-	} else {
-		str = string(bytes)
-	}
+// MapBoolToJson converts a map to a json string
+func MapBoolToJson(objmap map[string]bool) string {
+	b, _ := json.Marshal(objmap)
+	return string(b)
+}
 
-	decoder := json.NewDecoder(strings.NewReader(str))
-	var er AppError
-	err := decoder.Decode(&er)
-	if err == nil {
-		return &er
-	} else {
-		return NewAppError("AppErrorFromJson", "model.utils.decode_json.app_error", nil, "body: "+str, http.StatusInternalServerError)
+// MapFromJson will decode the key/value pair map
+func MapFromJson(data io.Reader) map[string]string {
+	decoder := json.NewDecoder(data)
+
+	var objmap map[string]string
+	if err := decoder.Decode(&objmap); err != nil {
+		return make(map[string]string)
 	}
+	return objmap
+}
+
+// MapFromJson will decode the key/value pair map
+func MapBoolFromJson(data io.Reader) map[string]bool {
+	decoder := json.NewDecoder(data)
+
+	var objmap map[string]bool
+	if err := decoder.Decode(&objmap); err != nil {
+		return make(map[string]bool)
+	}
+	return objmap
 }
 
 func ArrayToJson(objmap []string) string {
@@ -165,9 +279,8 @@ func ArrayFromJson(data io.Reader) []string {
 	var objmap []string
 	if err := decoder.Decode(&objmap); err != nil {
 		return make([]string, 0)
-	} else {
-		return objmap
 	}
+	return objmap
 }
 
 func ArrayFromInterface(data interface{}) []string {
@@ -198,9 +311,8 @@ func StringInterfaceFromJson(data io.Reader) map[string]interface{} {
 	var objmap map[string]interface{}
 	if err := decoder.Decode(&objmap); err != nil {
 		return make(map[string]interface{})
-	} else {
-		return objmap
 	}
+	return objmap
 }
 
 func StringToJson(s string) string {
@@ -214,9 +326,8 @@ func StringFromJson(data io.Reader) string {
 	var s string
 	if err := decoder.Decode(&s); err != nil {
 		return ""
-	} else {
-		return s
 	}
+	return s
 }
 
 func GetServerIpAddress(iface string) string {
@@ -274,90 +385,21 @@ func IsValidEmail(email string) bool {
 	return true
 }
 
-func IsValidId(value string) bool {
-	if len(value) != 26 {
-		return false
-	}
-
-	for _, r := range value {
-		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// SanitizeUnicode will remove undesirable Unicode characters from a string.
-func SanitizeUnicode(s string) string {
-	return strings.Map(filterBlocklist, s)
-}
-
-// filterBlocklist returns `r` if it is not in the blocklist, otherwise drop (-1).
-// Blocklist is taken from https://www.w3.org/TR/unicode-xml/#Charlist
-func filterBlocklist(r rune) rune {
-	const drop = -1
-	switch r {
-	case '\u0340', '\u0341': // clones of grave and acute; deprecated in Unicode
-		return drop
-	case '\u17A3', '\u17D3': // obsolete characters for Khmer; deprecated in Unicode
-		return drop
-	case '\u2028', '\u2029': // line and paragraph separator
-		return drop
-	case '\u202A', '\u202B', '\u202C', '\u202D', '\u202E': // BIDI embedding controls
-		return drop
-	case '\u206A', '\u206B': // activate/inhibit symmetric swapping; deprecated in Unicode
-		return drop
-	case '\u206C', '\u206D': // activate/inhibit Arabic form shaping; deprecated in Unicode
-		return drop
-	case '\u206E', '\u206F': // activate/inhibit national digit shapes; deprecated in Unicode
-		return drop
-	case '\uFFF9', '\uFFFA', '\uFFFB': // interlinear annotation characters
-		return drop
-	case '\uFEFF': // byte order mark
-		return drop
-	case '\uFFFC': // object replacement character
-		return drop
-	}
-
-	// Scoping for musical notation
-	if r >= 0x0001D173 && r <= 0x0001D17A {
-		return drop
-	}
-
-	// Language tag code points
-	if r >= 0x000E0000 && r <= 0x000E007F {
-		return drop
-	}
-
-	return r
-}
-
-func IsFileExtImage(ext string) bool {
-	ext = strings.ToLower(ext)
-	for _, imgExt := range IMAGE_EXTENSIONS {
-		if ext == imgExt {
-			return true
-		}
-	}
-	return false
-}
-
-func GetImageMimeType(ext string) string {
-	ext = strings.ToLower(ext)
-	if len(IMAGE_MIME_TYPES[ext]) == 0 {
-		return "image"
-	} else {
-		return IMAGE_MIME_TYPES[ext]
-	}
-}
-
-func AsStringBoolMap(list []string) map[string]bool {
-	listMap := map[string]bool{}
-	for _, p := range list {
-		listMap[p] = true
-	}
-	return listMap
+var reservedName = []string{
+	"admin",
+	"api",
+	"channel",
+	"claim",
+	"error",
+	"help",
+	"landing",
+	"login",
+	"mfa",
+	"oauth",
+	"plug",
+	"plugins",
+	"post",
+	"signup",
 }
 
 func IsValidChannelIdentifier(s string) bool {
@@ -371,6 +413,12 @@ func IsValidChannelIdentifier(s string) bool {
 	}
 
 	return true
+}
+
+func IsValidAlphaNum(s string) bool {
+	validAlphaNum := regexp.MustCompile(`^[a-z0-9]+([a-z\-0-9]+|(__)?)[a-z0-9]+$`)
+
+	return validAlphaNum.MatchString(s)
 }
 
 func IsValidAlphaNumHyphenUnderscore(s string, withFormat bool) bool {
@@ -432,22 +480,28 @@ func ParseHashtags(text string) (string, string) {
 	return strings.TrimSpace(hashtagString), strings.TrimSpace(plainString)
 }
 
-// MapFromJson will decode the key/value pair map
-func MapFromJson(data io.Reader) map[string]string {
-	decoder := json.NewDecoder(data)
-
-	var objmap map[string]string
-	if err := decoder.Decode(&objmap); err != nil {
-		return make(map[string]string)
-	} else {
-		return objmap
+func IsFileExtImage(ext string) bool {
+	ext = strings.ToLower(ext)
+	for _, imgExt := range IMAGE_EXTENSIONS {
+		if ext == imgExt {
+			return true
+		}
 	}
+	return false
 }
 
-func IsValidAlphaNum(s string) bool {
-	validAlphaNum := regexp.MustCompile(`^[a-z0-9]+([a-z\-0-9]+|(__)?)[a-z0-9]+$`)
+func GetImageMimeType(ext string) string {
+	ext = strings.ToLower(ext)
+	if len(IMAGE_MIME_TYPES[ext]) == 0 {
+		return "image"
+	}
+	return IMAGE_MIME_TYPES[ext]
+}
 
-	return validAlphaNum.MatchString(s)
+func ClearMentionTags(post string) string {
+	post = strings.Replace(post, "<mention>", "", -1)
+	post = strings.Replace(post, "</mention>", "", -1)
+	return post
 }
 
 func IsValidHttpUrl(rawUrl string) bool {
@@ -455,7 +509,19 @@ func IsValidHttpUrl(rawUrl string) bool {
 		return false
 	}
 
-	if _, err := url.ParseRequestURI(rawUrl); err != nil {
+	if u, err := url.ParseRequestURI(rawUrl); err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+
+	return true
+}
+
+func IsValidTurnOrStunServer(rawUri string) bool {
+	if strings.Index(rawUri, "turn:") != 0 && strings.Index(rawUri, "stun:") != 0 {
+		return false
+	}
+
+	if _, err := url.ParseRequestURI(rawUri); err != nil {
 		return false
 	}
 
@@ -476,10 +542,16 @@ func IsSafeLink(link *string) bool {
 	return true
 }
 
-var translateFunc goi18n.TranslateFunc = nil
+func IsValidWebsocketUrl(rawUrl string) bool {
+	if strings.Index(rawUrl, "ws://") != 0 && strings.Index(rawUrl, "wss://") != 0 {
+		return false
+	}
 
-func AppErrorInit(t goi18n.TranslateFunc) {
-	translateFunc = t
+	if _, err := url.ParseRequestURI(rawUrl); err != nil {
+		return false
+	}
+
+	return true
 }
 
 func IsValidTrueOrFalseString(value string) bool {
@@ -494,46 +566,72 @@ func IsValidNumberString(value string) bool {
 	return true
 }
 
-// PadDateStringZeros is a convenience method to pad 2 digit date parts with zeros to meet ISO 8601 format
-func PadDateStringZeros(dateString string) string {
-	parts := strings.Split(dateString, "-")
-	for index, part := range parts {
-		if len(part) == 1 {
-			parts[index] = "0" + part
+func IsValidId(value string) bool {
+	if len(value) != 26 {
+		return false
+	}
+
+	for _, r := range value {
+		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+			return false
 		}
 	}
-	dateString = strings.Join(parts[:], "-")
-	return dateString
+
+	return true
 }
 
-// GetStartOfDayMillis is a convenience method to get milliseconds since epoch for provided date's start of day
-func GetStartOfDayMillis(thisTime time.Time, timeZoneOffset int) int64 {
-	localSearchTimeZone := time.FixedZone("Local Search Time Zone", timeZoneOffset)
-	resultTime := time.Date(thisTime.Year(), thisTime.Month(), thisTime.Day(), 0, 0, 0, 0, localSearchTimeZone)
-	return GetMillisForTime(resultTime)
-}
-
-// GetEndOfDayMillis is a convenience method to get milliseconds since epoch for provided date's end of day
-func GetEndOfDayMillis(thisTime time.Time, timeZoneOffset int) int64 {
-	localSearchTimeZone := time.FixedZone("Local Search Time Zone", timeZoneOffset)
-	resultTime := time.Date(thisTime.Year(), thisTime.Month(), thisTime.Day(), 23, 59, 59, 999999999, localSearchTimeZone)
-	return GetMillisForTime(resultTime)
-}
-
-func CopyStringMap(originalMap map[string]string) map[string]string {
-	copyMap := make(map[string]string)
-	for k, v := range originalMap {
-		copyMap[k] = v
-	}
-	return copyMap
-}
-
-func GetPreferredTimezone(timezone StringMap) string {
-	if timezone["useAutomaticTimezone"] == "true" {
-		return timezone["automaticTimezone"]
+// Copied from https://golang.org/src/net/dnsclient.go#L119
+func IsDomainName(s string) bool {
+	// See RFC 1035, RFC 3696.
+	// Presentation format has dots before every label except the first, and the
+	// terminal empty label is optional here because we assume fully-qualified
+	// (absolute) input. We must therefore reserve space for the first and last
+	// labels' length octets in wire format, where they are necessary and the
+	// maximum total length is 255.
+	// So our _effective_ maximum is 253, but 254 is not rejected if the last
+	// character is a dot.
+	l := len(s)
+	if l == 0 || l > 254 || l == 254 && s[l-1] != '.' {
+		return false
 	}
 
-	return timezone["manualTimezone"]
+	last := byte('.')
+	ok := false // Ok once we've seen a letter.
+	partlen := 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		default:
+			return false
+		case 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '_':
+			ok = true
+			partlen++
+		case '0' <= c && c <= '9':
+			// fine
+			partlen++
+		case c == '-':
+			// Byte before dash cannot be dot.
+			if last == '.' {
+				return false
+			}
+			partlen++
+		case c == '.':
+			// Byte before dot cannot be dot, dash.
+			if last == '.' || last == '-' {
+				return false
+			}
+			if partlen > 63 || partlen == 0 {
+				return false
+			}
+			partlen = 0
+		}
+		last = c
+	}
+	if last == '-' || partlen > 63 {
+		return false
+	}
+
+	return ok
 }
 
 func RemoveDuplicateStrings(in []string) []string {
@@ -549,4 +647,70 @@ func RemoveDuplicateStrings(in []string) []string {
 	}
 
 	return out
+}
+
+func GetPreferredTimezone(timezone StringMap) string {
+	if timezone["useAutomaticTimezone"] == "true" {
+		return timezone["automaticTimezone"]
+	}
+
+	return timezone["manualTimezone"]
+}
+
+// IsSamlFile checks if filename is a SAML file.
+func IsSamlFile(saml *SamlSettings, filename string) bool {
+	return filename == *saml.PublicCertificateFile || filename == *saml.PrivateKeyFile || filename == *saml.IdpCertificateFile
+}
+
+func AsStringBoolMap(list []string) map[string]bool {
+	listMap := map[string]bool{}
+	for _, p := range list {
+		listMap[p] = true
+	}
+	return listMap
+}
+
+// SanitizeUnicode will remove undesirable Unicode characters from a string.
+func SanitizeUnicode(s string) string {
+	return strings.Map(filterBlocklist, s)
+}
+
+// filterBlocklist returns `r` if it is not in the blocklist, otherwise drop (-1).
+// Blocklist is taken from https://www.w3.org/TR/unicode-xml/#Charlist
+func filterBlocklist(r rune) rune {
+	const drop = -1
+	switch r {
+	case '\u0340', '\u0341': // clones of grave and acute; deprecated in Unicode
+		return drop
+	case '\u17A3', '\u17D3': // obsolete characters for Khmer; deprecated in Unicode
+		return drop
+	case '\u2028', '\u2029': // line and paragraph separator
+		return drop
+	case '\u202A', '\u202B', '\u202C', '\u202D', '\u202E': // BIDI embedding controls
+		return drop
+	case '\u206A', '\u206B': // activate/inhibit symmetric swapping; deprecated in Unicode
+		return drop
+	case '\u206C', '\u206D': // activate/inhibit Arabic form shaping; deprecated in Unicode
+		return drop
+	case '\u206E', '\u206F': // activate/inhibit national digit shapes; deprecated in Unicode
+		return drop
+	case '\uFFF9', '\uFFFA', '\uFFFB': // interlinear annotation characters
+		return drop
+	case '\uFEFF': // byte order mark
+		return drop
+	case '\uFFFC': // object replacement character
+		return drop
+	}
+
+	// Scoping for musical notation
+	if r >= 0x0001D173 && r <= 0x0001D17A {
+		return drop
+	}
+
+	// Language tag code points
+	if r >= 0x000E0000 && r <= 0x000E007F {
+		return drop
+	}
+
+	return r
 }

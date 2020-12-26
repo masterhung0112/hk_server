@@ -28,6 +28,15 @@ func (a *App) CreateSession(session *model.Session) (*model.Session, *model.AppE
 	return session, nil
 }
 
+func (a *App) GetSessionById(sessionId string) (*model.Session, *model.AppError) {
+	session, err := a.Srv().Store.Session().Get(sessionId)
+	if err != nil {
+		return nil, model.NewAppError("GetSessionById", "app.session.get.app_error", nil, err.Error(), http.StatusBadRequest)
+	}
+
+	return session, nil
+}
+
 func (a *App) RevokeSessionById(sessionId string) *model.AppError {
 	session, err := a.Srv().Store.Session().Get(sessionId)
 	if err != nil {
@@ -47,8 +56,16 @@ func (a *App) RevokeSession(session *model.Session) *model.AppError {
 		}
 	}
 
-	//TODO: Open
-	// a.ClearSessionCacheForUser(session.UserId)
+	a.ClearSessionCacheForUser(session.UserId)
+
+	return nil
+}
+
+func (a *App) AttachDeviceId(sessionId string, deviceId string, expiresAt int64) *model.AppError {
+	_, err := a.Srv().Store.Session().UpdateDeviceId(sessionId, deviceId, expiresAt)
+	if err != nil {
+		return model.NewAppError("AttachDeviceId", "app.session.update_device_id.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
 
 	return nil
 }

@@ -83,14 +83,14 @@ type SqlStoreStores struct {
 	command        store.CommandStore
 	commandWebhook store.CommandWebhookStore
 	preference     store.PreferenceStore
-	// license              store.LicenseStore
-	token store.TokenStore
-	// emoji                store.EmojiStore
-	status   store.StatusStore
-	fileInfo store.FileInfoStore
+	license        store.LicenseStore
+	token          store.TokenStore
+	emoji          store.EmojiStore
+	status         store.StatusStore
+	fileInfo       store.FileInfoStore
 	// uploadSession        store.UploadSessionStore
-	// reaction             store.ReactionStore
-	// job                  store.JobStore
+	reaction             store.ReactionStore
+	job                  store.JobStore
 	userAccessToken      store.UserAccessTokenStore
 	plugin               store.PluginStore
 	channelMemberHistory store.ChannelMemberHistoryStore
@@ -143,21 +143,21 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 	store.stores.command = newSqlCommandStore(store)
 	store.stores.commandWebhook = newSqlCommandWebhookStore(store)
 	store.stores.preference = newSqlPreferenceStore(store)
-	// store.stores.license = newSqlLicenseStore(store)
+	store.stores.license = newSqlLicenseStore(store)
 	store.stores.token = newSqlTokenStore(store)
-	// store.stores.emoji = newSqlEmojiStore(store, metrics)
+	store.stores.emoji = newSqlEmojiStore(store, metrics)
 	store.stores.status = newSqlStatusStore(store)
 	store.stores.fileInfo = newSqlFileInfoStore(store, metrics)
 	// store.stores.uploadSession = newSqlUploadSessionStore(store)
 	store.stores.thread = newSqlThreadStore(store)
-	// store.stores.job = newSqlJobStore(store)
+	store.stores.job = newSqlJobStore(store)
 	store.stores.userAccessToken = newSqlUserAccessTokenStore(store)
 	store.stores.channelMemberHistory = newSqlChannelMemberHistoryStore(store)
 	store.stores.plugin = newSqlPluginStore(store)
 	// store.stores.TermsOfService = newSqlTermsOfServiceStore(store, metrics)
 	// store.stores.UserTermsOfService = newSqlUserTermsOfServiceStore(store)
 	// store.stores.linkMetadata = newSqlLinkMetadataStore(store)
-	// store.stores.reaction = newSqlReactionStore(store)
+	store.stores.reaction = newSqlReactionStore(store)
 	store.stores.role = newSqlRoleStore(store)
 	store.stores.scheme = newSqlSchemeStore(store)
 	store.stores.group = newSqlGroupStore(store)
@@ -307,6 +307,23 @@ func (ss *SqlStore) GetReplica() *gorp.DbMap {
 	return ss.replicas[rrNum]
 }
 
+// RecycleDBConnections closes active connections by setting the max conn lifetime
+// to d, and then resets them back to their original duration.
+func (ss *SqlStore) RecycleDBConnections(d time.Duration) {
+	// Get old time.
+	originalDuration := time.Duration(*ss.settings.ConnMaxLifetimeMilliseconds) * time.Millisecond
+	// Set the max lifetimes for all connections.
+	for _, conn := range ss.GetAllConns() {
+		conn.Db.SetConnMaxLifetime(d)
+	}
+	// Wait for that period with an additional 2 seconds of scheduling delay.
+	time.Sleep(d + 2*time.Second)
+	// Reset max lifetime back to original value.
+	for _, conn := range ss.GetAllConns() {
+		conn.Db.SetConnMaxLifetime(originalDuration)
+	}
+}
+
 func (ss *SqlStore) Close() {
 	ss.master.Db.Close()
 	for _, replica := range ss.replicas {
@@ -355,6 +372,10 @@ func (ss *SqlStore) Thread() store.ThreadStore {
 	return ss.stores.thread
 }
 
+func (ss *SqlStore) Job() store.JobStore {
+	return ss.stores.job
+}
+
 func (ss *SqlStore) User() store.UserStore {
 	return ss.stores.user
 }
@@ -385,6 +406,10 @@ func (ss *SqlStore) Status() store.StatusStore {
 
 func (ss *SqlStore) FileInfo() store.FileInfoStore {
 	return ss.stores.fileInfo
+}
+
+func (ss *SqlStore) Reaction() store.ReactionStore {
+	return ss.stores.reaction
 }
 
 func (ss *SqlStore) Team() store.TeamStore {
@@ -419,8 +444,16 @@ func (ss *SqlStore) Plugin() store.PluginStore {
 	return ss.stores.plugin
 }
 
+func (ss *SqlStore) License() store.LicenseStore {
+	return ss.stores.license
+}
+
 func (ss *SqlStore) Token() store.TokenStore {
 	return ss.stores.token
+}
+
+func (ss *SqlStore) Emoji() store.EmojiStore {
+	return ss.stores.emoji
 }
 
 func (ss *SqlStore) Preference() store.PreferenceStore {
@@ -721,4 +754,170 @@ func (ss *SqlStore) RemoveIndexIfExists(indexName string, tableName string) bool
 	}
 
 	return true
+}
+
+func (ss *SqlStore) CreateColumnIfNotExistsNoDefault(tableName string, columnName string, mySqlColType string, postgresColType string) bool {
+
+	if ss.DoesColumnExist(tableName, columnName) {
+		return false
+	}
+
+	if ss.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := ss.GetMaster().ExecNoTimeout("ALTER TABLE " + tableName + " ADD " + columnName + " " + postgresColType)
+		if err != nil {
+			mlog.Critical("Failed to create column", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_CREATE_COLUMN_POSTGRES)
+		}
+
+		return true
+
+	} else if ss.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		_, err := ss.GetMaster().ExecNoTimeout("ALTER TABLE " + tableName + " ADD " + columnName + " " + mySqlColType)
+		if err != nil {
+			mlog.Critical("Failed to create column", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_CREATE_COLUMN_MYSQL)
+		}
+
+		return true
+
+	} else {
+		mlog.Critical("Failed to create column because of missing driver")
+		time.Sleep(time.Second)
+		os.Exit(EXIT_CREATE_COLUMN_MISSING)
+		return false
+	}
+}
+
+func (ss *SqlStore) RemoveColumnIfExists(tableName string, columnName string) bool {
+
+	if !ss.DoesColumnExist(tableName, columnName) {
+		return false
+	}
+
+	_, err := ss.GetMaster().ExecNoTimeout("ALTER TABLE " + tableName + " DROP COLUMN " + columnName)
+	if err != nil {
+		mlog.Critical("Failed to drop column", mlog.Err(err))
+		time.Sleep(time.Second)
+		os.Exit(EXIT_REMOVE_COLUMN)
+	}
+
+	return true
+}
+
+func (ss *SqlStore) DoesColumnExist(tableName string, columnName string) bool {
+	if ss.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		count, err := ss.GetMaster().SelectInt(
+			`SELECT COUNT(0)
+			FROM   pg_attribute
+			WHERE  attrelid = $1::regclass
+			AND    attname = $2
+			AND    NOT attisdropped`,
+			strings.ToLower(tableName),
+			strings.ToLower(columnName),
+		)
+
+		if err != nil {
+			if err.Error() == "pq: relation \""+strings.ToLower(tableName)+"\" does not exist" {
+				return false
+			}
+
+			mlog.Critical("Failed to check if column exists", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_DOES_COLUMN_EXISTS_POSTGRES)
+		}
+
+		return count > 0
+
+	} else if ss.DriverName() == model.DATABASE_DRIVER_MYSQL {
+
+		count, err := ss.GetMaster().SelectInt(
+			`SELECT
+		    COUNT(0) AS column_exists
+		FROM
+		    information_schema.COLUMNS
+		WHERE
+		    TABLE_SCHEMA = DATABASE()
+		        AND TABLE_NAME = ?
+		        AND COLUMN_NAME = ?`,
+			tableName,
+			columnName,
+		)
+
+		if err != nil {
+			mlog.Critical("Failed to check if column exists", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_DOES_COLUMN_EXISTS_MYSQL)
+		}
+
+		return count > 0
+
+	} else if ss.DriverName() == model.DATABASE_DRIVER_SQLITE {
+		count, err := ss.GetMaster().SelectInt(
+			`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`,
+			tableName,
+			columnName,
+		)
+
+		if err != nil {
+			mlog.Critical("Failed to check if column exists", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_DOES_COLUMN_EXISTS_SQLITE)
+		}
+
+		return count > 0
+
+	} else {
+		mlog.Critical("Failed to check if column exists because of missing driver")
+		time.Sleep(time.Second)
+		os.Exit(EXIT_DOES_COLUMN_EXISTS_MISSING)
+		return false
+	}
+}
+
+func (ss *SqlStore) DoesTriggerExist(triggerName string) bool {
+	if ss.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		count, err := ss.GetMaster().SelectInt(`
+			SELECT
+				COUNT(0)
+			FROM
+				pg_trigger
+			WHERE
+				tgname = $1
+		`, triggerName)
+
+		if err != nil {
+			mlog.Critical("Failed to check if trigger exists", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_GENERIC_FAILURE)
+		}
+
+		return count > 0
+
+	} else if ss.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		count, err := ss.GetMaster().SelectInt(`
+			SELECT
+				COUNT(0)
+			FROM
+				information_schema.triggers
+			WHERE
+				trigger_schema = DATABASE()
+			AND	trigger_name = ?
+		`, triggerName)
+
+		if err != nil {
+			mlog.Critical("Failed to check if trigger exists", mlog.Err(err))
+			time.Sleep(time.Second)
+			os.Exit(EXIT_GENERIC_FAILURE)
+		}
+
+		return count > 0
+
+	} else {
+		mlog.Critical("Failed to check if column exists because of missing driver")
+		time.Sleep(time.Second)
+		os.Exit(EXIT_GENERIC_FAILURE)
+		return false
+	}
 }

@@ -1,35 +1,45 @@
 package app
 
 import (
+	"github.com/masterhung0112/hk_server/services/searchengine/bleveengine"
+	"github.com/masterhung0112/hk_server/services/searchengine"
 	"context"
 	"fmt"
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/services/filesstore"
-	"github.com/masterhung0112/hk_server/services/httpservice"
+	"hash/maphash"
 	"net"
 	"net/http"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/einterfaces"
+	"github.com/masterhung0112/hk_server/jobs"
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/plugin"
+	"github.com/masterhung0112/hk_server/services/cache"
+	"github.com/masterhung0112/hk_server/services/filesstore"
+	"github.com/masterhung0112/hk_server/services/httpservice"
+	"github.com/masterhung0112/hk_server/services/imageproxy"
+	"github.com/masterhung0112/hk_server/services/timezones"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/masterhung0112/hk_server/store/sqlstore"
 	"github.com/masterhung0112/hk_server/utils"
-	"github.com/pkg/errors"
 )
 
 type Server struct {
-	newStore    func() store.Store
-	sqlStore    *sqlstore.SqlStore
-	Store       store.Store
-	configStore config.Store
+	newStore func() store.Store
+	sqlStore *sqlstore.SqlStore
+	Store    store.Store
 
-	licenseValue atomic.Value
+	configStore *config.Store
 
 	didFinishListen chan struct{}
 
@@ -58,18 +68,75 @@ type Server struct {
 
 	AppInitializedOnce sync.Once
 
-	phase2PermissionsMigrationComplete bool
+  phase2PermissionsMigrationComplete bool
 
-	Cluster einterfaces.ClusterInterface
-	Metrics einterfaces.MetricsInterface
+  SearchEngine *searchengine.Broker
+
+	AccountMigration einterfaces.AccountMigrationInterface
+	Cluster          einterfaces.ClusterInterface
+	Compliance       einterfaces.ComplianceInterface
+	DataRetention    einterfaces.DataRetentionInterface
+	Ldap             einterfaces.LdapInterface
+	MessageExport    einterfaces.MessageExportInterface
+	Cloud            einterfaces.CloudInterface
+	Metrics          einterfaces.MetricsInterface
+	Notification     einterfaces.NotificationInterface
+	Saml             einterfaces.SamlInterface
 
 	HTTPService httpservice.HTTPService
 
-	Log *mlog.Logger
+	Log              *mlog.Logger
+	NotificationsLog *mlog.Logger
 
 	PluginsEnvironment     *plugin.Environment
 	PluginConfigListenerId string
 	PluginsLock            sync.RWMutex
+
+	EmailService        *EmailService
+	htmlTemplateWatcher *utils.HTMLTemplateWatcher
+
+	hubs     []*Hub
+	hashSeed maphash.Seed
+
+	PushNotificationsHub   PushNotificationsHub
+	pushNotificationClient *http.Client // TODO: move this to it's own package
+
+	runjobs bool
+	Jobs    *jobs.JobServer
+
+	licenseValue       atomic.Value
+	clientLicenseValue atomic.Value
+	licenseListeners   map[string]func(*model.License, *model.License)
+
+	timezones *timezones.Timezones
+
+	sessionCache            cache.Cache
+	seenPendingPostIdsCache cache.Cache
+	statusCache             cache.Cache
+	configListenerId        string
+	licenseListenerId       string
+	logListenerId           string
+	clusterLeaderListenerId string
+	searchConfigListenerId  string
+	searchLicenseListenerId string
+	loggerLicenseListenerId string
+
+	Busy *Busy
+
+	pluginCommands     []*PluginCommand
+	pluginCommandsLock sync.RWMutex
+
+	advancedLogListenerCleanup func()
+
+	ImageProxy *imageproxy.ImageProxy
+
+  CacheProvider cache.Provider
+
+  // These are used to prevent concurrent upload requests
+	// for a given upload session which could cause inconsistencies
+	// and data corruption.
+	uploadLockMapMut sync.Mutex
+	uploadLockMap    map[string]bool
 }
 
 // Global app options that should be applied to apps created by this server
@@ -161,7 +228,9 @@ func NewServer(options ...Option) (*Server, error) {
 
 	// Create Server instance
 	s := &Server{
-		RootRouter: rootRouter,
+		RootRouter:       rootRouter,
+    licenseListeners: map[string]func(*model.License, *model.License){},
+    uploadLockMap:       map[string]bool{},
 	}
 
 	if err := s.initLogging(); err != nil {
@@ -178,7 +247,11 @@ func NewServer(options ...Option) (*Server, error) {
 
 	// Read config from config.json file
 	if s.configStore == nil {
-		configStore, err := config.NewFileStore("config.json", true)
+		innerStore, err := config.NewFileStore("config.json", true)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load config")
+		}
+		configStore, err := config.NewStoreFromBacking(innerStore, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load config")
 		}
@@ -187,13 +260,57 @@ func NewServer(options ...Option) (*Server, error) {
 	}
 
 	s.HTTPService = httpservice.MakeHTTPService(s)
-	// s.pushNotificationClient = s.HTTPService.MakeClient(true)
+	s.pushNotificationClient = s.HTTPService.MakeClient(true)
 
-	// s.ImageProxy = imageproxy.MakeImageProxy(s, s.HTTPService, s.Log)
+  s.ImageProxy = imageproxy.MakeImageProxy(s, s.HTTPService, s.Log)
+
+  searchEngine := searchengine.NewBroker(s.Config(), s.Jobs)
+	bleveEngine := bleveengine.NewBleveEngine(s.Config(), s.Jobs)
+	if err := bleveEngine.Start(); err != nil {
+		return nil, err
+	}
+	searchEngine.RegisterBleveEngine(bleveEngine)
+	s.SearchEngine = searchEngine
+
+	// at the moment we only have this implementation
+	// in the future the cache provider will be built based on the loaded config
+	s.CacheProvider = cache.NewProvider()
+	if err := s.CacheProvider.Connect(); err != nil {
+		return nil, errors.Wrapf(err, "Unable to connect to cache provider")
+	}
+
+	var err error
+	if s.sessionCache, err = s.CacheProvider.NewCache(&cache.CacheOptions{
+		Size:           model.SESSION_CACHE_SIZE,
+		Striped:        true,
+		StripedBuckets: maxInt(runtime.NumCPU()-1, 1),
+	}); err != nil {
+		return nil, errors.Wrap(err, "Unable to create session cache")
+	}
+	if s.seenPendingPostIdsCache, err = s.CacheProvider.NewCache(&cache.CacheOptions{
+		Size: PENDING_POST_IDS_CACHE_SIZE,
+	}); err != nil {
+		return nil, errors.Wrap(err, "Unable to create pending post ids cache")
+	}
+	if s.statusCache, err = s.CacheProvider.NewCache(&cache.CacheOptions{
+		Size:           model.STATUS_CACHE_SIZE,
+		Striped:        true,
+		StripedBuckets: maxInt(runtime.NumCPU()-1, 1),
+	}); err != nil {
+		return nil, errors.Wrap(err, "Unable to create status cache")
+	}
+
+	s.createPushNotificationsHub()
 
 	// Prepare the translation file
 	if err := utils.TranslationsPreInit(); err != nil {
 		return nil, errors.Wrapf(err, "unable to load Mattermost translation files")
+	}
+
+	if htmlTemplateWatcher, err2 := utils.NewHTMLTemplateWatcher("templates"); err2 != nil {
+		mlog.Error("Failed to parse server templates", mlog.Err(err2))
+	} else {
+		s.htmlTemplateWatcher = htmlTemplateWatcher
 	}
 
 	if s.newStore == nil {
@@ -204,6 +321,12 @@ func NewServer(options ...Option) (*Server, error) {
 	}
 
 	s.Store = s.newStore()
+
+	emailService, err := NewEmailService(s)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to initialize email service")
+	}
+	s.EmailService = emailService
 
 	if err := s.ensureInstallationDate(); err != nil {
 		return nil, errors.Wrapf(err, "unable to ensure installation date")
@@ -229,6 +352,8 @@ func NewServer(options ...Option) (*Server, error) {
 func (s *Server) Start() error {
 
 	var handler http.Handler = s.RootRouter
+
+	s.Busy = NewBusy(s.Cluster)
 
 	// Set HTTP handler of gozilla
 	s.Server = &http.Server{
@@ -274,6 +399,15 @@ func (s *Server) Shutdown() error {
 	mlog.Info("Stopping Server...")
 
 	s.StopHttpServer()
+
+	if s.htmlTemplateWatcher != nil {
+		s.htmlTemplateWatcher.Close()
+	}
+
+	if s.advancedLogListenerCleanup != nil {
+		s.advancedLogListenerCleanup()
+		s.advancedLogListenerCleanup = nil
+	}
 
 	if s.Store != nil {
 		s.Store.Close()
@@ -336,7 +470,42 @@ func (s *Server) Go(f func()) {
 
 func (s *Server) FileBackend() (filesstore.FileBackend, *model.AppError) {
 	license := s.License()
-	return filesstore.NewFileBackend(&s.Config().FileSettings, license != nil && *license.Features.Compliance)
+	backend, err := filesstore.NewFileBackend(&s.Config().FileSettings, license != nil && *license.Features.Compliance)
+	if err != nil {
+		return nil, model.NewAppError("FileBackend", "api.file.no_driver.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	return backend, nil
+}
+
+func (s *Server) initJobs() {
+	s.Jobs = jobs.NewJobServer(s, s.Store)
+	if jobsDataRetentionJobInterface != nil {
+		s.Jobs.DataRetentionJob = jobsDataRetentionJobInterface(s)
+	}
+	if jobsMessageExportJobInterface != nil {
+		s.Jobs.MessageExportJob = jobsMessageExportJobInterface(s)
+	}
+	if jobsElasticsearchAggregatorInterface != nil {
+		s.Jobs.ElasticsearchAggregator = jobsElasticsearchAggregatorInterface(s)
+	}
+	if jobsElasticsearchIndexerInterface != nil {
+		s.Jobs.ElasticsearchIndexer = jobsElasticsearchIndexerInterface(s)
+	}
+	if jobsBleveIndexerInterface != nil {
+		s.Jobs.BleveIndexer = jobsBleveIndexerInterface(s)
+	}
+	if jobsMigrationsInterface != nil {
+		s.Jobs.Migrations = jobsMigrationsInterface(s)
+	}
+}
+
+func (s *Server) TelemetryId() string {
+	return ""
+	//TODO: Open
+	// if s.telemetryService == nil {
+	// 	return ""
+	// }
+	// return s.telemetryService.TelemetryID
 }
 
 func (s *Server) HttpService() httpservice.HTTPService {
@@ -345,4 +514,11 @@ func (s *Server) HttpService() httpservice.HTTPService {
 
 func (s *Server) SetLog(l *mlog.Logger) {
 	s.Log = l
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

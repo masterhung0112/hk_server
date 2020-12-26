@@ -104,6 +104,38 @@ func (_m *Store) DropAllTables() {
 	_m.Called()
 }
 
+// Emoji provides a mock function with given fields:
+func (_m *Store) Emoji() store.EmojiStore {
+	ret := _m.Called()
+
+	var r0 store.EmojiStore
+	if rf, ok := ret.Get(0).(func() store.EmojiStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.EmojiStore)
+		}
+	}
+
+	return r0
+}
+
+// FileInfo provides a mock function with given fields:
+func (_m *Store) FileInfo() store.FileInfoStore {
+	ret := _m.Called()
+
+	var r0 store.FileInfoStore
+	if rf, ok := ret.Get(0).(func() store.FileInfoStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.FileInfoStore)
+		}
+	}
+
+	return r0
+}
+
 // Group provides a mock function with given fields:
 func (_m *Store) Group() store.GroupStore {
 	ret := _m.Called()
@@ -114,6 +146,22 @@ func (_m *Store) Group() store.GroupStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.GroupStore)
+		}
+	}
+
+	return r0
+}
+
+// License provides a mock function with given fields:
+func (_m *Store) License() store.LicenseStore {
+	ret := _m.Called()
+
+	var r0 store.LicenseStore
+	if rf, ok := ret.Get(0).(func() store.LicenseStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.LicenseStore)
 		}
 	}
 
@@ -172,6 +220,22 @@ func (_m *Store) Preference() store.PreferenceStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.PreferenceStore)
+		}
+	}
+
+	return r0
+}
+
+// Reaction provides a mock function with given fields:
+func (_m *Store) Reaction() store.ReactionStore {
+	ret := _m.Called()
+
+	var r0 store.ReactionStore
+	if rf, ok := ret.Get(0).(func() store.ReactionStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.ReactionStore)
 		}
 	}
 

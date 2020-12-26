@@ -5,13 +5,16 @@ import (
 	"net/http"
 
 	"github.com/masterhung0112/hk_server/app"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 )
 
 type Context struct {
-	App    *app.App
-	Err    *model.AppError
-	Params *Params
+	App           *app.App
+	Log           *mlog.Logger
+	Err           *model.AppError
+	Params        *Params
+	siteURLHeader string
 }
 
 func NewInvalidParamError(parameter string) *model.AppError {
