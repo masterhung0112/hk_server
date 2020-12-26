@@ -2,8 +2,8 @@ package filesstore
 
 import (
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/pkg/errors"
 	"io"
-	"net/http"
 )
 
 type ReadCloseSeeker interface {
@@ -12,32 +12,34 @@ type ReadCloseSeeker interface {
 }
 
 type FileBackend interface {
-	TestConnection() *model.AppError
-	WriteFile(fr io.Reader, path string) (int64, *model.AppError)
-	RemoveFile(path string) *model.AppError
-	Reader(path string) (ReadCloseSeeker, *model.AppError)
-	ReadFile(path string) ([]byte, *model.AppError)
+	TestConnection() error
+
+	Reader(path string) (ReadCloseSeeker, error)
+	ReadFile(path string) ([]byte, error)
+	FileExists(path string) (bool, error)
+	FileSize(path string) (int64, error)
+	CopyFile(oldPath, newPath string) error
+	MoveFile(oldPath, newPath string) error
+	WriteFile(fr io.Reader, path string) (int64, error)
+	AppendFile(fr io.Reader, path string) (int64, error)
+	RemoveFile(path string) error
+
+	ListDirectory(path string) (*[]string, error)
+	RemoveDirectory(path string) error
 }
 
-func NewFileBackend(settings *model.FileSettings, enableComplianceFeatures bool) (FileBackend, *model.AppError) {
+func NewFileBackend(settings *model.FileSettings, enableComplianceFeatures bool) (FileBackend, error) {
 	switch *settings.DriverName {
 	case model.IMAGE_DRIVER_S3:
-		return &S3FileBackend{
-			endpoint:   *settings.S3Endpoint,
-			accessKey:  *settings.S3AccessKeyId,
-			secretKey:  *settings.S3SecretAccessKey,
-			secure:     settings.S3SSL == nil || *settings.S3SSL,
-			signV2:     settings.S3SignV2 != nil && *settings.S3SignV2,
-			region:     *settings.S3Region,
-			trace:      settings.S3Trace != nil && *settings.S3Trace,
-			bucket:     *settings.S3Bucket,
-			pathPrefix: *settings.S3PathPrefix,
-			encrypt:    settings.S3SSE != nil && *settings.S3SSE && enableComplianceFeatures,
-		}, nil
+		backend, err := NewS3FileBackend(settings, enableComplianceFeatures)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to connect to the s3 backend")
+		}
+		return backend, nil
 	case model.IMAGE_DRIVER_LOCAL:
 		return &LocalFileBackend{
 			directory: *settings.Directory,
 		}, nil
 	}
-	return nil, model.NewAppError("NewFileBackend", "api.file.no_driver.app_error", nil, "", http.StatusInternalServerError)
+	return nil, errors.New("no valid filestorage driver found")
 }

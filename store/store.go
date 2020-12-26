@@ -25,6 +25,7 @@ type Store interface {
 	Command() CommandStore
 	CommandWebhook() CommandWebhookStore
 	Status() StatusStore
+	FileInfo() FileInfoStore
 	Role() RoleStore
 	Scheme() SchemeStore
 	Session() SessionStore
@@ -251,6 +252,24 @@ type StatusStore interface {
 	ResetAll() error
 	GetTotalActiveUsersCount() (int64, error)
 	UpdateLastActivityAt(userId string, lastActivityAt int64) error
+}
+
+type FileInfoStore interface {
+	Save(info *model.FileInfo) (*model.FileInfo, error)
+	Upsert(info *model.FileInfo) (*model.FileInfo, error)
+	Get(id string) (*model.FileInfo, error)
+	GetByPath(path string) (*model.FileInfo, error)
+	GetForPost(postId string, readFromMaster, includeDeleted, allowFromCache bool) ([]*model.FileInfo, error)
+	GetForUser(userId string) ([]*model.FileInfo, error)
+	GetWithOptions(page, perPage int, opt *model.GetFileInfosOptions) ([]*model.FileInfo, error)
+	InvalidateFileInfosForPostCache(postId string, deleted bool)
+	AttachToPost(fileId string, postId string, creatorId string) error
+	DeleteForPost(postId string) (string, error)
+	PermanentDelete(fileId string) error
+	PermanentDeleteBatch(endTime int64, limit int64) (int64, error)
+	PermanentDeleteByUser(userId string) (int64, error)
+	SetContent(fileId, content string) error
+	ClearCaches()
 }
 
 type RoleStore interface {

@@ -86,8 +86,8 @@ type SqlStoreStores struct {
 	// license              store.LicenseStore
 	token store.TokenStore
 	// emoji                store.EmojiStore
-	status store.StatusStore
-	// fileInfo             store.FileInfoStore
+	status   store.StatusStore
+	fileInfo store.FileInfoStore
 	// uploadSession        store.UploadSessionStore
 	// reaction             store.ReactionStore
 	// job                  store.JobStore
@@ -147,7 +147,7 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 	store.stores.token = newSqlTokenStore(store)
 	// store.stores.emoji = newSqlEmojiStore(store, metrics)
 	store.stores.status = newSqlStatusStore(store)
-	// store.stores.fileInfo = newSqlFileInfoStore(store, metrics)
+	store.stores.fileInfo = newSqlFileInfoStore(store, metrics)
 	// store.stores.uploadSession = newSqlUploadSessionStore(store)
 	store.stores.thread = newSqlThreadStore(store)
 	// store.stores.job = newSqlJobStore(store)
@@ -381,6 +381,10 @@ func (ss *SqlStore) CommandWebhook() store.CommandWebhookStore {
 
 func (ss *SqlStore) Status() store.StatusStore {
 	return ss.stores.status
+}
+
+func (ss *SqlStore) FileInfo() store.FileInfoStore {
+	return ss.stores.fileInfo
 }
 
 func (ss *SqlStore) Team() store.TeamStore {
