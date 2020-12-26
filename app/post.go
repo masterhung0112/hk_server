@@ -429,3 +429,137 @@ func (a *App) SendEphemeralPost(userId string, post *model.Post) *model.Post {
 
 	return post
 }
+
+// countThreadMentions returns the number of times the user is mentioned in a specified thread after the timestamp.
+func (a *App) countThreadMentions(user *model.User, post *model.Post, teamId string, timestamp int64) (int64, *model.AppError) {
+	team, err := a.GetTeam(teamId)
+	if err != nil {
+		return 0, err
+	}
+	channel, err := a.GetChannel(post.ChannelId)
+	if err != nil {
+		return 0, err
+	}
+
+	keywords := addMentionKeywordsForUser(
+		map[string][]string{},
+		user,
+		map[string]string{},
+		&model.Status{Status: model.STATUS_ONLINE}, // Assume the user is online since they would've triggered this
+		true, // Assume channel mentions are always allowed for simplicity
+	)
+
+	posts, nErr := a.Srv().Store.Thread().GetPosts(post.Id, timestamp)
+	if nErr != nil {
+		return 0, model.NewAppError("countMentionsFromPost", "app.channel.count_posts_since.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+	}
+
+	count := 0
+
+	if channel.Type == model.CHANNEL_DIRECT {
+		// In a DM channel, every post made by the other user is a mention
+		otherId := channel.GetOtherUserIdForDM(user.Id)
+		for _, p := range posts {
+			if p.UserId == otherId {
+				count++
+			}
+		}
+
+		return int64(count), nil
+	}
+
+	groups, nErr := a.getGroupsAllowedForReferenceInChannel(channel, team)
+	if nErr != nil {
+		return 0, model.NewAppError("countMentionsFromPost", "app.channel.count_posts_since.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+	}
+
+	mentions := getExplicitMentions(post, keywords, groups)
+	if _, ok := mentions.Mentions[user.Id]; ok {
+		count += 1
+	}
+
+	for _, p := range posts {
+		mentions = getExplicitMentions(p, keywords, groups)
+		if _, ok := mentions.Mentions[user.Id]; ok {
+			count += 1
+		}
+	}
+
+	return int64(count), nil
+}
+
+// countMentionsFromPost returns the number of posts in the post's channel that mention the user after and including the
+// given post.
+func (a *App) countMentionsFromPost(user *model.User, post *model.Post) (int, *model.AppError) {
+	channel, err := a.GetChannel(post.ChannelId)
+	if err != nil {
+		return 0, err
+	}
+
+	if channel.Type == model.CHANNEL_DIRECT {
+		// In a DM channel, every post made by the other user is a mention
+		count, nErr := a.Srv().Store.Channel().CountPostsAfter(post.ChannelId, post.CreateAt-1, channel.GetOtherUserIdForDM(user.Id))
+		if nErr != nil {
+			return 0, model.NewAppError("countMentionsFromPost", "app.channel.count_posts_since.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+
+		return count, nil
+	}
+
+	channelMember, err := a.GetChannelMember(channel.Id, user.Id)
+	if err != nil {
+		return 0, err
+	}
+
+	keywords := addMentionKeywordsForUser(
+		map[string][]string{},
+		user,
+		channelMember.NotifyProps,
+		&model.Status{Status: model.STATUS_ONLINE}, // Assume the user is online since they would've triggered this
+		true, // Assume channel mentions are always allowed for simplicity
+	)
+	commentMentions := user.NotifyProps[model.COMMENTS_NOTIFY_PROP]
+	checkForCommentMentions := commentMentions == model.COMMENTS_NOTIFY_ROOT || commentMentions == model.COMMENTS_NOTIFY_ANY
+
+	// A mapping of thread root IDs to whether or not a post in that thread mentions the user
+	mentionedByThread := make(map[string]bool)
+
+	thread, err := a.GetPostThread(post.Id, false)
+	if err != nil {
+		return 0, err
+	}
+
+	count := 0
+
+	if isPostMention(user, post, keywords, thread.Posts, mentionedByThread, checkForCommentMentions) {
+		count += 1
+	}
+
+	page := 0
+	perPage := 200
+	for {
+		postList, err := a.GetPostsAfterPost(model.GetPostsOptions{
+			ChannelId: post.ChannelId,
+			PostId:    post.Id,
+			Page:      page,
+			PerPage:   perPage,
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		for _, postId := range postList.Order {
+			if isPostMention(user, postList.Posts[postId], keywords, postList.Posts, mentionedByThread, checkForCommentMentions) {
+				count += 1
+			}
+		}
+
+		if len(postList.Order) < perPage {
+			break
+		}
+
+		page += 1
+	}
+
+	return count, nil
+}

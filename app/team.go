@@ -417,3 +417,78 @@ func (a *App) sendUpdatedMemberRoleEvent(userId string, member *model.TeamMember
 	// message.Add("member", member.ToJson())
 	// a.Publish(message)
 }
+
+func (a *App) RemoveTeamMemberFromTeam(teamMember *model.TeamMember, requestorId string) *model.AppError {
+	// Send the websocket message before we actually do the remove so the user being removed gets it.
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_LEAVE_TEAM, teamMember.TeamId, "", "", nil)
+	message.Add("user_id", teamMember.UserId)
+	message.Add("team_id", teamMember.TeamId)
+	a.Publish(message)
+
+	user, nErr := a.Srv().Store.User().Get(teamMember.UserId)
+	if nErr != nil {
+		var nfErr *store.ErrNotFound
+		switch {
+		case errors.As(nErr, &nfErr):
+			return model.NewAppError("RemoveTeamMemberFromTeam", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+		default:
+			return model.NewAppError("RemoveTeamMemberFromTeam", "app.user.get.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	teamMember.Roles = ""
+	teamMember.DeleteAt = model.GetMillis()
+
+	if _, nErr := a.Srv().Store.Team().UpdateMember(teamMember); nErr != nil {
+		var appErr *model.AppError
+		switch {
+		case errors.As(nErr, &appErr):
+			return appErr
+		default:
+			return model.NewAppError("RemoveTeamMemberFromTeam", "app.team.save_member.save.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
+		var actor *model.User
+		if requestorId != "" {
+			actor, _ = a.GetUser(requestorId)
+		}
+
+		a.Srv().Go(func() {
+			pluginContext := a.PluginContext()
+			pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
+				hooks.UserHasLeftTeam(pluginContext, teamMember, actor)
+				return true
+			}, plugin.UserHasLeftTeamId)
+		})
+	}
+
+	if _, err := a.Srv().Store.User().UpdateUpdateAt(user.Id); err != nil {
+		return model.NewAppError("RemoveTeamMemberFromTeam", "app.user.update_update.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	if err := a.Srv().Store.Channel().ClearSidebarOnTeamLeave(user.Id, teamMember.TeamId); err != nil {
+		return model.NewAppError("RemoveTeamMemberFromTeam", "app.channel.sidebar_categories.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	// delete the preferences that set the last channel used in the team and other team specific preferences
+	if err := a.Srv().Store.Preference().DeleteCategory(user.Id, teamMember.TeamId); err != nil {
+		return model.NewAppError("RemoveTeamMemberFromTeam", "app.preference.delete.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	a.ClearSessionCacheForUser(user.Id)
+	a.InvalidateCacheForUser(user.Id)
+	a.invalidateCacheForUserTeams(user.Id)
+
+	return nil
+}
+
+func (a *App) GetTeamMembersByIds(teamId string, userIds []string, restrictions *model.ViewUsersRestrictions) ([]*model.TeamMember, *model.AppError) {
+	teamMembers, err := a.Srv().Store.Team().GetMembersByIds(teamId, userIds, restrictions)
+	if err != nil {
+		return nil, model.NewAppError("GetTeamMembersByIds", "app.team.get_members_by_ids.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return teamMembers, nil
+}

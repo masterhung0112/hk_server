@@ -78,11 +78,11 @@ type SqlStoreStores struct {
 	// compliance           store.ComplianceStore
 	session store.SessionStore
 	// oauth                store.OAuthStore
-	system store.SystemStore
-	// webhook              store.WebhookStore
-	// command              store.CommandStore
-	// commandWebhook       store.CommandWebhookStore
-	preference store.PreferenceStore
+	system         store.SystemStore
+	webhook        store.WebhookStore
+	command        store.CommandStore
+	commandWebhook store.CommandWebhookStore
+	preference     store.PreferenceStore
 	// license              store.LicenseStore
 	token store.TokenStore
 	// emoji                store.EmojiStore
@@ -91,11 +91,11 @@ type SqlStoreStores struct {
 	// uploadSession        store.UploadSessionStore
 	// reaction             store.ReactionStore
 	// job                  store.JobStore
-	userAccessToken store.UserAccessTokenStore
-	// plugin               store.PluginStore
-	// channelMemberHistory store.ChannelMemberHistoryStore
-	role   store.RoleStore
-	scheme store.SchemeStore
+	userAccessToken      store.UserAccessTokenStore
+	plugin               store.PluginStore
+	channelMemberHistory store.ChannelMemberHistoryStore
+	role                 store.RoleStore
+	scheme               store.SchemeStore
 	// TermsOfService       store.TermsOfServiceStore
 	// productNotices       store.ProductNoticesStore
 	group store.GroupStore
@@ -139,9 +139,9 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 	store.stores.session = newSqlSessionStore(store)
 	// store.stores.oauth = newSqlOAuthStore(store)
 	store.stores.system = newSqlSystemStore(store)
-	// store.stores.webhook = newSqlWebhookStore(store, metrics)
-	// store.stores.command = newSqlCommandStore(store)
-	// store.stores.commandWebhook = newSqlCommandWebhookStore(store)
+	store.stores.webhook = newSqlWebhookStore(store, metrics)
+	store.stores.command = newSqlCommandStore(store)
+	store.stores.commandWebhook = newSqlCommandWebhookStore(store)
 	store.stores.preference = newSqlPreferenceStore(store)
 	// store.stores.license = newSqlLicenseStore(store)
 	store.stores.token = newSqlTokenStore(store)
@@ -152,8 +152,8 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 	store.stores.thread = newSqlThreadStore(store)
 	// store.stores.job = newSqlJobStore(store)
 	store.stores.userAccessToken = newSqlUserAccessTokenStore(store)
-	// store.stores.channelMemberHistory = newSqlChannelMemberHistoryStore(store)
-	// store.stores.plugin = newSqlPluginStore(store)
+	store.stores.channelMemberHistory = newSqlChannelMemberHistoryStore(store)
+	store.stores.plugin = newSqlPluginStore(store)
 	// store.stores.TermsOfService = newSqlTermsOfServiceStore(store, metrics)
 	// store.stores.UserTermsOfService = newSqlUserTermsOfServiceStore(store)
 	// store.stores.linkMetadata = newSqlLinkMetadataStore(store)
@@ -367,6 +367,18 @@ func (ss *SqlStore) System() store.SystemStore {
 	return ss.stores.system
 }
 
+func (ss *SqlStore) Webhook() store.WebhookStore {
+	return ss.stores.webhook
+}
+
+func (ss *SqlStore) Command() store.CommandStore {
+	return ss.stores.command
+}
+
+func (ss *SqlStore) CommandWebhook() store.CommandWebhookStore {
+	return ss.stores.commandWebhook
+}
+
 func (ss *SqlStore) Status() store.StatusStore {
 	return ss.stores.status
 }
@@ -393,6 +405,14 @@ func (ss *SqlStore) Session() store.SessionStore {
 
 func (ss *SqlStore) UserAccessToken() store.UserAccessTokenStore {
 	return ss.stores.userAccessToken
+}
+
+func (ss *SqlStore) ChannelMemberHistory() store.ChannelMemberHistoryStore {
+	return ss.stores.channelMemberHistory
+}
+
+func (ss *SqlStore) Plugin() store.PluginStore {
+	return ss.stores.plugin
 }
 
 func (ss *SqlStore) Token() store.TokenStore {

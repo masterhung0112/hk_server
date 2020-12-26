@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/masterhung0112/hk_server/einterfaces"
+	"github.com/masterhung0112/hk_server/plugin"
 	"github.com/masterhung0112/hk_server/services/filesstore"
+	"github.com/masterhung0112/hk_server/services/httpservice"
 	"net"
 	"net/http"
 	"sync"
@@ -60,6 +62,14 @@ type Server struct {
 
 	Cluster einterfaces.ClusterInterface
 	Metrics einterfaces.MetricsInterface
+
+	HTTPService httpservice.HTTPService
+
+	Log *mlog.Logger
+
+	PluginsEnvironment     *plugin.Environment
+	PluginConfigListenerId string
+	PluginsLock            sync.RWMutex
 }
 
 // Global app options that should be applied to apps created by this server
@@ -69,14 +79,96 @@ func (s *Server) AppOptions() []AppOption {
 	}
 }
 
+// initLogging initializes and configures the logger. This may be called more than once.
+func (s *Server) initLogging() error {
+	if s.Log == nil {
+		s.Log = mlog.NewLogger(utils.MloggerConfigFromLoggerConfig(&s.Config().LogSettings, utils.GetLogFileLocation))
+	}
+
+	// Use this app logger as the global logger (eventually remove all instances of global logging).
+	// This is deferred because a copy is made of the logger and it must be fully configured before
+	// the copy is made.
+	defer mlog.InitGlobalLogger(s.Log)
+
+	// Redirect default Go logger to this logger.
+	defer mlog.RedirectStdLog(s.Log)
+
+	if s.NotificationsLog == nil {
+		notificationLogSettings := utils.GetLogSettingsFromNotificationsLogSettings(&s.Config().NotificationLogSettings)
+		s.NotificationsLog = mlog.NewLogger(utils.MloggerConfigFromLoggerConfig(notificationLogSettings, utils.GetNotificationsLogFileLocation)).
+			WithCallerSkip(1).With(mlog.String("logSource", "notifications"))
+	}
+
+	if s.logListenerId != "" {
+		s.RemoveConfigListener(s.logListenerId)
+	}
+	s.logListenerId = s.AddConfigListener(func(_, after *model.Config) {
+		s.Log.ChangeLevels(utils.MloggerConfigFromLoggerConfig(&after.LogSettings, utils.GetLogFileLocation))
+
+		notificationLogSettings := utils.GetLogSettingsFromNotificationsLogSettings(&after.NotificationLogSettings)
+		s.NotificationsLog.ChangeLevels(utils.MloggerConfigFromLoggerConfig(notificationLogSettings, utils.GetNotificationsLogFileLocation))
+	})
+
+	// Configure advanced logging.
+	// Advanced logging is E20 only, however logging must be initialized before the license
+	// file is loaded.  If no valid E20 license exists then advanced logging will be
+	// shutdown once license is loaded/checked.
+	if *s.Config().LogSettings.AdvancedLoggingConfig != "" {
+		dsn := *s.Config().LogSettings.AdvancedLoggingConfig
+		isJson := config.IsJsonMap(dsn)
+
+		// If this is a file based config we need the full path so it can be watched.
+		if !isJson && strings.HasPrefix(s.configStore.String(), "file://") && !filepath.IsAbs(dsn) {
+			configPath := strings.TrimPrefix(s.configStore.String(), "file://")
+			dsn = filepath.Join(filepath.Dir(configPath), dsn)
+		}
+
+		cfg, err := config.NewLogConfigSrc(dsn, isJson, s.configStore)
+		if err != nil {
+			return fmt.Errorf("invalid advanced logging config, %w", err)
+		}
+
+		if err := s.Log.ConfigAdvancedLogging(cfg.Get()); err != nil {
+			return fmt.Errorf("error configuring advanced logging, %w", err)
+		}
+
+		if !isJson {
+			mlog.Info("Loaded advanced logging config", mlog.String("source", dsn))
+		}
+
+		listenerId := cfg.AddListener(func(_, newCfg mlog.LogTargetCfg) {
+			if err := s.Log.ConfigAdvancedLogging(newCfg); err != nil {
+				mlog.Error("Error re-configuring advanced logging", mlog.Err(err))
+			} else {
+				mlog.Info("Re-configured advanced logging")
+			}
+		})
+
+		// In case initLogging is called more than once.
+		if s.advancedLogListenerCleanup != nil {
+			s.advancedLogListenerCleanup()
+		}
+
+		s.advancedLogListenerCleanup = func() {
+			cfg.RemoveListener(listenerId)
+		}
+	}
+	return nil
+}
+
 func NewServer(options ...Option) (*Server, error) {
 	rootRouter := mux.NewRouter()
 
-	mlog.Info("Server is initializing...")
 	// Create Server instance
 	s := &Server{
 		RootRouter: rootRouter,
 	}
+
+	if err := s.initLogging(); err != nil {
+		mlog.Error(err.Error())
+	}
+
+	mlog.Info("Server is initializing...")
 
 	for _, option := range options {
 		if err := option(s); err != nil {
@@ -93,6 +185,11 @@ func NewServer(options ...Option) (*Server, error) {
 
 		s.configStore = configStore
 	}
+
+	s.HTTPService = httpservice.MakeHTTPService(s)
+	// s.pushNotificationClient = s.HTTPService.MakeClient(true)
+
+	// s.ImageProxy = imageproxy.MakeImageProxy(s, s.HTTPService, s.Log)
 
 	// Prepare the translation file
 	if err := utils.TranslationsPreInit(); err != nil {
@@ -240,4 +337,12 @@ func (s *Server) Go(f func()) {
 func (s *Server) FileBackend() (filesstore.FileBackend, *model.AppError) {
 	license := s.License()
 	return filesstore.NewFileBackend(&s.Config().FileSettings, license != nil && *license.Features.Compliance)
+}
+
+func (s *Server) HttpService() httpservice.HTTPService {
+	return s.HTTPService
+}
+
+func (s *Server) SetLog(l *mlog.Logger) {
+	s.Log = l
 }

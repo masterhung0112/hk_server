@@ -48,6 +48,7 @@ type Channel struct {
 	SchemeId         *string                `json:"scheme_id"`
 	Props            map[string]interface{} `json:"props" db:"-"`
 	GroupConstrained *bool                  `json:"group_constrained"`
+	Shared           *bool                  `json:"shared"`
 }
 
 type ChannelWithTeamData struct {
@@ -137,6 +138,69 @@ type ChannelMemberCountByGroup struct {
 	ChannelMemberTimezonesCount int64  `db:"-" json:"channel_member_timezones_count"`
 }
 
+func (o *Channel) DeepCopy() *Channel {
+	copy := *o
+	if copy.SchemeId != nil {
+		copy.SchemeId = NewString(*o.SchemeId)
+	}
+	return &copy
+}
+
+func (o *Channel) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}
+
+func (o *ChannelPatch) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}
+
+func (o *ChannelsWithCount) ToJson() []byte {
+	b, _ := json.Marshal(o)
+	return b
+}
+
+func ChannelsWithCountFromJson(data io.Reader) *ChannelsWithCount {
+	var o *ChannelsWithCount
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func ChannelFromJson(data io.Reader) *Channel {
+	var o *Channel
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func ChannelPatchFromJson(data io.Reader) *ChannelPatch {
+	var o *ChannelPatch
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func ChannelModerationsFromJson(data io.Reader) []*ChannelModeration {
+	var o []*ChannelModeration
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func ChannelModerationsPatchFromJson(data io.Reader) []*ChannelModerationPatch {
+	var o []*ChannelModerationPatch
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func ChannelMemberCountsByGroupFromJson(data io.Reader) []*ChannelMemberCountByGroup {
+	var o []*ChannelMemberCountByGroup
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func (o *Channel) Etag() string {
+	return Etag(o.Id, o.UpdateAt)
+}
+
 func (o *Channel) IsValid() *AppError {
 	if !IsValidId(o.Id) {
 		return NewAppError("Channel.IsValid", "model.channel.is_valid.id.app_error", nil, "", http.StatusBadRequest)
@@ -201,34 +265,81 @@ func (o *Channel) PreUpdate() {
 	o.DisplayName = SanitizeUnicode(o.DisplayName)
 }
 
-func (o *Channel) IsGroupConstrained() bool {
-	return o.GroupConstrained != nil && *o.GroupConstrained
-}
-
-func (o *Channel) ToJson() string {
-	b, _ := json.Marshal(o)
-	return string(b)
-}
-
-func ChannelFromJson(data io.Reader) *Channel {
-	var o *Channel
-	json.NewDecoder(data).Decode(&o)
-	return o
-}
-
 func (o *Channel) IsGroupOrDirect() bool {
 	return o.Type == CHANNEL_DIRECT || o.Type == CHANNEL_GROUP
 }
 
-func GetGroupNameFromUserIds(userIds []string) string {
-	sort.Strings(userIds)
+func (o *Channel) IsOpen() bool {
+	return o.Type == CHANNEL_OPEN
+}
 
-	h := sha1.New()
-	for _, id := range userIds {
-		io.WriteString(h, id)
+func (o *Channel) Patch(patch *ChannelPatch) {
+	if patch.DisplayName != nil {
+		o.DisplayName = *patch.DisplayName
 	}
 
-	return hex.EncodeToString(h.Sum(nil))
+	if patch.Name != nil {
+		o.Name = *patch.Name
+	}
+
+	if patch.Header != nil {
+		o.Header = *patch.Header
+	}
+
+	if patch.Purpose != nil {
+		o.Purpose = *patch.Purpose
+	}
+
+	if patch.GroupConstrained != nil {
+		o.GroupConstrained = patch.GroupConstrained
+	}
+}
+
+func (o *Channel) MakeNonNil() {
+	if o.Props == nil {
+		o.Props = make(map[string]interface{})
+	}
+}
+
+func (o *Channel) AddProp(key string, value interface{}) {
+	o.MakeNonNil()
+
+	o.Props[key] = value
+}
+
+func (o *Channel) IsGroupConstrained() bool {
+	return o.GroupConstrained != nil && *o.GroupConstrained
+}
+
+func (o *Channel) IsShared() bool {
+	return o.Shared != nil && *o.Shared
+}
+
+func (o *Channel) GetOtherUserIdForDM(userId string) string {
+	if o.Type != CHANNEL_DIRECT {
+		return ""
+	}
+
+	userIds := strings.Split(o.Name, "__")
+
+	var otherUserId string
+
+	if userIds[0] != userIds[1] {
+		if userIds[0] == userId {
+			otherUserId = userIds[1]
+		} else {
+			otherUserId = userIds[0]
+		}
+	}
+
+	return otherUserId
+}
+
+func GetDMNameFromIds(userId1, userId2 string) string {
+	if userId1 > userId2 {
+		return userId2 + "__" + userId1
+	}
+	return userId1 + "__" + userId2
 }
 
 func GetGroupDisplayNameFromUsers(users []*User, truncate bool) string {
@@ -248,10 +359,13 @@ func GetGroupDisplayNameFromUsers(users []*User, truncate bool) string {
 	return name
 }
 
-func GetDMNameFromIds(userId1, userId2 string) string {
-	if userId1 > userId2 {
-		return userId2 + "__" + userId1
-	} else {
-		return userId1 + "__" + userId2
+func GetGroupNameFromUserIds(userIds []string) string {
+	sort.Strings(userIds)
+
+	h := sha1.New()
+	for _, id := range userIds {
+		io.WriteString(h, id)
 	}
+
+	return hex.EncodeToString(h.Sum(nil))
 }

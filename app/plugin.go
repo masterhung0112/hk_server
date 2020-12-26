@@ -765,7 +765,7 @@ func (a *App) getPluginsFromFilePaths(fileStorePaths []string) map[string]*plugi
 
 	fsPrefix := ""
 	if *a.Config().FileSettings.DriverName == model.IMAGE_DRIVER_S3 {
-		ptr := a.Config().FileSettings.AmazonS3PathPrefix
+		ptr := a.Config().FileSettings.S3PathPrefix
 		if ptr != nil && *ptr != "" {
 			fsPrefix = *ptr + "/"
 		}

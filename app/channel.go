@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/plugin"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/pkg/errors"

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/masterhung0112/hk_server/einterfaces"
+	"github.com/masterhung0112/hk_server/mlog"
 	"net/http"
 	"strconv"
 
@@ -32,6 +33,13 @@ func (a *App) SetContext(c context.Context) {
 
 func (a *App) Srv() *Server {
 	return a.srv
+}
+func (a *App) Log() *mlog.Logger {
+	return a.srv.Log
+}
+
+func (a *App) Metrics() einterfaces.MetricsInterface {
+	return a.srv.Metrics
 }
 
 func (a *App) InitServer() {

@@ -21,11 +21,16 @@ type Store interface {
 	User() UserStore
 	Bot() BotStore
 	System() SystemStore
+	Webhook() WebhookStore
+	Command() CommandStore
+	CommandWebhook() CommandWebhookStore
 	Status() StatusStore
 	Role() RoleStore
 	Scheme() SchemeStore
 	Session() SessionStore
 	UserAccessToken() UserAccessTokenStore
+	ChannelMemberHistory() ChannelMemberHistoryStore
+	Plugin() PluginStore
 	Preference() PreferenceStore
 	Token() TokenStore
 	Group() GroupStore
@@ -36,24 +41,31 @@ type Store interface {
 	UnlockFromMaster()
 }
 
+type ChannelMemberHistoryStore interface {
+	LogJoinEvent(userId string, channelId string, joinTime int64) error
+	LogLeaveEvent(userId string, channelId string, leaveTime int64) error
+	GetUsersInChannelDuring(startTime int64, endTime int64, channelId string) ([]*model.ChannelMemberHistoryResult, error)
+	PermanentDeleteBatch(endTime int64, limit int64) (int64, error)
+}
+
 type ThreadStore interface {
-	// SaveMultiple(thread []*model.Thread) ([]*model.Thread, int, error)
-	// Save(thread *model.Thread) (*model.Thread, error)
+	SaveMultiple(thread []*model.Thread) ([]*model.Thread, int, error)
+	Save(thread *model.Thread) (*model.Thread, error)
 	Update(thread *model.Thread) (*model.Thread, error)
 	Get(id string) (*model.Thread, error)
-	// GetThreadsForUser(userId, teamId string, opts model.GetUserThreadsOpts) (*model.Threads, error)
-	// Delete(postId string) error
-	// GetPosts(threadId string, since int64) ([]*model.Post, error)
+	GetThreadsForUser(userId, teamId string, opts model.GetUserThreadsOpts) (*model.Threads, error)
+	Delete(postId string) error
+	GetPosts(threadId string, since int64) ([]*model.Post, error)
 
-	// MarkAllAsRead(userId, teamId string) error
-	// MarkAsRead(userId, threadId string, timestamp int64) error
+	MarkAllAsRead(userId, teamId string) error
+	MarkAsRead(userId, threadId string, timestamp int64) error
 
-	// SaveMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
-	// UpdateMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
-	// GetMembershipsForUser(userId, teamId string) ([]*model.ThreadMembership, error)
-	// GetMembershipForUser(userId, postId string) (*model.ThreadMembership, error)
-	// DeleteMembershipForUser(userId, postId string) error
-	// CreateMembershipIfNeeded(userId, postId string, following, incrementMentions, updateFollowing bool) error
+	SaveMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
+	UpdateMembership(membership *model.ThreadMembership) (*model.ThreadMembership, error)
+	GetMembershipsForUser(userId, teamId string) ([]*model.ThreadMembership, error)
+	GetMembershipForUser(userId, postId string) (*model.ThreadMembership, error)
+	DeleteMembershipForUser(userId, postId string) error
+	CreateMembershipIfNeeded(userId, postId string, following, incrementMentions, updateFollowing bool) error
 	CollectThreadsWithNewerReplies(userId string, channelIds []string, timestamp int64) ([]string, error)
 	UpdateUnreadsByChannel(userId string, changedThreads []string, timestamp int64, updateViewedTimestamp bool) error
 }
@@ -179,6 +191,57 @@ type SystemStore interface {
 	GetByName(name string) (*model.System, error)
 	PermanentDeleteByName(name string) (*model.System, error)
 	InsertIfExists(system *model.System) (*model.System, error)
+}
+
+type WebhookStore interface {
+	SaveIncoming(webhook *model.IncomingWebhook) (*model.IncomingWebhook, error)
+	GetIncoming(id string, allowFromCache bool) (*model.IncomingWebhook, error)
+	GetIncomingList(offset, limit int) ([]*model.IncomingWebhook, error)
+	GetIncomingListByUser(userId string, offset, limit int) ([]*model.IncomingWebhook, error)
+	GetIncomingByTeam(teamId string, offset, limit int) ([]*model.IncomingWebhook, error)
+	GetIncomingByTeamByUser(teamId string, userId string, offset, limit int) ([]*model.IncomingWebhook, error)
+	UpdateIncoming(webhook *model.IncomingWebhook) (*model.IncomingWebhook, error)
+	GetIncomingByChannel(channelId string) ([]*model.IncomingWebhook, error)
+	DeleteIncoming(webhookId string, time int64) error
+	PermanentDeleteIncomingByChannel(channelId string) error
+	PermanentDeleteIncomingByUser(userId string) error
+
+	SaveOutgoing(webhook *model.OutgoingWebhook) (*model.OutgoingWebhook, error)
+	GetOutgoing(id string) (*model.OutgoingWebhook, error)
+	GetOutgoingByChannel(channelId string, offset, limit int) ([]*model.OutgoingWebhook, error)
+	GetOutgoingByChannelByUser(channelId string, userId string, offset, limit int) ([]*model.OutgoingWebhook, error)
+	GetOutgoingList(offset, limit int) ([]*model.OutgoingWebhook, error)
+	GetOutgoingListByUser(userId string, offset, limit int) ([]*model.OutgoingWebhook, error)
+	GetOutgoingByTeam(teamId string, offset, limit int) ([]*model.OutgoingWebhook, error)
+	GetOutgoingByTeamByUser(teamId string, userId string, offset, limit int) ([]*model.OutgoingWebhook, error)
+	DeleteOutgoing(webhookId string, time int64) error
+	PermanentDeleteOutgoingByChannel(channelId string) error
+	PermanentDeleteOutgoingByUser(userId string) error
+	UpdateOutgoing(hook *model.OutgoingWebhook) (*model.OutgoingWebhook, error)
+
+	AnalyticsIncomingCount(teamId string) (int64, error)
+	AnalyticsOutgoingCount(teamId string) (int64, error)
+	InvalidateWebhookCache(webhook string)
+	ClearCaches()
+}
+
+type CommandStore interface {
+	Save(webhook *model.Command) (*model.Command, error)
+	GetByTrigger(teamId string, trigger string) (*model.Command, error)
+	Get(id string) (*model.Command, error)
+	GetByTeam(teamId string) ([]*model.Command, error)
+	Delete(commandId string, time int64) error
+	PermanentDeleteByTeam(teamId string) error
+	PermanentDeleteByUser(userId string) error
+	Update(hook *model.Command) (*model.Command, error)
+	AnalyticsCommandCount(teamId string) (int64, error)
+}
+
+type CommandWebhookStore interface {
+	Save(webhook *model.CommandWebhook) (*model.CommandWebhook, error)
+	Get(id string) (*model.CommandWebhook, error)
+	TryUse(id string, limit int) error
+	Cleanup()
 }
 
 type StatusStore interface {
@@ -430,6 +493,18 @@ type UserAccessTokenStore interface {
 	// Search(term string) ([]*model.UserAccessToken, error)
 	// UpdateTokenEnable(tokenId string) error
 	// UpdateTokenDisable(tokenId string) error
+}
+
+type PluginStore interface {
+	SaveOrUpdate(keyVal *model.PluginKeyValue) (*model.PluginKeyValue, error)
+	CompareAndSet(keyVal *model.PluginKeyValue, oldValue []byte) (bool, error)
+	CompareAndDelete(keyVal *model.PluginKeyValue, oldValue []byte) (bool, error)
+	SetWithOptions(pluginId string, key string, value []byte, options model.PluginKVSetOptions) (bool, error)
+	Get(pluginId, key string) (*model.PluginKeyValue, error)
+	Delete(pluginId, key string) error
+	DeleteAllForPlugin(PluginId string) error
+	DeleteAllExpired() error
+	List(pluginId string, page, perPage int) ([]string, error)
 }
 
 type TokenStore interface {

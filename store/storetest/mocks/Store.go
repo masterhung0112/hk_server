@@ -46,9 +46,57 @@ func (_m *Store) Channel() store.ChannelStore {
 	return r0
 }
 
+// ChannelMemberHistory provides a mock function with given fields:
+func (_m *Store) ChannelMemberHistory() store.ChannelMemberHistoryStore {
+	ret := _m.Called()
+
+	var r0 store.ChannelMemberHistoryStore
+	if rf, ok := ret.Get(0).(func() store.ChannelMemberHistoryStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.ChannelMemberHistoryStore)
+		}
+	}
+
+	return r0
+}
+
 // Close provides a mock function with given fields:
 func (_m *Store) Close() {
 	_m.Called()
+}
+
+// Command provides a mock function with given fields:
+func (_m *Store) Command() store.CommandStore {
+	ret := _m.Called()
+
+	var r0 store.CommandStore
+	if rf, ok := ret.Get(0).(func() store.CommandStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.CommandStore)
+		}
+	}
+
+	return r0
+}
+
+// CommandWebhook provides a mock function with given fields:
+func (_m *Store) CommandWebhook() store.CommandWebhookStore {
+	ret := _m.Called()
+
+	var r0 store.CommandWebhookStore
+	if rf, ok := ret.Get(0).(func() store.CommandWebhookStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.CommandWebhookStore)
+		}
+	}
+
+	return r0
 }
 
 // DropAllTables provides a mock function with given fields:
@@ -80,6 +128,22 @@ func (_m *Store) LockToMaster() {
 // MarkSystemRanUnitTests provides a mock function with given fields:
 func (_m *Store) MarkSystemRanUnitTests() {
 	_m.Called()
+}
+
+// Plugin provides a mock function with given fields:
+func (_m *Store) Plugin() store.PluginStore {
+	ret := _m.Called()
+
+	var r0 store.PluginStore
+	if rf, ok := ret.Get(0).(func() store.PluginStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.PluginStore)
+		}
+	}
+
+	return r0
 }
 
 // Post provides a mock function with given fields:
@@ -273,6 +337,22 @@ func (_m *Store) UserAccessToken() store.UserAccessTokenStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.UserAccessTokenStore)
+		}
+	}
+
+	return r0
+}
+
+// Webhook provides a mock function with given fields:
+func (_m *Store) Webhook() store.WebhookStore {
+	ret := _m.Called()
+
+	var r0 store.WebhookStore
+	if rf, ok := ret.Get(0).(func() store.WebhookStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.WebhookStore)
 		}
 	}
 
