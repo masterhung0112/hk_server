@@ -3,9 +3,11 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
+
 	"github.com/pkg/errors"
 )
 
@@ -14,9 +16,7 @@ type SqlTokenStore struct {
 }
 
 func newSqlTokenStore(sqlStore *SqlStore) store.TokenStore {
-	s := &SqlTokenStore{
-		SqlStore: sqlStore,
-	}
+	s := &SqlTokenStore{sqlStore}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Token{}, "Tokens").SetKeys(false, "Token")

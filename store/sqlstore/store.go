@@ -73,22 +73,22 @@ type SqlStoreStores struct {
 	thread  store.ThreadStore
 	user    store.UserStore
 	bot     store.BotStore
-	// audit                store.AuditStore
+	audit   store.AuditStore
 	// cluster              store.ClusterDiscoveryStore
 	// compliance           store.ComplianceStore
-	session store.SessionStore
-	// oauth                store.OAuthStore
-	system         store.SystemStore
-	webhook        store.WebhookStore
-	command        store.CommandStore
-	commandWebhook store.CommandWebhookStore
-	preference     store.PreferenceStore
-	license        store.LicenseStore
-	token          store.TokenStore
-	emoji          store.EmojiStore
-	status         store.StatusStore
-	fileInfo       store.FileInfoStore
-	// uploadSession        store.UploadSessionStore
+	session              store.SessionStore
+	oauth                store.OAuthStore
+	system               store.SystemStore
+	webhook              store.WebhookStore
+	command              store.CommandStore
+	commandWebhook       store.CommandWebhookStore
+	preference           store.PreferenceStore
+	license              store.LicenseStore
+	token                store.TokenStore
+	emoji                store.EmojiStore
+	status               store.StatusStore
+	fileInfo             store.FileInfoStore
+	uploadSession        store.UploadSessionStore
 	reaction             store.ReactionStore
 	job                  store.JobStore
 	userAccessToken      store.UserAccessTokenStore
@@ -133,11 +133,11 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 	store.stores.post = newSqlPostStore(store, metrics)
 	store.stores.user = newSqlUserStore(store, metrics)
 	store.stores.bot = newSqlBotStore(store, metrics)
-	// store.stores.audit = newSqlAuditStore(store)
+	store.stores.audit = newSqlAuditStore(store)
 	// store.stores.cluster = newSqlClusterDiscoveryStore(store)
 	// store.stores.compliance = newSqlComplianceStore(store)
 	store.stores.session = newSqlSessionStore(store)
-	// store.stores.oauth = newSqlOAuthStore(store)
+	store.stores.oauth = newSqlOAuthStore(store)
 	store.stores.system = newSqlSystemStore(store)
 	store.stores.webhook = newSqlWebhookStore(store, metrics)
 	store.stores.command = newSqlCommandStore(store)
@@ -148,7 +148,7 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 	store.stores.emoji = newSqlEmojiStore(store, metrics)
 	store.stores.status = newSqlStatusStore(store)
 	store.stores.fileInfo = newSqlFileInfoStore(store, metrics)
-	// store.stores.uploadSession = newSqlUploadSessionStore(store)
+	store.stores.uploadSession = newSqlUploadSessionStore(store)
 	store.stores.thread = newSqlThreadStore(store)
 	store.stores.job = newSqlJobStore(store)
 	store.stores.userAccessToken = newSqlUserAccessTokenStore(store)
@@ -384,6 +384,14 @@ func (ss *SqlStore) Bot() store.BotStore {
 	return ss.stores.bot
 }
 
+func (ss *SqlStore) Audit() store.AuditStore {
+	return ss.stores.audit
+}
+
+func (ss *SqlStore) OAuth() store.OAuthStore {
+	return ss.stores.oauth
+}
+
 func (ss *SqlStore) System() store.SystemStore {
 	return ss.stores.system
 }
@@ -406,6 +414,10 @@ func (ss *SqlStore) Status() store.StatusStore {
 
 func (ss *SqlStore) FileInfo() store.FileInfoStore {
 	return ss.stores.fileInfo
+}
+
+func (ss *SqlStore) UploadSession() store.UploadSessionStore {
+	return ss.stores.uploadSession
 }
 
 func (ss *SqlStore) Reaction() store.ReactionStore {

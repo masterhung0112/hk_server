@@ -1,10 +1,10 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/services/searchengine/bleveengine"
-	"github.com/masterhung0112/hk_server/services/searchengine"
 	"context"
 	"fmt"
+	"github.com/masterhung0112/hk_server/services/searchengine"
+	"github.com/masterhung0112/hk_server/services/searchengine/bleveengine"
 	"hash/maphash"
 	"net"
 	"net/http"
@@ -68,9 +68,9 @@ type Server struct {
 
 	AppInitializedOnce sync.Once
 
-  phase2PermissionsMigrationComplete bool
+	phase2PermissionsMigrationComplete bool
 
-  SearchEngine *searchengine.Broker
+	SearchEngine *searchengine.Broker
 
 	AccountMigration einterfaces.AccountMigrationInterface
 	Cluster          einterfaces.ClusterInterface
@@ -130,9 +130,9 @@ type Server struct {
 
 	ImageProxy *imageproxy.ImageProxy
 
-  CacheProvider cache.Provider
+	CacheProvider cache.Provider
 
-  // These are used to prevent concurrent upload requests
+	// These are used to prevent concurrent upload requests
 	// for a given upload session which could cause inconsistencies
 	// and data corruption.
 	uploadLockMapMut sync.Mutex
@@ -229,8 +229,8 @@ func NewServer(options ...Option) (*Server, error) {
 	// Create Server instance
 	s := &Server{
 		RootRouter:       rootRouter,
-    licenseListeners: map[string]func(*model.License, *model.License){},
-    uploadLockMap:       map[string]bool{},
+		licenseListeners: map[string]func(*model.License, *model.License){},
+		uploadLockMap:    map[string]bool{},
 	}
 
 	if err := s.initLogging(); err != nil {
@@ -262,9 +262,9 @@ func NewServer(options ...Option) (*Server, error) {
 	s.HTTPService = httpservice.MakeHTTPService(s)
 	s.pushNotificationClient = s.HTTPService.MakeClient(true)
 
-  s.ImageProxy = imageproxy.MakeImageProxy(s, s.HTTPService, s.Log)
+	s.ImageProxy = imageproxy.MakeImageProxy(s, s.HTTPService, s.Log)
 
-  searchEngine := searchengine.NewBroker(s.Config(), s.Jobs)
+	searchEngine := searchengine.NewBroker(s.Config(), s.Jobs)
 	bleveEngine := bleveengine.NewBleveEngine(s.Config(), s.Jobs)
 	if err := bleveEngine.Start(); err != nil {
 		return nil, err

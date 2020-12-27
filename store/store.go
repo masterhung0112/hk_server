@@ -21,17 +21,20 @@ type Store interface {
 	Thread() ThreadStore
 	User() UserStore
 	Bot() BotStore
+	Audit() AuditStore
 	System() SystemStore
 	Webhook() WebhookStore
 	Command() CommandStore
 	CommandWebhook() CommandWebhookStore
 	Status() StatusStore
 	FileInfo() FileInfoStore
+	UploadSession() UploadSessionStore
 	Reaction() ReactionStore
 	Role() RoleStore
 	Scheme() SchemeStore
 	Job() JobStore
 	Session() SessionStore
+	OAuth() OAuthStore
 	UserAccessToken() UserAccessTokenStore
 	ChannelMemberHistory() ChannelMemberHistoryStore
 	Plugin() PluginStore
@@ -190,6 +193,28 @@ type UserStore interface {
 	GetKnownUsers(userID string) ([]string, error)
 }
 
+type OAuthStore interface {
+	SaveApp(app *model.OAuthApp) (*model.OAuthApp, error)
+	UpdateApp(app *model.OAuthApp) (*model.OAuthApp, error)
+	GetApp(id string) (*model.OAuthApp, error)
+	GetAppByUser(userId string, offset, limit int) ([]*model.OAuthApp, error)
+	GetApps(offset, limit int) ([]*model.OAuthApp, error)
+	GetAuthorizedApps(userId string, offset, limit int) ([]*model.OAuthApp, error)
+	DeleteApp(id string) error
+	SaveAuthData(authData *model.AuthData) (*model.AuthData, error)
+	GetAuthData(code string) (*model.AuthData, error)
+	RemoveAuthData(code string) error
+	PermanentDeleteAuthDataByUser(userId string) error
+	SaveAccessData(accessData *model.AccessData) (*model.AccessData, error)
+	UpdateAccessData(accessData *model.AccessData) (*model.AccessData, error)
+	GetAccessData(token string) (*model.AccessData, error)
+	GetAccessDataByUserForApp(userId, clientId string) ([]*model.AccessData, error)
+	GetAccessDataByRefreshToken(token string) (*model.AccessData, error)
+	GetPreviousAccessData(userId, clientId string) (*model.AccessData, error)
+	RemoveAccessData(token string) error
+	RemoveAllAccessData() error
+}
+
 type SystemStore interface {
 	Save(system *model.System) error
 	SaveOrUpdate(system *model.System) error
@@ -277,6 +302,14 @@ type FileInfoStore interface {
 	PermanentDeleteByUser(userId string) (int64, error)
 	SetContent(fileId, content string) error
 	ClearCaches()
+}
+
+type UploadSessionStore interface {
+	Save(session *model.UploadSession) (*model.UploadSession, error)
+	Update(session *model.UploadSession) error
+	Get(id string) (*model.UploadSession, error)
+	GetForUser(userId string) ([]*model.UploadSession, error)
+	Delete(id string) error
 }
 
 type ReactionStore interface {
@@ -517,6 +550,12 @@ type SessionStore interface {
 	Cleanup(expiryTime int64, batchSize int64)
 }
 
+type AuditStore interface {
+	Save(audit *model.Audit) error
+	Get(user_id string, offset int, limit int) (model.Audits, error)
+	PermanentDeleteByUser(userId string) error
+}
+
 type JobStore interface {
 	Save(job *model.Job) (*model.Job, error)
 	UpdateOptimistically(job *model.Job, currentStatus string) (bool, error)
@@ -534,16 +573,16 @@ type JobStore interface {
 }
 
 type UserAccessTokenStore interface {
-	// Save(token *model.UserAccessToken) (*model.UserAccessToken, error)
-	// DeleteAllForUser(userId string) error
-	// Delete(tokenId string) error
-	// Get(tokenId string) (*model.UserAccessToken, error)
-	// GetAll(offset int, limit int) ([]*model.UserAccessToken, error)
+	Save(token *model.UserAccessToken) (*model.UserAccessToken, error)
+	DeleteAllForUser(userId string) error
+	Delete(tokenId string) error
+	Get(tokenId string) (*model.UserAccessToken, error)
+	GetAll(offset int, limit int) ([]*model.UserAccessToken, error)
 	GetByToken(tokenString string) (*model.UserAccessToken, error)
-	// GetByUser(userId string, page, perPage int) ([]*model.UserAccessToken, error)
-	// Search(term string) ([]*model.UserAccessToken, error)
-	// UpdateTokenEnable(tokenId string) error
-	// UpdateTokenDisable(tokenId string) error
+	GetByUser(userId string, page, perPage int) ([]*model.UserAccessToken, error)
+	Search(term string) ([]*model.UserAccessToken, error)
+	UpdateTokenEnable(tokenId string) error
+	UpdateTokenDisable(tokenId string) error
 }
 
 type PluginStore interface {

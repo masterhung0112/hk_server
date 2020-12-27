@@ -1,7 +1,7 @@
 package app
 
 import (
-  "fmt"
+	"fmt"
 	"github.com/masterhung0112/hk_server/model"
 )
 
