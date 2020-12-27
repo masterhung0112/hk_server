@@ -1,9 +1,25 @@
 package commands
 
 import (
-	"github.com/masterhung0112/hk_server/mlog"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"os"
 	"reflect"
+	"sort"
+	"strings"
+
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/spf13/cobra"
 )
+
+const CUSTOM_DEFAULTS_ENV_VAR = "MM_CUSTOM_DEFAULTS_PATH"
+
+// prettyPrintStruct will return a prettyPrint version of a given struct
+func prettyPrintStruct(t interface{}) string {
+	return prettyPrintMap(structToMap(t))
+}
 
 // structToMap converts a struct into a map
 func structToMap(t interface{}) map[string]interface{} {
@@ -45,4 +61,81 @@ func structToMap(t interface{}) map[string]interface{} {
 	}
 
 	return out
+}
+
+// prettyPrintMap will return a prettyPrint version of a given map
+func prettyPrintMap(configMap map[string]interface{}) string {
+	value := reflect.ValueOf(configMap)
+	return printStringMap(value, 0)
+}
+
+// printStringMap takes a reflect.Value and prints it out alphabetically based on key values, which must be strings.
+// This is done recursively if it's a map, and uses the given tab settings.
+func printStringMap(value reflect.Value, tabVal int) string {
+	out := &bytes.Buffer{}
+
+	var sortedKeys []string
+	stringToKeyMap := make(map[string]reflect.Value)
+	for _, k := range value.MapKeys() {
+		sortedKeys = append(sortedKeys, k.String())
+		stringToKeyMap[k.String()] = k
+	}
+
+	sort.Strings(sortedKeys)
+
+	for _, keyString := range sortedKeys {
+		key := stringToKeyMap[keyString]
+		val := value.MapIndex(key)
+		if newVal, ok := val.Interface().(map[string]interface{}); !ok {
+			fmt.Fprintf(out, "%s", strings.Repeat("\t", tabVal))
+			fmt.Fprintf(out, "%v: \"%v\"\n", key.Interface(), val.Interface())
+		} else {
+			fmt.Fprintf(out, "%s", strings.Repeat("\t", tabVal))
+			fmt.Fprintf(out, "%v:\n", key.Interface())
+			// going one level in, increase the tab
+			tabVal++
+			fmt.Fprintf(out, "%s", printStringMap(reflect.ValueOf(newVal), tabVal))
+			// coming back one level, decrease the tab
+			tabVal--
+		}
+	}
+
+	return out.String()
+}
+
+func getConfigDSN(command *cobra.Command, env map[string]string) string {
+	configDSN, _ := command.Flags().GetString("config")
+
+	// Config not supplied in flag, check env
+	if configDSN == "" {
+		configDSN = env["MM_CONFIG"]
+	}
+
+	// Config not supplied in env or flag use default
+	if configDSN == "" {
+		configDSN = "config.json"
+	}
+
+	return configDSN
+}
+
+func loadCustomDefaults() (*model.Config, error) {
+	customDefaultsPath := os.Getenv(CUSTOM_DEFAULTS_ENV_VAR)
+	if customDefaultsPath == "" {
+		return nil, nil
+	}
+
+	file, err := os.Open(customDefaultsPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open custom defaults file at %q: %w", customDefaultsPath, err)
+	}
+	defer file.Close()
+
+	var customDefaults *model.Config
+	err = json.NewDecoder(file).Decode(&customDefaults)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode custom defaults configuration: %w", err)
+	}
+
+	return customDefaults, nil
 }

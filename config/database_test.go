@@ -1062,12 +1062,12 @@ func TestDatabaseStoreString(t *testing.T) {
 	if *mainHelper.GetSQLSettings().DriverName == "postgres" {
 		maskedDSN := ds.String()
 		assert.True(t, strings.HasPrefix(maskedDSN, "postgres://"))
-		assert.True(t, strings.Contains(maskedDSN, "mmuser"))
+		assert.True(t, strings.Contains(maskedDSN, "hkuser"))
 		assert.False(t, strings.Contains(maskedDSN, "mostest"))
 	} else {
 		maskedDSN := ds.String()
 		assert.True(t, strings.HasPrefix(maskedDSN, "mysql://"))
-		assert.True(t, strings.Contains(maskedDSN, "mmuser"))
+		assert.True(t, strings.Contains(maskedDSN, "hkuser"))
 		assert.False(t, strings.Contains(maskedDSN, "mostest"))
 	}
 }

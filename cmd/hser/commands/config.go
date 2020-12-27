@@ -6,7 +6,6 @@ import (
 	"github.com/masterhung0112/hk_server/config"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/utils"
-	"github.com/mattermost/viper"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"os"
@@ -48,14 +47,12 @@ func init() {
 	RootCmd.AddCommand(ConfigCmd)
 }
 
-func getConfigStore(command *cobra.Command) (config.Store, error) {
+func getConfigStore(command *cobra.Command) (*config.Store, error) {
 	if err := utils.TranslationsPreInit(); err != nil {
 		return nil, errors.Wrap(err, "failed to initialize i18n")
 	}
 
-	configDSN := viper.GetString("config")
-
-	configStore, err := config.NewStore(configDSN, false)
+	configStore, err := config.NewStore(getConfigDSN(command, config.GetEnvironment()), false, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize config store")
 	}

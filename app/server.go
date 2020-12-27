@@ -8,6 +8,8 @@ import (
 	"github.com/masterhung0112/hk_server/services/searchengine/bleveengine"
 	"github.com/masterhung0112/hk_server/store/localcachelayer"
 	"github.com/masterhung0112/hk_server/store/retrylayer"
+	"github.com/masterhung0112/hk_server/store/searchlayer"
+	"github.com/masterhung0112/hk_server/store/timerlayer"
 	"hash/maphash"
 	"net"
 	"net/http"
@@ -56,7 +58,7 @@ type Server struct {
 	// requests to the server
 	LocalRouter *mux.Router
 
-	// Router is the starting point for all web, api4 and ws requests to the server. It differs
+	// Router is the starting point for all web, api1 and ws requests to the server. It differs
 	// from RootRouter only if the SiteURL contains a /subpath.
 	Router *mux.Router
 
@@ -252,19 +254,16 @@ func (s *Server) initLogging() error {
 
 func NewServer(options ...Option) (*Server, error) {
 	rootRouter := mux.NewRouter()
+	localRouter := mux.NewRouter()
 
-	// Create Server instance
 	s := &Server{
-		RootRouter:       rootRouter,
-		licenseListeners: map[string]func(*model.License, *model.License){},
-		uploadLockMap:    map[string]bool{},
+		goroutineExitSignal: make(chan struct{}, 1),
+		RootRouter:          rootRouter,
+		LocalRouter:         localRouter,
+		licenseListeners:    map[string]func(*model.License, *model.License){},
+		hashSeed:            maphash.MakeSeed(),
+		uploadLockMap:       map[string]bool{},
 	}
-
-	if err := s.initLogging(); err != nil {
-		mlog.Error(err.Error())
-	}
-
-	mlog.Info("Server is initializing...")
 
 	for _, option := range options {
 		if err := option(s); err != nil {
@@ -285,6 +284,12 @@ func NewServer(options ...Option) (*Server, error) {
 
 		s.configStore = configStore
 	}
+
+	if err := s.initLogging(); err != nil {
+		mlog.Error(err.Error())
+	}
+
+	mlog.Info("Server is initializing...")
 
 	s.HTTPService = httpservice.MakeHTTPService(s)
 	s.pushNotificationClient = s.HTTPService.MakeClient(true)
@@ -389,7 +394,16 @@ func NewServer(options ...Option) (*Server, error) {
 		}
 	}
 
-	s.Store = s.newStore()
+	if htmlTemplateWatcher, err2 := utils.NewHTMLTemplateWatcher("templates"); err2 != nil {
+		mlog.Error("Failed to parse server templates", mlog.Err(err2))
+	} else {
+		s.htmlTemplateWatcher = htmlTemplateWatcher
+	}
+
+	s.Store, err = s.newStore()
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot create store")
+	}
 
 	emailService, err := NewEmailService(s)
 	if err != nil {

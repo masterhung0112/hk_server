@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/masterhung0112/hk_server/api"
+	"github.com/masterhung0112/hk_server/api1"
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/testlib"
 	"os"

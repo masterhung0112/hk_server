@@ -9,6 +9,8 @@ import (
 )
 
 func TestStartServerSuccess(t *testing.T) {
+	th := Setup(t)
+	defer th.TearDown()
 	s, err := NewServer()
 	require.NoError(t, err)
 

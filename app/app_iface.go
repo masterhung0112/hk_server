@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/masterhung0112/hk_server/model"
+	"net/http"
 )
 
 type AppIface interface {
@@ -19,4 +20,6 @@ type AppIface interface {
 	LimitedClientConfig() map[string]string
 
 	GetSanitizeOptions(asAdmin bool) map[string]bool
+	Config() *model.Config
+	Handle404(w http.ResponseWriter, r *http.Request)
 }

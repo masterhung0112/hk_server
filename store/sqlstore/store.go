@@ -252,7 +252,7 @@ func setupConnection(con_type string, dataSource string, settings *model.SqlSett
 				time.Sleep(time.Second)
 				os.Exit(EXIT_PING)
 			} else {
-				mlog.Error("Failed to ping DB", mlog.Err(err), mlog.Int("retrying in seconds", DB_PING_TIMEOUT_SECS))
+				mlog.Error("Failed to ping DB", mlog.Err(err), mlog.Int("retrying in seconds", DB_PING_TIMEOUT_SECS), mlog.String("dataSource", dataSource))
 				time.Sleep(DB_PING_TIMEOUT_SECS * time.Second)
 			}
 		}

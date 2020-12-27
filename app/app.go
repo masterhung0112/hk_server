@@ -187,6 +187,18 @@ func (s *Server) HTMLTemplates() *template.Template {
 	return nil
 }
 
+func (a *App) Handle404(w http.ResponseWriter, r *http.Request) {
+	ipAddress := utils.GetIpAddress(r, a.Config().ServiceSettings.TrustedProxyIPHeader)
+	mlog.Debug("not found handler triggered", mlog.String("path", r.URL.Path), mlog.Int("code", 404), mlog.String("ip", ipAddress))
+
+	if *a.Config().ServiceSettings.WebserverMode == "disabled" {
+		http.NotFound(w, r)
+		return
+	}
+
+	utils.RenderWebAppError(a.Config(), w, r, model.NewAppError("Handle404", "api.context.404.app_error", nil, "", http.StatusNotFound), a.AsymmetricSigningKey())
+}
+
 func (a *App) InitServer() {
 	a.srv.AppInitializedOnce.Do(func() {
 		a.DoAppMigrations()

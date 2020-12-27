@@ -32,8 +32,8 @@ func InitDBCommandContext(configDSN string) (*app.App, error) {
 	model.AppErrorInit(utils.T)
 
 	s, err := app.NewServer(
-		app.Config(configDSN, false),
-		// app.StartSearchEngine,
+		app.Config(configDSN, false, nil),
+		app.StartSearchEngine,
 	)
 	if err != nil {
 		return nil, err
@@ -42,9 +42,9 @@ func InitDBCommandContext(configDSN string) (*app.App, error) {
 	a := app.New(app.ServerConnector(s))
 
 	if model.BuildEnterpriseReady == "true" {
-		//TODO: Open
-		// a.Srv().LoadLicense()
+		a.Srv().LoadLicense()
 	}
+	a.InitServer()
 
 	return a, nil
 }

@@ -1,61 +1,25 @@
 package sqlstore
 
 import (
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	"github.com/stretchr/testify/suite"
+	"fmt"
 	"os"
+	"regexp"
 	"sync"
 	"testing"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/store/searchtest"
+	"github.com/masterhung0112/hk_server/store/storetest"
+	"github.com/mattermost/gorp"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	_ "github.com/mattn/go-sqlite3"
 )
-
-type StoreTestBaseSuite interface {
-	suite.TestingSuite
-
-	InitInitializeStore()
-
-	SetStore(store store.Store)
-	Store() store.Store
-
-	SetSqlStore(sqlStore *SqlStore)
-	SqlStore() *SqlStore
-}
-
-type StoreTestSuite struct {
-	// suite.Suite
-
-	store    store.Store
-	sqlStore *SqlStore
-	// sqlSupplier storetest.SqlSupplier
-}
-
-/***
- * StoreTestSuite implements interface StoreTestBaseSuite
- ***/
-func (s *StoreTestSuite) InitInitializeStore() {
-	if len(StoreTypes) >= 1 && (s.Store() == nil || s.SqlStore() == nil) {
-		s.SetStore(StoreTypes[0].Store)
-		s.SetSqlStore(StoreTypes[0].SqlStore)
-	}
-}
-
-func (s *StoreTestSuite) SetStore(store store.Store) {
-	s.store = store
-}
-
-func (s *StoreTestSuite) Store() store.Store {
-	return s.store
-}
-
-func (s *StoreTestSuite) SetSqlStore(sqlStore *SqlStore) {
-	s.sqlStore = sqlStore
-}
-
-func (s *StoreTestSuite) SqlStore() *SqlStore {
-	return s.sqlStore
-}
 
 type storeType struct {
 	Name        string
@@ -64,27 +28,85 @@ type storeType struct {
 	Store       store.Store
 }
 
-var StoreTypes []*storeType
-var tearDownStoresOnce sync.Once
+var storeTypes []*storeType
+
+func newStoreType(name, driver string) *storeType {
+	return &storeType{
+		Name:        name,
+		SqlSettings: storetest.MakeSqlSettings(driver),
+	}
+}
+
+func StoreTest(t *testing.T, f func(*testing.T, store.Store)) {
+	defer func() {
+		if err := recover(); err != nil {
+			tearDownStores()
+			panic(err)
+		}
+	}()
+	for _, st := range storeTypes {
+		st := st
+		t.Run(st.Name, func(t *testing.T) {
+			if testing.Short() {
+				t.SkipNow()
+			}
+			f(t, st.Store)
+		})
+	}
+}
+
+func StoreTestWithSearchTestEngine(t *testing.T, f func(*testing.T, store.Store, *searchtest.SearchTestEngine)) {
+	defer func() {
+		if err := recover(); err != nil {
+			tearDownStores()
+			panic(err)
+		}
+	}()
+
+	for _, st := range storeTypes {
+		st := st
+		searchTestEngine := &searchtest.SearchTestEngine{
+			Driver: *st.SqlSettings.DriverName,
+		}
+
+		t.Run(st.Name, func(t *testing.T) { f(t, st.Store, searchTestEngine) })
+	}
+}
+
+func StoreTestWithSqlStore(t *testing.T, f func(*testing.T, store.Store, storetest.SqlStore)) {
+	defer func() {
+		if err := recover(); err != nil {
+			tearDownStores()
+			panic(err)
+		}
+	}()
+	for _, st := range storeTypes {
+		st := st
+		t.Run(st.Name, func(t *testing.T) {
+			if testing.Short() {
+				t.SkipNow()
+			}
+			f(t, st.Store, st.SqlStore)
+		})
+	}
+}
 
 func initStores() {
 	if testing.Short() {
 		return
 	}
-
 	// In CI, we already run the entire test suite for both mysql and postgres in parallel.
 	// So we just run the tests for the current database set.
 	if os.Getenv("IS_CI") == "true" {
-		panic("Not implement IS_CI yet")
+		switch os.Getenv("MM_SQLSETTINGS_DRIVERNAME") {
+		case "mysql":
+			storeTypes = append(storeTypes, newStoreType("MySQL", model.DATABASE_DRIVER_MYSQL))
+		case "postgres":
+			storeTypes = append(storeTypes, newStoreType("PostgreSQL", model.DATABASE_DRIVER_POSTGRES))
+		}
 	} else {
-		StoreTypes = append(StoreTypes, &storeType{
-			Name:        "MySQL",
-			SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_MYSQL),
-		})
-		StoreTypes = append(StoreTypes, &storeType{
-			Name:        "PostgreSQL",
-			SqlSettings: storetest.MakeSqlSettings(model.DATABASE_DRIVER_POSTGRES),
-		})
+		storeTypes = append(storeTypes, newStoreType("MySQL", model.DATABASE_DRIVER_MYSQL),
+			newStoreType("PostgreSQL", model.DATABASE_DRIVER_POSTGRES))
 	}
 
 	defer func() {
@@ -93,9 +115,8 @@ func initStores() {
 			panic(err)
 		}
 	}()
-
 	var wg sync.WaitGroup
-	for _, st := range StoreTypes {
+	for _, st := range storeTypes {
 		st := st
 		wg.Add(1)
 		go func() {
@@ -109,14 +130,16 @@ func initStores() {
 	wg.Wait()
 }
 
+var tearDownStoresOnce sync.Once
+
 func tearDownStores() {
 	if testing.Short() {
 		return
 	}
 	tearDownStoresOnce.Do(func() {
 		var wg sync.WaitGroup
-		wg.Add(len(StoreTypes))
-		for _, st := range StoreTypes {
+		wg.Add(len(storeTypes))
+		for _, st := range storeTypes {
 			st := st
 			go func() {
 				if st.Store != nil {
@@ -132,41 +155,371 @@ func tearDownStores() {
 	})
 }
 
-func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, executeFunc func(t *testing.T, testSuite StoreTestBaseSuite)) {
-	for _, st := range StoreTypes {
-		st := st
-		t.Run(st.Name, func(t *testing.T) {
-			if testing.Short() {
-				t.SkipNow()
+// This test was used to consistently reproduce the race
+// before the fix in MM-28397.
+// Keeping it here to help avoiding future regressions.
+func TestStoreLicenseRace(t *testing.T) {
+	settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
+	settings.DataSourceReplicas = []string{":memory:"}
+	settings.DataSourceSearchReplicas = []string{":memory:"}
+	store := New(*settings, nil)
+
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+
+	go func() {
+		store.UpdateLicense(&model.License{})
+		wg.Done()
+	}()
+
+	go func() {
+		store.GetReplica()
+		wg.Done()
+	}()
+
+	go func() {
+		store.GetSearchReplica()
+		wg.Done()
+	}()
+
+	wg.Wait()
+}
+
+func TestGetReplica(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		Description              string
+		DataSourceReplicas       []string
+		DataSourceSearchReplicas []string
+	}{
+		{
+			"no replicas",
+			[]string{},
+			[]string{},
+		},
+		{
+			"one source replica",
+			[]string{":memory:"},
+			[]string{},
+		},
+		{
+			"multiple source replicas",
+			[]string{":memory:", ":memory:", ":memory:"},
+			[]string{},
+		},
+		{
+			"one source search replica",
+			[]string{},
+			[]string{":memory:"},
+		},
+		{
+			"multiple source search replicas",
+			[]string{},
+			[]string{":memory:", ":memory:", ":memory:"},
+		},
+		{
+			"one source replica, one source search replica",
+			[]string{":memory:"},
+			[]string{":memory:"},
+		},
+		{
+			"one source replica, multiple source search replicas",
+			[]string{":memory:"},
+			[]string{":memory:", ":memory:", ":memory:"},
+		},
+		{
+			"multiple source replica, one source search replica",
+			[]string{":memory:", ":memory:", ":memory:"},
+			[]string{":memory:"},
+		},
+		{
+			"multiple source replica, multiple source search replicas",
+			[]string{":memory:", ":memory:", ":memory:"},
+			[]string{":memory:", ":memory:", ":memory:"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.Description+" with license", func(t *testing.T) {
+			t.Parallel()
+
+			settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
+			settings.DataSourceReplicas = testCase.DataSourceReplicas
+			settings.DataSourceSearchReplicas = testCase.DataSourceSearchReplicas
+			store := New(*settings, nil)
+			store.UpdateLicense(&model.License{})
+
+			replicas := make(map[*gorp.DbMap]bool)
+			for i := 0; i < 5; i++ {
+				replicas[store.GetReplica()] = true
 			}
-			testSuite.SetStore(st.Store)
-			testSuite.SetSqlStore(st.SqlStore)
-			// suite.Run(t, testSuite)
-			executeFunc(t, testSuite)
+
+			searchReplicas := make(map[*gorp.DbMap]bool)
+			for i := 0; i < 5; i++ {
+				searchReplicas[store.GetSearchReplica()] = true
+			}
+
+			if len(testCase.DataSourceReplicas) > 0 {
+				// If replicas were defined, ensure none are the master.
+				assert.Len(t, replicas, len(testCase.DataSourceReplicas))
+
+				for replica := range replicas {
+					assert.NotEqual(t, store.GetMaster(), replica)
+				}
+
+			} else if assert.Len(t, replicas, 1) {
+				// Otherwise ensure the replicas contains only the master.
+				for replica := range replicas {
+					assert.Equal(t, store.GetMaster(), replica)
+				}
+			}
+
+			if len(testCase.DataSourceSearchReplicas) > 0 {
+				// If search replicas were defined, ensure none are the master nor the replicas.
+				assert.Len(t, searchReplicas, len(testCase.DataSourceSearchReplicas))
+
+				for searchReplica := range searchReplicas {
+					assert.NotEqual(t, store.GetMaster(), searchReplica)
+					for replica := range replicas {
+						assert.NotEqual(t, searchReplica, replica)
+					}
+				}
+
+			} else if len(testCase.DataSourceReplicas) > 0 {
+				// If no search replicas were defined, but replicas were, ensure they are equal.
+				assert.Equal(t, replicas, searchReplicas)
+
+			} else if assert.Len(t, searchReplicas, 1) {
+				// Otherwise ensure the search replicas contains the master.
+				for searchReplica := range searchReplicas {
+					assert.Equal(t, store.GetMaster(), searchReplica)
+				}
+			}
+		})
+
+		t.Run(testCase.Description+" without license", func(t *testing.T) {
+			t.Parallel()
+
+			settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
+			settings.DataSourceReplicas = testCase.DataSourceReplicas
+			settings.DataSourceSearchReplicas = testCase.DataSourceSearchReplicas
+			store := New(*settings, nil)
+
+			replicas := make(map[*gorp.DbMap]bool)
+			for i := 0; i < 5; i++ {
+				replicas[store.GetReplica()] = true
+			}
+
+			searchReplicas := make(map[*gorp.DbMap]bool)
+			for i := 0; i < 5; i++ {
+				searchReplicas[store.GetSearchReplica()] = true
+			}
+
+			if len(testCase.DataSourceReplicas) > 0 {
+				// If replicas were defined, ensure none are the master.
+				assert.Len(t, replicas, 1)
+
+				for replica := range replicas {
+					assert.Same(t, store.GetMaster(), replica)
+				}
+
+			} else if assert.Len(t, replicas, 1) {
+				// Otherwise ensure the replicas contains only the master.
+				for replica := range replicas {
+					assert.Equal(t, store.GetMaster(), replica)
+				}
+			}
+
+			if len(testCase.DataSourceSearchReplicas) > 0 {
+				// If search replicas were defined, ensure none are the master nor the replicas.
+				assert.Len(t, searchReplicas, 1)
+
+				for searchReplica := range searchReplicas {
+					assert.Same(t, store.GetMaster(), searchReplica)
+				}
+
+			} else if len(testCase.DataSourceReplicas) > 0 {
+				// If no search replicas were defined, but replicas were, ensure they are equal.
+				assert.Equal(t, replicas, searchReplicas)
+
+			} else if assert.Len(t, searchReplicas, 1) {
+				// Otherwise ensure the search replicas contains the master.
+				for searchReplica := range searchReplicas {
+					assert.Equal(t, store.GetMaster(), searchReplica)
+				}
+			}
 		})
 	}
 }
 
-func StoreTestMysqlTestSuite(t *testing.T, testSuite *suite.Suite) {
-	// Setup a global logger to catch tests logging outside of app context
-	// The global logger will be stomped by apps initializing but that's fine for testing. Ideally this won't happen.
-	mlog.InitGlobalLogger(mlog.NewLogger(&mlog.LoggerConfiguration{
-		EnableConsole: true,
-		ConsoleJson:   true,
-		ConsoleLevel:  "error",
-		EnableFile:    false,
-	}))
+func TestGetDbVersion(t *testing.T) {
+	testDrivers := []string{
+		model.DATABASE_DRIVER_POSTGRES,
+		model.DATABASE_DRIVER_MYSQL,
+		model.DATABASE_DRIVER_SQLITE,
+	}
 
-	// dir, err := ioutil.TempDir("", "")
-	// require.NoError(t, err)
-	// defer os.RemoveAll(dir)
+	for _, driver := range testDrivers {
+		t.Run("Should return db version for "+driver, func(t *testing.T) {
+			t.Parallel()
+			settings := makeSqlSettings(driver)
+			store := New(*settings, nil)
 
-	suite.Run(t, testSuite)
+			version, err := store.GetDbVersion(false)
+			require.Nil(t, err)
+			require.Regexp(t, regexp.MustCompile(`\d+\.\d+(\.\d+)?`), version)
+		})
+	}
+}
 
-	// suite.Run(t, &FileBackendTestSuite{
-	// 	settings: model.FileSettings{
-	// 		DriverName: model.NewString(model.IMAGE_DRIVER_LOCAL),
-	// 		Directory:  &dir,
-	// 	},
-	// })
+func TestGetAllConns(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		Description              string
+		DataSourceReplicas       []string
+		DataSourceSearchReplicas []string
+		ExpectedNumConnections   int
+	}{
+		{
+			"no replicas",
+			[]string{},
+			[]string{},
+			1,
+		},
+		{
+			"one source replica",
+			[]string{":memory:"},
+			[]string{},
+			2,
+		},
+		{
+			"multiple source replicas",
+			[]string{":memory:", ":memory:", ":memory:"},
+			[]string{},
+			4,
+		},
+		{
+			"one source search replica",
+			[]string{},
+			[]string{":memory:"},
+			1,
+		},
+		{
+			"multiple source search replicas",
+			[]string{},
+			[]string{":memory:", ":memory:", ":memory:"},
+			1,
+		},
+		{
+			"one source replica, one source search replica",
+			[]string{":memory:"},
+			[]string{":memory:"},
+			2,
+		},
+		{
+			"one source replica, multiple source search replicas",
+			[]string{":memory:"},
+			[]string{":memory:", ":memory:", ":memory:"},
+			2,
+		},
+		{
+			"multiple source replica, one source search replica",
+			[]string{":memory:", ":memory:", ":memory:"},
+			[]string{":memory:"},
+			4,
+		},
+		{
+			"multiple source replica, multiple source search replicas",
+			[]string{":memory:", ":memory:", ":memory:"},
+			[]string{":memory:", ":memory:", ":memory:"},
+			4,
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.Description, func(t *testing.T) {
+			t.Parallel()
+			settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
+			settings.DataSourceReplicas = testCase.DataSourceReplicas
+			settings.DataSourceSearchReplicas = testCase.DataSourceSearchReplicas
+			store := New(*settings, nil)
+
+			assert.Len(t, store.GetAllConns(), testCase.ExpectedNumConnections)
+		})
+	}
+}
+
+func TestIsDuplicate(t *testing.T) {
+	testErrors := map[error]bool{
+		&pq.Error{Code: "42P06"}:                              false,
+		&pq.Error{Code: PG_DUP_TABLE_ERROR_CODE}:              true,
+		&mysql.MySQLError{Number: uint16(1000)}:               false,
+		&mysql.MySQLError{Number: MYSQL_DUP_TABLE_ERROR_CODE}: true,
+		errors.New("Random error"):                            false,
+	}
+
+	for err, expected := range testErrors {
+		t.Run(fmt.Sprintf("Should return %t for %s", expected, err.Error()), func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, expected, IsDuplicate(err))
+		})
+	}
+}
+
+func TestVersionString(t *testing.T) {
+	versions := []struct {
+		input  int
+		output string
+	}{
+		{
+			input:  100000,
+			output: "10.0",
+		},
+		{
+			input:  90603,
+			output: "9.603",
+		},
+		{
+			input:  120005,
+			output: "12.5",
+		},
+	}
+
+	for _, v := range versions {
+		out := VersionString(v.input)
+		assert.Equal(t, v.output, out)
+	}
+}
+
+func makeSqlSettings(driver string) *model.SqlSettings {
+	switch driver {
+	case model.DATABASE_DRIVER_POSTGRES:
+		return storetest.MakeSqlSettings(driver)
+	case model.DATABASE_DRIVER_MYSQL:
+		return storetest.MakeSqlSettings(driver)
+	case model.DATABASE_DRIVER_SQLITE:
+		return makeSqliteSettings()
+	}
+
+	return nil
+}
+
+func makeSqliteSettings() *model.SqlSettings {
+	driverName := model.DATABASE_DRIVER_SQLITE
+	dataSource := ":memory:"
+	maxIdleConns := 1
+	connMaxLifetimeMilliseconds := 3600000
+	maxOpenConns := 1
+	queryTimeout := 5
+
+	return &model.SqlSettings{
+		DriverName:                  &driverName,
+		DataSource:                  &dataSource,
+		MaxIdleConns:                &maxIdleConns,
+		ConnMaxLifetimeMilliseconds: &connMaxLifetimeMilliseconds,
+		MaxOpenConns:                &maxOpenConns,
+		QueryTimeout:                &queryTimeout,
+	}
 }

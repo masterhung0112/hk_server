@@ -29,6 +29,7 @@ type MainHelper struct {
 
 	status           int
 	testResourcePath string
+	originalPath     string
 }
 
 type HelperOptions struct {
@@ -78,6 +79,8 @@ func (h *MainHelper) Main(m *testing.M) {
 		if err != nil {
 			panic("Failed to get current working directory: " + err.Error())
 		}
+
+		h.originalPath = prevDir
 
 		err = os.Chdir(h.testResourcePath)
 		if err != nil {
@@ -132,7 +135,7 @@ func (h *MainHelper) setupResources() {
 // In the worst case, only an optimization is lost.
 //
 // Re-generate the files with:
-// pg_dump -a -h localhost -U mmuser -d <> --no-comments --inserts -t roles -t systems
+// pg_dump -a -h localhost -U hkuser -d <> --no-comments --inserts -t roles -t systems
 // mysqldump -u root -p <> --no-create-info --extended-insert=FALSE Systems Roles
 // And keep only the permission related rows in the systems table output.
 func (h *MainHelper) PreloadMigrations() {
@@ -146,7 +149,7 @@ func (h *MainHelper) PreloadMigrations() {
 		if basePath != "" {
 			finalPath = filepath.Join(basePath, relPath, "postgres_migration_warmup.sql")
 		} else {
-			finalPath = filepath.Join("mattermost-server", relPath, "postgres_migration_warmup.sql")
+			finalPath = filepath.Join(h.testResourcePath, relPath, "postgres_migration_warmup.sql")
 		}
 		buf, err = ioutil.ReadFile(finalPath)
 		if err != nil {
@@ -157,7 +160,7 @@ func (h *MainHelper) PreloadMigrations() {
 		if basePath != "" {
 			finalPath = filepath.Join(basePath, relPath, "mysql_migration_warmup.sql")
 		} else {
-			finalPath = filepath.Join("mattermost-server", relPath, "mysql_migration_warmup.sql")
+			finalPath = filepath.Join(h.testResourcePath, relPath, "mysql_migration_warmup.sql")
 		}
 		buf, err = ioutil.ReadFile(finalPath)
 		if err != nil {
