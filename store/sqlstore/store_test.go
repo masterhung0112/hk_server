@@ -21,17 +21,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type storeType struct {
+type StoreType struct {
 	Name        string
 	SqlSettings *model.SqlSettings
 	SqlStore    *SqlStore
 	Store       store.Store
 }
 
-var storeTypes []*storeType
+var StoreTypes []*StoreType
 
-func newStoreType(name, driver string) *storeType {
-	return &storeType{
+func newStoreType(name, driver string) *StoreType {
+	return &StoreType{
 		Name:        name,
 		SqlSettings: storetest.MakeSqlSettings(driver),
 	}
@@ -44,7 +44,7 @@ func StoreTest(t *testing.T, f func(*testing.T, store.Store)) {
 			panic(err)
 		}
 	}()
-	for _, st := range storeTypes {
+	for _, st := range StoreTypes {
 		st := st
 		t.Run(st.Name, func(t *testing.T) {
 			if testing.Short() {
@@ -63,7 +63,7 @@ func StoreTestWithSearchTestEngine(t *testing.T, f func(*testing.T, store.Store,
 		}
 	}()
 
-	for _, st := range storeTypes {
+	for _, st := range StoreTypes {
 		st := st
 		searchTestEngine := &searchtest.SearchTestEngine{
 			Driver: *st.SqlSettings.DriverName,
@@ -80,7 +80,7 @@ func StoreTestWithSqlStore(t *testing.T, f func(*testing.T, store.Store, storete
 			panic(err)
 		}
 	}()
-	for _, st := range storeTypes {
+	for _, st := range StoreTypes {
 		st := st
 		t.Run(st.Name, func(t *testing.T) {
 			if testing.Short() {
@@ -100,12 +100,12 @@ func initStores() {
 	if os.Getenv("IS_CI") == "true" {
 		switch os.Getenv("MM_SQLSETTINGS_DRIVERNAME") {
 		case "mysql":
-			storeTypes = append(storeTypes, newStoreType("MySQL", model.DATABASE_DRIVER_MYSQL))
+			StoreTypes = append(StoreTypes, newStoreType("MySQL", model.DATABASE_DRIVER_MYSQL))
 		case "postgres":
-			storeTypes = append(storeTypes, newStoreType("PostgreSQL", model.DATABASE_DRIVER_POSTGRES))
+			StoreTypes = append(StoreTypes, newStoreType("PostgreSQL", model.DATABASE_DRIVER_POSTGRES))
 		}
 	} else {
-		storeTypes = append(storeTypes, newStoreType("MySQL", model.DATABASE_DRIVER_MYSQL),
+		StoreTypes = append(StoreTypes, newStoreType("MySQL", model.DATABASE_DRIVER_MYSQL),
 			newStoreType("PostgreSQL", model.DATABASE_DRIVER_POSTGRES))
 	}
 
@@ -116,7 +116,7 @@ func initStores() {
 		}
 	}()
 	var wg sync.WaitGroup
-	for _, st := range storeTypes {
+	for _, st := range StoreTypes {
 		st := st
 		wg.Add(1)
 		go func() {
@@ -138,8 +138,8 @@ func tearDownStores() {
 	}
 	tearDownStoresOnce.Do(func() {
 		var wg sync.WaitGroup
-		wg.Add(len(storeTypes))
-		for _, st := range storeTypes {
+		wg.Add(len(StoreTypes))
+		for _, st := range StoreTypes {
 			st := st
 			go func() {
 				if st.Store != nil {
