@@ -1,13 +1,14 @@
 package api
 
 import (
+	"context"
 	"fmt"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/testlib"
-	"github.com/masterhung0112/hk_server/utils"
+	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -15,15 +16,27 @@ import (
 
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/services/searchengine"
+	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/store/localcachelayer"
+	"github.com/masterhung0112/hk_server/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/testlib"
+	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/web"
+
+	s3 "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
 )
 
 type TestHelper struct {
-	App                  *app.App
-	Server               *app.Server
-	ConfigStore          config.Store
-	Client               *model.Client
+	App         *app.App
+	Server      *app.Server
+	ConfigStore *config.Store
+
+	Client               *model.Client4
 	BasicUser            *model.User
 	BasicUser2           *model.User
 	TeamAdminUser        *model.User
@@ -33,12 +46,16 @@ type TestHelper struct {
 	BasicPrivateChannel2 *model.Channel
 	BasicDeletedChannel  *model.Channel
 	BasicChannel2        *model.Channel
-	// BasicPost            *model.Post
-	// Group                *model.Group
+	BasicPost            *model.Post
+	Group                *model.Group
 
-	SystemAdminClient *model.Client
+	SystemAdminClient *model.Client4
 	SystemAdminUser   *model.User
-	LocalClient       *model.Client
+	tempWorkspace     string
+
+	LocalClient *model.Client4
+
+	IncludeCacheLayer bool
 }
 
 var mainHelper *testlib.MainHelper
@@ -47,26 +64,49 @@ func SetMainHelper(mh *testlib.MainHelper) {
 	mainHelper = mh
 }
 
-func setupTestHelper(dbStore store.Store) *TestHelper {
-	var options []app.Option
+func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, enterprise bool, includeCache bool, updateConfig func(*model.Config)) *TestHelper {
+	tempWorkspace, err := ioutil.TempDir("", "apptest")
+	if err != nil {
+		panic(err)
+	}
 
 	memoryStore, err := config.NewMemoryStoreWithOptions(&config.MemoryStoreOptions{IgnoreEnvironmentOverrides: true})
 	if err != nil {
 		panic("failed to initialize memory store: " + err.Error())
 	}
 
-	config := memoryStore.Get()
-	// *config.PluginSettings.Directory = filepath.Join(tempWorkspace, "plugins")
-	// *config.PluginSettings.ClientDirectory = filepath.Join(tempWorkspace, "webapp")
-	// config.ServiceSettings.EnableLocalMode = model.NewBool(true)
-	// *config.ServiceSettings.LocalModeSocketLocation = filepath.Join(tempWorkspace, "mattermost_local.sock")
-	// if updateConfig != nil {
-	// 	updateConfig(config)
-	// }
-	memoryStore.Set(config)
+	memoryConfig := &model.Config{}
+	memoryConfig.SetDefaults()
+	*memoryConfig.PluginSettings.Directory = filepath.Join(tempWorkspace, "plugins")
+	*memoryConfig.PluginSettings.ClientDirectory = filepath.Join(tempWorkspace, "webapp")
+	memoryConfig.ServiceSettings.EnableLocalMode = model.NewBool(true)
+	*memoryConfig.ServiceSettings.LocalModeSocketLocation = filepath.Join(tempWorkspace, "mattermost_local.sock")
+	*memoryConfig.AnnouncementSettings.AdminNoticesEnabled = false
+	*memoryConfig.AnnouncementSettings.UserNoticesEnabled = false
+	if updateConfig != nil {
+		updateConfig(memoryConfig)
+	}
+	memoryStore.Set(memoryConfig)
 
-	options = append(options, app.ConfigStore(memoryStore))
-	options = append(options, app.StoreOverride(dbStore))
+	configStore, err := config.NewStoreFromBacking(memoryStore, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var options []app.Option
+	options = append(options, app.ConfigStore(configStore))
+	if includeCache {
+		// Adds the cache layer to the test store
+		options = append(options, app.StoreOverride(func(s *app.Server) store.Store {
+			lcl, err2 := localcachelayer.NewLocalCacheLayer(dbStore, s.Metrics, s.Cluster, s.CacheProvider)
+			if err2 != nil {
+				panic(err2)
+			}
+			return lcl
+		}))
+	} else {
+		options = append(options, app.StoreOverride(dbStore))
+	}
 
 	s, err := app.NewServer(options...)
 	if err != nil {
@@ -74,69 +114,94 @@ func setupTestHelper(dbStore store.Store) *TestHelper {
 	}
 
 	th := &TestHelper{
-		App:    app.New(app.ServerConnector(s)),
-		Server: s,
+		App:               app.New(app.ServerConnector(s)),
+		Server:            s,
+		ConfigStore:       configStore,
+		IncludeCacheLayer: includeCache,
 	}
 
-	// Initialize the router URL
-	ApiInit(th.Server.AppOptions, th.App.Srv().Router)
-	prevListenAddress := *th.App.Config().ServiceSettings.ListenAddress
-	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = ":0" })
-
-	// Start HTTP Server and other stuff
-	if err := th.Server.Start(); err != nil {
-		panic(err)
+	if searchEngine != nil {
+		th.App.SetSearchEngine(searchEngine)
 	}
 
-	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.ServiceSettings.ListenAddress = prevListenAddress })
-
-	// Disable strict password requirements for test
 	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.TeamSettings.MaxUsersPerTeam = 50
+		*cfg.RateLimitSettings.Enable = false
+		*cfg.EmailSettings.SendEmailNotifications = true
+		*cfg.ServiceSettings.SiteURL = ""
+
+		// Disable sniffing, otherwise elastic client fails to connect to docker node
+		// More details: https://github.com/olivere/elastic/wiki/Sniffing
+		*cfg.ElasticsearchSettings.Sniff = false
+
+		*cfg.TeamSettings.EnableOpenServer = true
+
+		// Disable strict password requirements for test
 		*cfg.PasswordSettings.MinimumLength = 5
 		*cfg.PasswordSettings.Lowercase = false
 		*cfg.PasswordSettings.Uppercase = false
 		*cfg.PasswordSettings.Symbol = false
 		*cfg.PasswordSettings.Number = false
+
+		*cfg.ServiceSettings.ListenAddress = ":0"
 	})
+	if err := th.Server.Start(); err != nil {
+		panic(err)
+	}
+
+	Init(th.Server, th.Server.AppOptions, th.App.Srv().Router)
+	InitLocal(th.Server, th.Server.AppOptions, th.App.Srv().LocalRouter)
+	web.New(th.Server, th.Server.AppOptions, th.App.Srv().Router)
+	//TODO: Open
+	// wsapi.Init(th.App.Srv())
+
+	if enterprise {
+		th.App.Srv().SetLicense(model.NewTestLicense())
+	} else {
+		th.App.Srv().SetLicense(nil)
+	}
 
 	th.Client = th.CreateClient()
 	th.SystemAdminClient = th.CreateClient()
-	//TODO: Open this
-	// th.LocalClient = th.CreateLocalClient(*config.ServiceSettings.LocalModeSocketLocation)
+
+	// Verify handling of the supported true/false values by randomizing on each run.
+	rand.Seed(time.Now().UTC().UnixNano())
+	trueValues := []string{"1", "t", "T", "TRUE", "true", "True"}
+	falseValues := []string{"0", "f", "F", "FALSE", "false", "False"}
+	trueString := trueValues[rand.Intn(len(trueValues))]
+	falseString := falseValues[rand.Intn(len(falseValues))]
+	mlog.Debug("Configured Client4 bool string values", mlog.String("true", trueString), mlog.String("false", falseString))
+	th.Client.SetBoolString(true, trueString)
+	th.Client.SetBoolString(false, falseString)
+
+	th.LocalClient = th.CreateLocalClient(*memoryConfig.ServiceSettings.LocalModeSocketLocation)
+
+	if th.tempWorkspace == "" {
+		th.tempWorkspace = tempWorkspace
+	}
 
 	th.App.InitServer()
 
 	return th
 }
 
-func (me *TestHelper) InitBasic() *TestHelper {
-	me.BasicTeam = me.CreateTeam()
-	me.BasicChannel = me.CreatePublicChannel()
-	me.BasicPrivateChannel = me.CreatePrivateChannel()
-	me.BasicPrivateChannel2 = me.CreatePrivateChannel()
-	me.BasicDeletedChannel = me.CreatePublicChannel()
-	me.BasicChannel2 = me.CreatePublicChannel()
-	// me.BasicPost = me.CreatePost()
-	me.LinkUserToTeam(me.BasicUser, me.BasicTeam)
-	me.LinkUserToTeam(me.BasicUser2, me.BasicTeam)
-	me.App.AddUserToChannel(me.BasicUser, me.BasicChannel)
-	me.App.AddUserToChannel(me.BasicUser2, me.BasicChannel)
-	me.App.AddUserToChannel(me.BasicUser, me.BasicChannel2)
-	me.App.AddUserToChannel(me.BasicUser2, me.BasicChannel2)
-	me.App.AddUserToChannel(me.BasicUser, me.BasicPrivateChannel)
-	me.App.AddUserToChannel(me.BasicUser2, me.BasicPrivateChannel)
-	me.App.AddUserToChannel(me.BasicUser, me.BasicDeletedChannel)
-	me.App.AddUserToChannel(me.BasicUser2, me.BasicDeletedChannel)
-	me.App.UpdateUserRoles(me.BasicUser.Id, model.SYSTEM_USER_ROLE_ID, false)
-	me.Client.DeleteChannel(me.BasicDeletedChannel.Id)
-	me.LoginBasic()
-	// me.Group = me.CreateGroup()
+func SetupEnterprise(tb testing.TB) *TestHelper {
+	if testing.Short() {
+		tb.SkipNow()
+	}
 
-	return me
-}
+	if mainHelper == nil {
+		tb.SkipNow()
+	}
 
-func (th *TestHelper) CreateClient() *model.Client {
-	return model.NewApiClient(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
+	dbStore := mainHelper.GetStore()
+	dbStore.DropAllTables()
+	dbStore.MarkSystemRanUnitTests()
+	mainHelper.PreloadMigrations()
+	searchEngine := mainHelper.GetSearchEngine()
+	th := setupTestHelper(dbStore, searchEngine, true, true, nil)
+	th.InitLogin()
+	return th
 }
 
 func Setup(tb testing.TB) *TestHelper {
@@ -151,28 +216,59 @@ func Setup(tb testing.TB) *TestHelper {
 	dbStore := mainHelper.GetStore()
 	dbStore.DropAllTables()
 	dbStore.MarkSystemRanUnitTests()
-
-	th := setupTestHelper(dbStore)
+	mainHelper.PreloadMigrations()
+	searchEngine := mainHelper.GetSearchEngine()
+	th := setupTestHelper(dbStore, searchEngine, false, true, nil)
 	th.InitLogin()
 	return th
 }
 
-func (me *TestHelper) TearDown() {
-	// utils.DisableDebugLogForTest()
-	// if me.IncludeCacheLayer {
-	// 	// Clean all the caches
-	// 	me.App.Srv().InvalidateAllCaches()
-	// }
+func SetupConfig(tb testing.TB, updateConfig func(cfg *model.Config)) *TestHelper {
+	if testing.Short() {
+		tb.SkipNow()
+	}
 
-	me.ShutdownApp()
+	if mainHelper == nil {
+		tb.SkipNow()
+	}
 
-	// utils.EnableDebugLogForTest()
+	dbStore := mainHelper.GetStore()
+	dbStore.DropAllTables()
+	dbStore.MarkSystemRanUnitTests()
+	searchEngine := mainHelper.GetSearchEngine()
+	th := setupTestHelper(dbStore, searchEngine, false, true, updateConfig)
+	th.InitLogin()
+	return th
 }
 
-func (me *TestHelper) ShutdownApp() {
+func SetupConfigWithStoreMock(tb testing.TB, updateConfig func(cfg *model.Config)) *TestHelper {
+	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, false, false, updateConfig)
+	emptyMockStore := mocks.Store{}
+	emptyMockStore.On("Close").Return(nil)
+	th.App.Srv().Store = &emptyMockStore
+	return th
+}
+
+func SetupWithStoreMock(tb testing.TB) *TestHelper {
+	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, false, false, nil)
+	emptyMockStore := mocks.Store{}
+	emptyMockStore.On("Close").Return(nil)
+	th.App.Srv().Store = &emptyMockStore
+	return th
+}
+
+func SetupEnterpriseWithStoreMock(tb testing.TB) *TestHelper {
+	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, true, false, nil)
+	emptyMockStore := mocks.Store{}
+	emptyMockStore.On("Close").Return(nil)
+	th.App.Srv().Store = &emptyMockStore
+	return th
+}
+
+func (th *TestHelper) ShutdownApp() {
 	done := make(chan bool)
 	go func() {
-		me.Server.Shutdown()
+		th.Server.Shutdown()
 		close(done)
 	}()
 
@@ -185,8 +281,119 @@ func (me *TestHelper) ShutdownApp() {
 	}
 }
 
+func (th *TestHelper) TearDown() {
+	utils.DisableDebugLogForTest()
+	if th.IncludeCacheLayer {
+		// Clean all the caches
+		th.App.Srv().InvalidateAllCaches()
+	}
+
+	th.ShutdownApp()
+
+	utils.EnableDebugLogForTest()
+}
+
+var initBasicOnce sync.Once
+var userCache struct {
+	SystemAdminUser *model.User
+	TeamAdminUser   *model.User
+	BasicUser       *model.User
+	BasicUser2      *model.User
+}
+
+func (th *TestHelper) InitLogin() *TestHelper {
+	th.waitForConnectivity()
+
+	// create users once and cache them because password hashing is slow
+	initBasicOnce.Do(func() {
+		th.SystemAdminUser = th.CreateUser()
+		th.App.UpdateUserRoles(th.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
+		th.SystemAdminUser, _ = th.App.GetUser(th.SystemAdminUser.Id)
+		userCache.SystemAdminUser = th.SystemAdminUser.DeepCopy()
+
+		th.TeamAdminUser = th.CreateUser()
+		th.App.UpdateUserRoles(th.TeamAdminUser.Id, model.SYSTEM_USER_ROLE_ID, false)
+		th.TeamAdminUser, _ = th.App.GetUser(th.TeamAdminUser.Id)
+		userCache.TeamAdminUser = th.TeamAdminUser.DeepCopy()
+
+		th.BasicUser = th.CreateUser()
+		th.BasicUser, _ = th.App.GetUser(th.BasicUser.Id)
+		userCache.BasicUser = th.BasicUser.DeepCopy()
+
+		th.BasicUser2 = th.CreateUser()
+		th.BasicUser2, _ = th.App.GetUser(th.BasicUser2.Id)
+		userCache.BasicUser2 = th.BasicUser2.DeepCopy()
+	})
+	// restore cached users
+	th.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
+	th.TeamAdminUser = userCache.TeamAdminUser.DeepCopy()
+	th.BasicUser = userCache.BasicUser.DeepCopy()
+	th.BasicUser2 = userCache.BasicUser2.DeepCopy()
+	mainHelper.GetSQLStore().GetMaster().Insert(th.SystemAdminUser, th.TeamAdminUser, th.BasicUser, th.BasicUser2)
+	// restore non hashed password for login
+	th.SystemAdminUser.Password = "Pa$$word11"
+	th.TeamAdminUser.Password = "Pa$$word11"
+	th.BasicUser.Password = "Pa$$word11"
+	th.BasicUser2.Password = "Pa$$word11"
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		th.LoginSystemAdmin()
+		wg.Done()
+	}()
+	go func() {
+		th.LoginTeamAdmin()
+		wg.Done()
+	}()
+	wg.Wait()
+	return th
+}
+
+func (th *TestHelper) InitBasic() *TestHelper {
+	th.BasicTeam = th.CreateTeam()
+	th.BasicChannel = th.CreatePublicChannel()
+	th.BasicPrivateChannel = th.CreatePrivateChannel()
+	th.BasicPrivateChannel2 = th.CreatePrivateChannel()
+	th.BasicDeletedChannel = th.CreatePublicChannel()
+	th.BasicChannel2 = th.CreatePublicChannel()
+	th.BasicPost = th.CreatePost()
+	th.LinkUserToTeam(th.BasicUser, th.BasicTeam)
+	th.LinkUserToTeam(th.BasicUser2, th.BasicTeam)
+	th.App.AddUserToChannel(th.BasicUser, th.BasicChannel)
+	th.App.AddUserToChannel(th.BasicUser2, th.BasicChannel)
+	th.App.AddUserToChannel(th.BasicUser, th.BasicChannel2)
+	th.App.AddUserToChannel(th.BasicUser2, th.BasicChannel2)
+	th.App.AddUserToChannel(th.BasicUser, th.BasicPrivateChannel)
+	th.App.AddUserToChannel(th.BasicUser2, th.BasicPrivateChannel)
+	th.App.AddUserToChannel(th.BasicUser, th.BasicDeletedChannel)
+	th.App.AddUserToChannel(th.BasicUser2, th.BasicDeletedChannel)
+	th.App.UpdateUserRoles(th.BasicUser.Id, model.SYSTEM_USER_ROLE_ID, false)
+	th.Client.DeleteChannel(th.BasicDeletedChannel.Id)
+	th.LoginBasic()
+	th.Group = th.CreateGroup()
+
+	return th
+}
+
+func (th *TestHelper) waitForConnectivity() {
+	for i := 0; i < 1000; i++ {
+		conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%v", th.App.Srv().ListenAddr.Port))
+		if err == nil {
+			conn.Close()
+			return
+		}
+		time.Sleep(time.Millisecond * 20)
+	}
+	panic("unable to connect")
+}
+
+func (th *TestHelper) CreateClient() *model.Client4 {
+	return model.NewAPIv4Client(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
+}
+
 // ToDo: maybe move this to NewAPIv4SocketClient and reuse it in mmctl
-func (me *TestHelper) CreateLocalClient(socketPath string) *model.Client {
+func (th *TestHelper) CreateLocalClient(socketPath string) *model.Client4 {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			Dial: func(network, addr string) (net.Conn, error) {
@@ -195,62 +402,366 @@ func (me *TestHelper) CreateLocalClient(socketPath string) *model.Client {
 		},
 	}
 
-	return &model.Client{
+	return &model.Client4{
 		ApiUrl:     "http://_" + model.API_URL_SUFFIX,
 		HttpClient: httpClient,
 	}
 }
 
+func (th *TestHelper) CreateWebSocketClient() (*model.WebSocketClient, *model.AppError) {
+	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), th.Client.AuthToken)
+}
+
+func (th *TestHelper) CreateWebSocketSystemAdminClient() (*model.WebSocketClient, *model.AppError) {
+	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), th.SystemAdminClient.AuthToken)
+}
+
+func (th *TestHelper) CreateWebSocketClientWithClient(client *model.Client4) (*model.WebSocketClient, *model.AppError) {
+	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), client.AuthToken)
+}
+
+func (th *TestHelper) CreateBotWithSystemAdminClient() *model.Bot {
+	return th.CreateBotWithClient((th.SystemAdminClient))
+}
+
+func (th *TestHelper) CreateBotWithClient(client *model.Client4) *model.Bot {
+	bot := &model.Bot{
+		Username:    GenerateTestUsername(),
+		DisplayName: "a bot",
+		Description: "bot",
+	}
+
+	utils.DisableDebugLogForTest()
+	rbot, resp := client.CreateBot(bot)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+	return rbot
+}
+
+func (th *TestHelper) CreateUser() *model.User {
+	return th.CreateUserWithClient(th.Client)
+}
+
+func (th *TestHelper) CreateTeam() *model.Team {
+	return th.CreateTeamWithClient(th.Client)
+}
+
+func (th *TestHelper) CreateTeamWithClient(client *model.Client4) *model.Team {
+	id := model.NewId()
+	team := &model.Team{
+		DisplayName: "dn_" + id,
+		Name:        GenerateTestTeamName(),
+		Email:       th.GenerateTestEmail(),
+		Type:        model.TEAM_OPEN,
+	}
+
+	utils.DisableDebugLogForTest()
+	rteam, resp := client.CreateTeam(team)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+	return rteam
+}
+
+func (th *TestHelper) CreateUserWithClient(client *model.Client4) *model.User {
+	id := model.NewId()
+
+	user := &model.User{
+		Email:     th.GenerateTestEmail(),
+		Username:  GenerateTestUsername(),
+		Nickname:  "nn_" + id,
+		FirstName: "f_" + id,
+		LastName:  "l_" + id,
+		Password:  "Pa$$word11",
+	}
+
+	utils.DisableDebugLogForTest()
+	ruser, response := client.CreateUser(user)
+	if response.Error != nil {
+		panic(response.Error)
+	}
+
+	ruser.Password = "Pa$$word11"
+	_, err := th.App.Srv().Store.User().VerifyEmail(ruser.Id, ruser.Email)
+	if err != nil {
+		return nil
+	}
+	utils.EnableDebugLogForTest()
+	return ruser
+}
+
+func (th *TestHelper) CreatePublicChannel() *model.Channel {
+	return th.CreateChannelWithClient(th.Client, model.CHANNEL_OPEN)
+}
+
+func (th *TestHelper) CreatePrivateChannel() *model.Channel {
+	return th.CreateChannelWithClient(th.Client, model.CHANNEL_PRIVATE)
+}
+
+func (th *TestHelper) CreateChannelWithClient(client *model.Client4, channelType string) *model.Channel {
+	return th.CreateChannelWithClientAndTeam(client, channelType, th.BasicTeam.Id)
+}
+
+func (th *TestHelper) CreateChannelWithClientAndTeam(client *model.Client4, channelType string, teamId string) *model.Channel {
+	id := model.NewId()
+
+	channel := &model.Channel{
+		DisplayName: "dn_" + id,
+		Name:        GenerateTestChannelName(),
+		Type:        channelType,
+		TeamId:      teamId,
+	}
+
+	utils.DisableDebugLogForTest()
+	rchannel, resp := client.CreateChannel(channel)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+	return rchannel
+}
+
+func (th *TestHelper) CreatePost() *model.Post {
+	return th.CreatePostWithClient(th.Client, th.BasicChannel)
+}
+
+func (th *TestHelper) CreatePinnedPost() *model.Post {
+	return th.CreatePinnedPostWithClient(th.Client, th.BasicChannel)
+}
+
+func (th *TestHelper) CreateMessagePost(message string) *model.Post {
+	return th.CreateMessagePostWithClient(th.Client, th.BasicChannel, message)
+}
+
+func (th *TestHelper) CreatePostWithClient(client *model.Client4, channel *model.Channel) *model.Post {
+	id := model.NewId()
+
+	post := &model.Post{
+		ChannelId: channel.Id,
+		Message:   "message_" + id,
+	}
+
+	utils.DisableDebugLogForTest()
+	rpost, resp := client.CreatePost(post)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+	return rpost
+}
+
+func (th *TestHelper) CreatePinnedPostWithClient(client *model.Client4, channel *model.Channel) *model.Post {
+	id := model.NewId()
+
+	post := &model.Post{
+		ChannelId: channel.Id,
+		Message:   "message_" + id,
+		IsPinned:  true,
+	}
+
+	utils.DisableDebugLogForTest()
+	rpost, resp := client.CreatePost(post)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+	return rpost
+}
+
+func (th *TestHelper) CreateMessagePostWithClient(client *model.Client4, channel *model.Channel, message string) *model.Post {
+	post := &model.Post{
+		ChannelId: channel.Id,
+		Message:   message,
+	}
+
+	utils.DisableDebugLogForTest()
+	rpost, resp := client.CreatePost(post)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+	return rpost
+}
+
+func (th *TestHelper) CreateMessagePostNoClient(channel *model.Channel, message string, createAtTime int64) *model.Post {
+	post, err := th.App.Srv().Store.Post().Save(&model.Post{
+		UserId:    th.BasicUser.Id,
+		ChannelId: channel.Id,
+		Message:   message,
+		CreateAt:  createAtTime,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return post
+}
+
+func (th *TestHelper) CreateDmChannel(user *model.User) *model.Channel {
+	utils.DisableDebugLogForTest()
+	var err *model.AppError
+	var channel *model.Channel
+	if channel, err = th.App.GetOrCreateDirectChannel(th.BasicUser.Id, user.Id); err != nil {
+		panic(err)
+	}
+	utils.EnableDebugLogForTest()
+	return channel
+}
+
+func (th *TestHelper) LoginBasic() {
+	th.LoginBasicWithClient(th.Client)
+}
+
+func (th *TestHelper) LoginBasic2() {
+	th.LoginBasic2WithClient(th.Client)
+}
+
+func (th *TestHelper) LoginTeamAdmin() {
+	th.LoginTeamAdminWithClient(th.Client)
+}
+
+func (th *TestHelper) LoginSystemAdmin() {
+	th.LoginSystemAdminWithClient(th.SystemAdminClient)
+}
+
+func (th *TestHelper) LoginBasicWithClient(client *model.Client4) {
+	utils.DisableDebugLogForTest()
+	_, resp := client.Login(th.BasicUser.Email, th.BasicUser.Password)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) LoginBasic2WithClient(client *model.Client4) {
+	utils.DisableDebugLogForTest()
+	_, resp := client.Login(th.BasicUser2.Email, th.BasicUser2.Password)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client4) {
+	utils.DisableDebugLogForTest()
+	_, resp := client.Login(th.TeamAdminUser.Email, th.TeamAdminUser.Password)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) LoginSystemAdminWithClient(client *model.Client4) {
+	utils.DisableDebugLogForTest()
+	_, resp := client.Login(th.SystemAdminUser.Email, th.SystemAdminUser.Password)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) UpdateActiveUser(user *model.User, active bool) {
+	utils.DisableDebugLogForTest()
+
+	_, err := th.App.UpdateActive(user, active)
+	if err != nil {
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) LinkUserToTeam(user *model.User, team *model.Team) {
+	utils.DisableDebugLogForTest()
+
+	err := th.App.JoinUserToTeam(team, user, "")
+	if err != nil {
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) AddUserToChannel(user *model.User, channel *model.Channel) *model.ChannelMember {
+	utils.DisableDebugLogForTest()
+
+	member, err := th.App.AddUserToChannel(user, channel)
+	if err != nil {
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
+
+	return member
+}
+
 func (th *TestHelper) GenerateTestEmail() string {
+	if *th.App.Config().EmailSettings.SMTPServer != "localhost" && os.Getenv("CI_INBUCKET_PORT") == "" {
+		return strings.ToLower("success+" + model.NewId() + "@simulator.amazonses.com")
+	}
 	return strings.ToLower(model.NewId() + "@localhost")
 }
 
-func (th *TestHelper) GenerateTestUsername() string {
-	return "fakeuser" + model.NewRandomString(10)
-}
-
-func checkHTTPStatus(t *testing.T, resp *model.Response, expectedStatus int, expectError bool) {
-	t.Helper()
-
-	require.NotNilf(t, resp, "Unexpected nil response, expected http:%v, expectError:%v", expectedStatus, expectError)
-	if expectError {
-		require.NotNil(t, resp.Error, "Expected a non-nil error and http status:%v, got nil, %v, error: %v", expectedStatus, resp.StatusCode)
-	} else {
-		require.Nil(t, resp.Error, "Expected no error and http status:%v, got %q, http:%v", expectedStatus, resp.Error, resp.StatusCode)
+func (th *TestHelper) CreateGroup() *model.Group {
+	id := model.NewId()
+	group := &model.Group{
+		Name:        model.NewString("n-" + id),
+		DisplayName: "dn_" + id,
+		Source:      model.GroupSourceLdap,
+		RemoteId:    "ri_" + id,
 	}
-	require.Equalf(t, expectedStatus, resp.StatusCode, "Expected http status:%v, got %v (err: %q)", expectedStatus, resp.StatusCode, resp.Error)
+
+	utils.DisableDebugLogForTest()
+	group, err := th.App.CreateGroup(group)
+	if err != nil {
+		panic(err)
+	}
+	utils.EnableDebugLogForTest()
+	return group
 }
 
-func CheckNoError(t *testing.T, resp *model.Response) {
-	t.Helper()
+// TestForSystemAdminAndLocal runs a test function for both
+// SystemAdmin and Local clients. Several endpoints work in the same
+// way when used by a fully privileged user and through the local
+// mode, so this helper facilitates checking both
+func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client4), name ...string) {
+	var testName string
+	if len(name) > 0 {
+		testName = name[0] + "/"
+	}
 
-	require.Nil(t, resp.Error, "expected no error")
+	t.Run(testName+"SystemAdminClient", func(t *testing.T) {
+		f(t, th.SystemAdminClient)
+	})
+
+	t.Run(testName+"LocalClient", func(t *testing.T) {
+		f(t, th.LocalClient)
+	})
 }
 
-func CheckCreatedStatus(t *testing.T, resp *model.Response) {
-	t.Helper()
-	checkHTTPStatus(t, resp, http.StatusCreated, false)
-}
+// TestForAllClients runs a test function for all the clients
+// registered in the TestHelper
+func (th *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.Client4), name ...string) {
+	var testName string
+	if len(name) > 0 {
+		testName = name[0] + "/"
+	}
 
-func CheckBadRequestStatus(t *testing.T, resp *model.Response) {
-	t.Helper()
-	checkHTTPStatus(t, resp, http.StatusBadRequest, true)
-}
+	t.Run(testName+"Client", func(t *testing.T) {
+		f(t, th.Client)
+	})
 
-func CheckUserSanitization(t *testing.T, user *model.User) {
-	t.Helper()
+	t.Run(testName+"SystemAdminClient", func(t *testing.T) {
+		f(t, th.SystemAdminClient)
+	})
 
-	require.Equal(t, "", user.Password, "password wasn't blank")
-	//TODO: Open
-	// require.Empty(t, user.AuthData, "auth data wasn't blank")
-	// require.Equal(t, "", user.MfaSecret, "mfa secret wasn't blank")
-}
-
-func CheckErrorMessage(t *testing.T, resp *model.Response, errorId string) {
-	t.Helper()
-
-	require.NotNilf(t, resp.Error, "should have errored with message: %s", errorId)
-	require.Equalf(t, resp.Error.Id, errorId, "incorrect error message, actual: %s, expected: %s", resp.Error.Id, errorId)
+	t.Run(testName+"LocalClient", func(t *testing.T) {
+		f(t, th.LocalClient)
+	})
 }
 
 func GenerateTestUsername() string {
@@ -273,269 +784,47 @@ func GenerateTestId() string {
 	return model.NewId()
 }
 
-// TestForAllClients runs a test function for all the clients
-// registered in the TestHelper
-func (me *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.Client), name ...string) {
-	var testName string
-	if len(name) > 0 {
-		testName = name[0] + "/"
-	}
-
-	t.Run(testName+"Client", func(t *testing.T) {
-		f(t, me.Client)
-	})
-
-	t.Run(testName+"SystemAdminClient", func(t *testing.T) {
-		f(t, me.SystemAdminClient)
-	})
-
-	//TODO: Open this
-	// t.Run(testName+"LocalClient", func(t *testing.T) {
-	// 	f(t, me.LocalClient)
-	// })
-}
-
-func CheckUnauthorizedStatus(t *testing.T, resp *model.Response) {
+func CheckUserSanitization(t *testing.T, user *model.User) {
 	t.Helper()
-	checkHTTPStatus(t, resp, http.StatusUnauthorized, true)
+
+	require.Equal(t, "", user.Password, "password wasn't blank")
+	require.Empty(t, user.AuthData, "auth data wasn't blank")
+	require.Equal(t, "", user.MfaSecret, "mfa secret wasn't blank")
 }
 
-func (me *TestHelper) waitForConnectivity() {
-	for i := 0; i < 1000; i++ {
-		conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%v", me.App.Srv().ListenAddr.Port))
-		if err == nil {
-			conn.Close()
-			return
-		}
-		time.Sleep(time.Millisecond * 20)
+func CheckEtag(t *testing.T, data interface{}, resp *model.Response) {
+	t.Helper()
+
+	require.Empty(t, data)
+	require.Equal(t, resp.StatusCode, http.StatusNotModified, "wrong status code for etag")
+}
+
+func CheckNoError(t *testing.T, resp *model.Response) {
+	t.Helper()
+
+	require.Nil(t, resp.Error, "expected no error")
+}
+
+func checkHTTPStatus(t *testing.T, resp *model.Response, expectedStatus int, expectError bool) {
+	t.Helper()
+
+	require.NotNilf(t, resp, "Unexpected nil response, expected http:%v, expectError:%v", expectedStatus, expectError)
+	if expectError {
+		require.NotNil(t, resp.Error, "Expected a non-nil error and http status:%v, got nil, %v", expectedStatus, resp.StatusCode)
+	} else {
+		require.Nil(t, resp.Error, "Expected no error and http status:%v, got %q, http:%v", expectedStatus, resp.Error, resp.StatusCode)
 	}
-	panic("unable to connect")
+	require.Equalf(t, expectedStatus, resp.StatusCode, "Expected http status:%v, got %v (err: %q)", expectedStatus, resp.StatusCode, resp.Error)
 }
 
-var initBasicOnce sync.Once
-
-var userCache struct {
-	SystemAdminUser *model.User
-	TeamAdminUser   *model.User
-	BasicUser       *model.User
-	BasicUser2      *model.User
+func CheckOKStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusOK, false)
 }
 
-func (me *TestHelper) CreateUser() *model.User {
-	return me.CreateUserWithClient(me.Client)
-}
-
-func (me *TestHelper) CreateTeam() *model.Team {
-	return me.CreateTeamWithClient(me.Client)
-}
-
-func (me *TestHelper) CreateUserWithClient(client *model.Client) *model.User {
-	id := model.NewId()
-
-	user := &model.User{
-		Email:     me.GenerateTestEmail(),
-		Username:  GenerateTestUsername(),
-		Nickname:  "nn_" + id,
-		FirstName: "f_" + id,
-		LastName:  "l_" + id,
-		Password:  "Pa$$word11",
-	}
-
-	utils.DisableDebugLogForTest()
-	ruser, response := client.CreateUser(user)
-	if response.Error != nil {
-		panic(response.Error)
-	}
-
-	ruser.Password = "Pa$$word11"
-	//TODO: Open
-	// _, err := me.App.Srv().Store.User().VerifyEmail(ruser.Id, ruser.Email)
-	// if err != nil {
-	// 	return nil
-	// }
-	utils.EnableDebugLogForTest()
-	return ruser
-}
-
-func (me *TestHelper) InitLogin() *TestHelper {
-	me.waitForConnectivity()
-
-	// create users once and cache them because password hashing is slow
-	initBasicOnce.Do(func() {
-		var err *model.AppError = nil
-		me.SystemAdminUser = me.CreateUser()
-		me.App.UpdateUserRoles(me.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
-		me.SystemAdminUser, err = me.App.GetUser(me.SystemAdminUser.Id)
-		if err != nil {
-			panic(err)
-		}
-		userCache.SystemAdminUser = me.SystemAdminUser.DeepCopy()
-
-		me.TeamAdminUser = me.CreateUser()
-		me.App.UpdateUserRoles(me.TeamAdminUser.Id, model.SYSTEM_USER_ROLE_ID, false)
-		me.TeamAdminUser, err = me.App.GetUser(me.TeamAdminUser.Id)
-		if err != nil {
-			panic(err)
-		}
-		userCache.TeamAdminUser = me.TeamAdminUser.DeepCopy()
-
-		me.BasicUser = me.CreateUser()
-		me.BasicUser, err = me.App.GetUser(me.BasicUser.Id)
-		if err != nil {
-			panic(err)
-		}
-		userCache.BasicUser = me.BasicUser.DeepCopy()
-
-		me.BasicUser2 = me.CreateUser()
-		me.BasicUser2, err = me.App.GetUser(me.BasicUser2.Id)
-		if err != nil {
-			panic(err)
-		}
-		userCache.BasicUser2 = me.BasicUser2.DeepCopy()
-	})
-	// restore cached users
-	me.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
-	me.TeamAdminUser = userCache.TeamAdminUser.DeepCopy()
-	me.BasicUser = userCache.BasicUser.DeepCopy()
-	me.BasicUser2 = userCache.BasicUser2.DeepCopy()
-	mainHelper.GetSQLSupplier().GetMaster().Insert(me.SystemAdminUser, me.TeamAdminUser, me.BasicUser, me.BasicUser2)
-	// restore non hashed password for login
-	me.SystemAdminUser.Password = "Pa$$word11"
-	me.TeamAdminUser.Password = "Pa$$word11"
-	me.BasicUser.Password = "Pa$$word11"
-	me.BasicUser2.Password = "Pa$$word11"
-
-	//TODO: Open
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		me.LoginSystemAdmin()
-		wg.Done()
-	}()
-	go func() {
-		me.LoginTeamAdmin()
-		wg.Done()
-	}()
-	wg.Wait()
-	return me
-}
-
-func (me *TestHelper) CreateTeamWithClient(client *model.Client) *model.Team {
-	id := model.NewId()
-	team := &model.Team{
-		DisplayName: "dn_" + id,
-		Name:        GenerateTestTeamName(),
-		Email:       me.GenerateTestEmail(),
-		Type:        model.TEAM_OPEN,
-	}
-
-	utils.DisableDebugLogForTest()
-	rteam, resp := client.CreateTeam(team)
-	if resp.Error != nil {
-		panic(resp.Error)
-	}
-	utils.EnableDebugLogForTest()
-	return rteam
-}
-
-func (me *TestHelper) LoginBasic() {
-	me.LoginBasicWithClient(me.Client)
-}
-
-func (me *TestHelper) LoginSystemAdmin() {
-	me.LoginSystemAdminWithClient(me.SystemAdminClient)
-}
-
-func (me *TestHelper) LoginTeamAdmin() {
-	me.LoginTeamAdminWithClient(me.Client)
-}
-
-func (me *TestHelper) LoginBasicWithClient(client *model.Client) {
-	utils.DisableDebugLogForTest()
-	_, resp := client.Login(me.BasicUser.Email, me.BasicUser.Password)
-	if resp.Error != nil {
-		panic(resp.Error)
-	}
-	utils.EnableDebugLogForTest()
-}
-
-func (me *TestHelper) LoginTeamAdminWithClient(client *model.Client) {
-	utils.DisableDebugLogForTest()
-	_, resp := client.Login(me.TeamAdminUser.Email, me.TeamAdminUser.Password)
-	if resp.Error != nil {
-		panic(resp.Error)
-	}
-	utils.EnableDebugLogForTest()
-}
-
-func (me *TestHelper) LoginSystemAdminWithClient(client *model.Client) {
-	utils.DisableDebugLogForTest()
-	_, resp := client.Login(me.SystemAdminUser.Email, me.SystemAdminUser.Password)
-	if resp.Error != nil {
-		panic(resp.Error)
-	}
-	utils.EnableDebugLogForTest()
-}
-
-func (me *TestHelper) CreatePublicChannel() *model.Channel {
-	return me.CreateChannelWithClient(me.Client, model.CHANNEL_OPEN)
-}
-
-func (me *TestHelper) CreatePrivateChannel() *model.Channel {
-	return me.CreateChannelWithClient(me.Client, model.CHANNEL_PRIVATE)
-}
-
-func (me *TestHelper) CreateChannelWithClient(client *model.Client, channelType string) *model.Channel {
-	return me.CreateChannelWithClientAndTeam(client, channelType, me.BasicTeam.Id)
-}
-
-func (me *TestHelper) CreateChannelWithClientAndTeam(client *model.Client, channelType string, teamId string) *model.Channel {
-	id := model.NewId()
-
-	channel := &model.Channel{
-		DisplayName: "dn_" + id,
-		Name:        GenerateTestChannelName(),
-		Type:        channelType,
-		TeamId:      teamId,
-	}
-
-	utils.DisableDebugLogForTest()
-	rchannel, resp := client.CreateChannel(channel)
-	if resp.Error != nil {
-		panic(resp.Error)
-	}
-	utils.EnableDebugLogForTest()
-	return rchannel
-}
-
-func (me *TestHelper) LinkUserToTeam(user *model.User, team *model.Team) {
-	utils.DisableDebugLogForTest()
-
-	err := me.App.JoinUserToTeam(team, user, "")
-	if err != nil {
-		mlog.Error(err.Error())
-
-		time.Sleep(time.Second)
-		panic(err)
-	}
-
-	utils.EnableDebugLogForTest()
-}
-
-func (me *TestHelper) AddUserToChannel(user *model.User, channel *model.Channel) *model.ChannelMember {
-	utils.DisableDebugLogForTest()
-
-	member, err := me.App.AddUserToChannel(user, channel)
-	if err != nil {
-		mlog.Error(err.Error())
-
-		time.Sleep(time.Second)
-		panic(err)
-	}
-
-	utils.EnableDebugLogForTest()
-
-	return member
+func CheckCreatedStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusCreated, false)
 }
 
 func CheckForbiddenStatus(t *testing.T, resp *model.Response) {
@@ -543,56 +832,230 @@ func CheckForbiddenStatus(t *testing.T, resp *model.Response) {
 	checkHTTPStatus(t, resp, http.StatusForbidden, true)
 }
 
-// TestForSystemAdminAndLocal runs a test function for both
-// SystemAdmin and Local clients. Several endpoints work in the same
-// way when used by a fully privileged user and through the local
-// mode, so this helper facilitates checking both
-func (me *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client), name ...string) {
-	var testName string
-	if len(name) > 0 {
-		testName = name[0] + "/"
-	}
-
-	t.Run(testName+"SystemAdminClient", func(t *testing.T) {
-		f(t, me.SystemAdminClient)
-	})
-
-	// t.Run(testName+"LocalClient", func(t *testing.T) {
-	// 	f(t, me.LocalClient)
-	// })
+func CheckUnauthorizedStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusUnauthorized, true)
 }
 
-func (me *TestHelper) AddPermissionToRole(permission string, roleName string) {
-	utils.DisableDebugLogForTest()
+func CheckNotFoundStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusNotFound, true)
+}
 
-	role, err1 := me.App.GetRoleByName(roleName)
-	if err1 != nil {
-		utils.EnableDebugLogForTest()
-		panic(err1)
+func CheckBadRequestStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusBadRequest, true)
+}
+
+func CheckNotImplementedStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusNotImplemented, true)
+}
+
+func CheckRequestEntityTooLargeStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusRequestEntityTooLarge, true)
+}
+
+func CheckInternalErrorStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusInternalServerError, true)
+}
+
+func CheckServiceUnavailableStatus(t *testing.T, resp *model.Response) {
+	t.Helper()
+	checkHTTPStatus(t, resp, http.StatusServiceUnavailable, true)
+}
+
+func CheckErrorMessage(t *testing.T, resp *model.Response, errorId string) {
+	t.Helper()
+
+	require.NotNilf(t, resp.Error, "should have errored with message: %s", errorId)
+	require.Equalf(t, errorId, resp.Error.Id, "incorrect error message, actual: %s, expected: %s", resp.Error.Id, errorId)
+}
+
+func CheckStartsWith(t *testing.T, value, prefix, message string) {
+	require.True(t, strings.HasPrefix(value, prefix), message, value)
+}
+
+// Similar to s3.New() but allows initialization of signature v2 or signature v4 client.
+// If signV2 input is false, function always returns signature v4.
+//
+// Additionally this function also takes a user defined region, if set
+// disables automatic region lookup.
+func s3New(endpoint, accessKey, secretKey string, secure bool, signV2 bool, region string) (*s3.Client, error) {
+	var creds *credentials.Credentials
+	if signV2 {
+		creds = credentials.NewStatic(accessKey, secretKey, "", credentials.SignatureV2)
+	} else {
+		creds = credentials.NewStatic(accessKey, secretKey, "", credentials.SignatureV4)
 	}
 
-	for _, existingPermission := range role.Permissions {
-		if existingPermission == permission {
-			utils.EnableDebugLogForTest()
-			return
+	opts := s3.Options{
+		Creds:  creds,
+		Secure: secure,
+		Region: region,
+	}
+	return s3.New(endpoint, &opts)
+}
+
+func (th *TestHelper) cleanupTestFile(info *model.FileInfo) error {
+	cfg := th.App.Config()
+	if *cfg.FileSettings.DriverName == model.IMAGE_DRIVER_S3 {
+		endpoint := *cfg.FileSettings.AmazonS3Endpoint
+		accessKey := *cfg.FileSettings.AmazonS3AccessKeyId
+		secretKey := *cfg.FileSettings.AmazonS3SecretAccessKey
+		secure := *cfg.FileSettings.AmazonS3SSL
+		signV2 := *cfg.FileSettings.AmazonS3SignV2
+		region := *cfg.FileSettings.AmazonS3Region
+		s3Clnt, err := s3New(endpoint, accessKey, secretKey, secure, signV2, region)
+		if err != nil {
+			return err
+		}
+		bucket := *cfg.FileSettings.AmazonS3Bucket
+		if err := s3Clnt.RemoveObject(context.Background(), bucket, info.Path, s3.RemoveObjectOptions{}); err != nil {
+			return err
+		}
+
+		if info.ThumbnailPath != "" {
+			if err := s3Clnt.RemoveObject(context.Background(), bucket, info.ThumbnailPath, s3.RemoveObjectOptions{}); err != nil {
+				return err
+			}
+		}
+
+		if info.PreviewPath != "" {
+			if err := s3Clnt.RemoveObject(context.Background(), bucket, info.PreviewPath, s3.RemoveObjectOptions{}); err != nil {
+				return err
+			}
+		}
+	} else if *cfg.FileSettings.DriverName == model.IMAGE_DRIVER_LOCAL {
+		if err := os.Remove(*cfg.FileSettings.Directory + info.Path); err != nil {
+			return err
+		}
+
+		if info.ThumbnailPath != "" {
+			if err := os.Remove(*cfg.FileSettings.Directory + info.ThumbnailPath); err != nil {
+				return err
+			}
+		}
+
+		if info.PreviewPath != "" {
+			if err := os.Remove(*cfg.FileSettings.Directory + info.PreviewPath); err != nil {
+				return err
+			}
 		}
 	}
 
-	role.Permissions = append(role.Permissions, permission)
+	return nil
+}
 
-	_, err2 := me.App.UpdateRole(role)
-	if err2 != nil {
+func (th *TestHelper) MakeUserChannelAdmin(user *model.User, channel *model.Channel) {
+	utils.DisableDebugLogForTest()
+
+	if cm, err := th.App.Srv().Store.Channel().GetMember(channel.Id, user.Id); err == nil {
+		cm.SchemeAdmin = true
+		if _, err = th.App.Srv().Store.Channel().UpdateMember(cm); err != nil {
+			utils.EnableDebugLogForTest()
+			panic(err)
+		}
+	} else {
 		utils.EnableDebugLogForTest()
-		panic(err2)
+		panic(err)
 	}
 
 	utils.EnableDebugLogForTest()
 }
 
-func (me *TestHelper) RemovePermissionFromRole(permission string, roleName string) {
+func (th *TestHelper) UpdateUserToTeamAdmin(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	role, err1 := me.App.GetRoleByName(roleName)
+	if tm, err := th.App.Srv().Store.Team().GetMember(team.Id, user.Id); err == nil {
+		tm.SchemeAdmin = true
+		if _, err = th.App.Srv().Store.Team().UpdateMember(tm); err != nil {
+			utils.EnableDebugLogForTest()
+			panic(err)
+		}
+	} else {
+		utils.EnableDebugLogForTest()
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) UpdateUserToNonTeamAdmin(user *model.User, team *model.Team) {
+	utils.DisableDebugLogForTest()
+
+	if tm, err := th.App.Srv().Store.Team().GetMember(team.Id, user.Id); err == nil {
+		tm.SchemeAdmin = false
+		if _, err = th.App.Srv().Store.Team().UpdateMember(tm); err != nil {
+			utils.EnableDebugLogForTest()
+			panic(err)
+		}
+	} else {
+		utils.EnableDebugLogForTest()
+		panic(err)
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) SaveDefaultRolePermissions() map[string][]string {
+	utils.DisableDebugLogForTest()
+
+	results := make(map[string][]string)
+
+	for _, roleName := range []string{
+		"system_user",
+		"system_admin",
+		"team_user",
+		"team_admin",
+		"channel_user",
+		"channel_admin",
+	} {
+		role, err1 := th.App.GetRoleByName(roleName)
+		if err1 != nil {
+			utils.EnableDebugLogForTest()
+			panic(err1)
+		}
+
+		results[roleName] = role.Permissions
+	}
+
+	utils.EnableDebugLogForTest()
+	return results
+}
+
+func (th *TestHelper) RestoreDefaultRolePermissions(data map[string][]string) {
+	utils.DisableDebugLogForTest()
+
+	for roleName, permissions := range data {
+		role, err1 := th.App.GetRoleByName(roleName)
+		if err1 != nil {
+			utils.EnableDebugLogForTest()
+			panic(err1)
+		}
+
+		if strings.Join(role.Permissions, " ") == strings.Join(permissions, " ") {
+			continue
+		}
+
+		role.Permissions = permissions
+
+		_, err2 := th.App.UpdateRole(role)
+		if err2 != nil {
+			utils.EnableDebugLogForTest()
+			panic(err2)
+		}
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) RemovePermissionFromRole(permission string, roleName string) {
+	utils.DisableDebugLogForTest()
+
+	role, err1 := th.App.GetRoleByName(roleName)
 	if err1 != nil {
 		utils.EnableDebugLogForTest()
 		panic(err1)
@@ -612,11 +1075,58 @@ func (me *TestHelper) RemovePermissionFromRole(permission string, roleName strin
 
 	role.Permissions = newPermissions
 
-	_, err2 := me.App.UpdateRole(role)
+	_, err2 := th.App.UpdateRole(role)
 	if err2 != nil {
 		utils.EnableDebugLogForTest()
 		panic(err2)
 	}
 
 	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) AddPermissionToRole(permission string, roleName string) {
+	utils.DisableDebugLogForTest()
+
+	role, err1 := th.App.GetRoleByName(roleName)
+	if err1 != nil {
+		utils.EnableDebugLogForTest()
+		panic(err1)
+	}
+
+	for _, existingPermission := range role.Permissions {
+		if existingPermission == permission {
+			utils.EnableDebugLogForTest()
+			return
+		}
+	}
+
+	role.Permissions = append(role.Permissions, permission)
+
+	_, err2 := th.App.UpdateRole(role)
+	if err2 != nil {
+		utils.EnableDebugLogForTest()
+		panic(err2)
+	}
+
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) SetupTeamScheme() *model.Scheme {
+	return th.SetupScheme(model.SCHEME_SCOPE_TEAM)
+}
+
+func (th *TestHelper) SetupChannelScheme() *model.Scheme {
+	return th.SetupScheme(model.SCHEME_SCOPE_CHANNEL)
+}
+
+func (th *TestHelper) SetupScheme(scope string) *model.Scheme {
+	scheme, err := th.App.CreateScheme(&model.Scheme{
+		Name:        model.NewId(),
+		DisplayName: model.NewId(),
+		Scope:       scope,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return scheme
 }

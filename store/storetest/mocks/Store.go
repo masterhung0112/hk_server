@@ -5,8 +5,12 @@
 package mocks
 
 import (
-	store "github.com/masterhung0112/hk_server/store"
+	context "context"
+
+	model "github.com/masterhung0112/hk_server/model"
 	mock "github.com/stretchr/testify/mock"
+
+	store "github.com/masterhung0112/hk_server/store"
 
 	time "time"
 )
@@ -80,9 +84,41 @@ func (_m *Store) ChannelMemberHistory() store.ChannelMemberHistoryStore {
 	return r0
 }
 
+// CheckIntegrity provides a mock function with given fields:
+func (_m *Store) CheckIntegrity() <-chan model.IntegrityCheckResult {
+	ret := _m.Called()
+
+	var r0 <-chan model.IntegrityCheckResult
+	if rf, ok := ret.Get(0).(func() <-chan model.IntegrityCheckResult); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan model.IntegrityCheckResult)
+		}
+	}
+
+	return r0
+}
+
 // Close provides a mock function with given fields:
 func (_m *Store) Close() {
 	_m.Called()
+}
+
+// ClusterDiscovery provides a mock function with given fields:
+func (_m *Store) ClusterDiscovery() store.ClusterDiscoveryStore {
+	ret := _m.Called()
+
+	var r0 store.ClusterDiscoveryStore
+	if rf, ok := ret.Get(0).(func() store.ClusterDiscoveryStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.ClusterDiscoveryStore)
+		}
+	}
+
+	return r0
 }
 
 // Command provides a mock function with given fields:
@@ -111,6 +147,38 @@ func (_m *Store) CommandWebhook() store.CommandWebhookStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.CommandWebhookStore)
+		}
+	}
+
+	return r0
+}
+
+// Compliance provides a mock function with given fields:
+func (_m *Store) Compliance() store.ComplianceStore {
+	ret := _m.Called()
+
+	var r0 store.ComplianceStore
+	if rf, ok := ret.Get(0).(func() store.ComplianceStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.ComplianceStore)
+		}
+	}
+
+	return r0
+}
+
+// Context provides a mock function with given fields:
+func (_m *Store) Context() context.Context {
+	ret := _m.Called()
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func() context.Context); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
 		}
 	}
 
@@ -152,6 +220,41 @@ func (_m *Store) FileInfo() store.FileInfoStore {
 	}
 
 	return r0
+}
+
+// GetCurrentSchemaVersion provides a mock function with given fields:
+func (_m *Store) GetCurrentSchemaVersion() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// GetDbVersion provides a mock function with given fields: numerical
+func (_m *Store) GetDbVersion(numerical bool) (string, error) {
+	ret := _m.Called(numerical)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(bool) string); ok {
+		r0 = rf(numerical)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(bool) error); ok {
+		r1 = rf(numerical)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Group provides a mock function with given fields:
@@ -196,6 +299,22 @@ func (_m *Store) License() store.LicenseStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.LicenseStore)
+		}
+	}
+
+	return r0
+}
+
+// LinkMetadata provides a mock function with given fields:
+func (_m *Store) LinkMetadata() store.LinkMetadataStore {
+	ret := _m.Called()
+
+	var r0 store.LinkMetadataStore
+	if rf, ok := ret.Get(0).(func() store.LinkMetadataStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.LinkMetadataStore)
 		}
 	}
 
@@ -276,6 +395,22 @@ func (_m *Store) Preference() store.PreferenceStore {
 	return r0
 }
 
+// ProductNotices provides a mock function with given fields:
+func (_m *Store) ProductNotices() store.ProductNoticesStore {
+	ret := _m.Called()
+
+	var r0 store.ProductNoticesStore
+	if rf, ok := ret.Get(0).(func() store.ProductNoticesStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.ProductNoticesStore)
+		}
+	}
+
+	return r0
+}
+
 // Reaction provides a mock function with given fields:
 func (_m *Store) Reaction() store.ReactionStore {
 	ret := _m.Called()
@@ -345,6 +480,11 @@ func (_m *Store) Session() store.SessionStore {
 	return r0
 }
 
+// SetContext provides a mock function with given fields: _a0
+func (_m *Store) SetContext(_a0 context.Context) {
+	_m.Called(_a0)
+}
+
 // Status provides a mock function with given fields:
 func (_m *Store) Status() store.StatusStore {
 	ret := _m.Called()
@@ -393,6 +533,22 @@ func (_m *Store) Team() store.TeamStore {
 	return r0
 }
 
+// TermsOfService provides a mock function with given fields:
+func (_m *Store) TermsOfService() store.TermsOfServiceStore {
+	ret := _m.Called()
+
+	var r0 store.TermsOfServiceStore
+	if rf, ok := ret.Get(0).(func() store.TermsOfServiceStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.TermsOfServiceStore)
+		}
+	}
+
+	return r0
+}
+
 // Thread provides a mock function with given fields:
 func (_m *Store) Thread() store.ThreadStore {
 	ret := _m.Called()
@@ -420,6 +576,48 @@ func (_m *Store) Token() store.TokenStore {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.TokenStore)
 		}
+	}
+
+	return r0
+}
+
+// TotalMasterDbConnections provides a mock function with given fields:
+func (_m *Store) TotalMasterDbConnections() int {
+	ret := _m.Called()
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// TotalReadDbConnections provides a mock function with given fields:
+func (_m *Store) TotalReadDbConnections() int {
+	ret := _m.Called()
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// TotalSearchDbConnections provides a mock function with given fields:
+func (_m *Store) TotalSearchDbConnections() int {
+	ret := _m.Called()
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int)
 	}
 
 	return r0
@@ -472,6 +670,22 @@ func (_m *Store) UserAccessToken() store.UserAccessTokenStore {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(store.UserAccessTokenStore)
+		}
+	}
+
+	return r0
+}
+
+// UserTermsOfService provides a mock function with given fields:
+func (_m *Store) UserTermsOfService() store.UserTermsOfServiceStore {
+	ret := _m.Called()
+
+	var r0 store.UserTermsOfServiceStore
+	if rf, ok := ret.Get(0).(func() store.UserTermsOfServiceStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.UserTermsOfServiceStore)
 		}
 	}
 

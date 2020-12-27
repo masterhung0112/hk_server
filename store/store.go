@@ -22,10 +22,18 @@ type Store interface {
 	User() UserStore
 	Bot() BotStore
 	Audit() AuditStore
+	ClusterDiscovery() ClusterDiscoveryStore
+	Compliance() ComplianceStore
+	Session() SessionStore
+	OAuth() OAuthStore
 	System() SystemStore
 	Webhook() WebhookStore
 	Command() CommandStore
 	CommandWebhook() CommandWebhookStore
+	Preference() PreferenceStore
+	License() LicenseStore
+	Token() TokenStore
+	Emoji() EmojiStore
 	Status() StatusStore
 	FileInfo() FileInfoStore
 	UploadSession() UploadSessionStore
@@ -33,22 +41,28 @@ type Store interface {
 	Role() RoleStore
 	Scheme() SchemeStore
 	Job() JobStore
-	Session() SessionStore
-	OAuth() OAuthStore
 	UserAccessToken() UserAccessTokenStore
 	ChannelMemberHistory() ChannelMemberHistoryStore
 	Plugin() PluginStore
-	Preference() PreferenceStore
-	License() LicenseStore
-	Token() TokenStore
-	Emoji() EmojiStore
+	TermsOfService() TermsOfServiceStore
+	ProductNotices() ProductNoticesStore
 	Group() GroupStore
-	Close()
-	DropAllTables()
+	UserTermsOfService() UserTermsOfServiceStore
+	LinkMetadata() LinkMetadataStore
 	MarkSystemRanUnitTests()
+	Close()
 	LockToMaster()
 	UnlockFromMaster()
+	DropAllTables()
 	RecycleDBConnections(d time.Duration)
+	GetCurrentSchemaVersion() string
+	GetDbVersion(numerical bool) (string, error)
+	TotalMasterDbConnections() int
+	TotalReadDbConnections() int
+	TotalSearchDbConnections() int
+	CheckIntegrity() <-chan model.IntegrityCheckResult
+	SetContext(context context.Context)
+	Context() context.Context
 }
 
 type ChannelMemberHistoryStore interface {
@@ -523,6 +537,25 @@ type SchemeStore interface {
 	CountWithoutPermission(scope, permissionID string, roleScope model.RoleScope, roleType model.RoleType) (int64, error)
 }
 
+type TermsOfServiceStore interface {
+	Save(termsOfService *model.TermsOfService) (*model.TermsOfService, error)
+	GetLatest(allowFromCache bool) (*model.TermsOfService, error)
+	Get(id string, allowFromCache bool) (*model.TermsOfService, error)
+}
+
+type ProductNoticesStore interface {
+	View(userId string, notices []string) error
+	Clear(notices []string) error
+	ClearOldNotices(currentNotices *model.ProductNotices) error
+	GetViews(userId string) ([]model.ProductNoticeViewState, error)
+}
+
+type UserTermsOfServiceStore interface {
+	GetByUser(userId string) (*model.UserTermsOfService, error)
+	Save(userTermsOfService *model.UserTermsOfService) (*model.UserTermsOfService, error)
+	Delete(userId, termsOfServiceId string) error
+}
+
 type BotStore interface {
 	Get(userId string, includeDeleted bool) (*model.Bot, error)
 	GetAll(options *model.BotGetOptions) ([]*model.Bot, error)
@@ -554,6 +587,24 @@ type AuditStore interface {
 	Save(audit *model.Audit) error
 	Get(user_id string, offset int, limit int) (model.Audits, error)
 	PermanentDeleteByUser(userId string) error
+}
+
+type ClusterDiscoveryStore interface {
+	Save(discovery *model.ClusterDiscovery) error
+	Delete(discovery *model.ClusterDiscovery) (bool, error)
+	Exists(discovery *model.ClusterDiscovery) (bool, error)
+	GetAll(discoveryType, clusterName string) ([]*model.ClusterDiscovery, error)
+	SetLastPingAt(discovery *model.ClusterDiscovery) error
+	Cleanup() error
+}
+
+type ComplianceStore interface {
+	Save(compliance *model.Compliance) (*model.Compliance, error)
+	Update(compliance *model.Compliance) (*model.Compliance, error)
+	Get(id string) (*model.Compliance, error)
+	GetAll(offset, limit int) (model.Compliances, error)
+	ComplianceExport(compliance *model.Compliance) ([]*model.CompliancePost, error)
+	MessageExport(after int64, limit int) ([]*model.MessageExport, error)
 }
 
 type JobStore interface {
@@ -717,6 +768,11 @@ type GroupStore interface {
 
 	// GroupCountWithAllowReference returns the count of records in the Groups table with AllowReference set to true.
 	GroupCountWithAllowReference() (int64, error)
+}
+
+type LinkMetadataStore interface {
+	Save(linkMetadata *model.LinkMetadata) (*model.LinkMetadata, error)
+	Get(url string, timestamp int64) (*model.LinkMetadata, error)
 }
 
 // ChannelSearchOpts contains options for searching channels.

@@ -97,7 +97,7 @@ func TestGetUsers(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
 
-	th.TestForAllClients(t, func(t *testing.T, client *model.Client) {
+	th.TestForAllClients(t, func(t *testing.T, client *model.Client1) {
 		rusers, resp := client.GetUsers(0, 60, "")
 		CheckNoError(t, resp)
 		for _, u := range rusers {

@@ -3,13 +3,17 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/masterhung0112/hk_server/audit"
 	"github.com/masterhung0112/hk_server/services/searchengine"
 	"github.com/masterhung0112/hk_server/services/searchengine/bleveengine"
+	"github.com/masterhung0112/hk_server/store/localcachelayer"
+	"github.com/masterhung0112/hk_server/store/retrylayer"
 	"hash/maphash"
 	"net"
 	"net/http"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -34,14 +38,16 @@ import (
 	"github.com/masterhung0112/hk_server/utils"
 )
 
+var MaxNotificationsPerChannelDefault int64 = 1000000
+
+// declaring this as var to allow overriding in tests
+var SENTRY_DSN = "placeholder_sentry_dsn"
+
 type Server struct {
-	newStore func() store.Store
-	sqlStore *sqlstore.SqlStore
-	Store    store.Store
-
-	configStore *config.Store
-
-	didFinishListen chan struct{}
+	sqlStore           *sqlstore.SqlStore
+	Store              store.Store
+	WebSocketRouter    *WebSocketRouter
+	AppInitializedOnce sync.Once
 
 	// RootRouter is the starting point for all HTTP requests to the server.
 	RootRouter *mux.Router
@@ -50,25 +56,86 @@ type Server struct {
 	// requests to the server
 	LocalRouter *mux.Router
 
-	// Router is the starting point for all web, api4 and ws requests to the server.
-	// It differs from RootRouter only if the SiteURL contains a /subpath
+	// Router is the starting point for all web, api4 and ws requests to the server. It differs
+	// from RootRouter only if the SiteURL contains a /subpath.
 	Router *mux.Router
 
 	Server     *http.Server
 	ListenAddr *net.TCPAddr
+	// RateLimiter *RateLimiter
+	Busy *Busy
 
-	clientConfig        atomic.Value
-	clientConfigHash    atomic.Value
-	limitedClientConfig atomic.Value
+	localModeServer *http.Server
 
-	postActionCookieSecret []byte
+	didFinishListen chan struct{}
 
 	goroutineCount      int32
 	goroutineExitSignal chan struct{}
 
-	AppInitializedOnce sync.Once
+	PluginsEnvironment     *plugin.Environment
+	PluginConfigListenerId string
+	PluginsLock            sync.RWMutex
+
+	EmailService *EmailService
+
+	hubs     []*Hub
+	hashSeed maphash.Seed
+
+	PushNotificationsHub   PushNotificationsHub
+	pushNotificationClient *http.Client // TODO: move this to it's own package
+
+	runjobs bool
+	Jobs    *jobs.JobServer
+
+	clusterLeaderListeners sync.Map
+
+	licenseValue       atomic.Value
+	clientLicenseValue atomic.Value
+	licenseListeners   map[string]func(*model.License, *model.License)
+
+	timezones *timezones.Timezones
+
+	newStore func() (store.Store, error)
+
+	htmlTemplateWatcher     *utils.HTMLTemplateWatcher
+	sessionCache            cache.Cache
+	seenPendingPostIdsCache cache.Cache
+	statusCache             cache.Cache
+	configListenerId        string
+	licenseListenerId       string
+	logListenerId           string
+	clusterLeaderListenerId string
+	searchConfigListenerId  string
+	searchLicenseListenerId string
+	loggerLicenseListenerId string
+	configStore             *config.Store
+	postActionCookieSecret  []byte
+
+	advancedLogListenerCleanup func()
+
+	pluginCommands     []*PluginCommand
+	pluginCommandsLock sync.RWMutex
+
+	asymmetricSigningKey atomic.Value
+	clientConfig         atomic.Value
+	clientConfigHash     atomic.Value
+	limitedClientConfig  atomic.Value
+
+	// telemetryService *telemetry.TelemetryService
 
 	phase2PermissionsMigrationComplete bool
+
+	HTTPService httpservice.HTTPService
+
+	ImageProxy *imageproxy.ImageProxy
+
+	Audit            *audit.Audit
+	Log              *mlog.Logger
+	NotificationsLog *mlog.Logger
+
+	joinCluster       bool
+	startMetrics      bool
+	startSearchEngine bool
 
 	SearchEngine *searchengine.Broker
 
@@ -83,60 +150,20 @@ type Server struct {
 	Notification     einterfaces.NotificationInterface
 	Saml             einterfaces.SamlInterface
 
-	HTTPService httpservice.HTTPService
-
-	Log              *mlog.Logger
-	NotificationsLog *mlog.Logger
-
-	PluginsEnvironment     *plugin.Environment
-	PluginConfigListenerId string
-	PluginsLock            sync.RWMutex
-
-	EmailService        *EmailService
-	htmlTemplateWatcher *utils.HTMLTemplateWatcher
-
-	hubs     []*Hub
-	hashSeed maphash.Seed
-
-	PushNotificationsHub   PushNotificationsHub
-	pushNotificationClient *http.Client // TODO: move this to it's own package
-
-	runjobs bool
-	Jobs    *jobs.JobServer
-
-	licenseValue       atomic.Value
-	clientLicenseValue atomic.Value
-	licenseListeners   map[string]func(*model.License, *model.License)
-
-	timezones *timezones.Timezones
-
-	sessionCache            cache.Cache
-	seenPendingPostIdsCache cache.Cache
-	statusCache             cache.Cache
-	configListenerId        string
-	licenseListenerId       string
-	logListenerId           string
-	clusterLeaderListenerId string
-	searchConfigListenerId  string
-	searchLicenseListenerId string
-	loggerLicenseListenerId string
-
-	Busy *Busy
-
-	pluginCommands     []*PluginCommand
-	pluginCommandsLock sync.RWMutex
-
-	advancedLogListenerCleanup func()
-
-	ImageProxy *imageproxy.ImageProxy
-
 	CacheProvider cache.Provider
+
+	// tracer *tracing.Tracer
 
 	// These are used to prevent concurrent upload requests
 	// for a given upload session which could cause inconsistencies
 	// and data corruption.
 	uploadLockMapMut sync.Mutex
 	uploadLockMap    map[string]bool
+
+	// featureFlagSynchronizer      *config.FeatureFlagSynchronizer
+	featureFlagStop              chan struct{}
+	featureFlagStopped           chan struct{}
+	featureFlagSynchronizerMutex sync.Mutex
 }
 
 // Global app options that should be applied to apps created by this server
@@ -314,9 +341,51 @@ func NewServer(options ...Option) (*Server, error) {
 	}
 
 	if s.newStore == nil {
-		s.newStore = func() store.Store {
+		s.newStore = func() (store.Store, error) {
 			s.sqlStore = sqlstore.New(s.Config().SqlSettings, s.Metrics)
-			return s.sqlStore
+			if s.sqlStore.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+				ver, err2 := s.sqlStore.GetDbVersion(true)
+				if err2 != nil {
+					return nil, errors.Wrap(err2, "cannot get DB version")
+				}
+				intVer, err2 := strconv.Atoi(ver)
+				if err2 != nil {
+					return nil, errors.Wrap(err2, "cannot parse DB version")
+				}
+				if intVer < sqlstore.MINIMUM_REQUIRED_POSTGRES_VERSION {
+					return nil, fmt.Errorf("minimum required postgres version is %s; found %s", sqlstore.VersionString(sqlstore.MINIMUM_REQUIRED_POSTGRES_VERSION), sqlstore.VersionString(intVer))
+				}
+			}
+
+			lcl, err2 := localcachelayer.NewLocalCacheLayer(
+				retrylayer.New(s.sqlStore),
+				s.Metrics,
+				s.Cluster,
+				s.CacheProvider,
+			)
+			if err2 != nil {
+				return nil, errors.Wrap(err2, "cannot create local cache layer")
+			}
+
+			searchStore := searchlayer.NewSearchLayer(
+				lcl,
+				s.SearchEngine,
+				s.Config(),
+			)
+
+			s.AddConfigListener(func(prevCfg, cfg *model.Config) {
+				searchStore.UpdateConfig(cfg)
+			})
+
+			s.sqlStore.UpdateLicense(s.License())
+			s.AddLicenseListener(func(oldLicense, newLicense *model.License) {
+				s.sqlStore.UpdateLicense(newLicense)
+			})
+
+			return timerlayer.New(
+				searchStore,
+				s.Metrics,
+			), nil
 		}
 	}
 
@@ -340,6 +409,27 @@ func NewServer(options ...Option) (*Server, error) {
 		return nil, errors.Wrap(err, "Failed to parse SiteURL subpath")
 	}
 	s.Router = s.RootRouter.PathPrefix(subpath).Subrouter()
+
+	s.timezones = timezones.New()
+
+	license := s.License()
+	if license == nil {
+		s.UpdateConfig(func(cfg *model.Config) {
+			cfg.TeamSettings.MaxNotificationsPerChannel = &MaxNotificationsPerChannelDefault
+		})
+	}
+
+	s.ReloadConfig()
+
+	allowAdvancedLogging := license != nil && *license.Features.AdvancedLogging
+
+	if s.Audit == nil {
+		s.Audit = &audit.Audit{}
+		s.Audit.Init(audit.DefMaxQueueSize)
+		if err = s.configureAudit(s.Audit, allowAdvancedLogging); err != nil {
+			mlog.Error("Error configuring audit", mlog.Err(err))
+		}
+	}
 
 	mlog.Info("Server is initialized...")
 
@@ -475,6 +565,21 @@ func (s *Server) FileBackend() (filesstore.FileBackend, *model.AppError) {
 		return nil, model.NewAppError("FileBackend", "api.file.no_driver.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 	return backend, nil
+}
+
+func (s *Server) TotalWebsocketConnections() int {
+	// This method is only called after the hub is initialized.
+	// Therefore, no mutex is needed to protect s.hubs.
+	count := int64(0)
+	for _, hub := range s.hubs {
+		count = count + atomic.LoadInt64(&hub.connectionCount)
+	}
+
+	return int(count)
+}
+
+func (s *Server) ClientConfigHash() string {
+	return s.clientConfigHash.Load().(string)
 }
 
 func (s *Server) initJobs() {

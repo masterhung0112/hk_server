@@ -6,6 +6,7 @@ import (
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/services/httpservice"
 	"github.com/masterhung0112/hk_server/services/mailservice"
+	"github.com/masterhung0112/hk_server/services/searchengine"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/mattermost/go-i18n/i18n"
 	"html/template"
@@ -17,7 +18,13 @@ import (
 )
 
 type App struct {
-	srv     *Server
+	srv *Server
+
+	// XXX: This is required because removing this needs BleveEngine
+	// to be registered in (h *MainHelper) setupStore, but that creates
+	// a cyclic dependency as bleve tests themselves import testlib.
+	searchEngine *searchengine.Broker
+
 	context context.Context
 
 	t goi18n.TranslateFunc
@@ -230,6 +237,9 @@ func (s *Server) getSystemInstallDate() (int64, *model.AppError) {
 
 func (a *App) Cluster() einterfaces.ClusterInterface {
 	return a.srv.Cluster
+}
+func (a *App) SearchEngine() *searchengine.Broker {
+	return a.searchEngine
 }
 
 func (a *App) setWarnMetricsStatusAndNotify(warnMetricId string) *model.AppError {

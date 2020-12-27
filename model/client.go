@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -21,14 +22,16 @@ const (
 	HEADER_CSRF_TOKEN         = "X-CSRF-Token"
 	HEADER_BEARER             = "BEARER"
 	HEADER_AUTH               = "Authorization"
+	HEADER_CLOUD_TOKEN        = "X-Cloud-Token"
 	HEADER_REQUESTED_WITH     = "X-Requested-With"
 	HEADER_REQUESTED_WITH_XML = "XMLHttpRequest"
+	STATUS                    = "status"
+	STATUS_OK                 = "OK"
+	STATUS_FAIL               = "FAIL"
+	STATUS_UNHEALTHY          = "UNHEALTHY"
+	STATUS_REMOVE             = "REMOVE"
 
-	STATUS           = "status"
-	STATUS_OK        = "OK"
-	STATUS_FAIL      = "FAIL"
-	STATUS_UNHEALTHY = "UNHEALTHY"
-	STATUS_REMOVE    = "REMOVE"
+	CLIENT_DIR = "client"
 
 	API_URL_SUFFIX = "/api/v1"
 )
@@ -42,25 +45,68 @@ type Response struct {
 	Header        http.Header
 }
 
-type Client struct {
-	Url    string // the location of the server
-	ApiUrl string // The Api location of the server
-
-	HttpClient *http.Client
+type Client1 struct {
+	Url        string       // The location of the server, for example  "http://localhost:8065"
+	ApiUrl     string       // The api location of the server, for example "http://localhost:8065/api/v4"
+	HttpClient *http.Client // The http client
 	AuthToken  string
 	AuthType   string
-	HttpHeader map[string]string
+	HttpHeader map[string]string // Headers to be copied over for each request
+
+	// TrueString is the string value sent to the server for true boolean query parameters.
+	trueString string
+
+	// FalseString is the string value sent to the server for false boolean query parameters.
+	falseString string
 }
 
-func NewApiClient(url string) *Client {
-	return &Client{
-		url,
-		url + API_URL_SUFFIX,
-		&http.Client{},
-		"",
-		"",
-		map[string]string{},
+// SetBoolString is a helper method for overriding how true and false query string parameters are
+// sent to the server.
+//
+// This method is only exposed for testing. It is never necessary to configure these values
+// in production.
+func (c *Client1) SetBoolString(value bool, valueStr string) {
+	if value {
+		c.trueString = valueStr
+	} else {
+		c.falseString = valueStr
 	}
+}
+
+// boolString builds the query string parameter for boolean values.
+func (c *Client1) boolString(value bool) string {
+	if value && c.trueString != "" {
+		return c.trueString
+	} else if !value && c.falseString != "" {
+		return c.falseString
+	}
+
+	if value {
+		return "true"
+	}
+	return "false"
+}
+
+func closeBody(r *http.Response) {
+	if r.Body != nil {
+		_, _ = io.Copy(ioutil.Discard, r.Body)
+		_ = r.Body.Close()
+	}
+}
+
+// Must is a convenience function used for testing.
+func (c *Client1) Must(result interface{}, resp *Response) interface{} {
+	if resp.Error != nil {
+		time.Sleep(time.Second)
+		panic(resp.Error)
+	}
+
+	return result
+}
+
+func NewApiClient(url string) *Client1 {
+	url = strings.TrimRight(url, "/")
+	return &Client1{url, url + API_URL_SUFFIX, &http.Client{}, "", "", map[string]string{}, "", ""}
 }
 
 func BuildErrorResponse(r *http.Response, err *AppError) *Response {
@@ -91,41 +137,34 @@ func BuildResponse(r *http.Response) *Response {
 	}
 }
 
-func closeBody(r *http.Response) {
-	if r.Body != nil {
-		_, _ = io.Copy(ioutil.Discard, r.Body)
-		_ = r.Body.Close()
-	}
-}
-
-func (client *Client) GetUsersRoute() string {
+func (client *Client1) GetUsersRoute() string {
 	return "/users"
 }
 
-func (c *Client) GetUserRoute(userId string) string {
+func (c *Client1) GetUserRoute(userId string) string {
 	return fmt.Sprintf(c.GetUsersRoute()+"/%v", userId)
 }
 
-func (c *Client) GetTeamsRoute() string {
+func (c *Client1) GetTeamsRoute() string {
 	return "/teams"
 }
 
-func (c *Client) DoApiGet(url string, etag string) (*http.Response, *AppError) {
+func (c *Client1) DoApiGet(url string, etag string) (*http.Response, *AppError) {
 	return c.DoApiRequest(http.MethodGet, c.ApiUrl+url, "", etag)
 }
 
-func (client *Client) DoApiPost(url string, data string) (*http.Response, *AppError) {
+func (client *Client1) DoApiPost(url string, data string) (*http.Response, *AppError) {
 	return client.DoApiRequest(http.MethodPost, client.ApiUrl+url, data, "")
 }
 
-func (client *Client) DoApiRequest(method, url, data, etag string) (*http.Response, *AppError) {
+func (client *Client1) DoApiRequest(method, url, data, etag string) (*http.Response, *AppError) {
 	return client.doApiRequestReader(method, url, strings.NewReader(data), etag)
 }
 
-func (client *Client) doApiRequestReader(method, url string, data io.Reader, etag string) (*http.Response, *AppError) {
+func (client *Client1) doApiRequestReader(method, url string, data io.Reader, etag string) (*http.Response, *AppError) {
 	rq, err := http.NewRequest(method, url, data)
 	if err != nil {
-		return nil, NewAppError(url, "model.client.connecting.app_error", nil, err.Error(), http.StatusBadRequest)
+		return nil, NewAppError(url, "model.Client1.connecting.app_error", nil, err.Error(), http.StatusBadRequest)
 	}
 
 	if len(etag) > 0 {
@@ -144,7 +183,7 @@ func (client *Client) doApiRequestReader(method, url string, data io.Reader, eta
 
 	rp, err := client.HttpClient.Do(rq)
 	if err != nil || rp == nil {
-		return nil, NewAppError(url, "model.client.connecting.app_error", nil, err.Error(), 0)
+		return nil, NewAppError(url, "model.Client1.connecting.app_error", nil, err.Error(), 0)
 	}
 
 	if rp.StatusCode == 304 {
@@ -159,7 +198,7 @@ func (client *Client) doApiRequestReader(method, url string, data io.Reader, eta
 	return rp, nil
 }
 
-func (client *Client) CreateUser(user *User) (*User, *Response) {
+func (client *Client1) CreateUser(user *User) (*User, *Response) {
 	r, err := client.DoApiPost(client.GetUsersRoute(), user.ToJson())
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -170,14 +209,14 @@ func (client *Client) CreateUser(user *User) (*User, *Response) {
 
 // Login authenticates a user by login id, which can be username, email or some sort
 // of SSO identifier based on server configuration, and a password.
-func (c *Client) Login(loginId string, password string) (*User, *Response) {
+func (c *Client1) Login(loginId string, password string) (*User, *Response) {
 	m := make(map[string]string)
 	m["login_id"] = loginId
 	m["password"] = password
 	return c.login(m)
 }
 
-func (c *Client) login(m map[string]string) (*User, *Response) {
+func (c *Client1) login(m map[string]string) (*User, *Response) {
 	r, err := c.DoApiPost("/users/login", MapToJson(m))
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -189,7 +228,7 @@ func (c *Client) login(m map[string]string) (*User, *Response) {
 }
 
 // GetUsers returns a page of users on the system. Page counting starts at 0.
-func (c *Client) GetUsers(page int, perPage int, etag string) ([]*User, *Response) {
+func (c *Client1) GetUsers(page int, perPage int, etag string) ([]*User, *Response) {
 	query := fmt.Sprintf("?page=%v&per_page=%v", page, perPage)
 	r, err := c.DoApiGet(c.GetUsersRoute()+query, etag)
 	if err != nil {
@@ -200,7 +239,7 @@ func (c *Client) GetUsers(page int, perPage int, etag string) ([]*User, *Respons
 }
 
 // Logout terminates the current user's session.
-func (c *Client) Logout() (bool, *Response) {
+func (c *Client1) Logout() (bool, *Response) {
 	r, err := c.DoApiPost("/users/logout", "")
 	if err != nil {
 		return false, BuildErrorResponse(r, err)
@@ -227,7 +266,7 @@ func CheckStatusOK(r *http.Response) bool {
 // Team Section
 
 // CreateTeam creates a team in the system based on the provided team struct.
-func (c *Client) CreateTeam(team *Team) (*Team, *Response) {
+func (c *Client1) CreateTeam(team *Team) (*Team, *Response) {
 	r, err := c.DoApiPost(c.GetTeamsRoute(), team.ToJson())
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -237,7 +276,7 @@ func (c *Client) CreateTeam(team *Team) (*Team, *Response) {
 }
 
 // GetMe returns the logged in user.
-func (c *Client) GetMe(etag string) (*User, *Response) {
+func (c *Client1) GetMe(etag string) (*User, *Response) {
 	r, err := c.DoApiGet(c.GetUserRoute(ME), etag)
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -247,7 +286,7 @@ func (c *Client) GetMe(etag string) (*User, *Response) {
 }
 
 // CreateChannel creates a channel based on the provided channel struct.
-func (c *Client) CreateChannel(channel *Channel) (*Channel, *Response) {
+func (c *Client1) CreateChannel(channel *Channel) (*Channel, *Response) {
 	r, err := c.DoApiPost(c.GetChannelsRoute(), channel.ToJson())
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -257,7 +296,7 @@ func (c *Client) CreateChannel(channel *Channel) (*Channel, *Response) {
 }
 
 // DeleteChannel deletes channel based on the provided channel id string.
-func (c *Client) DeleteChannel(channelId string) (bool, *Response) {
+func (c *Client1) DeleteChannel(channelId string) (bool, *Response) {
 	r, err := c.DoApiDelete(c.GetChannelRoute(channelId))
 	if err != nil {
 		return false, BuildErrorResponse(r, err)
@@ -266,24 +305,24 @@ func (c *Client) DeleteChannel(channelId string) (bool, *Response) {
 	return CheckStatusOK(r), BuildResponse(r)
 }
 
-func (c *Client) DoApiDelete(url string) (*http.Response, *AppError) {
+func (c *Client1) DoApiDelete(url string) (*http.Response, *AppError) {
 	return c.DoApiRequest(http.MethodDelete, c.ApiUrl+url, "", "")
 }
 
-func (c *Client) GetChannelsRoute() string {
+func (c *Client1) GetChannelsRoute() string {
 	return "/channels"
 }
 
-func (c *Client) GetChannelRoute(channelId string) string {
+func (c *Client1) GetChannelRoute(channelId string) string {
 	return fmt.Sprintf(c.GetChannelsRoute()+"/%v", channelId)
 }
 
-func (c *Client) GetConfigRoute() string {
+func (c *Client1) GetConfigRoute() string {
 	return "/config"
 }
 
 // GetConfig will retrieve the server config with some sanitized items.
-func (c *Client) GetConfig() (*Config, *Response) {
+func (c *Client1) GetConfig() (*Config, *Response) {
 	r, err := c.DoApiGet(c.GetConfigRoute(), "")
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)

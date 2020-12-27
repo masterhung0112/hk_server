@@ -17,7 +17,7 @@ func TestGetConfig(t *testing.T) {
 	_, resp := Client.GetConfig()
 	CheckForbiddenStatus(t, resp)
 
-	th.TestForSystemAdminAndLocal(t, func(t *testing.T, client *model.Client) {
+	th.TestForSystemAdminAndLocal(t, func(t *testing.T, client *model.Client1) {
 		cfg, resp := client.GetConfig()
 		CheckNoError(t, resp)
 

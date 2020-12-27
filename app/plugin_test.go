@@ -495,13 +495,13 @@ func TestPluginSync(t *testing.T) {
 
 				s3Endpoint := fmt.Sprintf("%s:%s", s3Host, s3Port)
 				cfg.FileSettings.DriverName = model.NewString(model.IMAGE_DRIVER_S3)
-				cfg.FileSettings.AmazonS3AccessKeyId = model.NewString(model.MINIO_ACCESS_KEY)
-				cfg.FileSettings.AmazonS3SecretAccessKey = model.NewString(model.MINIO_SECRET_KEY)
-				cfg.FileSettings.AmazonS3Bucket = model.NewString(model.MINIO_BUCKET)
-				cfg.FileSettings.AmazonS3PathPrefix = model.NewString("")
-				cfg.FileSettings.AmazonS3Endpoint = model.NewString(s3Endpoint)
-				cfg.FileSettings.AmazonS3Region = model.NewString("")
-				cfg.FileSettings.AmazonS3SSL = model.NewBool(false)
+				cfg.FileSettings.S3AccessKeyId = model.NewString(model.MINIO_ACCESS_KEY)
+				cfg.FileSettings.S3SecretAccessKey = model.NewString(model.MINIO_SECRET_KEY)
+				cfg.FileSettings.S3Bucket = model.NewString(model.MINIO_BUCKET)
+				cfg.FileSettings.S3PathPrefix = model.NewString("")
+				cfg.FileSettings.S3Endpoint = model.NewString(s3Endpoint)
+				cfg.FileSettings.S3Region = model.NewString("")
+				cfg.FileSettings.S3SSL = model.NewBool(false)
 
 			},
 		},
