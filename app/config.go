@@ -27,8 +27,23 @@ func (a *App) UpdateConfig(f func(*model.Config)) {
 	a.Srv().UpdateConfig(f)
 }
 
+func (s *Server) ReloadConfig() error {
+	if err := s.configStore.Load(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ReloadConfig() error {
+	return a.Srv().ReloadConfig()
+}
+
 func (a *App) ClientConfig() map[string]string {
 	return a.Srv().clientConfig.Load().(map[string]string)
+}
+
+func (a *App) ClientConfigHash() string {
+	return a.Srv().ClientConfigHash()
 }
 
 // Registers a function with a given listener to be called when the config is reloaded and may have changed. The function
@@ -67,6 +82,10 @@ func (s *Server) PostActionCookieSecret() []byte {
 
 func (a *App) PostActionCookieSecret() []byte {
 	return a.Srv().PostActionCookieSecret()
+}
+
+func (a *App) GetSiteURL() string {
+	return *a.Config().ServiceSettings.SiteURL
 }
 
 // ClientConfigWithComputed gets the configuration in a format suitable for sending to the client.

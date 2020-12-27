@@ -1,16 +1,20 @@
 package storetest
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/pkg/errors"
 	"net/url"
 	"os"
 	"path"
+
+	"database/sql"
+
+	"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/model"
 )
 
 const (
@@ -22,9 +26,8 @@ const (
 func getEnv(name, defaultValue string) string {
 	if value := os.Getenv(name); value != "" {
 		return value
-	} else {
-		return defaultValue
 	}
+	return defaultValue
 }
 
 func log(message string) {
@@ -39,6 +42,35 @@ func log(message string) {
 	if verbose {
 		fmt.Println(message)
 	}
+}
+
+// MySQLSettings returns the database settings to connect to the MySQL unittesting database.
+// The database name is generated randomly and must be created before use.
+func MySQLSettings() *model.SqlSettings {
+	dsn := getEnv("TEST_DATABASE_MYSQL_DSN", defaultMysqlDSN)
+	cfg, err := mysql.ParseDSN(dsn)
+	if err != nil {
+		panic("failed to parse dsn " + dsn + ": " + err.Error())
+	}
+
+	cfg.DBName = "db" + model.NewId()
+
+	return databaseSettings("mysql", cfg.FormatDSN())
+}
+
+// PostgresSQLSettings returns the database settings to connect to the PostgreSQL unittesting database.
+// The database name is generated randomly and must be created before use.
+func PostgreSQLSettings() *model.SqlSettings {
+	dsn := getEnv("TEST_DATABASE_POSTGRESQL_DSN", defaultPostgresqlDSN)
+	dsnUrl, err := url.Parse(dsn)
+	if err != nil {
+		panic("failed to parse dsn " + dsn + ": " + err.Error())
+	}
+
+	// Generate a random database name
+	dsnUrl.Path = "db" + model.NewId()
+
+	return databaseSettings("postgres", dsnUrl.String())
 }
 
 func mySQLRootDSN(dsn string) string {
@@ -73,6 +105,45 @@ func postgreSQLRootDSN(dsn string) string {
 	return dsnUrl.String()
 }
 
+func mySQLDSNDatabase(dsn string) string {
+	cfg, err := mysql.ParseDSN(dsn)
+	if err != nil {
+		panic("failed to parse dsn " + dsn + ": " + err.Error())
+	}
+
+	return cfg.DBName
+}
+
+func postgreSQLDSNDatabase(dsn string) string {
+	dsnUrl, err := url.Parse(dsn)
+	if err != nil {
+		panic("failed to parse dsn " + dsn + ": " + err.Error())
+	}
+
+	return path.Base(dsnUrl.Path)
+}
+
+func databaseSettings(driver, dataSource string) *model.SqlSettings {
+	settings := &model.SqlSettings{
+		DriverName:                  &driver,
+		DataSource:                  &dataSource,
+		DataSourceReplicas:          []string{},
+		DataSourceSearchReplicas:    []string{},
+		MaxIdleConns:                new(int),
+		ConnMaxLifetimeMilliseconds: new(int),
+		MaxOpenConns:                new(int),
+		Trace:                       model.NewBool(false),
+		AtRestEncryptKey:            model.NewString(model.NewRandomString(32)),
+		QueryTimeout:                new(int),
+	}
+	*settings.MaxIdleConns = 10
+	*settings.ConnMaxLifetimeMilliseconds = 3600000
+	*settings.MaxOpenConns = 100
+	*settings.QueryTimeout = 60
+
+	return settings
+}
+
 // execAsRoot executes the given sql as root against the testing database
 func execAsRoot(settings *model.SqlSettings, sqlCommand string) error {
 	var dsn string
@@ -99,22 +170,42 @@ func execAsRoot(settings *model.SqlSettings, sqlCommand string) error {
 	return nil
 }
 
-func mySQLDSNDatabase(dsn string) string {
-	cfg, err := mysql.ParseDSN(dsn)
-	if err != nil {
-		panic("failed to parse dsn " + dsn + ": " + err.Error())
+// MakeSqlSettings creates a randomly named database and returns the corresponding sql settings
+func MakeSqlSettings(driver string) *model.SqlSettings {
+	var settings *model.SqlSettings
+	var dbName string
+
+	switch driver {
+	case model.DATABASE_DRIVER_MYSQL:
+		settings = MySQLSettings()
+		dbName = mySQLDSNDatabase(*settings.DataSource)
+	case model.DATABASE_DRIVER_POSTGRES:
+		settings = PostgreSQLSettings()
+		dbName = postgreSQLDSNDatabase(*settings.DataSource)
+	default:
+		panic("unsupported driver " + driver)
 	}
 
-	return cfg.DBName
-}
-
-func postgreSQLDSNDatabase(dsn string) string {
-	dsnUrl, err := url.Parse(dsn)
-	if err != nil {
-		panic("failed to parse dsn " + dsn + ": " + err.Error())
+	if err := execAsRoot(settings, "CREATE DATABASE "+dbName); err != nil {
+		panic("failed to create temporary database " + dbName + ": " + err.Error())
 	}
 
-	return path.Base(dsnUrl.Path)
+	switch driver {
+	case model.DATABASE_DRIVER_MYSQL:
+		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON "+dbName+".* TO 'hkuser'"); err != nil {
+			panic("failed to grant hkuser permission to " + dbName + ":" + err.Error())
+		}
+	case model.DATABASE_DRIVER_POSTGRES:
+		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON DATABASE \""+dbName+"\" TO hkuser"); err != nil {
+			panic("failed to grant hkuser permission to " + dbName + ":" + err.Error())
+		}
+	default:
+		panic("unsupported driver " + driver)
+	}
+
+	log("Created temporary " + driver + " database " + dbName)
+
+	return settings
 }
 
 func CleanupSqlSettings(settings *model.SqlSettings) {
@@ -135,86 +226,4 @@ func CleanupSqlSettings(settings *model.SqlSettings) {
 	}
 
 	log("Dropped temporary database " + dbName)
-}
-
-func databaseSettings(driver, dataSource string) *model.SqlSettings {
-	settings := &model.SqlSettings{
-		DriverName:         &driver,
-		DataSource:         &dataSource,
-		DataSourceReplicas: []string{},
-		QueryTimeout:       new(int),
-	}
-
-	*settings.QueryTimeout = 60
-
-	return settings
-}
-
-// MySQLSettings returns the database settings to connect to the MySQL unit testing database.
-// The database name is generated randomly and must be created before use.
-func MySQLSettings() *model.SqlSettings {
-	dsn := getEnv("TEST_DATABASE_MYSQL_DSN", defaultMysqlDSN)
-	cfg, err := mysql.ParseDSN(dsn)
-	if err != nil {
-		panic("failed to parse dsn " + dsn + ": " + err.Error())
-	}
-
-	cfg.DBName = "hk_test_db" + model.NewId()
-
-	return databaseSettings("mysql", cfg.FormatDSN())
-}
-
-// PostgresSQLSettings returns the database settings to connect to the PostgreSQL unittesting database.
-// The database name is generated randomly and must be created before use.
-func PostgreSQLSettings() *model.SqlSettings {
-	dsn := getEnv("TEST_DATABASE_POSTGRESQL_DSN", defaultPostgresqlDSN)
-	dsnUrl, err := url.Parse(dsn)
-	if err != nil {
-		panic("failed to parse dsn " + dsn + ": " + err.Error())
-	}
-
-	// Generate a random database name
-	dsnUrl.Path = "hk_test_db" + model.NewId()
-
-	return databaseSettings("postgres", dsnUrl.String())
-}
-
-// MakeSqlSettings created a random named database on Database and returns the corresponding sql settings
-func MakeSqlSettings(driver string) *model.SqlSettings {
-	var settings *model.SqlSettings
-	var dbName string
-
-	switch driver {
-	case model.DATABASE_DRIVER_MYSQL:
-		settings = MySQLSettings()
-		dbName = mySQLDSNDatabase(*settings.DataSource)
-	case model.DATABASE_DRIVER_POSTGRES:
-		settings = PostgreSQLSettings()
-		dbName = postgreSQLDSNDatabase(*settings.DataSource)
-	default:
-		panic("unsupported driver " + driver)
-	}
-
-	// Create new database on DB
-	if err := execAsRoot(settings, "CREATE DATABASE "+dbName); err != nil {
-		panic("failed to create temporary database " + dbName + ": " + err.Error())
-	}
-
-	// Grand permission
-	switch driver {
-	case model.DATABASE_DRIVER_MYSQL:
-		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON "+dbName+".* TO 'hkuser'"); err != nil {
-			panic("failed to grant hkuser permission to " + dbName + ":" + err.Error())
-		}
-	case model.DATABASE_DRIVER_POSTGRES:
-		if err := execAsRoot(settings, "GRANT ALL PRIVILEGES ON DATABASE \""+dbName+"\" TO hkuser"); err != nil {
-			panic("failed to grant hkuser permission to " + dbName + ":" + err.Error())
-		}
-	default:
-		panic("unsupported driver " + driver)
-	}
-
-	log("Created temporary " + driver + " database " + dbName)
-
-	return settings
 }

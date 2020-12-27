@@ -1,14 +1,19 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package mlog_test
 
 import (
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/mlog"
 )
 
 func TestLoggingBeforeInitialized(t *testing.T) {
@@ -31,7 +36,7 @@ func TestLoggingAfterInitialized(t *testing.T) {
 		{
 			"file logging, json, debug",
 			&mlog.LoggerConfiguration{
-				EnableConsole: true,
+				EnableConsole: false,
 				EnableFile:    true,
 				FileJson:      true,
 				FileLevel:     mlog.LevelDebug,
@@ -110,7 +115,6 @@ func TestLoggingAfterInitialized(t *testing.T) {
 			mlog.Critical("real critical log")
 
 			if testCase.LoggerConfiguration.EnableFile {
-
 				logs, err := ioutil.ReadFile(filePath)
 				require.NoError(t, err)
 

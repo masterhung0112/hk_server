@@ -2,13 +2,16 @@ package app
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/masterhung0112/hk_server/mlog"
+
 	"github.com/masterhung0112/hk_server/model"
 )
 
@@ -25,36 +28,73 @@ func stopOnError(err LineImportWorkerError) bool {
 	return true
 }
 
+func rewriteAttachmentPaths(files *[]AttachmentImportData, basePath string) {
+	if files == nil {
+		return
+	}
+	for _, f := range *files {
+		if f.Path != nil {
+			*f.Path = filepath.Join(basePath, *f.Path)
+		}
+	}
+}
+
+func rewriteFilePaths(line *LineImportData, basePath string) {
+	switch line.Type {
+	case "post", "direct_post":
+		var replies []ReplyImportData
+		if line.Type == "direct_post" {
+			rewriteAttachmentPaths(line.DirectPost.Attachments, basePath)
+			if line.DirectPost.Replies != nil {
+				replies = *line.DirectPost.Replies
+			}
+		} else {
+			rewriteAttachmentPaths(line.Post.Attachments, basePath)
+			if line.Post.Replies != nil {
+				replies = *line.Post.Replies
+			}
+		}
+		for _, reply := range replies {
+			rewriteAttachmentPaths(reply.Attachments, basePath)
+		}
+	case "user":
+		if line.User.ProfileImage != nil {
+			*line.User.ProfileImage = filepath.Join(basePath, *line.User.ProfileImage)
+		}
+	case "emoji":
+		if line.Emoji.Image != nil {
+			*line.Emoji.Image = filepath.Join(basePath, *line.Emoji.Image)
+		}
+	}
+}
+
 func (a *App) bulkImportWorker(dryRun bool, wg *sync.WaitGroup, lines <-chan LineImportWorkerData, errors chan<- LineImportWorkerError) {
-	//TODO: Open
-	// postLines := []LineImportWorkerData{}
-	// directPostLines := []LineImportWorkerData{}
+	postLines := []LineImportWorkerData{}
+	directPostLines := []LineImportWorkerData{}
 	for line := range lines {
 		switch {
 		case line.LineImportData.Type == "post":
-			break
-			// 	postLines = append(postLines, line)
-			// 	if line.Post == nil {
-			// 		errors <- LineImportWorkerError{model.NewAppError("BulkImport", "app.import.import_line.null_post.error", nil, "", http.StatusBadRequest), line.LineNumber}
-			// 	}
-			// 	if len(postLines) >= importMultiplePostsThreshold {
-			// 		if errLine, err := a.importMultiplePostLines(postLines, dryRun); err != nil {
-			// 			errors <- LineImportWorkerError{err, errLine}
-			// 		}
-			// 		postLines = []LineImportWorkerData{}
-			// 	}
+			postLines = append(postLines, line)
+			if line.Post == nil {
+				errors <- LineImportWorkerError{model.NewAppError("BulkImport", "app.import.import_line.null_post.error", nil, "", http.StatusBadRequest), line.LineNumber}
+			}
+			if len(postLines) >= importMultiplePostsThreshold {
+				if errLine, err := a.importMultiplePostLines(postLines, dryRun); err != nil {
+					errors <- LineImportWorkerError{err, errLine}
+				}
+				postLines = []LineImportWorkerData{}
+			}
 		case line.LineImportData.Type == "direct_post":
-			break
-		// 	directPostLines = append(directPostLines, line)
-		// 	if line.DirectPost == nil {
-		// 		errors <- LineImportWorkerError{model.NewAppError("BulkImport", "app.import.import_line.null_direct_post.error", nil, "", http.StatusBadRequest), line.LineNumber}
-		// 	}
-		// 	if len(directPostLines) >= importMultiplePostsThreshold {
-		// 		if errLine, err := a.importMultipleDirectPostLines(directPostLines, dryRun); err != nil {
-		// 			errors <- LineImportWorkerError{err, errLine}
-		// 		}
-		// 		directPostLines = []LineImportWorkerData{}
-		// 	}
+			directPostLines = append(directPostLines, line)
+			if line.DirectPost == nil {
+				errors <- LineImportWorkerError{model.NewAppError("BulkImport", "app.import.import_line.null_direct_post.error", nil, "", http.StatusBadRequest), line.LineNumber}
+			}
+			if len(directPostLines) >= importMultiplePostsThreshold {
+				if errLine, err := a.importMultipleDirectPostLines(directPostLines, dryRun); err != nil {
+					errors <- LineImportWorkerError{err, errLine}
+				}
+				directPostLines = []LineImportWorkerData{}
+			}
 		default:
 			if err := a.importLine(line.LineImportData, dryRun); err != nil {
 				errors <- LineImportWorkerError{err, line.LineNumber}
@@ -62,20 +102,28 @@ func (a *App) bulkImportWorker(dryRun bool, wg *sync.WaitGroup, lines <-chan Lin
 		}
 	}
 
-	// if len(postLines) > 0 {
-	// 	if errLine, err := a.importMultiplePostLines(postLines, dryRun); err != nil {
-	// 		errors <- LineImportWorkerError{err, errLine}
-	// 	}
-	// }
-	// if len(directPostLines) > 0 {
-	// 	if errLine, err := a.importMultipleDirectPostLines(directPostLines, dryRun); err != nil {
-	// 		errors <- LineImportWorkerError{err, errLine}
-	// 	}
-	// }
+	if len(postLines) > 0 {
+		if errLine, err := a.importMultiplePostLines(postLines, dryRun); err != nil {
+			errors <- LineImportWorkerError{err, errLine}
+		}
+	}
+	if len(directPostLines) > 0 {
+		if errLine, err := a.importMultipleDirectPostLines(directPostLines, dryRun); err != nil {
+			errors <- LineImportWorkerError{err, errLine}
+		}
+	}
 	wg.Done()
 }
 
 func (a *App) BulkImport(fileReader io.Reader, dryRun bool, workers int) (*model.AppError, int) {
+	return a.bulkImport(fileReader, dryRun, workers, "")
+}
+
+func (a *App) BulkImportWithPath(fileReader io.Reader, dryRun bool, workers int, importPath string) (*model.AppError, int) {
+	return a.bulkImport(fileReader, dryRun, workers, importPath)
+}
+
+func (a *App) bulkImport(fileReader io.Reader, dryRun bool, workers int, importPath string) (*model.AppError, int) {
 	scanner := bufio.NewScanner(fileReader)
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, maxScanTokenSize)
@@ -91,12 +139,16 @@ func (a *App) BulkImport(fileReader io.Reader, dryRun bool, workers int) (*model
 	lastLineType := ""
 
 	for scanner.Scan() {
-		decoder := json.NewDecoder(strings.NewReader(scanner.Text()))
+		decoder := json.NewDecoder(bytes.NewReader(scanner.Bytes()))
 		lineNumber++
 
 		var line LineImportData
 		if err := decoder.Decode(&line); err != nil {
 			return model.NewAppError("BulkImport", "app.import.bulk_import.json_decode.error", nil, err.Error(), http.StatusBadRequest), lineNumber
+		}
+
+		if importPath != "" {
+			rewriteFilePaths(&line, importPath)
 		}
 
 		if lineNumber == 1 {
@@ -204,7 +256,6 @@ func (a *App) importLine(line LineImportData, dryRun bool) *model.AppError {
 			return model.NewAppError("BulkImport", "app.import.import_line.null_direct_channel.error", nil, "", http.StatusBadRequest)
 		}
 		return a.importDirectChannel(line.DirectChannel, dryRun)
-		//TODO: open
 	case line.Type == "emoji":
 		if line.Emoji == nil {
 			return model.NewAppError("BulkImport", "app.import.import_line.null_emoji.error", nil, "", http.StatusBadRequest)
@@ -213,4 +264,21 @@ func (a *App) importLine(line LineImportData, dryRun bool) *model.AppError {
 	default:
 		return model.NewAppError("BulkImport", "app.import.import_line.unknown_line_type.error", map[string]interface{}{"Type": line.Type}, "", http.StatusBadRequest)
 	}
+}
+
+func (a *App) ListImports() ([]string, *model.AppError) {
+	imports, appErr := a.ListDirectory(*a.Config().ImportSettings.Directory)
+	if appErr != nil {
+		return nil, appErr
+	}
+
+	results := make([]string, 0, len(imports))
+	for i := 0; i < len(imports); i++ {
+		filename := filepath.Base(imports[i])
+		if !strings.HasSuffix(filename, incompleteUploadSuffix) {
+			results = append(results, filename)
+		}
+	}
+
+	return results, nil
 }

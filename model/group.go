@@ -1,6 +1,8 @@
 package model
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"regexp"
 )
@@ -94,24 +96,19 @@ type GroupStats struct {
 	TotalMemberCount int64  `json:"total_member_count"`
 }
 
-var validGroupnameChars = regexp.MustCompile(`^[a-z0-9\.\-_]+$`)
-
-func (group *Group) IsValidName() *AppError {
-
-	if group.Name == nil {
-		if group.AllowReference {
-			return NewAppError("Group.IsValidName", "model.group.name.app_error", map[string]interface{}{"GroupNameMaxLength": GroupNameMaxLength}, "", http.StatusBadRequest)
-		}
-	} else {
-		if l := len(*group.Name); l == 0 || l > GroupNameMaxLength {
-			return NewAppError("Group.IsValidName", "model.group.name.invalid_length.app_error", map[string]interface{}{"GroupNameMaxLength": GroupNameMaxLength}, "", http.StatusBadRequest)
-		}
-
-		if !validGroupnameChars.MatchString(*group.Name) {
-			return NewAppError("Group.IsValidName", "model.group.name.invalid_chars.app_error", nil, "", http.StatusBadRequest)
-		}
+func (group *Group) Patch(patch *GroupPatch) {
+	if patch.Name != nil {
+		group.Name = patch.Name
 	}
-	return nil
+	if patch.DisplayName != nil {
+		group.DisplayName = *patch.DisplayName
+	}
+	if patch.Description != nil {
+		group.Description = *patch.Description
+	}
+	if patch.AllowReference != nil {
+		group.AllowReference = *patch.AllowReference
+	}
 }
 
 func (group *Group) IsValidForCreate() *AppError {
@@ -153,4 +150,69 @@ func (group *Group) requiresRemoteId() bool {
 		}
 	}
 	return false
+}
+
+func (group *Group) IsValidForUpdate() *AppError {
+	if !IsValidId(group.Id) {
+		return NewAppError("Group.IsValidForUpdate", "app.group.id.app_error", nil, "", http.StatusBadRequest)
+	}
+	if group.CreateAt == 0 {
+		return NewAppError("Group.IsValidForUpdate", "model.group.create_at.app_error", nil, "", http.StatusBadRequest)
+	}
+	if group.UpdateAt == 0 {
+		return NewAppError("Group.IsValidForUpdate", "model.group.update_at.app_error", nil, "", http.StatusBadRequest)
+	}
+	if err := group.IsValidForCreate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (group *Group) ToJson() string {
+	b, _ := json.Marshal(group)
+	return string(b)
+}
+
+var validGroupnameChars = regexp.MustCompile(`^[a-z0-9\.\-_]+$`)
+
+func (group *Group) IsValidName() *AppError {
+
+	if group.Name == nil {
+		if group.AllowReference {
+			return NewAppError("Group.IsValidName", "model.group.name.app_error", map[string]interface{}{"GroupNameMaxLength": GroupNameMaxLength}, "", http.StatusBadRequest)
+		}
+	} else {
+		if l := len(*group.Name); l == 0 || l > GroupNameMaxLength {
+			return NewAppError("Group.IsValidName", "model.group.name.invalid_length.app_error", map[string]interface{}{"GroupNameMaxLength": GroupNameMaxLength}, "", http.StatusBadRequest)
+		}
+
+		if !validGroupnameChars.MatchString(*group.Name) {
+			return NewAppError("Group.IsValidName", "model.group.name.invalid_chars.app_error", nil, "", http.StatusBadRequest)
+		}
+	}
+	return nil
+}
+
+func GroupFromJson(data io.Reader) *Group {
+	var group *Group
+	json.NewDecoder(data).Decode(&group)
+	return group
+}
+
+func GroupsFromJson(data io.Reader) []*Group {
+	var groups []*Group
+	json.NewDecoder(data).Decode(&groups)
+	return groups
+}
+
+func GroupPatchFromJson(data io.Reader) *GroupPatch {
+	var groupPatch *GroupPatch
+	json.NewDecoder(data).Decode(&groupPatch)
+	return groupPatch
+}
+
+func GroupStatsFromJson(data io.Reader) *GroupStats {
+	var groupStats *GroupStats
+	json.NewDecoder(data).Decode(&groupStats)
+	return groupStats
 }

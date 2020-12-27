@@ -59,6 +59,6 @@ func TestRunServerSuccess(t *testing.T) {
 	// Use non-default listening port in case another server instance is already running.
 	*configStore.Get().ServiceSettings.ListenAddress = UnitTestListeningPort
 
-	err = runServer(configStore, th.interruptChan) //, th.disableConfigWatch, false
+	err := runServer(configStore, false, th.interruptChan)
 	require.NoError(t, err)
 }

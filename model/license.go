@@ -2,13 +2,15 @@ package model
 
 import (
 	"encoding/json"
+	"io"
+	"net/http"
 )
 
 const (
 	EXPIRED_LICENSE_ERROR = "api.license.add_license.expired.app_error"
 	INVALID_LICENSE_ERROR = "api.license.add_license.invalid.app_error"
 	LICENSE_GRACE_PERIOD  = 1000 * 60 * 60 * 24 * 10 //10 days
-	LICENSE_RENEWAL_LINK  = "https://mattermost.com/renew/"
+	LICENSE_RENEWAL_LINK  = "https://hungknow.com/renew/"
 )
 
 type LicenseRecord struct {
@@ -58,6 +60,7 @@ type Features struct {
 	MFA                       *bool `json:"mfa"`
 	GoogleOAuth               *bool `json:"google_oauth"`
 	Office365OAuth            *bool `json:"office365_oauth"`
+	OpenId                    *bool `json:"openid"`
 	Compliance                *bool `json:"compliance"`
 	Cluster                   *bool `json:"cluster"`
 	Metrics                   *bool `json:"metrics"`
@@ -78,6 +81,8 @@ type Features struct {
 	EnterprisePlugins         *bool `json:"enterprise_plugins"`
 	AdvancedLogging           *bool `json:"advanced_logging"`
 	Cloud                     *bool `json:"cloud"`
+	SharedChannels            *bool `json:"shared_channels"`
+	RemoteClusterService      *bool `json:"remote_cluster_service"`
 
 	// after we enabled more features we'll need to control them with this
 	FutureFeatures *bool `json:"future_features"`
@@ -90,6 +95,7 @@ func (f *Features) ToMap() map[string]interface{} {
 		"mfa":                         *f.MFA,
 		"google":                      *f.GoogleOAuth,
 		"office365":                   *f.Office365OAuth,
+		"openid":                      *f.OpenId,
 		"compliance":                  *f.Compliance,
 		"cluster":                     *f.Cluster,
 		"metrics":                     *f.Metrics,
@@ -107,6 +113,8 @@ func (f *Features) ToMap() map[string]interface{} {
 		"enterprise_plugins":          *f.EnterprisePlugins,
 		"advanced_logging":            *f.AdvancedLogging,
 		"cloud":                       *f.Cloud,
+		"shared_channels":             *f.SharedChannels,
+		"remote_cluster_service":      *f.RemoteClusterService,
 		"future":                      *f.FutureFeatures,
 	}
 }
@@ -138,6 +146,10 @@ func (f *Features) SetDefaults() {
 
 	if f.Office365OAuth == nil {
 		f.Office365OAuth = NewBool(*f.FutureFeatures)
+	}
+
+	if f.OpenId == nil {
+		f.OpenId = NewBool(*f.FutureFeatures)
 	}
 
 	if f.Compliance == nil {
@@ -219,4 +231,75 @@ func (f *Features) SetDefaults() {
 	if f.Cloud == nil {
 		f.Cloud = NewBool(false)
 	}
+
+	if f.SharedChannels == nil {
+		f.SharedChannels = NewBool(false)
+	}
+
+	if f.RemoteClusterService == nil {
+		f.RemoteClusterService = f.SharedChannels
+	}
+}
+
+func (l *License) IsExpired() bool {
+	return l.ExpiresAt < GetMillis()
+}
+
+func (l *License) IsPastGracePeriod() bool {
+	timeDiff := GetMillis() - l.ExpiresAt
+	return timeDiff > LICENSE_GRACE_PERIOD
+}
+
+func (l *License) IsStarted() bool {
+	return l.StartsAt < GetMillis()
+}
+
+func (l *License) ToJson() string {
+	b, _ := json.Marshal(l)
+	return string(b)
+}
+
+// NewTestLicense returns a license that expires in the future and has the given features.
+func NewTestLicense(features ...string) *License {
+	ret := &License{
+		ExpiresAt: GetMillis() + 90*24*60*60*1000,
+		Customer:  &Customer{},
+		Features:  &Features{},
+	}
+	ret.Features.SetDefaults()
+
+	featureMap := map[string]bool{}
+	for _, feature := range features {
+		featureMap[feature] = true
+	}
+	featureJson, _ := json.Marshal(featureMap)
+	json.Unmarshal(featureJson, &ret.Features)
+
+	return ret
+}
+
+func LicenseFromJson(data io.Reader) *License {
+	var o *License
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func (lr *LicenseRecord) IsValid() *AppError {
+	if !IsValidId(lr.Id) {
+		return NewAppError("LicenseRecord.IsValid", "model.license_record.is_valid.id.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	if lr.CreateAt == 0 {
+		return NewAppError("LicenseRecord.IsValid", "model.license_record.is_valid.create_at.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	if len(lr.Bytes) == 0 || len(lr.Bytes) > 10000 {
+		return NewAppError("LicenseRecord.IsValid", "model.license_record.is_valid.create_at.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	return nil
+}
+
+func (lr *LicenseRecord) PreSave() {
+	lr.CreateAt = GetMillis()
 }

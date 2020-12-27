@@ -2,13 +2,15 @@ package filesstore
 
 import (
 	"bytes"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/utils"
 )
 
 const (
@@ -19,56 +21,135 @@ type LocalFileBackend struct {
 	directory string
 }
 
-func (b *LocalFileBackend) TestConnection() *model.AppError {
+func (b *LocalFileBackend) TestConnection() error {
 	f := bytes.NewReader([]byte("testingwrite"))
 	if _, err := writeFileLocally(f, filepath.Join(b.directory, TEST_FILE_PATH)); err != nil {
-		return model.NewAppError("TestFileConnection", "api.file.test_connection.local.connection.app_error", nil, err.Error(), http.StatusInternalServerError)
+		return errors.Wrap(err, "unable to write to the local filesystem storage")
 	}
 	os.Remove(filepath.Join(b.directory, TEST_FILE_PATH))
 	mlog.Debug("Able to write files to local storage.")
 	return nil
 }
 
-func (b *LocalFileBackend) WriteFile(fr io.Reader, path string) (int64, *model.AppError) {
-	return writeFileLocally(fr, filepath.Join(b.directory, path))
+func (b *LocalFileBackend) Reader(path string) (ReadCloseSeeker, error) {
+	f, err := os.Open(filepath.Join(b.directory, path))
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to open file %s", path)
+	}
+	return f, nil
 }
 
-func writeFileLocally(fr io.Reader, path string) (int64, *model.AppError) {
-	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
-		directory, _ := filepath.Abs(filepath.Dir(path))
-		return 0, model.NewAppError("WriteFile", "api.file.write_file_locally.create_dir.app_error", nil, "directory="+directory+", err="+err.Error(), http.StatusInternalServerError)
-	}
-	fw, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+func (b *LocalFileBackend) ReadFile(path string) ([]byte, error) {
+	f, err := ioutil.ReadFile(filepath.Join(b.directory, path))
 	if err != nil {
-		return 0, model.NewAppError("WriteFile", "api.file.write_file_locally.writing.app_error", nil, err.Error(), http.StatusInternalServerError)
+		return nil, errors.Wrapf(err, "unable to read file %s", path)
 	}
-	defer fw.Close()
-	written, err := io.Copy(fw, fr)
-	if err != nil {
-		return written, model.NewAppError("WriteFile", "api.file.write_file_locally.writing.app_error", nil, err.Error(), http.StatusInternalServerError)
-	}
-	return written, nil
+	return f, nil
 }
 
-func (b *LocalFileBackend) RemoveFile(path string) *model.AppError {
-	if err := os.Remove(filepath.Join(b.directory, path)); err != nil {
-		return model.NewAppError("RemoveFile", "utils.file.remove_file.local.app_error", nil, err.Error(), http.StatusInternalServerError)
+func (b *LocalFileBackend) FileExists(path string) (bool, error) {
+	_, err := os.Stat(filepath.Join(b.directory, path))
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	if err != nil {
+		return false, errors.Wrapf(err, "unable to know if file %s exists", path)
+	}
+	return true, nil
+}
+
+func (b *LocalFileBackend) FileSize(path string) (int64, error) {
+	info, err := os.Stat(filepath.Join(b.directory, path))
+	if err != nil {
+		return 0, errors.Wrapf(err, "unable to get file size for %s", path)
+	}
+	return info.Size(), nil
+}
+
+func (b *LocalFileBackend) CopyFile(oldPath, newPath string) error {
+	if err := utils.CopyFile(filepath.Join(b.directory, oldPath), filepath.Join(b.directory, newPath)); err != nil {
+		return errors.Wrapf(err, "unable to copy file from %s to %s", oldPath, newPath)
 	}
 	return nil
 }
 
-func (b *LocalFileBackend) ReadFile(path string) ([]byte, *model.AppError) {
-	f, err := ioutil.ReadFile(filepath.Join(b.directory, path))
-	if err != nil {
-		return nil, model.NewAppError("ReadFile", "api.file.read_file.reading_local.app_error", nil, err.Error(), http.StatusInternalServerError)
+func (b *LocalFileBackend) MoveFile(oldPath, newPath string) error {
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(b.directory, newPath)), 0750); err != nil {
+		return errors.Wrapf(err, "unable to create the new destination directory %s", filepath.Dir(newPath))
 	}
-	return f, nil
+
+	if err := os.Rename(filepath.Join(b.directory, oldPath), filepath.Join(b.directory, newPath)); err != nil {
+		return errors.Wrapf(err, "unable to move the file to %s to the destination directory", newPath)
+	}
+
+	return nil
 }
 
-func (b *LocalFileBackend) Reader(path string) (ReadCloseSeeker, *model.AppError) {
-	f, err := os.Open(filepath.Join(b.directory, path))
-	if err != nil {
-		return nil, model.NewAppError("Reader", "api.file.reader.reading_local.app_error", nil, err.Error(), http.StatusInternalServerError)
+func (b *LocalFileBackend) WriteFile(fr io.Reader, path string) (int64, error) {
+	return writeFileLocally(fr, filepath.Join(b.directory, path))
+}
+
+func writeFileLocally(fr io.Reader, path string) (int64, error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
+		directory, _ := filepath.Abs(filepath.Dir(path))
+		return 0, errors.Wrapf(err, "unable to create the directory %s for the file %s", directory, path)
 	}
-	return f, nil
+	fw, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return 0, errors.Wrapf(err, "unable to open the file %s to write the data", path)
+	}
+	defer fw.Close()
+	written, err := io.Copy(fw, fr)
+	if err != nil {
+		return written, errors.Wrapf(err, "unable write the data in the file %s", path)
+	}
+	return written, nil
+}
+
+func (b *LocalFileBackend) AppendFile(fr io.Reader, path string) (int64, error) {
+	fp := filepath.Join(b.directory, path)
+	if _, err := os.Stat(fp); err != nil {
+		return 0, errors.Wrapf(err, "unable to find the file %s to append the data", path)
+	}
+	fw, err := os.OpenFile(fp, os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return 0, errors.Wrapf(err, "unable to open the file %s to append the data", path)
+	}
+	defer fw.Close()
+	written, err := io.Copy(fw, fr)
+	if err != nil {
+		return written, errors.Wrapf(err, "unable append the data in the file %s", path)
+	}
+	return written, nil
+}
+
+func (b *LocalFileBackend) RemoveFile(path string) error {
+	if err := os.Remove(filepath.Join(b.directory, path)); err != nil {
+		return errors.Wrapf(err, "unable to remove the file %s", path)
+	}
+	return nil
+}
+
+func (b *LocalFileBackend) ListDirectory(path string) (*[]string, error) {
+	var paths []string
+	fileInfos, err := ioutil.ReadDir(filepath.Join(b.directory, path))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &paths, nil
+		}
+		return nil, errors.Wrapf(err, "unable to list the directory %s", path)
+	}
+	for _, fileInfo := range fileInfos {
+		paths = append(paths, filepath.Join(path, fileInfo.Name()))
+	}
+	return &paths, nil
+}
+
+func (b *LocalFileBackend) RemoveDirectory(path string) error {
+	if err := os.RemoveAll(filepath.Join(b.directory, path)); err != nil {
+		return errors.Wrapf(err, "unable to remove the directory %s", path)
+	}
+	return nil
 }

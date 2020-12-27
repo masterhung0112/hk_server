@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/masterhung0112/hk_server/api"
+	api1 "github.com/masterhung0112/hk_server/api1"
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/testlib"
 	"os"
@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 
 	mainHelper = testlib.NewMainHelperWithOptions(&options)
 	defer mainHelper.Close()
-	api.SetMainHelper(mainHelper)
+	api1.SetMainHelper(mainHelper)
 
 	mainHelper.Main(m)
 }

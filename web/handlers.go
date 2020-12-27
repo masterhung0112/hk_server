@@ -36,6 +36,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 	c.App.InitServer()
 
+	t, _ := utils.GetTranslationsAndLocale(w, r)
+	c.App.SetT(t)
+	c.Log = c.App.Log()
+
 	c.Params = ParamsFromRequest(r)
 
 	token, tokenLocation := app.ParseAuthTokenFromRequest(r)

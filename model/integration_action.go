@@ -1,8 +1,38 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package model
 
 import (
+	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/ecdsa"
+	"crypto/rand"
+	"encoding/asn1"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io"
+	"math/big"
+	"net/http"
 	"reflect"
+	"strconv"
+	"strings"
 )
+
+const (
+	POST_ACTION_TYPE_BUTTON                         = "button"
+	POST_ACTION_TYPE_SELECT                         = "select"
+	INTERACTIVE_DIALOG_TRIGGER_TIMEOUT_MILLISECONDS = 3000
+)
+
+var PostActionRetainPropKeys = []string{"from_webhook", "override_username", "override_icon_url"}
+
+type DoPostActionRequest struct {
+	SelectedOption string `json:"selected_option,omitempty"`
+	Cookie         string `json:"cookie,omitempty"`
+}
 
 type PostAction struct {
 	// A unique Action ID. If not set, generated automatically.
@@ -214,6 +244,141 @@ type SubmitDialogResponse struct {
 	Errors map[string]string `json:"errors,omitempty"`
 }
 
+func GenerateTriggerId(userId string, s crypto.Signer) (string, string, *AppError) {
+	clientTriggerId := NewId()
+	triggerData := strings.Join([]string{clientTriggerId, userId, strconv.FormatInt(GetMillis(), 10)}, ":") + ":"
+
+	h := crypto.SHA256
+	sum := h.New()
+	sum.Write([]byte(triggerData))
+	signature, err := s.Sign(rand.Reader, sum.Sum(nil), h)
+	if err != nil {
+		return "", "", NewAppError("GenerateTriggerId", "interactive_message.generate_trigger_id.signing_failed", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	base64Sig := base64.StdEncoding.EncodeToString(signature)
+
+	triggerId := base64.StdEncoding.EncodeToString([]byte(triggerData + base64Sig))
+	return clientTriggerId, triggerId, nil
+}
+
+func (r *PostActionIntegrationRequest) GenerateTriggerId(s crypto.Signer) (string, string, *AppError) {
+	clientTriggerId, triggerId, err := GenerateTriggerId(r.UserId, s)
+	if err != nil {
+		return "", "", err
+	}
+
+	r.TriggerId = triggerId
+	return clientTriggerId, triggerId, nil
+}
+
+func DecodeAndVerifyTriggerId(triggerId string, s *ecdsa.PrivateKey) (string, string, *AppError) {
+	triggerIdBytes, err := base64.StdEncoding.DecodeString(triggerId)
+	if err != nil {
+		return "", "", NewAppError("DecodeAndVerifyTriggerId", "interactive_message.decode_trigger_id.base64_decode_failed", nil, err.Error(), http.StatusBadRequest)
+	}
+
+	split := strings.Split(string(triggerIdBytes), ":")
+	if len(split) != 4 {
+		return "", "", NewAppError("DecodeAndVerifyTriggerId", "interactive_message.decode_trigger_id.missing_data", nil, "", http.StatusBadRequest)
+	}
+
+	clientTriggerId := split[0]
+	userId := split[1]
+	timestampStr := split[2]
+	timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+
+	now := GetMillis()
+	if now-timestamp > INTERACTIVE_DIALOG_TRIGGER_TIMEOUT_MILLISECONDS {
+		return "", "", NewAppError("DecodeAndVerifyTriggerId", "interactive_message.decode_trigger_id.expired", map[string]interface{}{"Seconds": INTERACTIVE_DIALOG_TRIGGER_TIMEOUT_MILLISECONDS / 1000}, "", http.StatusBadRequest)
+	}
+
+	signature, err := base64.StdEncoding.DecodeString(split[3])
+	if err != nil {
+		return "", "", NewAppError("DecodeAndVerifyTriggerId", "interactive_message.decode_trigger_id.base64_decode_failed_signature", nil, err.Error(), http.StatusBadRequest)
+	}
+
+	var esig struct {
+		R, S *big.Int
+	}
+
+	if _, err := asn1.Unmarshal(signature, &esig); err != nil {
+		return "", "", NewAppError("DecodeAndVerifyTriggerId", "interactive_message.decode_trigger_id.signature_decode_failed", nil, err.Error(), http.StatusBadRequest)
+	}
+
+	triggerData := strings.Join([]string{clientTriggerId, userId, timestampStr}, ":") + ":"
+
+	h := crypto.SHA256
+	sum := h.New()
+	sum.Write([]byte(triggerData))
+
+	if !ecdsa.Verify(&s.PublicKey, sum.Sum(nil), esig.R, esig.S) {
+		return "", "", NewAppError("DecodeAndVerifyTriggerId", "interactive_message.decode_trigger_id.verify_signature_failed", nil, "", http.StatusBadRequest)
+	}
+
+	return clientTriggerId, userId, nil
+}
+
+func (r *OpenDialogRequest) DecodeAndVerifyTriggerId(s *ecdsa.PrivateKey) (string, string, *AppError) {
+	return DecodeAndVerifyTriggerId(r.TriggerId, s)
+}
+
+func (r *PostActionIntegrationRequest) ToJson() []byte {
+	b, _ := json.Marshal(r)
+	return b
+}
+
+func PostActionIntegrationRequestFromJson(data io.Reader) *PostActionIntegrationRequest {
+	var o *PostActionIntegrationRequest
+	err := json.NewDecoder(data).Decode(&o)
+	if err != nil {
+		return nil
+	}
+	return o
+}
+
+func (r *PostActionIntegrationResponse) ToJson() []byte {
+	b, _ := json.Marshal(r)
+	return b
+}
+
+func PostActionIntegrationResponseFromJson(data io.Reader) *PostActionIntegrationResponse {
+	var o *PostActionIntegrationResponse
+	err := json.NewDecoder(data).Decode(&o)
+	if err != nil {
+		return nil
+	}
+	return o
+}
+
+func SubmitDialogRequestFromJson(data io.Reader) *SubmitDialogRequest {
+	var o *SubmitDialogRequest
+	err := json.NewDecoder(data).Decode(&o)
+	if err != nil {
+		return nil
+	}
+	return o
+}
+
+func (r *SubmitDialogRequest) ToJson() []byte {
+	b, _ := json.Marshal(r)
+	return b
+}
+
+func SubmitDialogResponseFromJson(data io.Reader) *SubmitDialogResponse {
+	var o *SubmitDialogResponse
+	err := json.NewDecoder(data).Decode(&o)
+	if err != nil {
+		return nil
+	}
+	return o
+}
+
+func (r *SubmitDialogResponse) ToJson() []byte {
+	b, _ := json.Marshal(r)
+	return b
+}
+
 func (o *Post) StripActionIntegrations() {
 	attachments := o.Attachments()
 	if o.GetProp("attachments") != nil {
@@ -226,6 +391,17 @@ func (o *Post) StripActionIntegrations() {
 	}
 }
 
+func (o *Post) GetAction(id string) *PostAction {
+	for _, attachment := range o.Attachments() {
+		for _, action := range attachment.Actions {
+			if action != nil && action.Id == id {
+				return action
+			}
+		}
+	}
+	return nil
+}
+
 func (o *Post) GenerateActionIds() {
 	if o.GetProp("attachments") != nil {
 		o.AddProp("attachments", o.Attachments())
@@ -233,10 +409,124 @@ func (o *Post) GenerateActionIds() {
 	if attachments, ok := o.GetProp("attachments").([]*SlackAttachment); ok {
 		for _, attachment := range attachments {
 			for _, action := range attachment.Actions {
-				if action.Id == "" {
+				if action != nil && action.Id == "" {
 					action.Id = NewId()
 				}
 			}
 		}
 	}
+}
+
+func AddPostActionCookies(o *Post, secret []byte) *Post {
+	p := o.Clone()
+
+	// retainedProps carry over their value from the old post, including no value
+	retainProps := map[string]interface{}{}
+	removeProps := []string{}
+	for _, key := range PostActionRetainPropKeys {
+		value, ok := p.GetProps()[key]
+		if ok {
+			retainProps[key] = value
+		} else {
+			removeProps = append(removeProps, key)
+		}
+	}
+
+	attachments := p.Attachments()
+	for _, attachment := range attachments {
+		for _, action := range attachment.Actions {
+			c := &PostActionCookie{
+				Type:        action.Type,
+				ChannelId:   p.ChannelId,
+				DataSource:  action.DataSource,
+				Integration: action.Integration,
+				RetainProps: retainProps,
+				RemoveProps: removeProps,
+			}
+
+			c.PostId = p.Id
+			if p.RootId == "" {
+				c.RootPostId = p.Id
+			} else {
+				c.RootPostId = p.RootId
+			}
+
+			b, _ := json.Marshal(c)
+			action.Cookie, _ = encryptPostActionCookie(string(b), secret)
+		}
+	}
+
+	return p
+}
+
+func encryptPostActionCookie(plain string, secret []byte) (string, error) {
+	if len(secret) == 0 {
+		return plain, nil
+	}
+
+	block, err := aes.NewCipher(secret)
+	if err != nil {
+		return "", err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, aesgcm.NonceSize())
+	_, err = io.ReadFull(rand.Reader, nonce)
+	if err != nil {
+		return "", err
+	}
+
+	sealed := aesgcm.Seal(nil, nonce, []byte(plain), nil)
+
+	combined := append(nonce, sealed...)
+	encoded := make([]byte, base64.StdEncoding.EncodedLen(len(combined)))
+	base64.StdEncoding.Encode(encoded, combined)
+
+	return string(encoded), nil
+}
+
+func DecryptPostActionCookie(encoded string, secret []byte) (string, error) {
+	if len(secret) == 0 {
+		return encoded, nil
+	}
+
+	block, err := aes.NewCipher(secret)
+	if err != nil {
+		return "", err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	decoded := make([]byte, base64.StdEncoding.DecodedLen(len(encoded)))
+	n, err := base64.StdEncoding.Decode(decoded, []byte(encoded))
+	if err != nil {
+		return "", err
+	}
+	decoded = decoded[:n]
+
+	nonceSize := aesgcm.NonceSize()
+	if len(decoded) < nonceSize {
+		return "", fmt.Errorf("cookie too short")
+	}
+
+	nonce, decoded := decoded[:nonceSize], decoded[nonceSize:]
+	plain, err := aesgcm.Open(nil, nonce, decoded, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(plain), nil
+}
+
+func DoPostActionRequestFromJson(data io.Reader) *DoPostActionRequest {
+	var o *DoPostActionRequest
+	json.NewDecoder(data).Decode(&o)
+	return o
 }

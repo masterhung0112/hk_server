@@ -3,8 +3,14 @@ package sqlstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/utils"
+
 	"github.com/pkg/errors"
 )
 
@@ -13,9 +19,7 @@ type SqlSystemStore struct {
 }
 
 func newSqlSystemStore(sqlStore *SqlStore) store.SystemStore {
-	s := &SqlSystemStore{
-		SqlStore: sqlStore,
-	}
+	s := &SqlSystemStore{sqlStore}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.System{}, "Systems").SetKeys(false, "Name")
@@ -24,6 +28,9 @@ func newSqlSystemStore(sqlStore *SqlStore) store.SystemStore {
 	}
 
 	return s
+}
+
+func (s SqlSystemStore) createIndexesIfNotExists() {
 }
 
 func (s SqlSystemStore) Save(system *model.System) error {
@@ -43,6 +50,26 @@ func (s SqlSystemStore) SaveOrUpdate(system *model.System) error {
 			return errors.Wrapf(err, "failed to save system property with name=%s", system.Name)
 		}
 	}
+	return nil
+}
+
+func (s SqlSystemStore) SaveOrUpdateWithWarnMetricHandling(system *model.System) error {
+	if err := s.GetMaster().SelectOne(&model.System{}, "SELECT * FROM Systems WHERE Name = :Name", map[string]interface{}{"Name": system.Name}); err == nil {
+		if _, err := s.GetMaster().Update(system); err != nil {
+			return errors.Wrapf(err, "failed to update system property with name=%s", system.Name)
+		}
+	} else {
+		if err := s.GetMaster().Insert(system); err != nil {
+			return errors.Wrapf(err, "failed to save system property with name=%s", system.Name)
+		}
+	}
+
+	if strings.HasPrefix(system.Name, model.WARN_METRIC_STATUS_STORE_PREFIX) && (system.Value == model.WARN_METRIC_STATUS_RUNONCE || system.Value == model.WARN_METRIC_STATUS_LIMIT_REACHED) {
+		if err := s.SaveOrUpdate(&model.System{Name: model.SYSTEM_WARN_METRIC_LAST_RUN_TIMESTAMP_KEY, Value: strconv.FormatInt(utils.MillisFromTime(time.Now()), 10)}); err != nil {
+			return errors.Wrapf(err, "failed to save system property with name=%s", model.SYSTEM_WARN_METRIC_LAST_RUN_TIMESTAMP_KEY)
+		}
+	}
+
 	return nil
 }
 

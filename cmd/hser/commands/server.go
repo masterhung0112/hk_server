@@ -1,17 +1,21 @@
 package commands
 
 import (
-	"github.com/masterhung0112/hk_server/api"
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/mattermost/viper"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
+	"net"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
+
+	api1 "github.com/masterhung0112/hk_server/api1"
+	"github.com/masterhung0112/hk_server/app"
+	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/manualtesting"
+	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/web"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 var serverCmd = &cobra.Command{
@@ -27,28 +31,41 @@ func init() {
 }
 
 func serverCmdF(command *cobra.Command, args []string) error {
-	configDSN := viper.GetString("config")
-
 	disableConfigWatch, _ := command.Flags().GetBool("disableconfigwatch")
-	//TODO: open this
-	// usedPlatform, _ := command.Flags().GetBool("platform")
+	usedPlatform, _ := command.Flags().GetBool("platform")
 
 	interruptChan := make(chan os.Signal, 1)
+
 	if err := utils.TranslationsPreInit(); err != nil {
-		return errors.Wrapf(err, "unable to load Mattermost translation files")
+		return errors.Wrap(err, "unable to load Mattermost translation files")
 	}
-	configStore, err := config.NewStore(configDSN, !disableConfigWatch)
+
+	customDefaults, err := loadCustomDefaults()
+	if err != nil {
+		mlog.Error("Error loading custom configuration defaults: " + err.Error())
+	}
+
+	configStore, err := config.NewStore(getConfigDSN(command, config.GetEnvironment()), !disableConfigWatch, customDefaults)
 	if err != nil {
 		return errors.Wrap(err, "failed to load configuration")
 	}
+	defer configStore.Close()
 
-	//TODO: Replace this
-	return runServer(configStore, interruptChan) //runServer(configStore, disableConfigWatch, usedPlatform, interruptChan)
+	return runServer(configStore, usedPlatform, interruptChan)
 }
 
-func runServer(configStore config.Store, interruptChan chan os.Signal) error {
+func runServer(configStore *config.Store, usedPlatform bool, interruptChan chan os.Signal) error {
+	// Setting the highest traceback level from the code.
+	// This is done to print goroutines from all threads (see golang.org/issue/13161)
+	// and also preserve a crash dump for later investigation.
+	debug.SetTraceback("crash")
+
 	options := []app.Option{
 		app.ConfigStore(configStore),
+		app.RunJobs,
+		app.JoinCluster,
+		app.StartSearchEngine,
+		app.StartMetrics,
 	}
 	server, err := app.NewServer(options...)
 	if err != nil {
@@ -57,8 +74,15 @@ func runServer(configStore config.Store, interruptChan chan os.Signal) error {
 	}
 	defer server.Shutdown()
 
-	// server, server.AppOptions,
-	api.ApiInit(server.AppOptions, server.Router)
+	if usedPlatform {
+		mlog.Error("The platform binary has been deprecated, please switch to using the mattermost binary.")
+	}
+
+	api := api1.ApiInit(server, server.AppOptions, server.Router)
+	//TODO: Open
+	// wsapi.Init(server)
+	web.New(server, server.AppOptions, server.Router)
+	api1.ApiInitLocal(server, server.AppOptions, server.LocalRouter)
 
 	serverErr := server.Start()
 	if serverErr != nil {
@@ -66,10 +90,46 @@ func runServer(configStore config.Store, interruptChan chan os.Signal) error {
 		return serverErr
 	}
 
+	// If we allow testing then listen for manual testing URL hits
+	if *server.Config().ServiceSettings.EnableTesting {
+		manualtesting.Init(api)
+	}
+
+	notifyReady()
+
 	// wait for kill signal before attempting to gracefully shutdown
 	// the running service
 	signal.Notify(interruptChan, syscall.SIGINT, syscall.SIGTERM)
 	<-interruptChan
 
 	return nil
+}
+
+func notifyReady() {
+	// If the environment vars provide a systemd notification socket,
+	// notify systemd that the server is ready.
+	systemdSocket := os.Getenv("NOTIFY_SOCKET")
+	if systemdSocket != "" {
+		mlog.Info("Sending systemd READY notification.")
+
+		err := sendSystemdReadyNotification(systemdSocket)
+		if err != nil {
+			mlog.Error(err.Error())
+		}
+	}
+}
+
+func sendSystemdReadyNotification(socketPath string) error {
+	msg := "READY=1"
+	addr := &net.UnixAddr{
+		Name: socketPath,
+		Net:  "unixgram",
+	}
+	conn, err := net.DialUnix(addr.Net, nil, addr)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	_, err = conn.Write([]byte(msg))
+	return err
 }

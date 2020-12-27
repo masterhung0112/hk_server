@@ -2,10 +2,13 @@ package app
 
 import (
 	"errors"
+	"net/http"
+	"time"
+
+	"github.com/masterhung0112/hk_server/store"
+
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"net/http"
 )
 
 func (a *App) createInitialSidebarCategories(userId, teamId string) *model.AppError {
@@ -16,6 +19,73 @@ func (a *App) createInitialSidebarCategories(userId, teamId string) *model.AppEr
 	}
 
 	return nil
+}
+
+func (a *App) GetSidebarCategories(userId, teamId string) (*model.OrderedSidebarCategories, *model.AppError) {
+	categories, err := a.Srv().Store.Channel().GetSidebarCategories(userId, teamId)
+
+	if err == nil && len(categories.Categories) == 0 {
+		// A user must always have categories, so migration must not have happened yet, and we should run it ourselves
+		appErr := a.createInitialSidebarCategories(userId, teamId)
+		if appErr != nil {
+			return nil, appErr
+		}
+
+		categories, err = a.waitForSidebarCategories(userId, teamId)
+	}
+
+	if err != nil {
+		var nfErr *store.ErrNotFound
+		switch {
+		case errors.As(err, &nfErr):
+			return nil, model.NewAppError("GetSidebarCategories", "app.channel.sidebar_categories.app_error", nil, nfErr.Error(), http.StatusNotFound)
+		default:
+			return nil, model.NewAppError("GetSidebarCategories", "app.channel.sidebar_categories.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	return categories, nil
+}
+
+// waitForSidebarCategories is used to get a user's sidebar categories after they've been created since there may be
+// replication lag if any database replicas exist. It will wait until results are available to return them.
+func (a *App) waitForSidebarCategories(userId, teamId string) (*model.OrderedSidebarCategories, error) {
+	if len(a.Config().SqlSettings.DataSourceReplicas) == 0 {
+		// The categories should be available immediately on a single database
+		return a.Srv().Store.Channel().GetSidebarCategories(userId, teamId)
+	}
+
+	now := model.GetMillis()
+
+	for model.GetMillis()-now < 12000 {
+		time.Sleep(100 * time.Millisecond)
+
+		categories, err := a.Srv().Store.Channel().GetSidebarCategories(userId, teamId)
+
+		if err != nil || len(categories.Categories) > 0 {
+			// We've found something, so return
+			return categories, err
+		}
+	}
+
+	mlog.Error("waitForSidebarCategories giving up", mlog.String("user_id", userId), mlog.String("team_id", teamId))
+
+	return &model.OrderedSidebarCategories{}, nil
+}
+
+func (a *App) GetSidebarCategoryOrder(userId, teamId string) ([]string, *model.AppError) {
+	categories, err := a.Srv().Store.Channel().GetSidebarCategoryOrder(userId, teamId)
+	if err != nil {
+		var nfErr *store.ErrNotFound
+		switch {
+		case errors.As(err, &nfErr):
+			return nil, model.NewAppError("GetSidebarCategoryOrder", "app.channel.sidebar_categories.app_error", nil, nfErr.Error(), http.StatusNotFound)
+		default:
+			return nil, model.NewAppError("GetSidebarCategoryOrder", "app.channel.sidebar_categories.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	return categories, nil
 }
 
 func (a *App) GetSidebarCategory(categoryId string) (*model.SidebarCategoryWithChannels, *model.AppError) {
@@ -44,10 +114,9 @@ func (a *App) CreateSidebarCategory(userId, teamId string, newCategory *model.Si
 			return nil, model.NewAppError("CreateSidebarCategory", "app.channel.sidebar_categories.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	//TODO: Add
-	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_SIDEBAR_CATEGORY_CREATED, teamId, "", userId, nil)
-	// message.Add("category_id", category.Id)
-	// a.Publish(message)
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_SIDEBAR_CATEGORY_CREATED, teamId, "", userId, nil)
+	message.Add("category_id", category.Id)
+	a.Publish(message)
 	return category, nil
 }
 
@@ -65,10 +134,9 @@ func (a *App) UpdateSidebarCategoryOrder(userId, teamId string, categoryOrder []
 			return model.NewAppError("UpdateSidebarCategoryOrder", "app.channel.sidebar_categories.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	//TODO: Add
-	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_SIDEBAR_CATEGORY_ORDER_UPDATED, teamId, "", userId, nil)
-	// message.Add("order", categoryOrder)
-	// a.Publish(message)
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_SIDEBAR_CATEGORY_ORDER_UPDATED, teamId, "", userId, nil)
+	message.Add("order", categoryOrder)
+	a.Publish(message)
 	return nil
 }
 
@@ -78,9 +146,8 @@ func (a *App) UpdateSidebarCategories(userId, teamId string, categories []*model
 		return nil, model.NewAppError("UpdateSidebarCategories", "app.channel.sidebar_categories.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
-	//TODO: Add
-	// message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_SIDEBAR_CATEGORY_UPDATED, teamId, "", userId, nil)
-	// a.Publish(message)
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_SIDEBAR_CATEGORY_UPDATED, teamId, "", userId, nil)
+	a.Publish(message)
 
 	a.muteChannelsForUpdatedCategories(userId, updatedCategories, originalCategories)
 
@@ -209,50 +276,4 @@ func (a *App) DeleteSidebarCategory(userId, teamId, categoryId string) *model.Ap
 	a.Publish(message)
 
 	return nil
-}
-func (s *Server) Publish(message *model.WebSocketEvent) {
-	// if s.Metrics != nil {
-	// 	s.Metrics.IncrementWebsocketEvent(message.EventType())
-	// }
-
-	// s.PublishSkipClusterSend(message)
-
-	// if s.Cluster != nil {
-	// 	cm := &model.ClusterMessage{
-	// 		Event:    model.CLUSTER_EVENT_PUBLISH,
-	// 		SendType: model.CLUSTER_SEND_BEST_EFFORT,
-	// 		Data:     message.ToJson(),
-	// 	}
-
-	// 	if message.EventType() == model.WEBSOCKET_EVENT_POSTED ||
-	// 		message.EventType() == model.WEBSOCKET_EVENT_POST_EDITED ||
-	// 		message.EventType() == model.WEBSOCKET_EVENT_DIRECT_ADDED ||
-	// 		message.EventType() == model.WEBSOCKET_EVENT_GROUP_ADDED ||
-	// 		message.EventType() == model.WEBSOCKET_EVENT_ADDED_TO_TEAM {
-	// 		cm.SendType = model.CLUSTER_SEND_RELIABLE
-	// 	}
-
-	// 	s.Cluster.SendClusterMessage(cm)
-	// }
-}
-
-func (a *App) Publish(message *model.WebSocketEvent) {
-	a.Srv().Publish(message)
-}
-
-func (s *Server) PublishSkipClusterSend(message *model.WebSocketEvent) {
-	// if message.GetBroadcast().UserId != "" {
-	// 	hub := s.GetHubForUserId(message.GetBroadcast().UserId)
-	// 	if hub != nil {
-	// 		hub.Broadcast(message)
-	// 	}
-	// } else {
-	// 	for _, hub := range s.hubs {
-	// 		hub.Broadcast(message)
-	// 	}
-	// }
-}
-
-func (a *App) PublishSkipClusterSend(message *model.WebSocketEvent) {
-	a.Srv().PublishSkipClusterSend(message)
 }
