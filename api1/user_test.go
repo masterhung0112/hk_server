@@ -21,7 +21,7 @@ func TestCreateUser(t *testing.T) {
 	defer th.TearDown()
 
 	user := model.User{
-		Username: th.GenerateTestUsername(),
+		Username: GenerateTestUsername(),
 		Password: "hello1",
 		Email:    th.GenerateTestEmail(),
 		Roles:    model.SYSTEM_ADMIN_ROLE_ID,

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/masterhung0112/hk_server/api1"
+	api1 "github.com/masterhung0112/hk_server/api1"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/testlib"
 	"io/ioutil"

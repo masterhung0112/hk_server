@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
+	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
 	github.com/blang/semver v3.5.1+incompatible
@@ -36,7 +37,6 @@ require (
 	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible
 	github.com/mattermost/ldap v0.0.0-20191128190019-9f62ba4b8d4d
 	github.com/mattermost/logr v1.0.13
-	github.com/mattermost/mattermost-server/v5 v5.30.1
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0
 	github.com/mattermost/viper v1.0.4
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
@@ -45,6 +45,7 @@ require (
 	github.com/oov/psd v0.0.0-20201002182931-74231384897f
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
+	github.com/reflog/dateconstraints v0.2.1
 	github.com/rs/cors v1.7.0
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/sirupsen/logrus v1.7.0

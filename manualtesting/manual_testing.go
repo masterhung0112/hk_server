@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/masterhung0112/hk_server/api1"
+	api1 "github.com/masterhung0112/hk_server/api1"
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/app/slashcommands"
 	"github.com/masterhung0112/hk_server/mlog"
