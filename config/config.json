@@ -143,15 +143,15 @@
         "IosMinVersion": ""
     },
     "SqlSettings": {
-        "DriverName": "postgres",
-        "DataSource": "postgres://hkuser:mostest@localhost:7432/hungknow_test?sslmode=disable\u0026connect_timeout=10",
+        "DriverName": "mysql",
+        "DataSource": "hkuser:mostest@tcp(localhost:7306)/hungknow_test?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s",
         "DataSourceReplicas": [],
         "DataSourceSearchReplicas": [],
         "MaxIdleConns": 20,
         "ConnMaxLifetimeMilliseconds": 3600000,
         "MaxOpenConns": 300,
         "Trace": false,
-        "AtRestEncryptKey": "r66p5iyu91h5nb61tm7as3hf7yewqebe",
+        "AtRestEncryptKey": "tx3rgm35ag8st7esixe5u18ebph3u6ej",
         "QueryTimeout": 30,
         "DisableDatabaseSearch": false
     },
@@ -203,7 +203,7 @@
         "DriverName": "local",
         "Directory": "./data/",
         "EnablePublicLink": false,
-        "PublicLinkSalt": "65dd7h6h719hz6k9y737kggnmgk6ggk6",
+        "PublicLinkSalt": "izcz9grtnkfo1rhtc51ciqtpg6a4dx8p",
         "InitialFont": "nunito-bold.ttf",
         "S3AccessKeyId": "",
         "S3SecretAccessKey": "",
@@ -555,6 +555,11 @@
     },
     "CloudSettings": {
         "CWSUrl": "https://customers.mattermost.com"
+    },
+    "FeatureFlags": {
+        "TestFeature": "off",
+        "TestBoolFeature": false,
+        "CloudDelinquentEmailJobsEnabled": false
     },
     "ImportSettings": {
         "Directory": "./import",

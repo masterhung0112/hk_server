@@ -240,7 +240,7 @@ func setupConnection(con_type string, dataSource string, settings *model.SqlSett
 	}
 
 	for i := 0; i < DB_PING_ATTEMPTS; i++ {
-		mlog.Info("Pinging SQL", mlog.String("database", con_type))
+		mlog.Info("Pinging SQL", mlog.String("database", con_type), mlog.String("DriverName", *settings.DriverName))
 		ctx, cancel := context.WithTimeout(context.Background(), DB_PING_TIMEOUT_SECS*time.Second)
 		defer cancel()
 		err = db.PingContext(ctx)
