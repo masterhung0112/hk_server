@@ -10,7 +10,7 @@ import (
 type StoreTestBaseSuite interface {
 	suite.TestingSuite
 
-	InitInitializeStore()
+	// InitInitializeStore()
 
 	SetStore(store store.Store)
 	Store() store.Store
@@ -30,12 +30,12 @@ type StoreTestSuite struct {
 /***
  * StoreTestSuite implements interface StoreTestBaseSuite
  ***/
-func (s *StoreTestSuite) InitInitializeStore() {
-	if len(StoreTypes) >= 1 && (s.Store() == nil || s.SqlStore() == nil) {
-		s.SetStore(StoreTypes[0].Store)
-		s.SetSqlStore(StoreTypes[0].SqlStore)
-	}
-}
+// func (s *StoreTestSuite) InitInitializeStore() {
+// 	if len(StoreTypes) >= 1 && (s.Store() == nil || s.SqlStore() == nil) {
+// 		s.SetStore(StoreTypes[0].Store)
+// 		s.SetSqlStore(StoreTypes[0].SqlStore)
+// 	}
+// }
 
 func (s *StoreTestSuite) SetStore(store store.Store) {
 	s.store = store
@@ -53,20 +53,20 @@ func (s *StoreTestSuite) SqlStore() *SqlStore {
 	return s.sqlStore
 }
 
-func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, executeFunc func(t *testing.T, testSuite StoreTestBaseSuite)) {
-	for _, st := range StoreTypes {
-		st := st
-		t.Run(st.Name, func(t *testing.T) {
-			if testing.Short() {
-				t.SkipNow()
-			}
-			testSuite.SetStore(st.Store)
-			testSuite.SetSqlStore(st.SqlStore)
-			// suite.Run(t, testSuite)
-			executeFunc(t, testSuite)
-		})
-	}
-}
+// func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, executeFunc func(t *testing.T, testSuite StoreTestBaseSuite)) {
+// 	for _, st := range StoreTypes {
+// 		st := st
+// 		t.Run(st.Name, func(t *testing.T) {
+// 			if testing.Short() {
+// 				t.SkipNow()
+// 			}
+// 			testSuite.SetStore(st.Store)
+// 			testSuite.SetSqlStore(st.SqlStore)
+// 			// suite.Run(t, testSuite)
+// 			executeFunc(t, testSuite)
+// 		})
+// 	}
+// }
 
 func StoreTestMysqlTestSuite(t *testing.T, testSuite *suite.Suite) {
 	// Setup a global logger to catch tests logging outside of app context

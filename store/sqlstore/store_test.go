@@ -28,7 +28,7 @@ type StoreType struct {
 	Store       store.Store
 }
 
-var StoreTypes []*StoreType
+var StoreTypes []*StoreType = []*StoreType{}
 
 func newStoreType(name, driver string) *StoreType {
 	return &StoreType{
@@ -521,5 +521,20 @@ func makeSqliteSettings() *model.SqlSettings {
 		ConnMaxLifetimeMilliseconds: &connMaxLifetimeMilliseconds,
 		MaxOpenConns:                &maxOpenConns,
 		QueryTimeout:                &queryTimeout,
+	}
+}
+
+func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, executeFunc func(t *testing.T, testSuite StoreTestBaseSuite)) {
+	for _, st := range StoreTypes {
+		st := st
+		t.Run(st.Name, func(t *testing.T) {
+			if testing.Short() {
+				t.SkipNow()
+			}
+			testSuite.SetStore(st.Store)
+			testSuite.SetSqlStore(st.SqlStore)
+			// suite.Run(t, testSuite)
+			executeFunc(t, testSuite)
+		})
 	}
 }
