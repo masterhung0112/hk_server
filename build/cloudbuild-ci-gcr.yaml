@@ -1,7 +1,7 @@
 # In this directory, run the following command to build this builder.
 # $ gcloud builds submit
 
-# Run locally
+# Run locally (https://cloud.google.com/cloud-build/docs/build-debug-locally)
 # cloud-build-local --config=build/cloudbuild-ci-gcr.yaml
 
 steps:
