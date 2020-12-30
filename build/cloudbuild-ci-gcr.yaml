@@ -1,0 +1,31 @@
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit
+
+# Run locally
+# cloud-build-local --config=build/cloudbuild-ci-gcr.yaml
+
+steps:
+  # Reference: https://cloud.google.com/cloud-build/docs/speeding-up-builds#using_a_cached_docker_image
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull gcr.io/$PROJECT_ID/hkserver-stage1:latest || exit 0']
+
+  - name: 'gcr.io/cloud-builders-community/docker-compose'
+    args: [
+      '-f', './docker-compose.yml',
+      'up',
+    ]
+    id: '$SHORT_SHA'
+
+  # Future supported versions of docker builder go here.
+  # Tests for future supported versions of docker builder go here.
+  # Tag the latest version as :latest. We use gcr.io/cloud-builders/docker here
+  # and not gcr.io/$PROJECT_ID/hkserver-stageXX because the latter may not yet exist.
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['tag', 'gcr.io/$PROJECT_ID/hkserver-stage1:$SHORT_SHA', 'gcr.io/$PROJECT_ID/hkserver-stage1']
+    wait_for: ['$SHORT_SHA']
+    id: 'latest'
+
+images:
+  - 'gcr.io/$PROJECT_ID/hkserver-stage1:latest'
+  - 'gcr.io/$PROJECT_ID/hkserver-stage1:$SHORT_SHA'
