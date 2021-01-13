@@ -20,6 +20,10 @@ type ChannelStoreTestSuite struct {
 	StoreTestSuite
 }
 
+func (s *ChannelStoreTestSuite) SetupTest() {
+	createDefaultRoles(s.Store())
+}
+
 func TestChannelStoreTestSuite(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &ChannelStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
 		suite.Run(t, testSuite)
