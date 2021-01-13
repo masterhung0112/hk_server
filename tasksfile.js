@@ -35,7 +35,7 @@ LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_JSON_URL=${NOTI
 LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_JSON_FETCH_FREQUENCY_SECONDS=${NOTICES_FETCH_SECS}'`
 LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_SKIP_CACHE=${NOTICES_SKIP_CACHE}'`
 
-let PLATFORM_FILES = "./cmd/hser/main.go"
+let PLATFORM_FILES = "./cmd/hkserver/main.go"
 
 // Possible options: mysql, postgres, minio, inbucket, openldap, dejavu,
 let ENABLED_DOCKER_SERVICES = 'mysql postgres inbucket'
@@ -85,7 +85,7 @@ function test_data() {
 help(test_data, 'Add test data to the local instance')
 
 function start_server() {
-  sh(`${GO} run ./cmd/hser/main.go`, { nopipe: true })
+  sh(`${GO} run ./cmd/hkserver/main.go`, { nopipe: true })
 }
 help(start_server, 'Start server instance')
 

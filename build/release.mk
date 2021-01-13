@@ -8,7 +8,7 @@ else
 endif
 
 build-osx:
-	@echo Build OSX amd64
+	@echo Build OSX amd64, goarch $(BUILDER_GOOS_GOARCH)
 ifeq ($(BUILDER_GOOS_GOARCH),"darwin_amd64")
 	env GOOS=darwin GOARCH=amd64 $(GO) build -o $(GOBIN) $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./...
 else
