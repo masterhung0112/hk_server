@@ -289,7 +289,12 @@ func NewServer(options ...Option) (*Server, error) {
 		mlog.Error(err.Error())
 	}
 
-	mlog.Info("Server is initializing...")
+  mlog.Info("Server is initializing...")
+
+  // It is important to initialize the hub only after the global logger is set
+	// to avoid race conditions while logging from inside the hub.
+	fakeApp := New(ServerConnector(s))
+	fakeApp.HubStart()
 
 	s.HTTPService = httpservice.MakeHTTPService(s)
 	s.pushNotificationClient = s.HTTPService.MakeClient(true)

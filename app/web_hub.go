@@ -122,12 +122,16 @@ func (a *App) HubStop() {
 
 // GetHubForUserId returns the hub for a given user id.
 func (s *Server) GetHubForUserId(userId string) *Hub {
+  if len(s.hubs) == 0 {
+    return nil
+  }
+
 	// TODO: check if caching the userId -> hub mapping
 	// is worth the memory tradeoff.
 	// https://mattermost.atlassian.net/browse/MM-26629.
 	var hash maphash.Hash
 	hash.SetSeed(s.hashSeed)
-	hash.Write([]byte(userId))
+  hash.Write([]byte(userId))
 	index := hash.Sum64() % uint64(len(s.hubs))
 
 	return s.hubs[int(index)]
