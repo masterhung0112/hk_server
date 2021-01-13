@@ -283,7 +283,7 @@ func (a *App) GetEmojiStaticUrl(emojiName string) (string, *model.AppError) {
 
 	emoji, err := a.Srv().Store.Emoji().GetByName(emojiName, true)
 	if err == nil {
-		return path.Join(subPath, "/api/v4/emoji", emoji.Id, "image"), nil
+		return path.Join(subPath, "/api/v1/emoji", emoji.Id, "image"), nil
 	}
 	var nfErr *store.ErrNotFound
 	switch {

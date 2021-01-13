@@ -16,6 +16,14 @@ type Handler struct {
 	HandleFunc          func(*Context, http.ResponseWriter, *http.Request)
 	HandlerName         string
 	RequireSession      bool
+	RequireCloudKey     bool
+	TrustRequester      bool
+	RequireMfa          bool
+	IsStatic            bool
+	IsLocal             bool
+	DisableWhenBusy     bool
+
+	cspShaDirective string
 }
 
 func GetHandlerName(h func(*Context, http.ResponseWriter, *http.Request)) string {
