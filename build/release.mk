@@ -27,6 +27,36 @@ endif
 
 build: build-linux build-windows build-osx
 
+
+build-cmd-linux:
+	@echo Build Linux amd64
+ifeq ($(BUILDER_GOOS_GOARCH),"linux_amd64")
+	env GOOS=linux GOARCH=amd64 $(GO) build -o $(GOBIN) $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./cmd/...
+else
+	mkdir -p $(GOBIN)/linux_amd64
+	env GOOS=linux GOARCH=amd64 $(GO) build -o $(GOBIN)/linux_amd64 $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./cmd/...
+endif
+
+build-cmd-osx:
+	@echo Build OSX amd64
+ifeq ($(BUILDER_GOOS_GOARCH),"darwin_amd64")
+	env GOOS=darwin GOARCH=amd64 $(GO) build -o $(GOBIN) $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./cmd/...
+else
+	mkdir -p $(GOBIN)/darwin_amd64
+	env GOOS=darwin GOARCH=amd64 $(GO) build -o $(GOBIN)/darwin_amd64 $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./cmd/...
+endif
+
+build-cmd-windows:
+	@echo Build Windows amd64
+ifeq ($(BUILDER_GOOS_GOARCH),"windows_amd64")
+	env GOOS=windows GOARCH=amd64 $(GO) build -o $(GOBIN) $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./cmd/...
+else
+	mkdir -p $(GOBIN)/windows_amd64
+	env GOOS=windows GOARCH=amd64 $(GO) build -o $(GOBIN)/windows_amd64 $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./cmd/...
+endif
+
+build-cmd: build-cmd-linux build-cmd-windows build-cmd-osx
+
 package:
 	@ echo Packaging hkserver
 	@# Remove any old files
@@ -61,8 +91,26 @@ package:
 	@# Copy binary
 ifeq ($(BUILDER_GOOS_GOARCH),"darwin_amd64")
 	cp $(GOBIN)/hkserver $(DIST_PATH)/bin # from native bin dir, not cross-compiled
-	cp $(GOBIN)/platform $(DIST_PATH)/bin # from native bin dir, not cross-compiled
 else
 	cp $(GOBIN)/darwin_amd64/hkserver $(DIST_PATH)/bin # from cross-compiled bin dir
-	cp $(GOBIN)/darwin_amd64/platform $(DIST_PATH)/bin # from cross-compiled bin dir
 endif
+	@# Package
+	tar -C dist -czf $(DIST_PATH)-$(BUILD_TYPE_NAME)-osx-amd64.tar.gz hkserver
+	@# Cleanup
+	rm -f $(DIST_PATH)/bin/hkserver
+	# rm -f $(DIST_PATH)/bin/mmctl
+	# rm -f $(DIST_PATH)/prepackaged_plugins/*
+
+	@# Make linux package
+	@# Copy binary
+ifeq ($(BUILDER_GOOS_GOARCH),"linux_amd64")
+	cp $(GOBIN)/hkserver $(DIST_PATH)/bin # from native bin dir, not cross-compiled
+else
+	cp $(GOBIN)/linux_amd64/hkserver $(DIST_PATH)/bin # from cross-compiled bin dir
+endif
+	@# Package
+	tar -C dist -czf $(DIST_PATH)-$(BUILD_TYPE_NAME)-linux-amd64.tar.gz hkserver
+	@# Don't clean up native package so dev machines will have an unzipped package available
+	@#rm -f $(DIST_PATH)/bin/hkserver
+
+	rm -rf tmpprepackaged
