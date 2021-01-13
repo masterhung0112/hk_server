@@ -738,9 +738,9 @@ func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T
 		f(t, th.SystemAdminClient)
 	})
 
-	t.Run(testName+"LocalClient", func(t *testing.T) {
-		f(t, th.LocalClient)
-	})
+	// t.Run(testName+"LocalClient", func(t *testing.T) {
+	// 	f(t, th.LocalClient)
+	// })
 }
 
 // TestForAllClients runs a test function for all the clients
