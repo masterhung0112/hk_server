@@ -28,7 +28,7 @@ endif
 build: build-linux build-windows build-osx
 
 package:
-	@ echo Packaging mattermost
+	@ echo Packaging hkserver
 	@# Remove any old files
 	rm -Rf $(DIST_ROOT)
 
@@ -60,9 +60,9 @@ package:
 	@# Make osx package
 	@# Copy binary
 ifeq ($(BUILDER_GOOS_GOARCH),"darwin_amd64")
-	cp $(GOBIN)/mattermost $(DIST_PATH)/bin # from native bin dir, not cross-compiled
+	cp $(GOBIN)/hkserver $(DIST_PATH)/bin # from native bin dir, not cross-compiled
 	cp $(GOBIN)/platform $(DIST_PATH)/bin # from native bin dir, not cross-compiled
 else
-	cp $(GOBIN)/darwin_amd64/mattermost $(DIST_PATH)/bin # from cross-compiled bin dir
+	cp $(GOBIN)/darwin_amd64/hkserver $(DIST_PATH)/bin # from cross-compiled bin dir
 	cp $(GOBIN)/darwin_amd64/platform $(DIST_PATH)/bin # from cross-compiled bin dir
 endif
