@@ -7,3 +7,5 @@ mattermost.log
 hungknow.log
 yarn.lock
 dist/
+cprofile.out
+report.xml

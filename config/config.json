@@ -556,6 +556,11 @@
     "CloudSettings": {
         "CWSUrl": "https://customers.mattermost.com"
     },
+    "FeatureFlags": {
+        "TestFeature": "off",
+        "TestBoolFeature": false,
+        "CloudDelinquentEmailJobsEnabled": false
+    },
     "ImportSettings": {
         "Directory": "./import",
         "RetentionDays": 30
