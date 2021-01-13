@@ -299,7 +299,12 @@ func NewServer(options ...Option) (*Server, error) {
 	s.HTTPService = httpservice.MakeHTTPService(s)
 	s.pushNotificationClient = s.HTTPService.MakeClient(true)
 
-	s.ImageProxy = imageproxy.MakeImageProxy(s, s.HTTPService, s.Log)
+  s.ImageProxy = imageproxy.MakeImageProxy(s, s.HTTPService, s.Log)
+
+  if err := utils.TranslationsPreInit(); err != nil {
+		return nil, errors.Wrapf(err, "unable to load Mattermost translation files")
+	}
+	model.AppErrorInit(utils.T)
 
 	searchEngine := searchengine.NewBroker(s.Config(), s.Jobs)
 	bleveEngine := bleveengine.NewBleveEngine(s.Config(), s.Jobs)
@@ -337,11 +342,10 @@ func NewServer(options ...Option) (*Server, error) {
 		return nil, errors.Wrap(err, "Unable to create status cache")
 	}
 
-	s.createPushNotificationsHub()
+  s.createPushNotificationsHub()
 
-	// Prepare the translation file
-	if err := utils.TranslationsPreInit(); err != nil {
-		return nil, errors.Wrapf(err, "unable to load Mattermost translation files")
+  if err2 := utils.InitTranslations(s.Config().LocalizationSettings); err2 != nil {
+		return nil, errors.Wrapf(err2, "unable to load Mattermost translation files")
 	}
 
 	if htmlTemplateWatcher, err2 := utils.NewHTMLTemplateWatcher("templates"); err2 != nil {
