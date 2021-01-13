@@ -12,5 +12,9 @@
   "go.lintTool":"golangci-lint",
   "go.lintFlags": [
     "--fast"
-  ]
+  ],
+  "go.testEnvFile": "build/dotenv/test.env",
+  "go.toolsEnvVars": {
+    "TEST_DATABASE_POSTGRESQL_DSN": "postgres://hkuser:mostest@localhost:5432/hungknow_test?sslmode=disable&connect_timeout=10"
+  }
 }
