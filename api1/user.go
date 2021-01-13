@@ -1,6 +1,9 @@
 package api
 
 import (
+	"github.com/masterhung0112/hk_server/app"
+	"github.com/masterhung0112/hk_server/audit"
+	"github.com/masterhung0112/hk_server/store"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/web"
 	"net/http"
@@ -49,15 +52,72 @@ func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user.SanitizeInput(c.IsSystemAdmin())
+
+	tokenId := r.URL.Query().Get("t")
+	inviteId := r.URL.Query().Get("iid")
 	redirect := r.URL.Query().Get("r")
 
+	auditRec := c.MakeAuditRecord("createUser", audit.Fail)
+	defer c.LogAuditRec(auditRec)
+	auditRec.AddMeta("invite_id", inviteId)
+	auditRec.AddMeta("user", user)
+
+	// No permission check required
+
 	var ruser *model.User
-	ruser, err := c.App.CreateUserFromSignup(user, redirect)
+	var err *model.AppError
+	if len(tokenId) > 0 {
+		token, nErr := c.App.Srv().Store.Token().GetByToken(tokenId)
+		if nErr != nil {
+			var status int
+			switch nErr.(type) {
+			case *store.ErrNotFound:
+				status = http.StatusNotFound
+			default:
+				status = http.StatusInternalServerError
+			}
+			c.Err = model.NewAppError("CreateUserWithToken", "api.user.create_user.signup_link_invalid.app_error", nil, nErr.Error(), status)
+			return
+		}
+		auditRec.AddMeta("token_type", token.Type)
+
+		if token.Type == app.TokenTypeGuestInvitation {
+			if c.App.Srv().License() == nil {
+				c.Err = model.NewAppError("CreateUserWithToken", "api.user.create_user.guest_accounts.license.app_error", nil, "", http.StatusBadRequest)
+				return
+			}
+			if !*c.App.Config().GuestAccountsSettings.Enable {
+				c.Err = model.NewAppError("CreateUserWithToken", "api.user.create_user.guest_accounts.disabled.app_error", nil, "", http.StatusBadRequest)
+				return
+			}
+		}
+		ruser, err = c.App.CreateUserWithToken(user, token)
+	} else if len(inviteId) > 0 {
+		ruser, err = c.App.CreateUserWithInviteId(user, inviteId, redirect)
+	} else if c.IsSystemAdmin() {
+		ruser, err = c.App.CreateUserAsAdmin(user, redirect)
+		auditRec.AddMeta("admin", true)
+	} else {
+		ruser, err = c.App.CreateUserFromSignup(user, redirect)
+	}
 
 	if err != nil {
 		c.Err = err
 		return
 	}
+
+	// New user created, check cloud limits and send emails if needed
+	// Soft fail on error since user is already created
+	if ruser != nil {
+		err = c.App.CheckAndSendUserLimitWarningEmails()
+		if err != nil {
+			c.LogErrorByCode(err)
+		}
+	}
+
+	auditRec.Success()
+	auditRec.AddMeta("user", ruser) // overwrite meta
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(ruser.ToJson()))

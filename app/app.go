@@ -170,7 +170,9 @@ func (a *App) Ldap() einterfaces.LdapInterface {
 func (a *App) Metrics() einterfaces.MetricsInterface {
 	return a.srv.Metrics
 }
-
+func (a *App) Cloud() einterfaces.CloudInterface {
+	return a.srv.Cloud
+}
 func (a *App) HTTPService() httpservice.HTTPService {
 	return a.srv.HTTPService
 }

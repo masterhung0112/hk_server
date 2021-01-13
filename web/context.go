@@ -1,6 +1,8 @@
 package web
 
 import (
+	"github.com/masterhung0112/hk_server/audit"
+	"strings"
 	"github.com/masterhung0112/hk_server/utils"
 	"net/http"
 
@@ -11,7 +13,7 @@ import (
 
 type Context struct {
 	App           *app.App
-	Log           *mlog.Logger
+	Logger        *mlog.Logger
 	Err           *model.AppError
 	Params        *Params
 	siteURLHeader string
@@ -52,6 +54,87 @@ func NewInvalidUrlParamError(parameter string) *model.AppError {
 
 func (c *Context) SetPermissionError(permissions ...*model.Permission) {
 	c.Err = c.App.MakePermissionError(permissions)
+}
+
+
+// LogAuditRec logs an audit record using default LevelAPI.
+func (c *Context) LogAuditRec(rec *audit.Record) {
+	c.LogAuditRecWithLevel(rec, app.LevelAPI)
+}
+
+// LogAuditRec logs an audit record using specified Level.
+// If the context is flagged with a permissions error then `level`
+// is ignored and the audit record is emitted with `LevelPerms`.
+func (c *Context) LogAuditRecWithLevel(rec *audit.Record, level mlog.LogLevel) {
+	if rec == nil {
+		return
+	}
+	if c.Err != nil {
+		rec.AddMeta("err", c.Err.Id)
+		rec.AddMeta("code", c.Err.StatusCode)
+		if c.Err.Id == "api.context.permissions.app_error" {
+			level = app.LevelPerms
+		}
+		rec.Fail()
+	}
+	c.App.Srv().Audit.LogRecord(level, *rec)
+}
+
+// MakeAuditRecord creates a audit record pre-populated with data from this context.
+func (c *Context) MakeAuditRecord(event string, initialStatus string) *audit.Record {
+	rec := &audit.Record{
+		APIPath:   c.App.Path(),
+		Event:     event,
+		Status:    initialStatus,
+		UserID:    c.App.Session().UserId,
+		SessionID: c.App.Session().Id,
+		Client:    c.App.UserAgent(),
+		IPAddress: c.App.IpAddress(),
+		Meta:      audit.Meta{audit.KeyClusterID: c.App.GetClusterId()},
+	}
+	rec.AddMetaTypeConverter(model.AuditModelTypeConv)
+
+	return rec
+}
+
+func (c *Context) LogAudit(extraInfo string) {
+	audit := &model.Audit{UserId: c.App.Session().UserId, IpAddress: c.App.IpAddress(), Action: c.App.Path(), ExtraInfo: extraInfo, SessionId: c.App.Session().Id}
+	if err := c.App.Srv().Store.Audit().Save(audit); err != nil {
+		appErr := model.NewAppError("LogAudit", "app.audit.save.saving.app_error", nil, err.Error(), http.StatusInternalServerError)
+		c.LogErrorByCode(appErr)
+	}
+}
+
+func (c *Context) LogAuditWithUserId(userId, extraInfo string) {
+
+	if len(c.App.Session().UserId) > 0 {
+		extraInfo = strings.TrimSpace(extraInfo + " session_user=" + c.App.Session().UserId)
+	}
+
+	audit := &model.Audit{UserId: userId, IpAddress: c.App.IpAddress(), Action: c.App.Path(), ExtraInfo: extraInfo, SessionId: c.App.Session().Id}
+	if err := c.App.Srv().Store.Audit().Save(audit); err != nil {
+		appErr := model.NewAppError("LogAuditWithUserId", "app.audit.save.saving.app_error", nil, err.Error(), http.StatusInternalServerError)
+		c.LogErrorByCode(appErr)
+	}
+}
+
+func (c *Context) LogErrorByCode(err *model.AppError) {
+	code := err.StatusCode
+	msg := err.SystemMessage(utils.TDefault)
+	fields := []mlog.Field{
+		mlog.String("err_where", err.Where),
+		mlog.Int("http_code", err.StatusCode),
+		mlog.String("err_details", err.DetailedError),
+	}
+	switch {
+	case (code >= http.StatusBadRequest && code < http.StatusInternalServerError) ||
+		err.Id == "web.check_browser_compatibility.app_error":
+		c.Logger.Debug(msg, fields...)
+	case code == http.StatusNotImplemented:
+		c.Logger.Info(msg, fields...)
+	default:
+		c.Logger.Error(msg, fields...)
+	}
 }
 
 func (c *Context) IsSystemAdmin() bool {
