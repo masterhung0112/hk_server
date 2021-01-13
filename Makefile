@@ -81,7 +81,72 @@ TESTS=.
 # Packages lists
 TE_PACKAGES=$(shell $(GO) list ./... | grep -v ./data)
 
+# Prepares the enterprise build if exists. The IGNORE stuff is a hack to get the Makefile to execute the commands outside a target
+ifeq ($(BUILD_ENTERPRISE_READY),true)
+	IGNORE:=$(shell echo Enterprise build selected, preparing)
+	IGNORE:=$(shell rm -f imports/imports.go)
+	IGNORE:=$(shell cp $(BUILD_ENTERPRISE_DIR)/imports/imports.go imports/)
+	IGNORE:=$(shell rm -f enterprise)
+	IGNORE:=$(shell ln -s $(BUILD_ENTERPRISE_DIR) enterprise)
+else
+	IGNORE:=$(shell rm -f imports/imports.go)
+endif
+
+EE_PACKAGES=$(shell $(GO) list ./enterprise/...)
+
+ifeq ($(BUILD_ENTERPRISE_READY),true)
+ALL_PACKAGES=$(TE_PACKAGES) $(EE_PACKAGES)
+else
+ALL_PACKAGES=$(TE_PACKAGES)
+endif
+
+all: run ## Alias for 'run'.
+
+-include config.override.mk
+include config.mk
 include build/*.mk
+
+RUN_IN_BACKGROUND ?=
+ifeq ($(RUN_SERVER_IN_BACKGROUND),true)
+	RUN_IN_BACKGROUND := &
+endif
+
+start-docker-check:
+ifeq (,$(findstring minio,$(ENABLED_DOCKER_SERVICES)))
+  TEMP_DOCKER_SERVICES:=$(TEMP_DOCKER_SERVICES) minio
+endif
+ifeq ($(BUILD_ENTERPRISE_READY),true)
+  ifeq (,$(findstring openldap,$(ENABLED_DOCKER_SERVICES)))
+    TEMP_DOCKER_SERVICES:=$(TEMP_DOCKER_SERVICES) openldap
+  endif
+  ifeq (,$(findstring elasticsearch,$(ENABLED_DOCKER_SERVICES)))
+    TEMP_DOCKER_SERVICES:=$(TEMP_DOCKER_SERVICES) elasticsearch
+  endif
+endif
+ENABLED_DOCKER_SERVICES:=$(ENABLED_DOCKER_SERVICES) $(TEMP_DOCKER_SERVICES)
+
+start-docker: ## Starts the docker containers for local development.
+ifneq ($(IS_CI),false)
+	@echo CI Build: skipping docker start
+else ifeq ($(MM_NO_DOCKER),true)
+	@echo No Docker Enabled: skipping docker start
+else
+	@echo Starting docker containers
+
+	$(GO) run ./build/docker-compose-generator/main.go $(ENABLED_DOCKER_SERVICES) | docker-compose -f docker-compose.makefile.yml -f /dev/stdin run --rm start_dependencies
+ifneq (,$(findstring openldap,$(ENABLED_DOCKER_SERVICES)))
+	cat tests/${LDAP_DATA}-data.ldif | docker-compose -f docker-compose.makefile.yml exec -T openldap bash -c 'ldapadd -x -D "cn=admin,dc=mm,dc=test,dc=com" -w mostest || true';
+endif
+endif
+
+stop-docker: ## Stops the docker containers for local development.
+ifeq ($(MM_NO_DOCKER),true)
+	@echo No Docker Enabled: skipping docker stop
+else
+	@echo Stopping docker containers
+
+	docker-compose stop
+endif
 
 store-mocks: ## Creates mock files.
 	$(GO) get -modfile=go.tools.mod github.com/vektra/mockery/...
@@ -90,6 +155,11 @@ store-mocks: ## Creates mock files.
 einterfaces-mocks: ## Creates mock files for einterfaces.
 	$(GO) get -modfile=go.tools.mod github.com/vektra/mockery/...
 	$(GOBIN)/mockery -dir einterfaces -all -output einterfaces/mocks -note 'Regenerate this file using `make einterfaces-mocks`.'
+
+check-prereqs-enterprise: ## Checks prerequisite software status for enterprise.
+ifeq ($(BUILD_ENTERPRISE_READY),true)
+	#./scripts/prereq-check-enterprise.sh
+endif
 
 test-run-coverage:
 	go test -coverprofile=coverage_result ./...
@@ -104,3 +174,19 @@ run-fmt:
 
 gcloud-deploy:
 	gcloud app deploy
+
+test-server: check-prereqs-enterprise start-docker-check start-docker # go-junit-report do-cover-file ## Runs tests.
+ifeq ($(BUILD_ENTERPRISE_READY),true)
+	@echo Running all tests
+else
+	@echo Running only TE tests
+endif
+	./scripts/test.sh "$(GO)" "$(GOFLAGS)" "$(ALL_PACKAGES)" "$(TESTS)" "$(TESTFLAGS)" "$(GOBIN)"
+  ifneq ($(IS_CI),true)
+    ifneq ($(MM_NO_DOCKER),true)
+      ifneq ($(TEMP_DOCKER_SERVICES),)
+	      @echo Stopping temporary docker services
+	      docker-compose stop $(TEMP_DOCKER_SERVICES)
+      endif
+    endif
+  endif
