@@ -2,7 +2,7 @@
 # $ gcloud builds submit
 
 # Run locally (https://cloud.google.com/cloud-build/docs/build-debug-locally)
-# cloud-build-local --config=build/cloudbuild-ci-gcr.yaml
+# cloud-build-local --config=build/cloudbuild-ci-gcr.yaml ./
 
 steps:
   # Reference: https://cloud.google.com/cloud-build/docs/speeding-up-builds#using_a_cached_docker_image
@@ -13,7 +13,7 @@ steps:
   - name: 'gcr.io/cloud-builders-community/docker-compose'
     args: [
       '-f', './docker-compose.yml',
-      'up',
+      'build',
     ]
     id: '$SHORT_SHA'
 

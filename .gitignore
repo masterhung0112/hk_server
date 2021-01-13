@@ -5,3 +5,4 @@ coverage_result
 node_modules/
 mattermost.log
 hungknow.log
+yarn.lock

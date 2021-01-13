@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "${1:0:1}" = "-" ]; then
-  set -- mattermost "$@"
+  set -- hkserver "$@"
 fi
 
 exec "$@"
