@@ -606,7 +606,7 @@ func (a *App) LoginByOAuth(service string, userData io.Reader, teamId string, to
 
 	user, err := a.GetUserByAuth(model.NewString(*authUser.AuthData), service)
 	if err != nil {
-		if err.Id == MISSING_AUTH_ACCOUNT_ERROR {
+		if err.Id == MissingAuthAccountError {
 			user, err = a.CreateOAuthUser(service, bytes.NewReader(buf.Bytes()), teamId, tokenUser)
 		} else {
 			return nil, err
@@ -657,7 +657,7 @@ func (a *App) CompleteSwitchWithOAuth(service string, userData io.Reader, email 
 
 	user, nErr := a.Srv().Store.User().GetByEmail(email)
 	if nErr != nil {
-		return nil, model.NewAppError("CompleteSwitchWithOAuth", MISSING_ACCOUNT_ERROR, nil, nErr.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("CompleteSwitchWithOAuth", MissingAccountError, nil, nErr.Error(), http.StatusInternalServerError)
 	}
 
 	if err := a.RevokeAllSessions(user.Id); err != nil {

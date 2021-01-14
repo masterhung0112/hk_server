@@ -507,7 +507,7 @@ func (a *App) AddUserToTeam(teamId string, userId string, userRequestorId string
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(result.NErr, &nfErr):
-			return nil, model.NewAppError("AddUserToTeam", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, model.NewAppError("AddUserToTeam", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, model.NewAppError("AddUserToTeam", "app.user.get.app_error", nil, result.NErr.Error(), http.StatusInternalServerError)
 		}
@@ -588,7 +588,7 @@ func (a *App) AddUserToTeamByToken(userId string, tokenId string) (*model.Team, 
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(result.NErr, &nfErr):
-			return nil, model.NewAppError("AddUserToTeamByToken", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, model.NewAppError("AddUserToTeamByToken", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, model.NewAppError("AddUserToTeamByToken", "app.user.get.app_error", nil, result.NErr.Error(), http.StatusInternalServerError)
 		}
@@ -659,7 +659,7 @@ func (a *App) AddUserToTeamByInviteId(inviteId string, userId string) (*model.Te
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(result.NErr, &nfErr):
-			return nil, model.NewAppError("AddUserToTeamByInviteId", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, model.NewAppError("AddUserToTeamByInviteId", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, model.NewAppError("AddUserToTeamByInviteId", "app.user.get.app_error", nil, result.NErr.Error(), http.StatusInternalServerError)
 		}
@@ -1181,7 +1181,7 @@ func (a *App) RemoveUserFromTeam(teamId string, userId string, requestorId strin
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(result.NErr, &nfErr):
-			return model.NewAppError("RemoveUserFromTeam", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return model.NewAppError("RemoveUserFromTeam", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return model.NewAppError("RemoveUserFromTeam", "app.user.get.app_error", nil, result.NErr.Error(), http.StatusInternalServerError)
 		}
@@ -1207,7 +1207,7 @@ func (a *App) RemoveTeamMemberFromTeam(teamMember *model.TeamMember, requestorId
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(nErr, &nfErr):
-			return model.NewAppError("RemoveTeamMemberFromTeam", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return model.NewAppError("RemoveTeamMemberFromTeam", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return model.NewAppError("RemoveTeamMemberFromTeam", "app.user.get.app_error", nil, nErr.Error(), http.StatusInternalServerError)
 		}
@@ -1386,7 +1386,7 @@ func (a *App) prepareInviteNewUsersToTeam(teamId, senderId string) (*model.User,
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(result.NErr, &nfErr):
-			return nil, nil, model.NewAppError("prepareInviteNewUsersToTeam", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, nil, model.NewAppError("prepareInviteNewUsersToTeam", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, nil, model.NewAppError("prepareInviteNewUsersToTeam", "app.user.get.app_error", nil, result.NErr.Error(), http.StatusInternalServerError)
 		}
@@ -1511,7 +1511,7 @@ func (a *App) prepareInviteGuestsToChannels(teamId string, guestsInvite *model.G
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(result.NErr, &nfErr):
-			return nil, nil, nil, model.NewAppError("prepareInviteGuestsToChannels", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, nil, nil, model.NewAppError("prepareInviteGuestsToChannels", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, nil, nil, model.NewAppError("prepareInviteGuestsToChannels", "app.user.get.app_error", nil, result.NErr.Error(), http.StatusInternalServerError)
 		}

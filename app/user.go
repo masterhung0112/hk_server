@@ -453,7 +453,7 @@ func (a *App) GetUser(userId string) (*model.User, *model.AppError) {
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(err, &nfErr):
-			return nil, model.NewAppError("GetUser", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, model.NewAppError("GetUser", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, model.NewAppError("GetUser", "app.user.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
@@ -482,9 +482,9 @@ func (a *App) GetUserByEmail(email string) (*model.User, *model.AppError) {
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(err, &nfErr):
-			return nil, model.NewAppError("GetUserByEmail", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, model.NewAppError("GetUserByEmail", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
-			return nil, model.NewAppError("GetUserByEmail", MISSING_ACCOUNT_ERROR, nil, err.Error(), http.StatusInternalServerError)
+			return nil, model.NewAppError("GetUserByEmail", MissingAccountError, nil, err.Error(), http.StatusInternalServerError)
 		}
 	}
 	return user, nil
@@ -497,9 +497,9 @@ func (a *App) GetUserByAuth(authData *string, authService string) (*model.User, 
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(err, &invErr):
-			return nil, model.NewAppError("GetUserByAuth", MISSING_AUTH_ACCOUNT_ERROR, nil, invErr.Error(), http.StatusBadRequest)
+			return nil, model.NewAppError("GetUserByAuth", MissingAuthAccountError, nil, invErr.Error(), http.StatusBadRequest)
 		case errors.As(err, &nfErr):
-			return nil, model.NewAppError("GetUserByAuth", MISSING_AUTH_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusInternalServerError)
+			return nil, model.NewAppError("GetUserByAuth", MissingAuthAccountError, nil, nfErr.Error(), http.StatusInternalServerError)
 		default:
 			return nil, model.NewAppError("GetUserByAuth", "app.user.get_by_auth.other.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
@@ -760,7 +760,7 @@ func (a *App) ActivateMfa(userId, token string) *model.AppError {
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(err, &nfErr):
-			return model.NewAppError("ActivateMfa", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return model.NewAppError("ActivateMfa", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return model.NewAppError("ActivateMfa", "app.user.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
@@ -1252,7 +1252,7 @@ func (a *App) UpdateUser(user *model.User, sendNotifications bool) (*model.User,
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(err, &nfErr):
-			return nil, model.NewAppError("UpdateUser", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, model.NewAppError("UpdateUser", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, model.NewAppError("UpdateUser", "app.user.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
@@ -2342,7 +2342,7 @@ func (a *App) ConvertBotToUser(bot *model.Bot, userPatch *model.UserPatch, sysad
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(nErr, &nfErr):
-			return nil, model.NewAppError("ConvertBotToUser", MISSING_ACCOUNT_ERROR, nil, nfErr.Error(), http.StatusNotFound)
+			return nil, model.NewAppError("ConvertBotToUser", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
 			return nil, model.NewAppError("ConvertBotToUser", "app.user.get.app_error", nil, nErr.Error(), http.StatusInternalServerError)
 		}

@@ -76,7 +76,7 @@ func (a *App) SessionHasPermissionToChannel(session model.Session, channelId str
 		return true
 	}
 
-	if channel.TeamId != "" {
+	if appErr == nil && channel.TeamId != "" {
 		return a.SessionHasPermissionToTeam(session, channel.TeamId, permission)
 	}
 
@@ -135,10 +135,9 @@ func (a *App) SessionHasPermissionToUserOrBot(session model.Session, userId stri
 		return true
 	}
 
-	//TODO: Open this
-	// if err := a.SessionHasPermissionToManageBot(session, userId); err == nil {
-	// 	return true
-	// }
+	if err := a.SessionHasPermissionToManageBot(session, userId); err == nil {
+		return true
+	}
 
 	return false
 }
@@ -189,6 +188,32 @@ func (a *App) HasPermissionToChannel(askingUserId string, channelId string, perm
 	return a.HasPermissionTo(askingUserId, permission)
 }
 
+func (a *App) HasPermissionToChannelByPost(askingUserId string, postId string, permission *model.Permission) bool {
+	if channelMember, err := a.Srv().Store.Channel().GetMemberForPost(postId, askingUserId); err == nil {
+		if a.RolesGrantPermission(channelMember.GetRoles(), permission.Id) {
+			return true
+		}
+	}
+
+	if channel, err := a.Srv().Store.Channel().GetForPost(postId); err == nil {
+		return a.HasPermissionToTeam(askingUserId, channel.TeamId, permission)
+	}
+
+	return a.HasPermissionTo(askingUserId, permission)
+}
+
+func (a *App) HasPermissionToUser(askingUserId string, userId string) bool {
+	if askingUserId == userId {
+		return true
+	}
+
+	if a.HasPermissionTo(askingUserId, model.PERMISSION_EDIT_OTHER_USERS) {
+		return true
+	}
+
+	return false
+}
+
 func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool {
 	roles, err := a.GetRolesByNames(roleNames)
 	if err != nil {
@@ -212,4 +237,39 @@ func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool
 	}
 
 	return false
+}
+
+// SessionHasPermissionToManageBot returns nil if the session has access to manage the given bot.
+// This function deviates from other authorization checks in returning an error instead of just
+// a boolean, allowing the permission failure to be exposed with more granularity.
+func (a *App) SessionHasPermissionToManageBot(session model.Session, botUserId string) *model.AppError {
+	existingBot, err := a.GetBot(botUserId, true)
+	if err != nil {
+		return err
+	}
+	if session.IsUnrestricted() {
+		return nil
+	}
+
+	if existingBot.OwnerId == session.UserId {
+		if !a.SessionHasPermissionTo(session, model.PERMISSION_MANAGE_BOTS) {
+			if !a.SessionHasPermissionTo(session, model.PERMISSION_READ_BOTS) {
+				// If the user doesn't have permission to read bots, pretend as if
+				// the bot doesn't exist at all.
+				return model.MakeBotNotFoundError(botUserId)
+			}
+			return a.MakePermissionError([]*model.Permission{model.PERMISSION_MANAGE_BOTS})
+		}
+	} else {
+		if !a.SessionHasPermissionTo(session, model.PERMISSION_MANAGE_OTHERS_BOTS) {
+			if !a.SessionHasPermissionTo(session, model.PERMISSION_READ_OTHERS_BOTS) {
+				// If the user doesn't have permission to read others' bots,
+				// pretend as if the bot doesn't exist at all.
+				return model.MakeBotNotFoundError(botUserId)
+			}
+			return a.MakePermissionError([]*model.Permission{model.PERMISSION_MANAGE_OTHERS_BOTS})
+		}
+	}
+
+	return nil
 }

@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/dyatlov/go-opengraph/opengraph"
+	// "github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/gorilla/websocket"
 	"github.com/mattermost/go-i18n/i18n"
 	goi18n "github.com/mattermost/go-i18n/i18n"
@@ -68,7 +68,7 @@ type AppIface interface {
 	CreateDefaultChannels(teamID string) ([]*model.Channel, *model.AppError)
 	// CreateDefaultMemberships adds users to teams and channels based on their group memberships and how those groups
 	// are configured to sync with teams and channels for group members on or after the given timestamp.
-	CreateDefaultMemberships(since int64) error
+	// CreateDefaultMemberships(since int64) error
 	// CreateGuest creates a guest and sets several fields of the returned User struct to
 	// their zero values.
 	CreateGuest(user *model.User) (*model.User, *model.AppError)
@@ -92,7 +92,7 @@ type AppIface interface {
 	DeleteChannelScheme(channel *model.Channel) (*model.Channel, *model.AppError)
 	// DeleteGroupConstrainedMemberships deletes team and channel memberships of users who aren't members of the allowed
 	// groups of all group-constrained teams and channels.
-	DeleteGroupConstrainedMemberships() error
+	// DeleteGroupConstrainedMemberships() error
 	// DeletePublicKey will delete plugin public key from the config.
 	DeletePublicKey(name string) *model.AppError
 	// DemoteUserToGuest Convert user's roles and all his mermbership's roles from
@@ -129,7 +129,7 @@ type AppIface interface {
 	FilterNonGroupTeamMembers(userIds []string, team *model.Team) ([]string, error)
 	// GetAllLdapGroupsPage retrieves all LDAP groups under the configured base DN using the default or configured group
 	// filter.
-	GetAllLdapGroupsPage(page int, perPage int, opts model.LdapGroupSearchOpts) ([]*model.Group, int, *model.AppError)
+	// GetAllLdapGroupsPage(page int, perPage int, opts model.LdapGroupSearchOpts) ([]*model.Group, int, *model.AppError)
 	// GetBot returns the given bot.
 	GetBot(botUserId string, includeDeleted bool) (*model.Bot, *model.AppError)
 	// GetBotIconImage retrieves LHS icon for a bot.
@@ -143,12 +143,12 @@ type AppIface interface {
 	// GetClusterPluginStatuses returns the status for plugins installed anywhere in the cluster.
 	GetClusterPluginStatuses() (model.PluginStatuses, *model.AppError)
 	// GetConfigFile proxies access to the given configuration file to the underlying config store.
-	GetConfigFile(name string) ([]byte, error)
+	// GetConfigFile(name string) ([]byte, error)
 	// GetEmojiStaticUrl returns a relative static URL for system default emojis,
 	// and the API route for custom ones. Errors if not found or if custom and deleted.
 	GetEmojiStaticUrl(emojiName string) (string, *model.AppError)
 	// GetEnvironmentConfig returns a map of configuration keys whose values have been overridden by an environment variable.
-	GetEnvironmentConfig() map[string]interface{}
+	// GetEnvironmentConfig() map[string]interface{}
 	// GetFilteredUsersStats is used to get a count of users based on the set of filters supported by UserCountOptions.
 	GetFilteredUsersStats(options *model.UserCountOptions) (*model.UsersStats, *model.AppError)
 	// GetGroupsByTeam returns the paged list and the total count of group associated to the given team.
@@ -158,7 +158,7 @@ type AppIface interface {
 	// direct and group channels.
 	GetKnownUsers(userID string) ([]string, *model.AppError)
 	// GetLdapGroup retrieves a single LDAP group by the given LDAP group id.
-	GetLdapGroup(ldapGroupID string) (*model.Group, *model.AppError)
+	// GetLdapGroup(ldapGroupID string) (*model.Group, *model.AppError)
 	// GetMarketplacePlugins returns a list of plugins from the marketplace-server,
 	// and plugins that are installed locally.
 	GetMarketplacePlugins(filter *model.MarketplacePluginFilter) ([]*model.MarketplacePlugin, *model.AppError)
@@ -186,7 +186,7 @@ type AppIface interface {
 	// based on the type of session (Mobile, SSO, Web/LDAP).
 	GetSessionLengthInMillis(session *model.Session) int64
 	// GetSuggestions returns suggestions for user input.
-	GetSuggestions(commandArgs *model.CommandArgs, commands []*model.Command, roleID string) []model.AutocompleteSuggestion
+	// GetSuggestions(commandArgs *model.CommandArgs, commands []*model.Command, roleID string) []model.AutocompleteSuggestion
 	// GetTeamGroupUsers returns the users who are associated to the team via GroupTeams and GroupMembers.
 	GetTeamGroupUsers(teamID string) ([]*model.User, *model.AppError)
 	// GetTeamSchemeChannelRoles Checks if a team has an override scheme and returns the scheme channel role names or default channel role names.
@@ -263,7 +263,7 @@ type AppIface interface {
 	// SearchAllTeams returns a team list and the total count of the results
 	SearchAllTeams(searchOpts *model.TeamSearch) ([]*model.Team, int64, *model.AppError)
 	// SendNoCardPaymentFailedEmail
-	SendNoCardPaymentFailedEmail() *model.AppError
+	// SendNoCardPaymentFailedEmail() *model.AppError
 	// ServePluginPublicRequest serves public plugin files
 	// at the URL http(s)://$SITE_URL/plugins/$PLUGIN_ID/public/{anything}
 	ServePluginPublicRequest(w http.ResponseWriter, r *http.Request)
@@ -349,11 +349,11 @@ type AppIface interface {
 	AddChannelMember(userId string, channel *model.Channel, userRequestorId string, postRootId string) (*model.ChannelMember, *model.AppError)
 	AddConfigListener(listener func(*model.Config, *model.Config)) string
 	AddDirectChannels(teamId string, user *model.User) *model.AppError
-	AddLdapPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
-	AddLdapPublicCertificate(fileData *multipart.FileHeader) *model.AppError
-	AddSamlIdpCertificate(fileData *multipart.FileHeader) *model.AppError
-	AddSamlPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
-	AddSamlPublicCertificate(fileData *multipart.FileHeader) *model.AppError
+	// AddLdapPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
+	// AddLdapPublicCertificate(fileData *multipart.FileHeader) *model.AppError
+	// AddSamlIdpCertificate(fileData *multipart.FileHeader) *model.AppError
+	// AddSamlPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
+	// AddSamlPublicCertificate(fileData *multipart.FileHeader) *model.AppError
 	AddSessionToCache(session *model.Session)
 	AddStatusCache(status *model.Status)
 	AddStatusCacheSkipClusterSend(status *model.Status)
@@ -379,17 +379,17 @@ type AppIface interface {
 	AutocompleteUsersInChannel(teamId string, channelId string, term string, options *model.UserSearchOptions) (*model.UserAutocompleteInChannel, *model.AppError)
 	AutocompleteUsersInTeam(teamId string, term string, options *model.UserSearchOptions) (*model.UserAutocompleteInTeam, *model.AppError)
 	BroadcastStatus(status *model.Status)
-	BuildPostReactions(postId string) (*[]ReactionImportData, *model.AppError)
+	// BuildPostReactions(postId string) (*[]ReactionImportData, *model.AppError)
 	BuildPushNotificationMessage(contentsConfig string, post *model.Post, user *model.User, channel *model.Channel, channelName string, senderName string, explicitMention bool, channelWideMention bool, replyToThreadType string) (*model.PushNotification, *model.AppError)
-	BuildSamlMetadataObject(idpMetadata []byte) (*model.SamlMetadataResponse, *model.AppError)
-	BulkExport(writer io.Writer, file string, pathToEmojiDir string, dirNameToExportEmoji string) *model.AppError
-	BulkImport(fileReader io.Reader, dryRun bool, workers int) (*model.AppError, int)
+	// BuildSamlMetadataObject(idpMetadata []byte) (*model.SamlMetadataResponse, *model.AppError)
+	// BulkExport(writer io.Writer, file string, pathToEmojiDir string, dirNameToExportEmoji string) *model.AppError
+	// BulkImport(fileReader io.Reader, dryRun bool, workers int) (*model.AppError, int)
 	BulkImportWithPath(fileReader io.Reader, dryRun bool, workers int, importPath string) (*model.AppError, int)
-	CancelJob(jobId string) *model.AppError
+	// CancelJob(jobId string) *model.AppError
 	ChannelMembersToAdd(since int64, channelID *string) ([]*model.UserChannelIDPair, *model.AppError)
 	ChannelMembersToRemove(teamID *string) ([]*model.ChannelMember, *model.AppError)
 	CheckAndSendUserLimitWarningEmails() *model.AppError
-	CheckForClientSideCert(r *http.Request) (string, string, string)
+	// CheckForClientSideCert(r *http.Request) (string, string, string)
 	CheckMandatoryS3Fields(settings *model.FileSettings) *model.AppError
 	CheckPasswordAndAllCriteria(user *model.User, password string, mfaToken string) *model.AppError
 	CheckRolesExist(roleNames []string) *model.AppError
@@ -412,9 +412,9 @@ type AppIface interface {
 	CompareAndSetPluginKey(pluginId string, key string, oldValue, newValue []byte) (bool, *model.AppError)
 	CompleteOAuth(service string, body io.ReadCloser, teamId string, props map[string]string, tokenUser *model.User) (*model.User, *model.AppError)
 	CompleteSwitchWithOAuth(service string, userData io.Reader, email string, tokenUser *model.User) (*model.User, *model.AppError)
-	Compliance() einterfaces.ComplianceInterface
+	// Compliance() einterfaces.ComplianceInterface
 	Config() *model.Config
-	Context() context.Context
+	// Context() context.Context
 	CopyFileInfos(userId string, fileIds []string) ([]string, *model.AppError)
 	CreateChannel(channel *model.Channel, addMember bool) (*model.Channel, *model.AppError)
 	CreateChannelWithUser(channel *model.Channel, userId string) (*model.Channel, *model.AppError)
@@ -424,7 +424,7 @@ type AppIface interface {
 	CreateGroup(group *model.Group) (*model.Group, *model.AppError)
 	CreateGroupChannel(userIds []string, creatorId string) (*model.Channel, *model.AppError)
 	CreateIncomingWebhookForChannel(creatorId string, channel *model.Channel, hook *model.IncomingWebhook) (*model.IncomingWebhook, *model.AppError)
-	CreateJob(job *model.Job) (*model.Job, *model.AppError)
+	// CreateJob(job *model.Job) (*model.Job, *model.AppError)
 	CreateOAuthApp(app *model.OAuthApp) (*model.OAuthApp, *model.AppError)
 	CreateOAuthStateToken(extra string) (*model.Token, *model.AppError)
 	CreateOAuthUser(service string, userData io.Reader, teamId string, tokenUser *model.User) (*model.User, *model.AppError)
@@ -439,7 +439,7 @@ type AppIface interface {
 	CreateSidebarCategory(userId, teamId string, newCategory *model.SidebarCategoryWithChannels) (*model.SidebarCategoryWithChannels, *model.AppError)
 	CreateTeam(team *model.Team) (*model.Team, *model.AppError)
 	CreateTeamWithUser(team *model.Team, userId string) (*model.Team, *model.AppError)
-	CreateTermsOfService(text, userId string) (*model.TermsOfService, *model.AppError)
+	// CreateTermsOfService(text, userId string) (*model.TermsOfService, *model.AppError)
 	CreateUploadSession(us *model.UploadSession) (*model.UploadSession, *model.AppError)
 	CreateUserAccessToken(token *model.UserAccessToken) (*model.UserAccessToken, *model.AppError)
 	CreateUserAsAdmin(user *model.User, redirect string) (*model.User, *model.AppError)
@@ -447,15 +447,15 @@ type AppIface interface {
 	CreateUserWithInviteId(user *model.User, inviteId, redirect string) (*model.User, *model.AppError)
 	CreateUserWithToken(user *model.User, token *model.Token) (*model.User, *model.AppError)
 	CreateWebhookPost(userId string, channel *model.Channel, text, overrideUsername, overrideIconUrl, overrideIconEmoji string, props model.StringInterface, postType string, postRootId string) (*model.Post, *model.AppError)
-	DBHealthCheckDelete() error
-	DBHealthCheckWrite() error
-	DataRetention() einterfaces.DataRetentionInterface
+	// DBHealthCheckDelete() error
+	// DBHealthCheckWrite() error
+	// DataRetention() einterfaces.DataRetentionInterface
 	DeactivateGuests() *model.AppError
 	DeactivateMfa(userId string) *model.AppError
 	DeauthorizeOAuthAppForUser(userId, appId string) *model.AppError
 	DeleteAllExpiredPluginKeys() *model.AppError
 	DeleteAllKeysForPlugin(pluginId string) *model.AppError
-	DeleteBrandImage() *model.AppError
+	// DeleteBrandImage() *model.AppError
 	DeleteChannel(channel *model.Channel, userId string) *model.AppError
 	DeleteCommand(commandId string) *model.AppError
 	DeleteEmoji(emoji *model.Emoji) *model.AppError
@@ -479,7 +479,7 @@ type AppIface interface {
 	DisableUserAccessToken(token *model.UserAccessToken) *model.AppError
 	DoAppMigrations()
 	DoCommandRequest(cmd *model.Command, p url.Values) (*model.Command, *model.CommandResponse, *model.AppError)
-	DoEmojisPermissionsMigration()
+	// DoEmojisPermissionsMigration()
 	DoGuestRolesCreationMigration()
 	DoLocalRequest(rawURL string, body []byte) (*http.Response, *model.AppError)
 	DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, deviceId string, isMobile, isOAuthUser, isSaml bool) *model.AppError
@@ -490,9 +490,9 @@ type AppIface interface {
 	DoUploadFileExpectModification(now time.Time, rawTeamId string, rawChannelId string, rawUserId string, rawFilename string, data []byte) (*model.FileInfo, []byte, *model.AppError)
 	DownloadFromURL(downloadURL string) ([]byte, error)
 	EnableUserAccessToken(token *model.UserAccessToken) *model.AppError
-	EnvironmentConfig() map[string]interface{}
-	ExportPermissions(w io.Writer) error
-	FetchSamlMetadataFromIdp(url string) ([]byte, *model.AppError)
+	// EnvironmentConfig() map[string]interface{}
+	// ExportPermissions(w io.Writer) error
+	// FetchSamlMetadataFromIdp(url string) ([]byte, *model.AppError)
 	FileBackend() (filesstore.FileBackend, *model.AppError)
 	FileExists(path string) (bool, *model.AppError)
 	FileSize(path string) (int64, *model.AppError)
@@ -516,12 +516,12 @@ type AppIface interface {
 	GetAllTeams() ([]*model.Team, *model.AppError)
 	GetAllTeamsPage(offset int, limit int) ([]*model.Team, *model.AppError)
 	GetAllTeamsPageWithCount(offset int, limit int) (*model.TeamsWithCount, *model.AppError)
-	GetAnalytics(name string, teamId string) (model.AnalyticsRows, *model.AppError)
+	// GetAnalytics(name string, teamId string) (model.AnalyticsRows, *model.AppError)
 	GetAudits(userId string, limit int) (model.Audits, *model.AppError)
 	GetAuditsPage(userId string, page int, perPage int) (model.Audits, *model.AppError)
 	GetAuthorizationCode(w http.ResponseWriter, r *http.Request, service string, props map[string]string, loginHint string) (string, *model.AppError)
 	GetAuthorizedAppsForUser(userId string, page, perPage int) ([]*model.OAuthApp, *model.AppError)
-	GetBrandImage() ([]byte, *model.AppError)
+	// GetBrandImage() ([]byte, *model.AppError)
 	GetBulkReactionsForPosts(postIds []string) (map[string][]*model.Reaction, *model.AppError)
 	GetChannel(channelId string) (*model.Channel, *model.AppError)
 	GetChannelByName(channelName, teamId string, includeDeleted bool) (*model.Channel, *model.AppError)
@@ -546,11 +546,11 @@ type AppIface interface {
 	GetClusterId() string
 	GetClusterStatus() []*model.ClusterInfo
 	GetCommand(commandId string) (*model.Command, *model.AppError)
-	GetComplianceFile(job *model.Compliance) ([]byte, *model.AppError)
-	GetComplianceReport(reportId string) (*model.Compliance, *model.AppError)
-	GetComplianceReports(page, perPage int) (model.Compliances, *model.AppError)
+	// GetComplianceFile(job *model.Compliance) ([]byte, *model.AppError)
+	// GetComplianceReport(reportId string) (*model.Compliance, *model.AppError)
+	// GetComplianceReports(page, perPage int) (model.Compliances, *model.AppError)
 	GetCookieDomain() string
-	GetDataRetentionPolicy() (*model.DataRetentionPolicy, *model.AppError)
+	// GetDataRetentionPolicy() (*model.DataRetentionPolicy, *model.AppError)
 	GetDefaultProfileImage(user *model.User) ([]byte, *model.AppError)
 	GetDeletedChannels(teamId string, offset int, limit int, userId string) (*model.ChannelList, *model.AppError)
 	GetEmoji(emojiId string) (*model.Emoji, *model.AppError)
@@ -587,18 +587,18 @@ type AppIface interface {
 	GetIncomingWebhooksForTeamPageByUser(teamId string, userId string, page, perPage int) ([]*model.IncomingWebhook, *model.AppError)
 	GetIncomingWebhooksPage(page, perPage int) ([]*model.IncomingWebhook, *model.AppError)
 	GetIncomingWebhooksPageByUser(userId string, page, perPage int) ([]*model.IncomingWebhook, *model.AppError)
-	GetJob(id string) (*model.Job, *model.AppError)
-	GetJobs(offset int, limit int) ([]*model.Job, *model.AppError)
-	GetJobsByType(jobType string, offset int, limit int) ([]*model.Job, *model.AppError)
-	GetJobsByTypePage(jobType string, page int, perPage int) ([]*model.Job, *model.AppError)
-	GetJobsPage(page int, perPage int) ([]*model.Job, *model.AppError)
-	GetLatestTermsOfService() (*model.TermsOfService, *model.AppError)
+	// GetJob(id string) (*model.Job, *model.AppError)
+	// GetJobs(offset int, limit int) ([]*model.Job, *model.AppError)
+	// GetJobsByType(jobType string, offset int, limit int) ([]*model.Job, *model.AppError)
+	// GetJobsByTypePage(jobType string, page int, perPage int) ([]*model.Job, *model.AppError)
+	// GetJobsPage(page int, perPage int) ([]*model.Job, *model.AppError)
+	// GetLatestTermsOfService() (*model.TermsOfService, *model.AppError)
 	GetLogs(page, perPage int) ([]string, *model.AppError)
 	GetLogsSkipSend(page, perPage int) ([]string, *model.AppError)
 	GetMemberCountsByGroup(channelID string, includeTimezones bool) ([]*model.ChannelMemberCountByGroup, *model.AppError)
 	GetMessageForNotification(post *model.Post, translateFunc i18n.TranslateFunc) string
 	GetMultipleEmojiByName(names []string) ([]*model.Emoji, *model.AppError)
-	GetNewUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	// GetNewUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
 	GetNextPostIdFromPostList(postList *model.PostList) string
 	GetNotificationNameFormat(user *model.User) string
 	GetNumberOfChannelsOnTeam(teamId string) (int, *model.AppError)
@@ -612,7 +612,7 @@ type AppIface interface {
 	GetOAuthLoginEndpoint(w http.ResponseWriter, r *http.Request, service, teamId, action, redirectTo, loginHint string, isMobile bool) (string, *model.AppError)
 	GetOAuthSignupEndpoint(w http.ResponseWriter, r *http.Request, service, teamId string) (string, *model.AppError)
 	GetOAuthStateToken(token string) (*model.Token, *model.AppError)
-	GetOpenGraphMetadata(requestURL string) *opengraph.OpenGraph
+	// GetOpenGraphMetadata(requestURL string) *opengraph.OpenGraph
 	GetOrCreateDirectChannel(userId, otherUserId string) (*model.Channel, *model.AppError)
 	GetOutgoingWebhook(hookId string) (*model.OutgoingWebhook, *model.AppError)
 	GetOutgoingWebhooksForChannelPageByUser(channelId string, userId string, page, perPage int) ([]*model.OutgoingWebhook, *model.AppError)
@@ -646,14 +646,14 @@ type AppIface interface {
 	GetPublicChannelsByIdsForTeam(teamId string, channelIds []string) (*model.ChannelList, *model.AppError)
 	GetPublicChannelsForTeam(teamId string, offset int, limit int) (*model.ChannelList, *model.AppError)
 	GetReactionsForPost(postId string) ([]*model.Reaction, *model.AppError)
-	GetRecentlyActiveUsersForTeam(teamId string) (map[string]*model.User, *model.AppError)
-	GetRecentlyActiveUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	// GetRecentlyActiveUsersForTeam(teamId string) (map[string]*model.User, *model.AppError)
+	// GetRecentlyActiveUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
 	GetRole(id string) (*model.Role, *model.AppError)
 	GetRoleByName(name string) (*model.Role, *model.AppError)
 	GetRolesByNames(names []string) ([]*model.Role, *model.AppError)
-	GetSamlCertificateStatus() *model.SamlCertificateStatus
-	GetSamlMetadata() (string, *model.AppError)
-	GetSamlMetadataFromIdp(idpMetadataUrl string) (*model.SamlMetadataResponse, *model.AppError)
+	// GetSamlCertificateStatus() *model.SamlCertificateStatus
+	// GetSamlMetadata() (string, *model.AppError)
+	// GetSamlMetadataFromIdp(idpMetadataUrl string) (*model.SamlMetadataResponse, *model.AppError)
 	GetSanitizeOptions(asAdmin bool) map[string]bool
 	GetScheme(id string) (*model.Scheme, *model.AppError)
 	GetSchemeByName(name string) (*model.Scheme, *model.AppError)
@@ -671,7 +671,7 @@ type AppIface interface {
 	GetStatus(userId string) (*model.Status, *model.AppError)
 	GetStatusFromCache(userId string) *model.Status
 	GetStatusesByIds(userIds []string) (map[string]interface{}, *model.AppError)
-	GetT() goi18n.TranslateFunc
+	// GetT() goi18n.TranslateFunc
 	GetTeam(teamId string) (*model.Team, *model.AppError)
 	GetTeamByInviteId(inviteId string) (*model.Team, *model.AppError)
 	GetTeamByName(name string) (*model.Team, *model.AppError)
@@ -688,7 +688,7 @@ type AppIface interface {
 	GetTeamsForSchemePage(scheme *model.Scheme, page int, perPage int) ([]*model.Team, *model.AppError)
 	GetTeamsForUser(userId string) ([]*model.Team, *model.AppError)
 	GetTeamsUnreadForUser(excludeTeamId string, userId string) ([]*model.TeamUnread, *model.AppError)
-	GetTermsOfService(id string) (*model.TermsOfService, *model.AppError)
+	// GetTermsOfService(id string) (*model.TermsOfService, *model.AppError)
 	GetThreadMembershipsForUser(userId, teamId string) ([]*model.ThreadMembership, error)
 	GetThreadsForUser(userId, teamId string, options model.GetUserThreadsOpts) (*model.Threads, *model.AppError)
 	GetUploadSession(uploadId string) (*model.UploadSession, *model.AppError)
@@ -701,7 +701,7 @@ type AppIface interface {
 	GetUserByEmail(email string) (*model.User, *model.AppError)
 	GetUserByUsername(username string) (*model.User, *model.AppError)
 	GetUserForLogin(id, loginId string) (*model.User, *model.AppError)
-	GetUserTermsOfService(userId string) (*model.UserTermsOfService, *model.AppError)
+	// GetUserTermsOfService(userId string) (*model.UserTermsOfService, *model.AppError)
 	GetUsers(options *model.UserGetOptions) ([]*model.User, *model.AppError)
 	GetUsersByGroupChannelIds(channelIds []string, asAdmin bool) (map[string][]*model.User, *model.AppError)
 	GetUsersByIds(userIds []string, options *store.UserGetByIdsOpts) ([]*model.User, *model.AppError)
@@ -726,7 +726,7 @@ type AppIface interface {
 	GetUsersWithoutTeamPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError)
 	GetVerifyEmailToken(token string) (*model.Token, *model.AppError)
 	GetViewUsersRestrictions(userId string) (*model.ViewUsersRestrictions, *model.AppError)
-	GetWarnMetricsStatus() (map[string]*model.WarnMetricStatus, *model.AppError)
+	// GetWarnMetricsStatus() (map[string]*model.WarnMetricStatus, *model.AppError)
 	HTTPService() httpservice.HTTPService
 	Handle404(w http.ResponseWriter, r *http.Request)
 	HandleCommandResponse(command *model.Command, args *model.CommandArgs, response *model.CommandResponse, builtIn bool) (*model.CommandResponse, *model.AppError)
@@ -737,9 +737,9 @@ type AppIface interface {
 	HandleMessageExportConfig(cfg *model.Config, appCfg *model.Config)
 	HasPermissionTo(askingUserId string, permission *model.Permission) bool
 	HasPermissionToChannel(askingUserId string, channelId string, permission *model.Permission) bool
-	HasPermissionToChannelByPost(askingUserId string, postId string, permission *model.Permission) bool
+	// HasPermissionToChannelByPost(askingUserId string, postId string, permission *model.Permission) bool
 	HasPermissionToTeam(askingUserId string, teamId string, permission *model.Permission) bool
-	HasPermissionToUser(askingUserId string, userId string) bool
+	// HasPermissionToUser(askingUserId string, userId string) bool
 	HubStop()
 	ImageProxy() *imageproxy.ImageProxy
 	ImageProxyAdder() func(string) string
@@ -782,7 +782,7 @@ type AppIface interface {
 	MaxPostSize() int
 	MessageExport() einterfaces.MessageExportInterface
 	Metrics() einterfaces.MetricsInterface
-	MigrateIdLDAP(toAttribute string) *model.AppError
+	// MigrateIdLDAP(toAttribute string) *model.AppError
 	MoveCommand(team *model.Team, command *model.Command) *model.AppError
 	MoveFile(oldPath, newPath string) *model.AppError
 	NewClusterDiscoveryService() *ClusterDiscoveryService
@@ -834,13 +834,13 @@ type AppIface interface {
 	RemoveConfigListener(id string)
 	RemoveDirectory(path string) *model.AppError
 	RemoveFile(path string) *model.AppError
-	RemoveLdapPrivateCertificate() *model.AppError
-	RemoveLdapPublicCertificate() *model.AppError
+	// RemoveLdapPrivateCertificate() *model.AppError
+	// RemoveLdapPublicCertificate() *model.AppError
 	RemovePlugin(id string) *model.AppError
 	RemovePluginFromData(data model.PluginEventData)
-	RemoveSamlIdpCertificate() *model.AppError
-	RemoveSamlPrivateCertificate() *model.AppError
-	RemoveSamlPublicCertificate() *model.AppError
+	// RemoveSamlIdpCertificate() *model.AppError
+	// RemoveSamlPrivateCertificate() *model.AppError
+	// RemoveSamlPublicCertificate() *model.AppError
 	RemoveTeamIcon(teamId string) *model.AppError
 	RemoveTeamMemberFromTeam(teamMember *model.TeamMember, requestorId string) *model.AppError
 	RemoveUserFromChannel(userIdToRemove string, removerUserId string, channel *model.Channel) *model.AppError
@@ -866,10 +866,10 @@ type AppIface interface {
 	SanitizeTeam(session model.Session, team *model.Team) *model.Team
 	SanitizeTeams(session model.Session, teams []*model.Team) []*model.Team
 	SaveAndBroadcastStatus(status *model.Status)
-	SaveBrandImage(imageData *multipart.FileHeader) *model.AppError
-	SaveComplianceReport(job *model.Compliance) (*model.Compliance, *model.AppError)
+	// SaveBrandImage(imageData *multipart.FileHeader) *model.AppError
+	// SaveComplianceReport(job *model.Compliance) (*model.Compliance, *model.AppError)
 	SaveReactionForPost(reaction *model.Reaction) (*model.Reaction, *model.AppError)
-	SaveUserTermsOfService(userId, termsOfServiceId string, accepted bool) *model.AppError
+	// SaveUserTermsOfService(userId, termsOfServiceId string, accepted bool) *model.AppError
 	SchemesIterator(scope string, batchSize int) func() []*model.Scheme
 	SearchArchivedChannels(teamId string, term string, userId string) (*model.ChannelList, *model.AppError)
 	SearchChannels(teamId string, term string) (*model.ChannelList, *model.AppError)
@@ -897,7 +897,7 @@ type AppIface interface {
 	SendEphemeralPost(userId string, post *model.Post) *model.Post
 	SendNotifications(post *model.Post, team *model.Team, channel *model.Channel, sender *model.User, parentPostList *model.PostList, setOnline bool) ([]string, error)
 	SendPasswordReset(email string, siteURL string) (bool, *model.AppError)
-	SendPaymentFailedEmail(failedPayment *model.FailedPayment) *model.AppError
+	// SendPaymentFailedEmail(failedPayment *model.FailedPayment) *model.AppError
 	ServeInterPluginRequest(w http.ResponseWriter, r *http.Request, sourcePluginId, destinationPluginId string)
 	ServePluginRequest(w http.ResponseWriter, r *http.Request)
 	Session() *model.Session
@@ -926,7 +926,7 @@ type AppIface interface {
 	SetProfileImageFromFile(userId string, file io.Reader) *model.AppError
 	SetProfileImageFromMultiPartFile(userId string, file multipart.File) *model.AppError
 	SetRequestId(s string)
-	SetSamlIdpCertificateFromMetadata(data []byte) *model.AppError
+	// SetSamlIdpCertificateFromMetadata(data []byte) *model.AppError
 	SetSearchEngine(se *searchengine.Broker)
 	SetServer(srv *Server)
 	SetSession(s *model.Session)
@@ -944,7 +944,7 @@ type AppIface interface {
 	SoftDeleteTeam(teamId string) *model.AppError
 	Srv() *Server
 	SubmitInteractiveDialog(request model.SubmitDialogRequest) (*model.SubmitDialogResponse, *model.AppError)
-	SwitchEmailToLdap(email, password, code, ldapLoginId, ldapPassword string) (string, *model.AppError)
+	// SwitchEmailToLdap(email, password, code, ldapLoginId, ldapPassword string) (string, *model.AppError)
 	SwitchEmailToOAuth(w http.ResponseWriter, r *http.Request, email, password, code, service string) (string, *model.AppError)
 	SwitchLdapToEmail(ldapPassword, code, email, newPassword string) (string, *model.AppError)
 	SwitchOAuthToEmail(email, password, requesterId string) (string, *model.AppError)
