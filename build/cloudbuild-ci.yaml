@@ -5,14 +5,43 @@
 # $ cloud-build-local --config=build/cloudbuild-ci.yaml --dryrun=false ./
 
 steps:
-- name: golang
+#- name: mattermost/mattermost-build-server:20201119_golang-1.15.5
+#  entrypoint: 'bash'
+#  args:
+    - '-c'
+    - |
+      echo "Installing golangci-lint" \
+      curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b /usr/local/bin v1.33.2 \
+      echo "Install hkserver" \
+      export GOBIN=${PWD}/hkserver/bin \
+      export PATH=$PATH:$GOBIN \
+      make build \
+      && make package
+#  volumes:
+#    - name: 'hkserver'
+#      path: './'
+#artifacts:
+#  objects:
+#    location: 'gs://hk_cloudbuildci/packages/'
+#    paths: ['./dist/hkserver-team-linux-amd64.tar.gz']
+- name: mattermost/mattermost-build-server:20201119_golang-1.15.5
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      make build \
-      && make package
-artifacts:
-  objects:
-    location: 'gs://hk_cloudbuildci/packages/'
-    paths: ['./dist/hkserver-team-linux-amd64.tar.gz']
+      ssh -fNTM -L 7306:localhost:7306 -L 20025:localhost:20025 -L 20080:localhost:20080 -L 20110:localhost:20110 -L 9901:localhost:9901 -L 7432:localhost:7432 -i ./build/kunai_id_rsa kunai@global.kunai.tv && \
+      ulimit -n 8096; make test-server-ci;
+      ssh -TO exit kunai@global.kunai.tv
+  volumes:
+    - name: 'hkserver'
+      path: './'
+
+options:
+ env: [
+  'TEST_DATABASE_MYSQL_DSN=mmuser:mostest@tcp(localhost:7306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s&multiStatements=true',
+  'TEST_DATABASE_POSTGRESQL_DSN=postgres://mmuser:mostest@localhost:7432/mattermost_test?sslmode=disable&connect_timeout=10',
+  'TEST_DATABASE_MYSQL_ROOT_PASSWD=mostest',
+  'MM_SQLSETTINGS_DATASOURCE=',
+  'MM_SQLSETTINGS_DRIVERNAME=',
+  'IS_CI=true'
+]

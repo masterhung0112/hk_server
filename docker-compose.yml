@@ -20,7 +20,7 @@ services:
     restart: 'no'
     container_name: hungknow-minio
     ports:
-      - "9001:9000"
+      - "9901:9000"
     extends:
         file: build/docker-compose.common.yml
         service: minio

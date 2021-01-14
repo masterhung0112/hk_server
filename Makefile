@@ -190,3 +190,6 @@ endif
       endif
     endif
   endif
+
+test-server-ci:
+	./scripts/test.sh "$(GO)" "$(GOFLAGS)" "$(ALL_PACKAGES)" "$(TESTS)" "$(TESTFLAGS)" "$(GOBIN)"
