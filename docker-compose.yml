@@ -69,7 +69,7 @@ services:
         file: build/docker-compose.common.yml
         service: keycloak
   start_dependencies:
-    command: mysql:7306 postgres:7432 inbucket:20080 minio:9001
+    command: mysql:3306 postgres:5432 inbucket:10080 minio:9000
     image: mattermost/mattermost-wait-for-dep:latest
     networks:
       - hk-test
