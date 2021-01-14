@@ -53,8 +53,7 @@ func TestRunServerSuccess(t *testing.T) {
 	th := SetupServerTest(t)
 	defer th.TearDownServerTest()
 
-	configStore, err := config.NewMemoryStore()
-	require.NoError(t, err)
+	configStore := config.NewTestMemoryStore()
 
 	// Use non-default listening port in case another server instance is already running.
 	*configStore.Get().ServiceSettings.ListenAddress = UnitTestListeningPort
