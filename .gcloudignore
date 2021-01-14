@@ -23,3 +23,14 @@
 *.test
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+node_modules/
+.git/
+bin/
+.idea/
+dist/
+yarn.lock
+hungknow.log
+
+# CI
+/.circleci
+/.github

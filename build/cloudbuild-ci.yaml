@@ -1,0 +1,18 @@
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit --config ./build/cloudbuild-ci.yaml .
+
+# Run locally
+# $ cloud-build-local --config=build/cloudbuild-ci.yaml --dryrun=false ./
+
+steps:
+- name: golang
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      make build \
+      && make package
+artifacts:
+  objects:
+    location: 'gs://hk_cloudbuildci/packages/'
+    paths: ['./dist/hkserver-team-linux-amd64.tar.gz']
