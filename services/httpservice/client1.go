@@ -22,7 +22,7 @@ const (
 var reservedIPRanges []*net.IPNet
 
 // IsReservedIP checks whether the target IP belongs to reserved IP address ranges to avoid SSRF attacks to the internal
-// network of the Mattermost server
+// network of the HungKnow server
 func IsReservedIP(ip net.IP) bool {
 	for _, ipRange := range reservedIPRanges {
 		if ipRange.Contains(ip) {

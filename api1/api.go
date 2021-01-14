@@ -240,7 +240,7 @@ func ApiInit(configservice configservice.ConfigService, globalOptionsFunc app.Ap
 	// api.InitBot()
 	api.InitTeam()
 	api.InitChannel()
-	// api.InitPost()
+	api.InitPost()
 	// api.InitFile()
 	// api.InitUpload()
 	// api.InitSystem()

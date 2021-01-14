@@ -209,7 +209,7 @@ func (th *TestHelper) InitBasic() *TestHelper {
 	th.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
 	th.BasicUser = userCache.BasicUser.DeepCopy()
 	th.BasicUser2 = userCache.BasicUser2.DeepCopy()
-	mainHelper.GetSQLStore().GetMaster().Insert(th.SystemAdminUser, th.BasicUser, th.BasicUser2)
+	mainHelper.GetSqlStore().GetMaster().Insert(th.SystemAdminUser, th.BasicUser, th.BasicUser2)
 
 	th.BasicTeam = th.CreateTeam()
 
@@ -534,12 +534,12 @@ func (th *TestHelper) TearDown() {
 	}
 }
 
-func (*TestHelper) GetSQLStore() *sqlstore.SqlStore {
-	return mainHelper.GetSQLStore()
+func (*TestHelper) GetSqlStore() *sqlstore.SqlStore {
+	return mainHelper.GetSqlStore()
 }
 
 func (*TestHelper) ResetRoleMigration() {
-	sqlStore := mainHelper.GetSQLStore()
+	sqlStore := mainHelper.GetSqlStore()
 	if _, err := sqlStore.GetMaster().Exec("DELETE from Roles"); err != nil {
 		panic(err)
 	}
@@ -552,7 +552,7 @@ func (*TestHelper) ResetRoleMigration() {
 }
 
 func (*TestHelper) ResetEmojisMigration() {
-	sqlStore := mainHelper.GetSQLStore()
+	sqlStore := mainHelper.GetSqlStore()
 	if _, err := sqlStore.GetMaster().Exec("UPDATE Roles SET Permissions=REPLACE(Permissions, ' create_emojis', '') WHERE builtin=True"); err != nil {
 		panic(err)
 	}
@@ -567,7 +567,7 @@ func (*TestHelper) ResetEmojisMigration() {
 
 	mainHelper.GetClusterInterface().SendClearRoleCacheMessage()
 
-	if _, err := sqlStore.GetMaster().Exec("DELETE from Systems where Name = :Name", map[string]interface{}{"Name": EMOJIS_PERMISSIONS_MIGRATION_KEY}); err != nil {
+	if _, err := sqlStore.GetMaster().Exec("DELETE from Systems where Name = :Name", map[string]interface{}{"Name": EmojisPermissionsMigrationKey}); err != nil {
 		panic(err)
 	}
 }

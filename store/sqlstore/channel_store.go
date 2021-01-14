@@ -431,7 +431,7 @@ func (s SqlChannelStore) createIndexesIfNotExists() {
 }
 
 // MigratePublicChannels initializes the PublicChannels table with data created before this version
-// of the Mattermost server kept it up-to-date.
+// of the HungKnow server  kept it up-to-date.
 func (s SqlChannelStore) MigratePublicChannels() error {
 	if _, err := s.GetMaster().Exec(`
 		INSERT INTO PublicChannels

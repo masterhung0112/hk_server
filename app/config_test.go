@@ -46,20 +46,18 @@ func TestConfigListener(t *testing.T) {
 	assert.True(t, listener2Called, "listener 2 should've been called")
 }
 
-//TODO: Open
-// func TestAsymmetricSigningKey(t *testing.T) {
-// 	th := SetupWithStoreMock(t)
-// 	defer th.TearDown()
-// 	assert.NotNil(t, th.App.AsymmetricSigningKey())
-// 	assert.NotEmpty(t, th.App.ClientConfig()["AsymmetricSigningPublicKey"])
-// }
+func TestAsymmetricSigningKey(t *testing.T) {
+	th := SetupWithStoreMock(t)
+	defer th.TearDown()
+	assert.NotNil(t, th.App.AsymmetricSigningKey())
+	assert.NotEmpty(t, th.App.ClientConfig()["AsymmetricSigningPublicKey"])
+}
 
-//TODO: Open
-// func TestPostActionCookieSecret(t *testing.T) {
-// 	th := SetupWithStoreMock(t)
-// 	defer th.TearDown()
-// 	assert.Equal(t, 32, len(th.App.PostActionCookieSecret()))
-// }
+func TestPostActionCookieSecret(t *testing.T) {
+	th := SetupWithStoreMock(t)
+	defer th.TearDown()
+	assert.Equal(t, 32, len(th.App.PostActionCookieSecret()))
+}
 
 func TestClientConfigWithComputed(t *testing.T) {
 	th := SetupWithStoreMock(t)
@@ -68,21 +66,20 @@ func TestClientConfigWithComputed(t *testing.T) {
 	mockStore := th.App.Srv().Store.(*mocks.Store)
 	mockUserStore := mocks.UserStore{}
 	mockUserStore.On("Count", mock.Anything).Return(int64(10), nil)
-	//TODO: Open this
-	// mockPostStore := mocks.PostStore{}
-	// mockPostStore.On("GetMaxPostSize").Return(65535, nil)
+	mockPostStore := mocks.PostStore{}
+	mockPostStore.On("GetMaxPostSize").Return(65535, nil)
 	mockSystemStore := mocks.SystemStore{}
 	mockSystemStore.On("GetByName", "UpgradedFromTE").Return(&model.System{Name: "UpgradedFromTE", Value: "false"}, nil)
 	mockSystemStore.On("GetByName", "InstallationDate").Return(&model.System{Name: "InstallationDate", Value: "10"}, nil)
 	mockStore.On("User").Return(&mockUserStore)
-	// mockStore.On("Post").Return(&mockPostStore)
+	mockStore.On("Post").Return(&mockPostStore)
 	mockStore.On("System").Return(&mockSystemStore)
 
 	config := th.App.ClientConfigWithComputed()
 	_, ok := config["NoAccounts"]
 	assert.True(t, ok, "expected NoAccounts in returned config")
-	// _, ok = config["MaxPostSize"]
-	// assert.True(t, ok, "expected MaxPostSize in returned config")
+	_, ok = config["MaxPostSize"]
+	assert.True(t, ok, "expected MaxPostSize in returned config")
 }
 
 func TestEnsureInstallationDate(t *testing.T) {
@@ -123,7 +120,7 @@ func TestEnsureInstallationDate(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			sqlStore := th.GetSQLStore()
+			sqlStore := th.GetSqlStore()
 			sqlStore.GetMaster().Exec("DELETE FROM Users")
 
 			for _, createAt := range tc.UsersCreationDates {

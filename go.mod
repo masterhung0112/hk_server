@@ -3,14 +3,14 @@ module github.com/masterhung0112/hk_server
 go 1.14
 
 require (
-	code.sajari.com/docconv v1.1.0
+	code.sajari.com/docconv v1.1.1-0.20200701232649-d9ea05fbd50a
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
 	github.com/JalfResi/justext v0.0.0-20170829062021-c0282dea7198 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/advancedlogic/GoOse v0.0.0-20200830213114-1225d531e0ad // indirect
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
-	github.com/aws/aws-sdk-go v1.19.0
+	github.com/aws/aws-sdk-go v1.35.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cespare/xxhash/v2 v2.1.1

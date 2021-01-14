@@ -189,8 +189,8 @@ func UpgradeToE0() error {
 		if filename != "" {
 			os.Remove(filename)
 		}
-		upgradeError = fmt.Errorf("error downloading the new Mattermost server binary file (percentage: %d)", upgradePercentage)
-		mlog.Error("Unable to download the Mattermost server binary file", mlog.Int64("percentage", upgradePercentage), mlog.String("url", getCurrentVersionTgzUrl()), mlog.Err(err))
+		upgradeError = fmt.Errorf("error downloading the new HungKnow server  binary file (percentage: %d)", upgradePercentage)
+		mlog.Error("Unable to download the HungKnow server  binary file", mlog.Int64("percentage", upgradePercentage), mlog.String("url", getCurrentVersionTgzUrl()), mlog.Err(err))
 		upgradePercentage = 0
 		return err
 	}
@@ -201,7 +201,7 @@ func UpgradeToE0() error {
 			os.Remove(sigfilename)
 		}
 		upgradeError = errors.New("error downloading the signature file of the new server")
-		mlog.Error("Unable to download the signature file of the new Mattermost server", mlog.String("url", getCurrentVersionTgzUrl()+".sig"), mlog.Err(err))
+		mlog.Error("Unable to download the signature file of the new HungKnow server ", mlog.String("url", getCurrentVersionTgzUrl()+".sig"), mlog.Err(err))
 		upgradePercentage = 0
 		return err
 	}

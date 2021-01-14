@@ -42,7 +42,7 @@ func TestGetProxiedImageURL(t *testing.T) {
 			Expected: siteURL,
 		},
 		{
-			Name:     "should not proxy an image on the Mattermost server",
+			Name:     "should not proxy an image on the HungKnow server ",
 			Input:    "https://mattermost.example.com/static/logo.png",
 			Expected: "https://mattermost.example.com/static/logo.png",
 		},
@@ -95,7 +95,7 @@ func TestGetUnproxiedImageURL(t *testing.T) {
 			Expected: "/static/logo.png",
 		},
 		{
-			Name:     "should not remove proxy from an image on the Mattermost server",
+			Name:     "should not remove proxy from an image on the HungKnow server ",
 			Input:    "https://mattermost.example.com/static/logo.png",
 			Expected: "https://mattermost.example.com/static/logo.png",
 		},

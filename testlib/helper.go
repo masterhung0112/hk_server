@@ -210,7 +210,7 @@ func (h *MainHelper) GetStore() store.Store {
 	return h.Store
 }
 
-func (h *MainHelper) GetSQLStore() *sqlstore.SqlStore {
+func (h *MainHelper) GetSqlStore() *sqlstore.SqlStore {
 	if h.SQLStore == nil {
 		panic("MainHelper not initialized with sql store.")
 	}

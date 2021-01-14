@@ -84,14 +84,14 @@ type API interface {
 	// Minimum server version: 5.10
 	GetBundlePath() (string, error)
 
-	// GetLicense returns the current license used by the Mattermost server. Returns nil if
+	// GetLicense returns the current license used by the HungKnow server . Returns nil if
 	// the server does not have a license.
 	//
 	// @tag Server
 	// Minimum server version: 5.10
 	GetLicense() *model.License
 
-	// GetServerVersion return the current Mattermost server version
+	// GetServerVersion return the current HungKnow server  version
 	//
 	// @tag Server
 	// Minimum server version: 5.4
@@ -875,7 +875,7 @@ type API interface {
 	// Minimum server version: 5.3
 	HasPermissionToChannel(userId, channelId string, permission *model.Permission) bool
 
-	// LogDebug writes a log message to the Mattermost server log file.
+	// LogDebug writes a log message to the HungKnow server  log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
@@ -883,7 +883,7 @@ type API interface {
 	// Minimum server version: 5.2
 	LogDebug(msg string, keyValuePairs ...interface{})
 
-	// LogInfo writes a log message to the Mattermost server log file.
+	// LogInfo writes a log message to the HungKnow server  log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
@@ -891,7 +891,7 @@ type API interface {
 	// Minimum server version: 5.2
 	LogInfo(msg string, keyValuePairs ...interface{})
 
-	// LogError writes a log message to the Mattermost server log file.
+	// LogError writes a log message to the HungKnow server  log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
@@ -899,7 +899,7 @@ type API interface {
 	// Minimum server version: 5.2
 	LogError(msg string, keyValuePairs ...interface{})
 
-	// LogWarn writes a log message to the Mattermost server log file.
+	// LogWarn writes a log message to the HungKnow server  log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
