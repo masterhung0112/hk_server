@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"strings"
 	"crypto"
 	"crypto/rand"
 	"encoding/base64"
@@ -11,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 )
 
 func CheckOrigin(r *http.Request, allowedOrigins string) bool {

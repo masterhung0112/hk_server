@@ -47,7 +47,7 @@ const (
 	TokenTypeGuestInvitation   = "guest_invitation"
 	TokenTypeCWSAccess         = "cws_access_token"
 	PasswordRecoverExpiryTime  = 1000 * 60 * 60      // 1 hour
-	InvitationExpiryTime        = 1000 * 60 * 60 * 48 // 48 hours
+	InvitationExpiryTime       = 1000 * 60 * 60 * 48 // 48 hours
 	ImageProfilePixelDimension = 128
 )
 

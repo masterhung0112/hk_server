@@ -15,8 +15,6 @@ import (
 
 	// "github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/gorilla/websocket"
-	"github.com/mattermost/go-i18n/i18n"
-	goi18n "github.com/mattermost/go-i18n/i18n"
 	"github.com/masterhung0112/hk_server/audit"
 	"github.com/masterhung0112/hk_server/einterfaces"
 	"github.com/masterhung0112/hk_server/mlog"
@@ -28,6 +26,8 @@ import (
 	"github.com/masterhung0112/hk_server/services/searchengine"
 	"github.com/masterhung0112/hk_server/services/timezones"
 	"github.com/masterhung0112/hk_server/store"
+	"github.com/mattermost/go-i18n/i18n"
+	goi18n "github.com/mattermost/go-i18n/i18n"
 )
 
 // AppIface is extracted from App struct and contains all it's exported methods. It's provided to allow partial interface passing and app layers creation.

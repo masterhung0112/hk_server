@@ -17,8 +17,8 @@ func (api *API) ApiHandler(h func(*Context, http.ResponseWriter, *http.Request))
 		RequireMfa:          false,
 		IsStatic:            false,
 		IsLocal:             false,
-  }
-  // if *api.ConfigService.Config().ServiceSettings.WebserverMode == "gzip" {
+	}
+	// if *api.ConfigService.Config().ServiceSettings.WebserverMode == "gzip" {
 	// 	return gziphandler.GzipHandler(handler)
 	// }
 	return handler

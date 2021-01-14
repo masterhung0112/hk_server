@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-  "github.com/masterhung0112/hk_server/model"
-  "github.com/masterhung0112/hk_server/services/slackimport"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/services/slackimport"
 	"github.com/masterhung0112/hk_server/store"
 )
 
