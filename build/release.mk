@@ -97,7 +97,7 @@ endif
 	@# Package
 	#tar -C dist -czf $(DIST_PATH)-$(BUILD_TYPE_NAME)-osx-amd64.tar.gz hkserver
 	@# Cleanup
-	#rm -f $(DIST_PATH)/bin/hkserver
+	# rm -f $(DIST_PATH)/bin/hkserver
 	# rm -f $(DIST_PATH)/bin/mmctl
 	# rm -f $(DIST_PATH)/prepackaged_plugins/*
 

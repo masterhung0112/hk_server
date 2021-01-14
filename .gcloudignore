@@ -25,7 +25,6 @@
 *.out
 node_modules/
 .git/
-bin/
 .idea/
 dist/
 yarn.lock
