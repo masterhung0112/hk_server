@@ -759,9 +759,9 @@ func (th *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.
 		f(t, th.SystemAdminClient)
 	})
 
-	t.Run(testName+"LocalClient", func(t *testing.T) {
-		f(t, th.LocalClient)
-	})
+	// t.Run(testName+"LocalClient", func(t *testing.T) {
+	// 	f(t, th.LocalClient)
+	// })
 }
 
 func GenerateTestUsername() string {

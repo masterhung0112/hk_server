@@ -179,7 +179,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	channelRoles := []string{}
-	if channelRolesString != "" && len(inChannelId) != 0 {
+	if channelRolesString != "" && inChannelId != "" {
 		channelRoles, rolesValid = model.CleanRoleNames(strings.Split(channelRolesString, ","))
 		if !rolesValid {
 			c.SetInvalidParam("channelRoles")
@@ -187,7 +187,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	teamRoles := []string{}
-	if teamRolesString != "" && len(inTeamId) != 0 {
+	if teamRolesString != "" && inTeamId != "" {
 		teamRoles, rolesValid = model.CleanRoleNames(strings.Split(teamRolesString, ","))
 		if !rolesValid {
 			c.SetInvalidParam("teamRoles")
@@ -258,11 +258,9 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		if sort == "last_activity_at" {
-			//TODO: Open this
-			// profiles, err = c.App.GetRecentlyActiveUsersForTeamPage(inTeamId, c.Params.Page, c.Params.PerPage, c.IsSystemAdmin(), restrictions)
+			profiles, err = c.App.GetRecentlyActiveUsersForTeamPage(inTeamId, c.Params.Page, c.Params.PerPage, c.IsSystemAdmin(), restrictions)
 		} else if sort == "create_at" {
-			//TODO: Open this
-			// profiles, err = c.App.GetNewUsersForTeamPage(inTeamId, c.Params.Page, c.Params.PerPage, c.IsSystemAdmin(), restrictions)
+			profiles, err = c.App.GetNewUsersForTeamPage(inTeamId, c.Params.Page, c.Params.PerPage, c.IsSystemAdmin(), restrictions)
 		} else {
 			etag = c.App.GetUsersInTeamEtag(inTeamId, restrictions.Hash())
 			if c.HandleEtag(etag, "Get Users in Team", w, r) {
@@ -281,23 +279,21 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 			profiles, err = c.App.GetUsersInChannelPage(userGetOptions, c.IsSystemAdmin())
 		}
 	} else if len(inGroupId) > 0 {
-		//TODO: Open this
-		// if c.App.Srv().License() == nil || !*c.App.Srv().License().Features.LDAPGroups {
-		// 	c.Err = model.NewAppError("Api1.getUsersInGroup", "api.ldap_groups.license_error", nil, "", http.StatusNotImplemented)
-		// 	return
-		// }
+		if c.App.Srv().License() == nil || !*c.App.Srv().License().Features.LDAPGroups {
+			c.Err = model.NewAppError("Api4.getUsersInGroup", "api.ldap_groups.license_error", nil, "", http.StatusNotImplemented)
+			return
+		}
 
 		if !c.App.SessionHasPermissionTo(*c.App.Session(), model.PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS) {
 			c.SetPermissionError(model.PERMISSION_SYSCONSOLE_READ_USERMANAGEMENT_GROUPS)
 			return
 		}
 
-		//TODO: Open this
-		// profiles, _, err = c.App.GetGroupMemberUsersPage(inGroupId, c.Params.Page, c.Params.PerPage)
-		// if err != nil {
-		// 	c.Err = err
-		// 	return
-		// }
+		profiles, _, err = c.App.GetGroupMemberUsersPage(inGroupId, c.Params.Page, c.Params.PerPage)
+		if err != nil {
+			c.Err = err
+			return
+		}
 	} else {
 		userGetOptions, err = c.App.RestrictUsersGetByPermissions(c.App.Session().UserId, userGetOptions)
 		if err != nil {
@@ -315,9 +311,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	if len(etag) > 0 {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}
-
-	//TODO: Open this
-	// c.App.UpdateLastActivityAtIfNeeded(*c.App.Session())
+	c.App.UpdateLastActivityAtIfNeeded(*c.App.Session())
 	w.Write([]byte(model.UserListToJson(profiles)))
 }
 

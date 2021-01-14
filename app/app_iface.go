@@ -598,7 +598,7 @@ type AppIface interface {
 	GetMemberCountsByGroup(channelID string, includeTimezones bool) ([]*model.ChannelMemberCountByGroup, *model.AppError)
 	GetMessageForNotification(post *model.Post, translateFunc i18n.TranslateFunc) string
 	GetMultipleEmojiByName(names []string) ([]*model.Emoji, *model.AppError)
-	// GetNewUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	GetNewUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
 	GetNextPostIdFromPostList(postList *model.PostList) string
 	GetNotificationNameFormat(user *model.User) string
 	GetNumberOfChannelsOnTeam(teamId string) (int, *model.AppError)
@@ -647,7 +647,7 @@ type AppIface interface {
 	GetPublicChannelsForTeam(teamId string, offset int, limit int) (*model.ChannelList, *model.AppError)
 	GetReactionsForPost(postId string) ([]*model.Reaction, *model.AppError)
 	// GetRecentlyActiveUsersForTeam(teamId string) (map[string]*model.User, *model.AppError)
-	// GetRecentlyActiveUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
+	GetRecentlyActiveUsersForTeamPage(teamId string, page, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError)
 	GetRole(id string) (*model.Role, *model.AppError)
 	GetRoleByName(name string) (*model.Role, *model.AppError)
 	GetRolesByNames(names []string) ([]*model.Role, *model.AppError)
