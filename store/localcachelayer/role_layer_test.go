@@ -7,15 +7,15 @@ import (
 	"testing"
 
 	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store/storetest"
+	// "github.com/masterhung0112/hk_server/store/storetest"
 	"github.com/masterhung0112/hk_server/store/storetest/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRoleStore(t *testing.T) {
-	StoreTestWithSqlStore(t, storetest.TestRoleStore)
-}
+// func TestRoleStore(t *testing.T) {
+// 	StoreTestWithSqlStore(t, storetest.TestRoleStore)
+// }
 
 func TestRoleStoreCache(t *testing.T) {
 	fakeRole := model.Role{Id: "123", Name: "role-name"}
