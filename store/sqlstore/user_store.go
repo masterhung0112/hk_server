@@ -52,10 +52,7 @@ func newSqlUserStore(sqlStore *SqlStore, metrics einterfaces.MetricsInterface) s
 		LeftJoin("Bots b ON ( b.UserId = u.Id )")
 
 	for _, db := range sqlStore.GetAllConns() {
-		// Create table users
 		table := db.AddTableWithName(model.User{}, "Users").SetKeys(false, "Id")
-
-		// Set constraints for all columns
 		table.ColMap("Id").SetMaxSize(26)
 		table.ColMap("Username").SetMaxSize(64).SetUnique(true)
 		table.ColMap("Password").SetMaxSize(128)
@@ -285,7 +282,7 @@ func (us SqlUserStore) UpdateAuthData(userId string, service string, authData *s
 			     AuthService = :AuthService,
 			     AuthData = :AuthData`
 
-	if len(email) != 0 {
+	if email != "" {
 		query += ", Email = lower(:Email)"
 	}
 
@@ -517,9 +514,8 @@ func applyMultiRoleFilters(query sq.SelectBuilder, systemRoles []string, teamRol
 
 	if len(sqOr) > 0 {
 		return query.Where(sqOr)
-	} else {
-		return query
 	}
+	return query
 }
 
 func applyChannelGroupConstrainedFilter(query sq.SelectBuilder, channelId string) sq.SelectBuilder {
@@ -1404,7 +1400,7 @@ func (us SqlUserStore) performSearch(query sq.SelectBuilder, term string, option
 		if options.AllowFullNames {
 			searchType = UserSearchTypeAll
 		} else {
-			searchType = UserSearchTypeNames_NO_FULL_NAME
+			searchType = UserSearchTypeAll_NO_FULL_NAME
 		}
 	} else {
 		if options.AllowFullNames {
