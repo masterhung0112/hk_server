@@ -12,7 +12,7 @@ import (
 var mainHelper *testlib.MainHelper
 
 type testHelper struct {
-	*api.TestHelper
+	*api1.TestHelper
 
 	config            *model.Config
 	tempDir           string
@@ -27,7 +27,7 @@ func Setup(t testing.TB) *testHelper {
 		panic("failed to create temporary directory: " + err.Error())
 	}
 
-	api1TestHelper := api.Setup(t)
+	api1TestHelper := api1.Setup(t)
 
 	testHelper := &testHelper{
 		TestHelper:     api1TestHelper,

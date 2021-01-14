@@ -9,8 +9,8 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}\\cmd\\hser\\main.go",
-      "env": {},
+      "program": "${workspaceFolder}\\cmd\\hkserver\\main.go",
+      "envFile": "${workspaceFolder}/build/dotenv/test.env",
       "args": []
     }
   ]

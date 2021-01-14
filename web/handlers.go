@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/masterhung0112/hk_server/app"
+	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/utils"
 	"net/http"
@@ -15,6 +16,14 @@ type Handler struct {
 	HandleFunc          func(*Context, http.ResponseWriter, *http.Request)
 	HandlerName         string
 	RequireSession      bool
+	RequireCloudKey     bool
+	TrustRequester      bool
+	RequireMfa          bool
+	IsStatic            bool
+	IsLocal             bool
+	DisableWhenBusy     bool
+
+	cspShaDirective string
 }
 
 func GetHandlerName(h func(*Context, http.ResponseWriter, *http.Request)) string {
@@ -38,7 +47,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	t, _ := utils.GetTranslationsAndLocale(w, r)
 	c.App.SetT(t)
-	c.Log = c.App.Log()
+	c.Logger = c.App.Log()
 
 	c.Params = ParamsFromRequest(r)
 
@@ -47,7 +56,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(token) != 0 {
 		session, err := c.App.GetSession(token)
 		if err != nil {
-			// c.Log.Info("Invalid session", mlog.Err(err))
+			c.Logger.Info("Invalid session", mlog.Err(err))
 			if err.StatusCode == http.StatusInternalServerError {
 				c.Err = err
 			} else if h.RequireSession {

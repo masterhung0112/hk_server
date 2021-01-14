@@ -25,52 +25,52 @@ import (
 )
 
 const (
-	INDEX_TYPE_FULL_TEXT       = "full_text"
-	INDEX_TYPE_DEFAULT         = "default"
-	PG_DUP_TABLE_ERROR_CODE    = "42P07"      // see https://github.com/lib/pq/blob/master/error.go#L268
-	MYSQL_DUP_TABLE_ERROR_CODE = uint16(1050) // see https://dev.mysql.com/doc/mysql-errors/5.7/en/server-error-reference.html#error_er_table_exists_error
-	DB_PING_ATTEMPTS           = 18
-	DB_PING_TIMEOUT_SECS       = 10
+	IndexTypeFullText      = "full_text"
+	IndexTypeDefault       = "default"
+	PGDupTableErrorCode    = "42P07"      // see https://github.com/lib/pq/blob/master/error.go#L268
+	MySQLDupTableErrorCode = uint16(1050) // see https://dev.mysql.com/doc/mysql-errors/5.7/en/server-error-reference.html#error_er_table_exists_error
+	DBPingAttempts         = 18
+	DBPingTimeoutSecs      = 10
 	// This is a numerical version string by postgres. The format is
 	// 2 characters for major, minor, and patch version prior to 10.
 	// After 10, it's major and minor only.
 	// 10.1 would be 100001.
 	// 9.6.3 would be 90603.
-	MINIMUM_REQUIRED_POSTGRES_VERSION = 100000
+	MinimumRequiredPostgresVersion = 100000
 )
 
 const (
-	EXIT_GENERIC_FAILURE             = 1
-	EXIT_CREATE_TABLE                = 100
-	EXIT_DB_OPEN                     = 101
-	EXIT_PING                        = 102
-	EXIT_NO_DRIVER                   = 103
-	EXIT_TABLE_EXISTS                = 104
-	EXIT_TABLE_EXISTS_MYSQL          = 105
-	EXIT_COLUMN_EXISTS               = 106
-	EXIT_DOES_COLUMN_EXISTS_POSTGRES = 107
-	EXIT_DOES_COLUMN_EXISTS_MYSQL    = 108
-	EXIT_DOES_COLUMN_EXISTS_MISSING  = 109
-	EXIT_CREATE_COLUMN_POSTGRES      = 110
-	EXIT_CREATE_COLUMN_MYSQL         = 111
-	EXIT_CREATE_COLUMN_MISSING       = 112
-	EXIT_REMOVE_COLUMN               = 113
-	EXIT_RENAME_COLUMN               = 114
-	EXIT_MAX_COLUMN                  = 115
-	EXIT_ALTER_COLUMN                = 116
-	EXIT_CREATE_INDEX_POSTGRES       = 117
-	EXIT_CREATE_INDEX_MYSQL          = 118
-	EXIT_CREATE_INDEX_FULL_MYSQL     = 119
-	EXIT_CREATE_INDEX_MISSING        = 120
-	EXIT_REMOVE_INDEX_POSTGRES       = 121
-	EXIT_REMOVE_INDEX_MYSQL          = 122
-	EXIT_REMOVE_INDEX_MISSING        = 123
-	EXIT_REMOVE_TABLE                = 134
-	EXIT_CREATE_INDEX_SQLITE         = 135
-	EXIT_REMOVE_INDEX_SQLITE         = 136
-	EXIT_TABLE_EXISTS_SQLITE         = 137
-	EXIT_DOES_COLUMN_EXISTS_SQLITE   = 138
-	EXIT_ALTER_PRIMARY_KEY           = 139
+	ExitGenericFailure           = 1
+	ExitCreateTable              = 100
+	ExitDBOpen                   = 101
+	ExitPing                     = 102
+	ExitNoDriver                 = 103
+	ExitTableExists              = 104
+	ExitTableExistsMySQL         = 105
+	ExitColumnExists             = 106
+	ExitDoesColumnExistsPostgres = 107
+	ExitDoesColumnExistsMySQL    = 108
+	ExitDoesColumnExistsMissing  = 109
+	ExitCreateColumnPostgres     = 110
+	ExitCreateColumnMySQL        = 111
+	ExitCreateColumnMissing      = 112
+	ExitRemoveColumn             = 113
+	ExitRenameColumn             = 114
+	ExitMaxColumn                = 115
+	ExitAlterColumn              = 116
+	ExitCreateIndexPostgres      = 117
+	ExitCreateIndexMySQL         = 118
+	ExitCreateIndexFullMySQL     = 119
+	ExitCreateIndexMissing       = 120
+	ExitRemoveIndexPostgres      = 121
+	ExitRemoveIndexMySQL         = 122
+	ExitRemoveIndexMissing       = 123
+	ExitRemoveTable              = 134
+	ExitCreateIndexSqlite        = 135
+	ExitRemoveIndexSqlite        = 136
+	ExitTableExists_SQLITE       = 137
+	ExitDoesColumnExistsSqlite   = 138
+	ExitAlterPrimaryKey          = 139
 )
 
 type SqlStoreStores struct {
@@ -185,48 +185,48 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 			mlog.Warn("Duplicate key error occurred; assuming table already created and proceeding.", mlog.Err(err))
 		} else {
 			mlog.Critical("Error creating database tables.", mlog.Err(err))
-			os.Exit(EXIT_CREATE_TABLE)
+			os.Exit(ExitCreateTable)
 		}
 	}
 
-	// err = upgradeDatabase(store, model.CurrentVersion)
-	// if err != nil {
-	// 	mlog.Critical("Failed to upgrade database.", mlog.Err(err))
-	// 	time.Sleep(time.Second)
-	// 	os.Exit(EXIT_GENERIC_FAILURE)
-	// }
+	err = upgradeDatabase(store, model.CurrentVersion)
+	if err != nil {
+		mlog.Critical("Failed to upgrade database.", mlog.Err(err))
+		time.Sleep(time.Second)
+		os.Exit(ExitGenericFailure)
+	}
 
-	// store.stores.team.(*SqlTeamStore).createIndexesIfNotExists()
-	// store.stores.channel.(*SqlChannelStore).createIndexesIfNotExists()
-	// store.stores.post.(*SqlPostStore).createIndexesIfNotExists()
-	// store.stores.thread.(*SqlThreadStore).createIndexesIfNotExists()
-	// store.stores.user.(*SqlUserStore).createIndexesIfNotExists()
-	// store.stores.bot.(*SqlBotStore).createIndexesIfNotExists()
-	// store.stores.audit.(*SqlAuditStore).createIndexesIfNotExists()
-	// store.stores.compliance.(*SqlComplianceStore).createIndexesIfNotExists()
-	// store.stores.session.(*SqlSessionStore).createIndexesIfNotExists()
-	// store.stores.oauth.(*SqlOAuthStore).createIndexesIfNotExists()
-	// store.stores.system.(*SqlSystemStore).createIndexesIfNotExists()
-	// store.stores.webhook.(*SqlWebhookStore).createIndexesIfNotExists()
-	// store.stores.command.(*SqlCommandStore).createIndexesIfNotExists()
-	// store.stores.commandWebhook.(*SqlCommandWebhookStore).createIndexesIfNotExists()
-	// store.stores.preference.(*SqlPreferenceStore).createIndexesIfNotExists()
-	// store.stores.license.(*SqlLicenseStore).createIndexesIfNotExists()
-	// store.stores.token.(*SqlTokenStore).createIndexesIfNotExists()
-	// store.stores.emoji.(*SqlEmojiStore).createIndexesIfNotExists()
-	// store.stores.status.(*SqlStatusStore).createIndexesIfNotExists()
-	// store.stores.fileInfo.(*SqlFileInfoStore).createIndexesIfNotExists()
-	// store.stores.uploadSession.(*SqlUploadSessionStore).createIndexesIfNotExists()
-	// store.stores.job.(*SqlJobStore).createIndexesIfNotExists()
-	// store.stores.userAccessToken.(*SqlUserAccessTokenStore).createIndexesIfNotExists()
-	// store.stores.plugin.(*SqlPluginStore).createIndexesIfNotExists()
-	// store.stores.TermsOfService.(SqlTermsOfServiceStore).createIndexesIfNotExists()
-	// store.stores.productNotices.(SqlProductNoticesStore).createIndexesIfNotExists()
-	// store.stores.UserTermsOfService.(SqlUserTermsOfServiceStore).createIndexesIfNotExists()
-	// store.stores.linkMetadata.(*SqlLinkMetadataStore).createIndexesIfNotExists()
-	// store.stores.group.(*SqlGroupStore).createIndexesIfNotExists()
-	// store.stores.scheme.(*SqlSchemeStore).createIndexesIfNotExists()
-	// store.stores.preference.(*SqlPreferenceStore).deleteUnusedFeatures()
+	store.stores.team.(*SqlTeamStore).createIndexesIfNotExists()
+	store.stores.channel.(*SqlChannelStore).createIndexesIfNotExists()
+	store.stores.post.(*SqlPostStore).createIndexesIfNotExists()
+	store.stores.thread.(*SqlThreadStore).createIndexesIfNotExists()
+	store.stores.user.(*SqlUserStore).createIndexesIfNotExists()
+	store.stores.bot.(*SqlBotStore).createIndexesIfNotExists()
+	store.stores.audit.(*SqlAuditStore).createIndexesIfNotExists()
+	store.stores.compliance.(*SqlComplianceStore).createIndexesIfNotExists()
+	store.stores.session.(*SqlSessionStore).createIndexesIfNotExists()
+	store.stores.oauth.(*SqlOAuthStore).createIndexesIfNotExists()
+	store.stores.system.(*SqlSystemStore).createIndexesIfNotExists()
+	store.stores.webhook.(*SqlWebhookStore).createIndexesIfNotExists()
+	store.stores.command.(*SqlCommandStore).createIndexesIfNotExists()
+	store.stores.commandWebhook.(*SqlCommandWebhookStore).createIndexesIfNotExists()
+	store.stores.preference.(*SqlPreferenceStore).createIndexesIfNotExists()
+	store.stores.license.(*SqlLicenseStore).createIndexesIfNotExists()
+	store.stores.token.(*SqlTokenStore).createIndexesIfNotExists()
+	store.stores.emoji.(*SqlEmojiStore).createIndexesIfNotExists()
+	store.stores.status.(*SqlStatusStore).createIndexesIfNotExists()
+	store.stores.fileInfo.(*SqlFileInfoStore).createIndexesIfNotExists()
+	store.stores.uploadSession.(*SqlUploadSessionStore).createIndexesIfNotExists()
+	store.stores.job.(*SqlJobStore).createIndexesIfNotExists()
+	store.stores.userAccessToken.(*SqlUserAccessTokenStore).createIndexesIfNotExists()
+	store.stores.plugin.(*SqlPluginStore).createIndexesIfNotExists()
+	store.stores.TermsOfService.(SqlTermsOfServiceStore).createIndexesIfNotExists()
+	store.stores.productNotices.(SqlProductNoticesStore).createIndexesIfNotExists()
+	store.stores.UserTermsOfService.(SqlUserTermsOfServiceStore).createIndexesIfNotExists()
+	store.stores.linkMetadata.(*SqlLinkMetadataStore).createIndexesIfNotExists()
+	store.stores.group.(*SqlGroupStore).createIndexesIfNotExists()
+	store.stores.scheme.(*SqlSchemeStore).createIndexesIfNotExists()
+	store.stores.preference.(*SqlPreferenceStore).deleteUnusedFeatures()
 
 	return store
 }
@@ -236,24 +236,24 @@ func setupConnection(con_type string, dataSource string, settings *model.SqlSett
 	if err != nil {
 		mlog.Critical("Failed to open SQL connection to err.", mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_DB_OPEN)
+		os.Exit(ExitDBOpen)
 	}
 
-	for i := 0; i < DB_PING_ATTEMPTS; i++ {
-		mlog.Info("Pinging SQL", mlog.String("database", con_type), mlog.String("DriverName", *settings.DriverName))
-		ctx, cancel := context.WithTimeout(context.Background(), DB_PING_TIMEOUT_SECS*time.Second)
+	for i := 0; i < DBPingAttempts; i++ {
+		mlog.Info("Pinging SQL", mlog.String("database", con_type))
+		ctx, cancel := context.WithTimeout(context.Background(), DBPingTimeoutSecs*time.Second)
 		defer cancel()
 		err = db.PingContext(ctx)
 		if err == nil {
 			break
 		} else {
-			if i == DB_PING_ATTEMPTS-1 {
+			if i == DBPingAttempts-1 {
 				mlog.Critical("Failed to ping DB, server will exit.", mlog.Err(err))
 				time.Sleep(time.Second)
-				os.Exit(EXIT_PING)
+				os.Exit(ExitPing)
 			} else {
-				mlog.Error("Failed to ping DB", mlog.Err(err), mlog.Int("retrying in seconds", DB_PING_TIMEOUT_SECS), mlog.String("dataSource", dataSource))
-				time.Sleep(DB_PING_TIMEOUT_SECS * time.Second)
+				mlog.Error("Failed to ping DB", mlog.Err(err), mlog.Int("retrying in seconds", DBPingTimeoutSecs))
+				time.Sleep(DBPingTimeoutSecs * time.Second)
 			}
 		}
 	}
@@ -275,7 +275,7 @@ func setupConnection(con_type string, dataSource string, settings *model.SqlSett
 	} else {
 		mlog.Critical("Failed to create dialect specific driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_NO_DRIVER)
+		os.Exit(ExitNoDriver)
 	}
 
 	if settings.Trace != nil && *settings.Trace {
@@ -433,7 +433,7 @@ func (ss *SqlStore) DoesTableExist(tableName string) bool {
 		if err != nil {
 			mlog.Critical("Failed to check if table exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_TABLE_EXISTS)
+			os.Exit(ExitTableExists)
 		}
 
 		return count > 0
@@ -455,7 +455,7 @@ func (ss *SqlStore) DoesTableExist(tableName string) bool {
 		if err != nil {
 			mlog.Critical("Failed to check if table exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_TABLE_EXISTS_MYSQL)
+			os.Exit(ExitTableExistsMySQL)
 		}
 
 		return count > 0
@@ -469,7 +469,7 @@ func (ss *SqlStore) DoesTableExist(tableName string) bool {
 		if err != nil {
 			mlog.Critical("Failed to check if table exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_TABLE_EXISTS_SQLITE)
+			os.Exit(ExitTableExists_SQLITE)
 		}
 
 		return count > 0
@@ -477,7 +477,7 @@ func (ss *SqlStore) DoesTableExist(tableName string) bool {
 	} else {
 		mlog.Critical("Failed to check if column exists because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_COLUMN_EXISTS)
+		os.Exit(ExitColumnExists)
 		return false
 	}
 }
@@ -501,7 +501,7 @@ func (ss *SqlStore) DoesColumnExist(tableName string, columnName string) bool {
 
 			mlog.Critical("Failed to check if column exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_DOES_COLUMN_EXISTS_POSTGRES)
+			os.Exit(ExitDoesColumnExistsPostgres)
 		}
 
 		return count > 0
@@ -524,7 +524,7 @@ func (ss *SqlStore) DoesColumnExist(tableName string, columnName string) bool {
 		if err != nil {
 			mlog.Critical("Failed to check if column exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_DOES_COLUMN_EXISTS_MYSQL)
+			os.Exit(ExitDoesColumnExistsMySQL)
 		}
 
 		return count > 0
@@ -539,7 +539,7 @@ func (ss *SqlStore) DoesColumnExist(tableName string, columnName string) bool {
 		if err != nil {
 			mlog.Critical("Failed to check if column exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_DOES_COLUMN_EXISTS_SQLITE)
+			os.Exit(ExitDoesColumnExistsSqlite)
 		}
 
 		return count > 0
@@ -547,7 +547,7 @@ func (ss *SqlStore) DoesColumnExist(tableName string, columnName string) bool {
 	} else {
 		mlog.Critical("Failed to check if column exists because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_DOES_COLUMN_EXISTS_MISSING)
+		os.Exit(ExitDoesColumnExistsMissing)
 		return false
 	}
 }
@@ -566,7 +566,7 @@ func (ss *SqlStore) DoesTriggerExist(triggerName string) bool {
 		if err != nil {
 			mlog.Critical("Failed to check if trigger exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_GENERIC_FAILURE)
+			os.Exit(ExitGenericFailure)
 		}
 
 		return count > 0
@@ -585,7 +585,7 @@ func (ss *SqlStore) DoesTriggerExist(triggerName string) bool {
 		if err != nil {
 			mlog.Critical("Failed to check if trigger exists", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_GENERIC_FAILURE)
+			os.Exit(ExitGenericFailure)
 		}
 
 		return count > 0
@@ -593,7 +593,7 @@ func (ss *SqlStore) DoesTriggerExist(triggerName string) bool {
 	} else {
 		mlog.Critical("Failed to check if column exists because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_GENERIC_FAILURE)
+		os.Exit(ExitGenericFailure)
 		return false
 	}
 }
@@ -609,7 +609,7 @@ func (ss *SqlStore) CreateColumnIfNotExists(tableName string, columnName string,
 		if err != nil {
 			mlog.Critical("Failed to create column", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_COLUMN_POSTGRES)
+			os.Exit(ExitCreateColumnPostgres)
 		}
 
 		return true
@@ -619,7 +619,7 @@ func (ss *SqlStore) CreateColumnIfNotExists(tableName string, columnName string,
 		if err != nil {
 			mlog.Critical("Failed to create column", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_COLUMN_MYSQL)
+			os.Exit(ExitCreateColumnMySQL)
 		}
 
 		return true
@@ -627,7 +627,7 @@ func (ss *SqlStore) CreateColumnIfNotExists(tableName string, columnName string,
 	} else {
 		mlog.Critical("Failed to create column because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_CREATE_COLUMN_MISSING)
+		os.Exit(ExitCreateColumnMissing)
 		return false
 	}
 }
@@ -643,7 +643,7 @@ func (ss *SqlStore) CreateColumnIfNotExistsNoDefault(tableName string, columnNam
 		if err != nil {
 			mlog.Critical("Failed to create column", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_COLUMN_POSTGRES)
+			os.Exit(ExitCreateColumnPostgres)
 		}
 
 		return true
@@ -653,7 +653,7 @@ func (ss *SqlStore) CreateColumnIfNotExistsNoDefault(tableName string, columnNam
 		if err != nil {
 			mlog.Critical("Failed to create column", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_COLUMN_MYSQL)
+			os.Exit(ExitCreateColumnMySQL)
 		}
 
 		return true
@@ -661,7 +661,7 @@ func (ss *SqlStore) CreateColumnIfNotExistsNoDefault(tableName string, columnNam
 	} else {
 		mlog.Critical("Failed to create column because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_CREATE_COLUMN_MISSING)
+		os.Exit(ExitCreateColumnMissing)
 		return false
 	}
 }
@@ -676,7 +676,7 @@ func (ss *SqlStore) RemoveColumnIfExists(tableName string, columnName string) bo
 	if err != nil {
 		mlog.Critical("Failed to drop column", mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_REMOVE_COLUMN)
+		os.Exit(ExitRemoveColumn)
 	}
 
 	return true
@@ -691,7 +691,7 @@ func (ss *SqlStore) RemoveTableIfExists(tableName string) bool {
 	if err != nil {
 		mlog.Critical("Failed to drop table", mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_REMOVE_TABLE)
+		os.Exit(ExitRemoveTable)
 	}
 
 	return true
@@ -712,7 +712,7 @@ func (ss *SqlStore) RenameColumnIfExists(tableName string, oldColumnName string,
 	if err != nil {
 		mlog.Critical("Failed to rename column", mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_RENAME_COLUMN)
+		os.Exit(ExitRenameColumn)
 	}
 
 	return true
@@ -734,7 +734,7 @@ func (ss *SqlStore) GetMaxLengthOfColumnIfExists(tableName string, columnName st
 	if err != nil {
 		mlog.Critical("Failed to get max length of column", mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_MAX_COLUMN)
+		os.Exit(ExitMaxColumn)
 	}
 
 	return result
@@ -755,7 +755,7 @@ func (ss *SqlStore) AlterColumnTypeIfExists(tableName string, columnName string,
 	if err != nil {
 		mlog.Critical("Failed to alter column type", mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_ALTER_COLUMN)
+		os.Exit(ExitAlterColumn)
 	}
 
 	return true
@@ -790,7 +790,7 @@ func (ss *SqlStore) AlterColumnDefaultIfExists(tableName string, columnName stri
 	} else {
 		mlog.Critical("Failed to alter column default because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_GENERIC_FAILURE)
+		os.Exit(ExitGenericFailure)
 		return false
 	}
 
@@ -804,7 +804,7 @@ func (ss *SqlStore) AlterColumnDefaultIfExists(tableName string, columnName stri
 	if err != nil {
 		mlog.Critical("Failed to alter column", mlog.String("table", tableName), mlog.String("column", columnName), mlog.String("default value", defaultValue), mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_GENERIC_FAILURE)
+		os.Exit(ExitGenericFailure)
 		return false
 	}
 
@@ -849,7 +849,7 @@ func (ss *SqlStore) AlterPrimaryKey(tableName string, columnNames []string) bool
 	if err != nil {
 		mlog.Critical("Failed to get current primary key", mlog.String("table", tableName), mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_ALTER_PRIMARY_KEY)
+		os.Exit(ExitAlterPrimaryKey)
 	}
 
 	primaryKey := strings.Join(columnNames, ",")
@@ -867,29 +867,29 @@ func (ss *SqlStore) AlterPrimaryKey(tableName string, columnNames []string) bool
 	if err != nil {
 		mlog.Critical("Failed to alter primary key", mlog.String("table", tableName), mlog.Err(err))
 		time.Sleep(time.Second)
-		os.Exit(EXIT_ALTER_PRIMARY_KEY)
+		os.Exit(ExitAlterPrimaryKey)
 	}
 	return true
 }
 
 func (ss *SqlStore) CreateUniqueIndexIfNotExists(indexName string, tableName string, columnName string) bool {
-	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, INDEX_TYPE_DEFAULT, true)
+	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, IndexTypeDefault, true)
 }
 
 func (ss *SqlStore) CreateIndexIfNotExists(indexName string, tableName string, columnName string) bool {
-	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, INDEX_TYPE_DEFAULT, false)
+	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, IndexTypeDefault, false)
 }
 
 func (ss *SqlStore) CreateCompositeIndexIfNotExists(indexName string, tableName string, columnNames []string) bool {
-	return ss.createIndexIfNotExists(indexName, tableName, columnNames, INDEX_TYPE_DEFAULT, false)
+	return ss.createIndexIfNotExists(indexName, tableName, columnNames, IndexTypeDefault, false)
 }
 
 func (ss *SqlStore) CreateUniqueCompositeIndexIfNotExists(indexName string, tableName string, columnNames []string) bool {
-	return ss.createIndexIfNotExists(indexName, tableName, columnNames, INDEX_TYPE_DEFAULT, true)
+	return ss.createIndexIfNotExists(indexName, tableName, columnNames, IndexTypeDefault, true)
 }
 
 func (ss *SqlStore) CreateFullTextIndexIfNotExists(indexName string, tableName string, columnName string) bool {
-	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, INDEX_TYPE_FULL_TEXT, false)
+	return ss.createIndexIfNotExists(indexName, tableName, []string{columnName}, IndexTypeFullText, false)
 }
 
 func (ss *SqlStore) createIndexIfNotExists(indexName string, tableName string, columnNames []string, indexType string, unique bool) bool {
@@ -907,10 +907,10 @@ func (ss *SqlStore) createIndexIfNotExists(indexName string, tableName string, c
 		}
 
 		query := ""
-		if indexType == INDEX_TYPE_FULL_TEXT {
+		if indexType == IndexTypeFullText {
 			if len(columnNames) != 1 {
 				mlog.Critical("Unable to create multi column full text index")
-				os.Exit(EXIT_CREATE_INDEX_POSTGRES)
+				os.Exit(ExitCreateIndexPostgres)
 			}
 			columnName := columnNames[0]
 			postgresColumnNames := convertMySQLFullTextColumnsToPostgres(columnName)
@@ -923,7 +923,7 @@ func (ss *SqlStore) createIndexIfNotExists(indexName string, tableName string, c
 		if err != nil {
 			mlog.Critical("Failed to create index", mlog.Err(errExists), mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_INDEX_POSTGRES)
+			os.Exit(ExitCreateIndexPostgres)
 		}
 	} else if ss.DriverName() == model.DATABASE_DRIVER_MYSQL {
 
@@ -931,7 +931,7 @@ func (ss *SqlStore) createIndexIfNotExists(indexName string, tableName string, c
 		if err != nil {
 			mlog.Critical("Failed to check index", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_INDEX_MYSQL)
+			os.Exit(ExitCreateIndexMySQL)
 		}
 
 		if count > 0 {
@@ -939,7 +939,7 @@ func (ss *SqlStore) createIndexIfNotExists(indexName string, tableName string, c
 		}
 
 		fullTextIndex := ""
-		if indexType == INDEX_TYPE_FULL_TEXT {
+		if indexType == IndexTypeFullText {
 			fullTextIndex = " FULLTEXT "
 		}
 
@@ -947,19 +947,19 @@ func (ss *SqlStore) createIndexIfNotExists(indexName string, tableName string, c
 		if err != nil {
 			mlog.Critical("Failed to create index", mlog.String("table", tableName), mlog.String("index_name", indexName), mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_INDEX_FULL_MYSQL)
+			os.Exit(ExitCreateIndexFullMySQL)
 		}
 	} else if ss.DriverName() == model.DATABASE_DRIVER_SQLITE {
 		_, err := ss.GetMaster().ExecNoTimeout("CREATE INDEX IF NOT EXISTS " + indexName + " ON " + tableName + " (" + strings.Join(columnNames, ", ") + ")")
 		if err != nil {
 			mlog.Critical("Failed to create index", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_CREATE_INDEX_SQLITE)
+			os.Exit(ExitCreateIndexSqlite)
 		}
 	} else {
 		mlog.Critical("Failed to create index because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_CREATE_INDEX_MISSING)
+		os.Exit(ExitCreateIndexMissing)
 	}
 
 	return true
@@ -978,7 +978,7 @@ func (ss *SqlStore) RemoveIndexIfExists(indexName string, tableName string) bool
 		if err != nil {
 			mlog.Critical("Failed to remove index", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_REMOVE_INDEX_POSTGRES)
+			os.Exit(ExitRemoveIndexPostgres)
 		}
 
 		return true
@@ -988,7 +988,7 @@ func (ss *SqlStore) RemoveIndexIfExists(indexName string, tableName string) bool
 		if err != nil {
 			mlog.Critical("Failed to check index", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_REMOVE_INDEX_MYSQL)
+			os.Exit(ExitRemoveIndexMySQL)
 		}
 
 		if count <= 0 {
@@ -999,19 +999,19 @@ func (ss *SqlStore) RemoveIndexIfExists(indexName string, tableName string) bool
 		if err != nil {
 			mlog.Critical("Failed to remove index", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_REMOVE_INDEX_MYSQL)
+			os.Exit(ExitRemoveIndexMySQL)
 		}
 	} else if ss.DriverName() == model.DATABASE_DRIVER_SQLITE {
 		_, err := ss.GetMaster().ExecNoTimeout("DROP INDEX IF EXISTS " + indexName)
 		if err != nil {
 			mlog.Critical("Failed to remove index", mlog.Err(err))
 			time.Sleep(time.Second)
-			os.Exit(EXIT_REMOVE_INDEX_SQLITE)
+			os.Exit(ExitRemoveIndexSqlite)
 		}
 	} else {
 		mlog.Critical("Failed to create index because of missing driver")
 		time.Sleep(time.Second)
-		os.Exit(EXIT_REMOVE_INDEX_MISSING)
+		os.Exit(ExitRemoveIndexMissing)
 	}
 
 	return true
@@ -1342,11 +1342,11 @@ func IsDuplicate(err error) bool {
 	var mysqlErr *mysql.MySQLError
 	switch {
 	case errors.As(errors.Cause(err), &pqErr):
-		if pqErr.Code == PG_DUP_TABLE_ERROR_CODE {
+		if pqErr.Code == PGDupTableErrorCode {
 			return true
 		}
 	case errors.As(errors.Cause(err), &mysqlErr):
-		if mysqlErr.Number == MYSQL_DUP_TABLE_ERROR_CODE {
+		if mysqlErr.Number == MySQLDupTableErrorCode {
 			return true
 		}
 	}

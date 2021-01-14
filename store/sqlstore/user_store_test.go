@@ -34,6 +34,16 @@ type UserStoreTS struct {
 	StoreTestSuite
 }
 
+func (s *UserStoreTS) SetupTest() {
+	users, err := s.Store().User().GetAll()
+	s.Require().Nil(err, "failed cleaning up test users")
+
+	for _, u := range users {
+		err := s.Store().User().PermanentDelete(u.Id)
+		s.Require().Nil(err, "failed cleaning up test user %s", u.Username)
+	}
+}
+
 func TestUserStoreTS(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &UserStoreTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
 		suite.Run(t, testSuite)

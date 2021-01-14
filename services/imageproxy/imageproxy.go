@@ -149,7 +149,7 @@ func (proxy *ImageProxy) GetProxiedImageURL(imageURL string) string {
 		return parsedURL.String()
 	}
 
-	return proxy.siteURL.String() + "/api/v4/image?url=" + url.QueryEscape(parsedURL.String())
+	return proxy.siteURL.String() + "/api/v1/image?url=" + url.QueryEscape(parsedURL.String())
 }
 
 // GetUnproxiedImageURL takes the URL of an image on the image proxy and returns the original URL of the image.
@@ -158,7 +158,7 @@ func (proxy *ImageProxy) GetUnproxiedImageURL(proxiedURL string) string {
 }
 
 func getUnproxiedImageURL(proxiedURL, siteURL string) string {
-	if !strings.HasPrefix(proxiedURL, siteURL+"/api/v4/image?url=") {
+	if !strings.HasPrefix(proxiedURL, siteURL+"/api/v1/image?url=") {
 		return proxiedURL
 	}
 

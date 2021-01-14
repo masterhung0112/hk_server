@@ -3,10 +3,14 @@ module github.com/masterhung0112/hk_server
 go 1.14
 
 require (
+	code.sajari.com/docconv v1.1.1-0.20200701232649-d9ea05fbd50a
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
+	github.com/JalfResi/justext v0.0.0-20170829062021-c0282dea7198 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/squirrel v1.4.0
+	github.com/advancedlogic/GoOse v0.0.0-20200830213114-1225d531e0ad // indirect
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
+	github.com/aws/aws-sdk-go v1.35.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cespare/xxhash/v2 v2.1.1
@@ -32,6 +36,8 @@ require (
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/jaytaylor/html2text v0.0.0-20200412013138-3577fbdbcff7
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/ledongthuc/pdf v0.0.0-20200323191019-23c5852adbd2
+	github.com/levigross/exp-html v0.0.0-20120902181939-8df60c69a8f5 // indirect
 	github.com/lib/pq v1.8.0
 	github.com/mattermost/go-i18n v1.11.0
 	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible
@@ -40,27 +46,36 @@ require (
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0
 	github.com/mattermost/viper v1.0.4
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/mholt/archiver/v3 v3.5.0
 	github.com/minio/minio-go/v7 v7.0.5
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/oov/psd v0.0.0-20201002182931-74231384897f
+	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/reflog/dateconstraints v0.2.1
 	github.com/rs/cors v1.7.0
+	github.com/rudderlabs/analytics-go v3.2.1+incompatible
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
+	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/splitio/go-client/v6 v6.0.1
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/throttled/throttled v2.2.5+incompatible
 	github.com/tinylib/msgp v1.1.5
+	github.com/uber/jaeger-client-go v2.25.0+incompatible
+	github.com/uber/jaeger-lib v2.4.0+incompatible
 	github.com/vmihailenco/msgpack/v5 v5.1.0
 	github.com/wiggin77/merror v1.0.2
 	github.com/wiggin77/srslog v1.0.1
+	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
 	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/text v0.3.3
 	gopkg.in/mail.v2 v2.3.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0

@@ -13,7 +13,7 @@ func Run(args []string) error {
 }
 
 var RootCmd = &cobra.Command{
-	Use:   "hser",
+	Use:   "hkserver",
 	Short: "Self-hosted server",
 }
 

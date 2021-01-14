@@ -131,13 +131,13 @@ func TestGetAtmosCamoImageURL(t *testing.T) {
 			Expected: defaultSiteURL,
 		},
 		{
-			Name:     "should not proxy an image on the Mattermost server",
+			Name:     "should not proxy an image on the HungKnow server ",
 			Input:    "https://mattermost.example.com/static/logo.png",
 			SiteURL:  defaultSiteURL,
 			Expected: "https://mattermost.example.com/static/logo.png",
 		},
 		{
-			Name:     "should not proxy an image on the Mattermost server when a subpath is set",
+			Name:     "should not proxy an image on the HungKnow server  when a subpath is set",
 			Input:    "https://mattermost.example.com/static/logo.png",
 			SiteURL:  defaultSiteURL + "/static",
 			Expected: "https://mattermost.example.com/static/logo.png",

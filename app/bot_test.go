@@ -586,7 +586,7 @@ func TestNotifySysadminsBotOwnerDisabled(t *testing.T) {
 		}
 	}()
 
-	// // Create two sysadmins
+	// Create two sysadmins
 	sysadmin1 := model.User{
 		Email:    "sys1@example.com",
 		Nickname: "nn_sysadmin1",

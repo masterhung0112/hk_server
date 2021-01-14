@@ -1,14 +1,40 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
+	"mime/multipart"
+	"regexp"
+	"strings"
+
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/services/slackimport"
+	"github.com/masterhung0112/hk_server/store"
 )
 
+func (a *App) SlackImport(fileData multipart.File, fileSize int64, teamID string) (*model.AppError, *bytes.Buffer) {
+	actions := slackimport.Actions{
+		UpdateActive:           a.UpdateActive,
+		AddUserToChannel:       a.AddUserToChannel,
+		JoinUserToTeam:         a.JoinUserToTeam,
+		CreateDirectChannel:    a.createDirectChannel,
+		CreateGroupChannel:     a.createGroupChannel,
+		CreateChannel:          a.CreateChannel,
+		DoUploadFile:           a.DoUploadFile,
+		GenerateThumbnailImage: a.generateThumbnailImage,
+		GeneratePreviewImage:   a.generatePreviewImage,
+		InvalidateAllCaches:    func() { a.srv.InvalidateAllCaches() },
+		MaxPostSize:            func() int { return a.srv.MaxPostSize() },
+		PrepareImage:           prepareImage,
+	}
+
+	importer := slackimport.New(a.srv.Store, actions, a.Config())
+	return importer.SlackImport(fileData, fileSize, teamID)
+}
+
 func (a *App) ProcessSlackText(text string) string {
-	//TODO: Open
-	// text = expandAnnouncement(text)
-	// text = replaceUserIds(a.Srv().Store.User(), text)
+	text = expandAnnouncement(text)
+	text = replaceUserIds(a.Srv().Store.User(), text)
 
 	return text
 }
@@ -32,4 +58,38 @@ func (a *App) ProcessSlackAttachments(attachments []*model.SlackAttachment) []*m
 		}
 	}
 	return nonNilAttachments
+}
+
+// To mention @channel or @here via a webhook in Slack, the message should contain
+// <!channel> or <!here>, as explained at the bottom of this article:
+// https://get.slack.help/hc/en-us/articles/202009646-Making-announcements
+func expandAnnouncement(text string) string {
+	a1 := [3]string{"<!channel>", "<!here>", "<!all>"}
+	a2 := [3]string{"@channel", "@here", "@all"}
+
+	for i, a := range a1 {
+		text = strings.Replace(text, a, a2[i], -1)
+	}
+	return text
+}
+
+// Replaces user IDs mentioned like this <@userID> to a normal username (eg. @bob)
+// This is required so that Mattermost maintains Slack compatibility
+// Refer to: https://api.slack.com/changelog/2017-09-the-one-about-usernames
+func replaceUserIds(userStore store.UserStore, text string) string {
+	rgx, err := regexp.Compile("<@([a-zA-Z0-9]+)>")
+	if err == nil {
+		userIds := make([]string, 0)
+		matches := rgx.FindAllStringSubmatch(text, -1)
+		for _, match := range matches {
+			userIds = append(userIds, match[1])
+		}
+
+		if users, err := userStore.GetProfileByIds(userIds, nil, true); err == nil {
+			for _, user := range users {
+				text = strings.Replace(text, "<@"+user.Id+">", "@"+user.Username, -1)
+			}
+		}
+	}
+	return text
 }

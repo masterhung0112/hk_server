@@ -10,7 +10,7 @@ import (
 // It should be maintained in chronological order with most current
 // release at the front of the list.
 var versions = []string{
-	"0.0.1",
+	"5.31.0",
 }
 
 var CurrentVersion string = versions[0]

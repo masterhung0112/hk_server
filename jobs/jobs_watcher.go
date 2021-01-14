@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package jobs
 
 import (
@@ -10,7 +13,7 @@ import (
 
 // Default polling interval for jobs termination.
 // (Defining as `var` rather than `const` allows tests to lower the interval.)
-var DEFAULT_WATCHER_POLLING_INTERVAL = 15000
+var DefaultWatcherPollingInterval = 15000
 
 type Watcher struct {
 	srv     *JobServer

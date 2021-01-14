@@ -1527,7 +1527,7 @@ func (s *EmailSettings) SetDefaults(isUpdate bool) {
 	}
 
 	if s.SMTPPort == nil || len(*s.SMTPPort) == 0 {
-		s.SMTPPort = NewString("10025")
+		s.SMTPPort = NewString("20025")
 	}
 
 	if s.SMTPServerTimeout == nil || *s.SMTPServerTimeout == 0 {

@@ -45,7 +45,7 @@ type PrepackagedPlugin struct {
 
 // Environment represents the execution environment of active plugins.
 //
-// It is meant for use by the Mattermost server to manipulate, interact with and report on the set
+// It is meant for use by the HungKnow server  to manipulate, interact with and report on the set
 // of active plugins.
 type Environment struct {
 	registeredPlugins      sync.Map

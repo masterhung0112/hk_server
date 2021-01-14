@@ -35,7 +35,7 @@ LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_JSON_URL=${NOTI
 LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_JSON_FETCH_FREQUENCY_SECONDS=${NOTICES_FETCH_SECS}'`
 LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_SKIP_CACHE=${NOTICES_SKIP_CACHE}'`
 
-let PLATFORM_FILES = "./cmd/hser/main.go"
+let PLATFORM_FILES = "./cmd/hkserver/main.go"
 
 // Possible options: mysql, postgres, minio, inbucket, openldap, dejavu,
 let ENABLED_DOCKER_SERVICES = 'mysql postgres inbucket'
@@ -85,19 +85,19 @@ function test_data() {
 help(test_data, 'Add test data to the local instance')
 
 function start_server() {
-  sh(`${GO} run ./cmd/hser/main.go`, { nopipe: true })
+  sh(`${GO} run ./cmd/hkserver/main.go`, { nopipe: true })
 }
 help(start_server, 'Start server instance')
 
 function store_mocks() {
   sh(`${GO} get -modfile=go.tools.mod github.com/vektra/mockery/...`, { nopipe: true })
-  sh(`${GOBIN}/mockery -dir store -all -output store/storetest/mocks -note 'Regenerate this file using \`npm run task store_mocks\`.`, { nopipe: true })
+  sh(`${GOBIN}/mockery -dir store -all -output store/storetest/mocks -note 'Regenerate this file using \`npm run task store_mocks\`.'`, { nopipe: true })
 }
 help(store_mocks, 'Creates mock files for stores')
 
 function einterfaces_mocks() {
   sh(`${GO} get -modfile=go.tools.mod github.com/vektra/mockery/...`, { nopipe: true })
-  sh(`${GOBIN}/mockery -dir einterfaces -all -output einterfaces/mocks -note 'Regenerate this file using \`npm run task einterfaces_mocks\`.`, { nopipe: true })
+  sh(`${GOBIN}/mockery -dir einterfaces -all -output einterfaces/mocks -note 'Regenerate this file using \`npm run task einterfaces_mocks\`.'`, { nopipe: true })
 }
 help(einterfaces_mocks, 'Creates mock files for einterfaces')
 

@@ -5,3 +5,9 @@ coverage_result
 node_modules/
 mattermost.log
 hungknow.log
+yarn.lock
+dist/
+cprofile.out
+report.xml
+config/config.json
+output

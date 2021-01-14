@@ -20,6 +20,10 @@ type ChannelStoreTestSuite struct {
 	StoreTestSuite
 }
 
+func (s *ChannelStoreTestSuite) SetupTest() {
+	createDefaultRoles(s.Store())
+}
+
 func TestChannelStoreTestSuite(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &ChannelStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
 		suite.Run(t, testSuite)
@@ -142,7 +146,7 @@ func (s *ChannelStoreTestSuite) TestStoreSaveDirectChannel() {
 	returnedChannel, nErr := s.Store().Channel().SaveDirectChannel(&o1a, &m1, &m2)
 	s.Require().NotNil(nErr, "should've failed to save a duplicate direct channel")
 	var cErr *store.ErrConflict
-	s.Require().Truef(errors.As(nErr, &cErr), "should've returned CHANNEL_EXISTS_ERROR")
+	s.Require().Truef(errors.As(nErr, &cErr), "should've returned ChannelExistsError")
 	s.Require().Equal(o1.Id, returnedChannel.Id, "should've failed to save a duplicate direct channel")
 
 	// Attempt to save a non-direct channel

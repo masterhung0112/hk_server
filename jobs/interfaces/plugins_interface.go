@@ -3,7 +3,9 @@
 
 package interfaces
 
-import "github.com/masterhung0112/hk_server/model"
+import (
+	"github.com/masterhung0112/hk_server/model"
+)
 
 type PluginsJobInterface interface {
 	MakeWorker() model.Worker
