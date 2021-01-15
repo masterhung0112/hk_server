@@ -49,6 +49,7 @@ type Store interface {
 	Group() GroupStore
 	UserTermsOfService() UserTermsOfServiceStore
 	LinkMetadata() LinkMetadataStore
+	TrackPoint() TrackPointStore
 	MarkSystemRanUnitTests()
 	Close()
 	LockToMaster()
@@ -773,6 +774,11 @@ type GroupStore interface {
 type LinkMetadataStore interface {
 	Save(linkMetadata *model.LinkMetadata) (*model.LinkMetadata, error)
 	Get(url string, timestamp int64) (*model.LinkMetadata, error)
+}
+
+type TrackPointStore interface {
+	Save(trackPoint *model.TrackPoint) (*model.TrackPoint, error)
+	Get(trackPointId string) (*model.TrackPoint, error)
 }
 
 // ChannelSearchOpts contains options for searching channels.
