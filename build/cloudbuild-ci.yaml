@@ -31,17 +31,18 @@ steps:
   args:
     - '-c'
     - |
-      ssh -fNTM -L 7306:localhost:7306 -L 20025:localhost:20025 -L 20080:localhost:20080 -L 20110:localhost:20110 -L 9901:localhost:9901 -L 7432:localhost:7432 -i ./build/kunai_id_rsa kunai@global.kunai.tv && \
-      ulimit -n 8096; make test-server-ci;
-      ssh -TO exit kunai@global.kunai.tv
+      mkdir -p bin/;
+      ssh -4 -fNTM -o StrictHostKeyChecking=no -L 7306:127.0.0.1:7306 -L 20025:127.0.0.1:20025 -L 20080:127.0.0.1:20080 -L 20110:127.0.0.1:20110 -L 9901:127.0.0.1:9901 -L 7432:127.0.0.1:7432 -i ./build/kunai_id_rsa kunai@global.kunai.tv && \
+      make test-server-ci;
+      ps aux | grep '[s]sh.*-f' | awk '{ print $2; }' | xargs -r kill -INT
   #volumes:
   #  - name: 'hkserver'
   #    path: './'
 
 options:
   env: [
-   'TEST_DATABASE_MYSQL_DSN=mmuser:mostest@tcp(localhost:7306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s&multiStatements=true',
-   'TEST_DATABASE_POSTGRESQL_DSN=postgres://mmuser:mostest@localhost:7432/mattermost_test?sslmode=disable&connect_timeout=10',
+   'TEST_DATABASE_MYSQL_DSN=hkuser:mostest@tcp(127.0.0.1:7306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s&multiStatements=true',
+   'TEST_DATABASE_POSTGRESQL_DSN=postgres://hkuser:mostest@127.0.0.1:7432/mattermost_test?sslmode=disable&connect_timeout=10',
    'TEST_DATABASE_MYSQL_ROOT_PASSWD=mostest',
    'MM_SQLSETTINGS_DATASOURCE=',
    'MM_SQLSETTINGS_DRIVERNAME=',

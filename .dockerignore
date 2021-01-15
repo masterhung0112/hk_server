@@ -1,0 +1,16 @@
+# Prevent the following files and folders to be send to docker build context
+
+# dependencies
+node_modules/
+
+.git/
+.next/
+.gitignore
+.dockerignore
+out/
+.storybook/
+bin/*
+.idea
+dist/
+./output
+.vscode
