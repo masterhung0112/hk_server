@@ -25,7 +25,7 @@ else
 	env GOOS=windows GOARCH=amd64 $(GO) build -o $(GOBIN)/windows_amd64 $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./...
 endif
 
-build: build-linux build-windows build-osx
+build: build-linux # build-windows build-osx
 
 
 build-cmd-linux:
@@ -55,7 +55,7 @@ else
 	env GOOS=windows GOARCH=amd64 $(GO) build -o $(GOBIN)/windows_amd64 $(GOFLAGS) -trimpath -ldflags '$(LDFLAGS)' ./cmd/...
 endif
 
-build-cmd: build-cmd-linux build-cmd-windows build-cmd-osx
+build-cmd: build-cmd-linux # build-cmd-windows build-cmd-osx
 
 package:
 	@ echo Packaging hkserver
@@ -90,14 +90,14 @@ package:
 	@# Make osx package
 	@# Copy binary
 ifeq ($(BUILDER_GOOS_GOARCH),"darwin_amd64")
-	cp $(GOBIN)/hkserver $(DIST_PATH)/bin # from native bin dir, not cross-compiled
+	#cp $(GOBIN)/hkserver $(DIST_PATH)/bin # from native bin dir, not cross-compiled
 else
-	cp $(GOBIN)/darwin_amd64/hkserver $(DIST_PATH)/bin # from cross-compiled bin dir
+	#cp $(GOBIN)/darwin_amd64/hkserver $(DIST_PATH)/bin # from cross-compiled bin dir
 endif
 	@# Package
-	tar -C dist -czf $(DIST_PATH)-$(BUILD_TYPE_NAME)-osx-amd64.tar.gz hkserver
+	#tar -C dist -czf $(DIST_PATH)-$(BUILD_TYPE_NAME)-osx-amd64.tar.gz hkserver
 	@# Cleanup
-	rm -f $(DIST_PATH)/bin/hkserver
+	# rm -f $(DIST_PATH)/bin/hkserver
 	# rm -f $(DIST_PATH)/bin/mmctl
 	# rm -f $(DIST_PATH)/prepackaged_plugins/*
 

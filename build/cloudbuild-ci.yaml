@@ -1,0 +1,50 @@
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit --config ./build/cloudbuild-ci.yaml .
+
+# Run locally
+# $ cloud-build-local --config=build/cloudbuild-ci.yaml --dryrun=false ./
+
+#steps:
+#- name: mattermost/mattermost-build-server:20201119_golang-1.15.5
+#  entrypoint: 'bash'
+#  args:
+#    - '-c'
+#    - |
+#      echo "Installing golangci-lint" \
+#      curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b /usr/local/bin v1.33.2 \
+#      echo "Install hkserver" \
+#      export GOBIN=${PWD}/hkserver/bin \
+#      export PATH=$PATH:$GOBIN \
+#      make build \
+#      && make package
+#  volumes:
+#    - name: 'hkserver'
+#      path: './'
+#artifacts:
+#  objects:
+#    location: 'gs://hk_cloudbuildci/packages/'
+#    paths: ['./dist/hkserver-team-linux-amd64.tar.gz']
+
+steps:
+- name: 'mattermost/mattermost-build-server:20201119_golang-1.15.5'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      mkdir -p bin/;
+      ssh -4 -fNTM -o StrictHostKeyChecking=no -L 7306:127.0.0.1:7306 -L 20025:127.0.0.1:20025 -L 20080:127.0.0.1:20080 -L 20110:127.0.0.1:20110 -L 9901:127.0.0.1:9901 -L 7432:127.0.0.1:7432 -i ./build/kunai_id_rsa kunai@global.kunai.tv && \
+      make test-server-ci;
+      ps aux | grep '[s]sh.*-f' | awk '{ print $2; }' | xargs -r kill -INT
+  #volumes:
+  #  - name: 'hkserver'
+  #    path: './'
+
+options:
+  env: [
+   'TEST_DATABASE_MYSQL_DSN=hkuser:mostest@tcp(127.0.0.1:7306)/mattermost_test?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s&multiStatements=true',
+   'TEST_DATABASE_POSTGRESQL_DSN=postgres://hkuser:mostest@127.0.0.1:7432/mattermost_test?sslmode=disable&connect_timeout=10',
+   'TEST_DATABASE_MYSQL_ROOT_PASSWD=mostest',
+   'MM_SQLSETTINGS_DATASOURCE=',
+   'MM_SQLSETTINGS_DRIVERNAME=',
+   'IS_CI=true'
+  ]
