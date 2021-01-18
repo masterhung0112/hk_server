@@ -15,7 +15,7 @@ type SqlTrackPointStore struct {
 
 type TrackPoint struct {
 	Id         string
-	TargetId   uint64
+	TargetId   string
 	TargetType string
 	Lat        float64
 	Lng        float64

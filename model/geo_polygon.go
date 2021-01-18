@@ -66,7 +66,7 @@ func (p *GeoPolygon) Contains(GeoPoint *GeoPoint) bool {
 func (p *GeoPolygon) intersectsWithRaycast(GeoPoint *GeoPoint, start *GeoPoint, end *GeoPoint) bool {
 	// Always ensure that the the first GeoPoint
 	// has a y coordinate that is less than the second GeoPoint
-	if start.lng > end.lng {
+	if start.Lng > end.Lng {
 
 		// Switch the points if otherwise.
 		start, end = end, start
@@ -76,35 +76,35 @@ func (p *GeoPolygon) intersectsWithRaycast(GeoPoint *GeoPoint, start *GeoPoint, 
 	// Move the GeoPoint's y coordinate
 	// outside of the bounds of the testing region
 	// so we can start drawing a ray
-	for GeoPoint.lng == start.lng || GeoPoint.lng == end.lng {
-		newLng := math.Nextafter(GeoPoint.lng, math.Inf(1))
-		GeoPoint = NewPoint(GeoPoint.lat, newLng)
+	for GeoPoint.Lng == start.Lng || GeoPoint.Lng == end.Lng {
+		newLng := math.Nextafter(GeoPoint.Lng, math.Inf(1))
+		GeoPoint = NewPoint(GeoPoint.Lat, newLng)
 	}
 
 	// If we are outside of the GeoPolygon, indicate so.
-	if GeoPoint.lng < start.lng || GeoPoint.lng > end.lng {
+	if GeoPoint.Lng < start.Lng || GeoPoint.Lng > end.Lng {
 		return false
 	}
 
-	if start.lat > end.lat {
-		if GeoPoint.lat > start.lat {
+	if start.Lat > end.Lat {
+		if GeoPoint.Lat > start.Lat {
 			return false
 		}
-		if GeoPoint.lat < end.lat {
+		if GeoPoint.Lat < end.Lat {
 			return true
 		}
 
 	} else {
-		if GeoPoint.lat > end.lat {
+		if GeoPoint.Lat > end.Lat {
 			return false
 		}
-		if GeoPoint.lat < start.lat {
+		if GeoPoint.Lat < start.Lat {
 			return true
 		}
 	}
 
-	raySlope := (GeoPoint.lng - start.lng) / (GeoPoint.lat - start.lat)
-	diagSlope := (end.lng - start.lng) / (end.lat - start.lat)
+	raySlope := (GeoPoint.Lng - start.Lng) / (GeoPoint.Lat - start.Lat)
+	diagSlope := (end.Lng - start.Lng) / (end.Lat - start.Lat)
 
 	return raySlope >= diagSlope
 }

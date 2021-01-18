@@ -8,7 +8,7 @@ import (
 
 type TrackPoint struct {
 	Id         string   `json:"id"`
-	TargetId   uint64   `json:"target_id"`
+	TargetId   string   `json:"target_id"`
 	TargetType string   `json:"target_type"`
 	Point      GeoPoint `json:"point"`
 	CreateAt   int64    `json:"create_at"`

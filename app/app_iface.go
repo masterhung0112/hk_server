@@ -1022,5 +1022,6 @@ type AppIface interface {
 	VerifyUserEmail(userId, email string) *model.AppError
 	ViewChannel(view *model.ChannelView, userId string, currentSessionId string) (map[string]int64, *model.AppError)
 	WaitForChannelMembership(channelId string, userId string)
-	WriteFile(fr io.Reader, path string) (int64, *model.AppError)
+  WriteFile(fr io.Reader, path string) (int64, *model.AppError)
+  CreateTrackPoint(trackPoint *model.TrackPoint) (savedPost *model.TrackPoint, err *model.AppError)
 }
