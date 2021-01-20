@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
@@ -76,10 +75,8 @@ func (s *SqlTrackPointStore) Save(trackPoint *model.TrackPoint) (*model.TrackPoi
 	}
 
 	dbTrackPoint := NewTrackPointFromModel(trackPoint)
-	if rowsChanged, err := s.GetMaster().Update(dbTrackPoint); err != nil {
-		return nil, errors.Wrap(err, "failed to update TrackPoint")
-	} else if rowsChanged != 1 {
-		return nil, fmt.Errorf("invalid number of updated rows, expected 1 but got %d", rowsChanged)
+	if err := s.GetMaster().Insert(dbTrackPoint); err != nil {
+		return nil, errors.Wrap(err, "failed to insert TrackPoint")
 	}
 
 	return dbTrackPoint.ToModel(), nil
