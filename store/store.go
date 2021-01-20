@@ -50,7 +50,7 @@ type Store interface {
 	UserTermsOfService() UserTermsOfServiceStore
 	LinkMetadata() LinkMetadataStore
   TrackPoint() TrackPointStore
-  // TrackRecord() TrackRecordStore
+  TrackRecord() TrackRecordStore
 	MarkSystemRanUnitTests()
 	Close()
 	LockToMaster()
