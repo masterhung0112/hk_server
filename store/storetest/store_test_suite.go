@@ -1,4 +1,4 @@
-package sqlstore
+package storetest
 
 import (
 	"github.com/masterhung0112/hk_server/mlog"
@@ -15,15 +15,15 @@ type StoreTestBaseSuite interface {
 	SetStore(store store.Store)
 	Store() store.Store
 
-	SetSqlStore(sqlStore *SqlStore)
-	SqlStore() *SqlStore
+	SetSqlStore(sqlStore SqlStore)
+	SqlStore() SqlStore
 }
 
 type StoreTestSuite struct {
 	// suite.Suite
 
 	store    store.Store
-	sqlStore *SqlStore
+	sqlStore SqlStore
 	// sqlSupplier storetest.SqlSupplier
 }
 
@@ -45,11 +45,11 @@ func (s *StoreTestSuite) Store() store.Store {
 	return s.store
 }
 
-func (s *StoreTestSuite) SetSqlStore(sqlStore *SqlStore) {
+func (s *StoreTestSuite) SetSqlStore(sqlStore SqlStore) {
 	s.sqlStore = sqlStore
 }
 
-func (s *StoreTestSuite) SqlStore() *SqlStore {
+func (s *StoreTestSuite) SqlStore() SqlStore {
 	return s.sqlStore
 }
 

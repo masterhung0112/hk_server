@@ -639,6 +639,22 @@ func (_m *Store) TrackPoint() store.TrackPointStore {
 	return r0
 }
 
+// TrackRecord provides a mock function with given fields:
+func (_m *Store) TrackRecord() store.TrackRecordStore {
+	ret := _m.Called()
+
+	var r0 store.TrackRecordStore
+	if rf, ok := ret.Get(0).(func() store.TrackRecordStore); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(store.TrackRecordStore)
+		}
+	}
+
+	return r0
+}
+
 // UnlockFromMaster provides a mock function with given fields:
 func (_m *Store) UnlockFromMaster() {
 	_m.Called()

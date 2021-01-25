@@ -1,4 +1,4 @@
-package sqlstore
+package storetest
 
 import (
 	"github.com/masterhung0112/hk_server/model"
@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/masterhung0112/hk_server/store/storetest"
 )
 
 const (
@@ -1088,21 +1086,21 @@ func (s *UserStoreGetAllProfilesTS) SetupSuite() {
 	}
 
 	u1, err := s.Store().User().Save(&model.User{
-		Email:    storetest.MakeEmail(),
+		Email:    MakeEmail(),
 		Username: "u1" + model.NewId(),
 	})
 	s.Require().Nil(err)
 	s.u1 = u1
 
 	u2, err := s.Store().User().Save(&model.User{
-		Email:    storetest.MakeEmail(),
+		Email:    MakeEmail(),
 		Username: "u2" + model.NewId(),
 	})
 	s.Require().Nil(err)
 	s.u2 = u2
 
 	u3, err := s.Store().User().Save(&model.User{
-		Email:    storetest.MakeEmail(),
+		Email:    MakeEmail(),
 		Username: "u3" + model.NewId(),
 	})
 	s.Require().Nil(err)
@@ -1117,7 +1115,7 @@ func (s *UserStoreGetAllProfilesTS) SetupSuite() {
 	u3.IsBot = true
 
 	u4, err := s.Store().User().Save(&model.User{
-		Email:    storetest.MakeEmail(),
+		Email:    MakeEmail(),
 		Username: "u4" + model.NewId(),
 		Roles:    "system_user some-other-role",
 	})
@@ -1125,7 +1123,7 @@ func (s *UserStoreGetAllProfilesTS) SetupSuite() {
 	s.u4 = u4
 
 	u5, err := s.Store().User().Save(&model.User{
-		Email:    storetest.MakeEmail(),
+		Email:    MakeEmail(),
 		Username: "u5" + model.NewId(),
 		Roles:    "system_admin",
 	})
@@ -1133,7 +1131,7 @@ func (s *UserStoreGetAllProfilesTS) SetupSuite() {
 	s.u5 = u5
 
 	u6, err := s.Store().User().Save(&model.User{
-		Email:    storetest.MakeEmail(),
+		Email:    MakeEmail(),
 		Username: "u6" + model.NewId(),
 		DeleteAt: model.GetMillis(),
 		Roles:    "system_admin",
@@ -1142,7 +1140,7 @@ func (s *UserStoreGetAllProfilesTS) SetupSuite() {
 	s.u6 = u6
 
 	u7, err := s.Store().User().Save(&model.User{
-		Email:    storetest.MakeEmail(),
+		Email:    MakeEmail(),
 		Username: "u7" + model.NewId(),
 		DeleteAt: model.GetMillis(),
 	})
@@ -1206,7 +1204,7 @@ func (s *UserStoreGetAllProfilesTS) TestEtagChangesForAllAfterUserCreation() {
 	etag := s.Store().User().GetEtagForAllProfiles()
 
 	uNew := &model.User{}
-	uNew.Email = storetest.MakeEmail()
+	uNew.Email = MakeEmail()
 	_, err := s.Store().User().Save(uNew)
 	s.Require().Nil(err)
 	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(uNew.Id)) }()

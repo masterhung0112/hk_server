@@ -1,4 +1,4 @@
-package sqlstore
+package storetest
 
 import (
 	"github.com/masterhung0112/hk_server/model"
