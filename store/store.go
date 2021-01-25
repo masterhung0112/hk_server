@@ -780,6 +780,7 @@ type LinkMetadataStore interface {
 type TrackPointStore interface {
 	Save(trackPoint *model.TrackPoint) (*model.TrackPoint, error)
 	Get(trackPointId string) (*model.TrackPoint, error)
+	GetByTargetId(targetId string) ([]*model.TrackPoint, error)
 }
 
 type TrackRecordStore interface {

@@ -37,6 +37,29 @@ func (_m *TrackPointStore) Get(trackPointId string) (*model.TrackPoint, error) {
 	return r0, r1
 }
 
+// GetByTargetId provides a mock function with given fields: targetId
+func (_m *TrackPointStore) GetByTargetId(targetId string) ([]*model.TrackPoint, error) {
+	ret := _m.Called(targetId)
+
+	var r0 []*model.TrackPoint
+	if rf, ok := ret.Get(0).(func(string) []*model.TrackPoint); ok {
+		r0 = rf(targetId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.TrackPoint)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(targetId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Save provides a mock function with given fields: trackPoint
 func (_m *TrackPointStore) Save(trackPoint *model.TrackPoint) (*model.TrackPoint, error) {
 	ret := _m.Called(trackPoint)

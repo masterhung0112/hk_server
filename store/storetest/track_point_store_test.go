@@ -39,3 +39,7 @@ func (s *TrackPointStoreTestSuite) TestSave() {
 		s.NotEqual(etp1.CreateAt, 0)
 	}
 }
+
+// Test Get individual track point
+func (s *TrackPointStoreTestSuite) TestGet() {
+}

@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/pkg/errors"
@@ -93,4 +94,16 @@ func (s *SqlTrackPointStore) Get(trackPointId string) (*model.TrackPoint, error)
 	}
 
 	return dbTrackPoint.ToModel(), nil
+}
+
+func (s *SqlTrackPointStore) GetByTargetId(targetId string) ([]*model.TrackPoint, error) {
+	query, args, _ := s.getQueryBuilder().
+		Select("*").
+		Where(sq.Eq{"TargetId": targetId}).
+		ToSql()
+	var result []*model.TrackPoint
+	if _, err := s.GetReplica().Select(&result, query, args...); err != nil {
+		return nil, errors.Wrap(err, "failed to fetch track points for target id")
+	}
+	return result, nil
 }
