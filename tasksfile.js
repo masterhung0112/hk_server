@@ -92,6 +92,7 @@ help(start_server, 'Start server instance')
 function store_mocks() {
   sh(`${GO} get -modfile=go.tools.mod github.com/vektra/mockery/...`, { nopipe: true })
   sh(`${GOBIN}/mockery -dir store -all -output store/storetest/mocks -note 'Regenerate this file using \`npm run task store_mocks\`.'`, { nopipe: true })
+  sh(`rm store/storetest/mocks/StoreTestBaseSuite.go`)
 }
 help(store_mocks, 'Creates mock files for stores')
 
