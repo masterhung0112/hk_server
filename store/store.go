@@ -49,8 +49,8 @@ type Store interface {
 	Group() GroupStore
 	UserTermsOfService() UserTermsOfServiceStore
 	LinkMetadata() LinkMetadataStore
-  TrackPoint() TrackPointStore
-  TrackRecord() TrackRecordStore
+	TrackPoint() TrackPointStore
+	TrackRecord() TrackRecordStore
 	MarkSystemRanUnitTests()
 	Close()
 	LockToMaster()
@@ -783,8 +783,8 @@ type TrackPointStore interface {
 }
 
 type TrackRecordStore interface {
-  Save(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
-  Get(trackRecordId string) (*model.TrackRecord, error)
+	Save(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
+	Get(trackRecordId string) (*model.TrackRecord, error)
 }
 
 // ChannelSearchOpts contains options for searching channels.

@@ -33,7 +33,7 @@ func (s *SqlTrackRecordStore) Save(trackRecord *model.TrackRecord) (*model.Track
 	// Check the track point is valid before proceeding.
 	if err := trackRecord.IsValidWithoutId(); err != nil {
 		return nil, err
-  }
+	}
 
 	if err := s.GetMaster().Insert(trackRecord); err != nil {
 		return nil, errors.Wrap(err, "failed to insert TrackRecord")

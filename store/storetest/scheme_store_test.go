@@ -1,6 +1,5 @@
 package storetest
 
-
 import (
 	"github.com/stretchr/testify/suite"
 	"testing"
