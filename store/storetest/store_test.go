@@ -1,7 +1,8 @@
-package sqlstore
+package storetest
 
 import (
 	"fmt"
+	"github.com/masterhung0112/hk_server/store/sqlstore"
 	"os"
 	"regexp"
 	"sync"
@@ -12,7 +13,6 @@ import (
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/masterhung0112/hk_server/store/searchtest"
-	"github.com/masterhung0112/hk_server/store/storetest"
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +24,7 @@ import (
 type StoreType struct {
 	Name        string
 	SqlSettings *model.SqlSettings
-	SqlStore    *SqlStore
+	SqlStore    *sqlstore.SqlStore
 	Store       store.Store
 }
 
@@ -33,7 +33,7 @@ var StoreTypes []*StoreType = []*StoreType{}
 func newStoreType(name, driver string) *StoreType {
 	return &StoreType{
 		Name:        name,
-		SqlSettings: storetest.MakeSqlSettings(driver),
+		SqlSettings: MakeSqlSettings(driver),
 	}
 }
 
@@ -73,7 +73,7 @@ func StoreTestWithSearchTestEngine(t *testing.T, f func(*testing.T, store.Store,
 	}
 }
 
-func StoreTestWithSqlStore(t *testing.T, f func(*testing.T, store.Store, storetest.SqlStore)) {
+func StoreTestWithSqlStore(t *testing.T, f func(*testing.T, store.Store, SqlStore)) {
 	defer func() {
 		if err := recover(); err != nil {
 			tearDownStores()
@@ -121,7 +121,7 @@ func initStores() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			st.SqlStore = New(*st.SqlSettings, nil)
+			st.SqlStore = sqlstore.New(*st.SqlSettings, nil)
 			st.Store = st.SqlStore
 			st.Store.DropAllTables()
 			st.Store.MarkSystemRanUnitTests()
@@ -146,7 +146,7 @@ func tearDownStores() {
 					st.Store.Close()
 				}
 				if st.SqlSettings != nil {
-					storetest.CleanupSqlSettings(st.SqlSettings)
+					CleanupSqlSettings(st.SqlSettings)
 				}
 				wg.Done()
 			}()
@@ -162,7 +162,7 @@ func TestStoreLicenseRace(t *testing.T) {
 	settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
 	settings.DataSourceReplicas = []string{":memory:"}
 	settings.DataSourceSearchReplicas = []string{":memory:"}
-	store := New(*settings, nil)
+	store := sqlstore.New(*settings, nil)
 
 	wg := sync.WaitGroup{}
 	wg.Add(3)
@@ -247,7 +247,7 @@ func TestGetReplica(t *testing.T) {
 			settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
 			settings.DataSourceReplicas = testCase.DataSourceReplicas
 			settings.DataSourceSearchReplicas = testCase.DataSourceSearchReplicas
-			store := New(*settings, nil)
+			store := sqlstore.New(*settings, nil)
 			store.UpdateLicense(&model.License{})
 
 			replicas := make(map[*gorp.DbMap]bool)
@@ -304,7 +304,7 @@ func TestGetReplica(t *testing.T) {
 			settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
 			settings.DataSourceReplicas = testCase.DataSourceReplicas
 			settings.DataSourceSearchReplicas = testCase.DataSourceSearchReplicas
-			store := New(*settings, nil)
+			store := sqlstore.New(*settings, nil)
 
 			replicas := make(map[*gorp.DbMap]bool)
 			for i := 0; i < 5; i++ {
@@ -364,7 +364,7 @@ func TestGetDbVersion(t *testing.T) {
 		t.Run("Should return db version for "+driver, func(t *testing.T) {
 			t.Parallel()
 			settings := makeSqlSettings(driver)
-			store := New(*settings, nil)
+			store := sqlstore.New(*settings, nil)
 
 			version, err := store.GetDbVersion(false)
 			require.Nil(t, err)
@@ -444,7 +444,7 @@ func TestGetAllConns(t *testing.T) {
 			settings := makeSqlSettings(model.DATABASE_DRIVER_SQLITE)
 			settings.DataSourceReplicas = testCase.DataSourceReplicas
 			settings.DataSourceSearchReplicas = testCase.DataSourceSearchReplicas
-			store := New(*settings, nil)
+			store := sqlstore.New(*settings, nil)
 
 			assert.Len(t, store.GetAllConns(), testCase.ExpectedNumConnections)
 		})
@@ -453,17 +453,17 @@ func TestGetAllConns(t *testing.T) {
 
 func TestIsDuplicate(t *testing.T) {
 	testErrors := map[error]bool{
-		&pq.Error{Code: "42P06"}:                          false,
-		&pq.Error{Code: PGDupTableErrorCode}:              true,
-		&mysql.MySQLError{Number: uint16(1000)}:           false,
-		&mysql.MySQLError{Number: MySQLDupTableErrorCode}: true,
-		errors.New("Random error"):                        false,
+		&pq.Error{Code: "42P06"}:                                   false,
+		&pq.Error{Code: sqlstore.PGDupTableErrorCode}:              true,
+		&mysql.MySQLError{Number: uint16(1000)}:                    false,
+		&mysql.MySQLError{Number: sqlstore.MySQLDupTableErrorCode}: true,
+		errors.New("Random error"):                                 false,
 	}
 
 	for err, expected := range testErrors {
 		t.Run(fmt.Sprintf("Should return %t for %s", expected, err.Error()), func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, expected, IsDuplicate(err))
+			assert.Equal(t, expected, sqlstore.IsDuplicate(err))
 		})
 	}
 }
@@ -488,7 +488,7 @@ func TestVersionString(t *testing.T) {
 	}
 
 	for _, v := range versions {
-		out := VersionString(v.input)
+		out := sqlstore.VersionString(v.input)
 		assert.Equal(t, v.output, out)
 	}
 }
@@ -496,9 +496,9 @@ func TestVersionString(t *testing.T) {
 func makeSqlSettings(driver string) *model.SqlSettings {
 	switch driver {
 	case model.DATABASE_DRIVER_POSTGRES:
-		return storetest.MakeSqlSettings(driver)
+		return MakeSqlSettings(driver)
 	case model.DATABASE_DRIVER_MYSQL:
-		return storetest.MakeSqlSettings(driver)
+		return MakeSqlSettings(driver)
 	case model.DATABASE_DRIVER_SQLITE:
 		return makeSqliteSettings()
 	}

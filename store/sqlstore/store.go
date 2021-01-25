@@ -108,6 +108,8 @@ type SqlStoreStores struct {
 	group                store.GroupStore
 	UserTermsOfService   store.UserTermsOfServiceStore
 	linkMetadata         store.LinkMetadataStore
+	trackPoint           store.TrackPointStore
+	trackRecord          store.TrackRecordStore
 }
 
 type SqlStore struct {
@@ -179,6 +181,8 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 	store.stores.scheme = newSqlSchemeStore(store)
 	store.stores.group = newSqlGroupStore(store)
 	store.stores.productNotices = newSqlProductNoticesStore(store)
+	store.stores.trackPoint = newSqlTrackPointStore(store)
+	store.stores.trackRecord = newSqlTrackRecordStore(store)
 	err := store.GetMaster().CreateTablesIfNotExists()
 	if err != nil {
 		if IsDuplicate(err) {
@@ -1211,6 +1215,14 @@ func (ss *SqlStore) Group() store.GroupStore {
 
 func (ss *SqlStore) LinkMetadata() store.LinkMetadataStore {
 	return ss.stores.linkMetadata
+}
+
+func (ss *SqlStore) TrackPoint() store.TrackPointStore {
+	return ss.stores.trackPoint
+}
+
+func (ss *SqlStore) TrackRecord() store.TrackRecordStore {
+	return ss.stores.trackRecord
 }
 
 func (ss *SqlStore) DropAllTables() {

@@ -1,8 +1,7 @@
-package sqlstore
+package storetest
 
 import (
 	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store/storetest"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -47,12 +46,12 @@ func (s *TeamStoreTestSuite) TestGetMembersOrderByUserId() {
 func (s *TeamStoreTestSuite) TestGetMembersOrderByUsernameAndExcludeDeletedMembers() {
 	teamId1 := model.NewId()
 	teamId2 := model.NewId()
-	u1 := &model.User{Username: "a", Email: storetest.MakeEmail(), DeleteAt: int64(1)}
-	u2 := &model.User{Username: "c", Email: storetest.MakeEmail()}
-	u3 := &model.User{Username: "b", Email: storetest.MakeEmail(), DeleteAt: int64(1)}
-	u4 := &model.User{Username: "f", Email: storetest.MakeEmail()}
-	u5 := &model.User{Username: "e", Email: storetest.MakeEmail(), DeleteAt: int64(1)}
-	u6 := &model.User{Username: "d", Email: storetest.MakeEmail()}
+	u1 := &model.User{Username: "a", Email: MakeEmail(), DeleteAt: int64(1)}
+	u2 := &model.User{Username: "c", Email: MakeEmail()}
+	u3 := &model.User{Username: "b", Email: MakeEmail(), DeleteAt: int64(1)}
+	u4 := &model.User{Username: "f", Email: MakeEmail()}
+	u5 := &model.User{Username: "e", Email: MakeEmail(), DeleteAt: int64(1)}
+	u6 := &model.User{Username: "d", Email: MakeEmail()}
 	u1, err := s.Store().User().Save(u1)
 	s.Require().Nil(err)
 	u2, err = s.Store().User().Save(u2)
@@ -94,12 +93,12 @@ func (s *TeamStoreTestSuite) TestGetMembersExcludedDeletedUsers() {
 	teamId1 := model.NewId()
 	teamId2 := model.NewId()
 
-	u1 := &model.User{Email: storetest.MakeEmail()}
-	u2 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(1)}
-	u3 := &model.User{Email: storetest.MakeEmail()}
-	u4 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(3)}
-	u5 := &model.User{Email: storetest.MakeEmail()}
-	u6 := &model.User{Email: storetest.MakeEmail(), DeleteAt: int64(5)}
+	u1 := &model.User{Email: MakeEmail()}
+	u2 := &model.User{Email: MakeEmail(), DeleteAt: int64(1)}
+	u3 := &model.User{Email: MakeEmail()}
+	u4 := &model.User{Email: MakeEmail(), DeleteAt: int64(3)}
+	u5 := &model.User{Email: MakeEmail()}
+	u6 := &model.User{Email: MakeEmail(), DeleteAt: int64(5)}
 
 	u1, err := s.Store().User().Save(u1)
 	s.Require().Nil(err)
