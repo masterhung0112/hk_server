@@ -1023,5 +1023,7 @@ type AppIface interface {
 	ViewChannel(view *model.ChannelView, userId string, currentSessionId string) (map[string]int64, *model.AppError)
 	WaitForChannelMembership(channelId string, userId string)
 	WriteFile(fr io.Reader, path string) (int64, *model.AppError)
-	CreateTrackPoint(trackPoint *model.TrackPoint) (savedPost *model.TrackPoint, err *model.AppError)
+  CreateTrackPoint(trackPoint *model.TrackPoint) (savedTrackPoint *model.TrackPoint, err *model.AppError)
+  CreateTrackRecord(trackRecord *model.TrackRecord) (savedTrackRecord *model.TrackRecord, err *model.AppError)
+  CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, trackRecordId string) (savedTrackPoint *model.TrackPoint, err *model.AppError)
 }

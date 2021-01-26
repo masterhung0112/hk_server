@@ -16,24 +16,20 @@ type SqlTrackPointStore struct {
 type TrackPoint struct {
 	Id         string
 	TargetId   string
-	TargetType string
 	Lat        float64
 	Lng        float64
 	CreateAt   int64
 	DeviceId   string
-	DeviceType string
 }
 
 func NewTrackPointFromModel(trackPointModel *model.TrackPoint) *TrackPoint {
 	return &TrackPoint{
 		Id:         trackPointModel.Id,
 		TargetId:   trackPointModel.TargetId,
-		TargetType: trackPointModel.TargetType,
 		Lat:        trackPointModel.Point.Lat,
 		Lng:        trackPointModel.Point.Lng,
 		CreateAt:   trackPointModel.CreateAt,
 		DeviceId:   trackPointModel.DeviceId,
-		DeviceType: trackPointModel.DeviceType,
 	}
 }
 
@@ -41,14 +37,12 @@ func (trackPoint TrackPoint) ToModel() *model.TrackPoint {
 	return &model.TrackPoint{
 		Id:         trackPoint.Id,
 		TargetId:   trackPoint.TargetId,
-		TargetType: trackPoint.TargetType,
 		Point: model.GeoPoint{
 			Lat: trackPoint.Lat,
 			Lng: trackPoint.Lng,
 		},
 		CreateAt:   trackPoint.CreateAt,
 		DeviceId:   trackPoint.DeviceId,
-		DeviceType: trackPoint.DeviceType,
 	}
 }
 
