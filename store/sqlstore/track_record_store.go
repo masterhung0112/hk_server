@@ -73,7 +73,10 @@ func (s *SqlTrackRecordStore) Update(trackRecord *model.TrackRecord) (*model.Tra
 	}
 
 	oldTrackRecord := oldResult.(*model.TrackRecord)
-	trackRecord.CreateAt = oldTrackRecord.CreateAt
+  trackRecord.CreateAt = oldTrackRecord.CreateAt
+  // User must use the specialized functions to update these fields
+  trackRecord.StartAt = oldTrackRecord.StartAt
+  trackRecord.EndAt = oldTrackRecord.EndAt
 
 	count, err := s.GetMaster().Update(trackRecord)
 	if err != nil {
