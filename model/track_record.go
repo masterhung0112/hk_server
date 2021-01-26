@@ -13,7 +13,7 @@ type TrackRecord struct {
 	EndAt                 int64
 	WeightedAverage       float64
 	WeightedAverageLastId string
-	WeightedAverageIsLast bool
+  WeightedAverageIsLast bool
 }
 
 func (o *TrackRecord) PreSave() {
@@ -30,6 +30,17 @@ func (o *TrackRecord) PreSave() {
 	}
 
 	o.Categories = RemoveDuplicateStrings(o.Categories)
+}
+
+func (o *TrackRecord) PreUpdate() {
+}
+
+func (o *TrackRecord) IsValid() error {
+	if !(len(o.Id) == 26 || len(o.Id) == 0) {
+		return NewAppError("TrackRecord.IsValid", "model.trackrecord.is_valid.id.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	return o.IsValidWithoutId()
 }
 
 func (o *TrackRecord) IsValidWithoutId() error {

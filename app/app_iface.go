@@ -1025,5 +1025,8 @@ type AppIface interface {
 	WriteFile(fr io.Reader, path string) (int64, *model.AppError)
   CreateTrackPoint(trackPoint *model.TrackPoint) (savedTrackPoint *model.TrackPoint, err *model.AppError)
   CreateTrackRecord(trackRecord *model.TrackRecord) (savedTrackRecord *model.TrackRecord, err *model.AppError)
+  GetTrackRecord(trackRecordId string) (*model.TrackRecord, *model.AppError)
+  StartTrackRecord(trackRecordId string) (*model.TrackRecord, *model.AppError)
+  EndTrackRecord(trackRecordId string) (*model.TrackRecord, *model.AppError)
   CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, trackRecordId string) (savedTrackPoint *model.TrackPoint, err *model.AppError)
 }
