@@ -11,7 +11,9 @@ import (
 func (api *API) InitTrackRecord() {
 	api.BaseRoutes.TrackRecords.Handle("", api.ApiSessionRequired(createTrackRecord)).Methods("POST")
 	api.BaseRoutes.TrackRecord.Handle("", api.ApiSessionRequired(getTrackRecord)).Methods("GET")
-	api.BaseRoutes.TrackRecord.Handle("/trackpoint", api.ApiSessionRequired(createNewTrackPointForTrackRecord)).Methods("POST")
+  api.BaseRoutes.TrackRecord.Handle("/trackpoint", api.ApiSessionRequired(createNewTrackPointForTrackRecord)).Methods("POST")
+  api.BaseRoutes.TrackRecord.Handle("/start", api.ApiSessionRequired(startTrackRecord)).Methods("POST")
+  api.BaseRoutes.TrackRecord.Handle("/end", api.ApiSessionRequired(endTrackRecord)).Methods("POST")
 }
 
 func createTrackRecord(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -71,4 +73,34 @@ func createNewTrackPointForTrackRecord(c *Context, w http.ResponseWriter, r *htt
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(rTrackPoint.ToJson()))
+}
+
+func startTrackRecord(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireTrackRecordId()
+	if c.Err != nil {
+		return
+	}
+
+	trackRecord, err := c.App.StartTrackRecord(c.Params.TrackRecordId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(trackRecord.ToJson()))
+}
+
+func endTrackRecord(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireTrackRecordId()
+	if c.Err != nil {
+		return
+	}
+
+	trackRecord, err := c.App.EndTrackRecord(c.Params.TrackRecordId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(trackRecord.ToJson()))
 }

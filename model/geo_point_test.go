@@ -17,7 +17,7 @@ func TestNewPoint(t *testing.T) {
 		t.Error("Expected to get a pointer to a new GeoPoint, but got nil instead.")
 	}
 
-	if p.lat != 40.5 {
+	if p.Lat != 40.5 {
 		t.Errorf("Expected to be able to specify 40.5 as the lat value of a new GeoPoint, but got %f instead", p.lat)
 	}
 

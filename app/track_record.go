@@ -40,31 +40,6 @@ func (a *App) GetTrackRecord(trackRecordId string) (*model.TrackRecord, *model.A
 	return trackRecord, nil
 }
 
-func (a *App) CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, trackRecordId string) (*model.TrackPoint, *model.AppError) {
-	// Find if track Record exist
-	trackRecord, err := a.GetTrackRecord(trackRecordId)
-	if err != nil {
-		return nil, err
-	}
-
-	if trackRecord.EndAt != 0 {
-		return nil, model.NewAppError("CreateTrackPointForTrackRecord", "app.trackrecord.create.recordclosed.app_error", nil, "trackrecord closed", http.StatusBadRequest)
-	}
-
-	// Create trackpoint for trackRecord
-	trackPoint.TargetId = trackRecordId
-
-	// Write trackpoint to DB
-	rTrackPoint, err := a.CreateTrackPoint(trackPoint)
-	if err != nil {
-		return nil, err
-	}
-
-	//TODO: Update the metric for track record
-
-	return rTrackPoint, nil
-}
-
 func (a *App) StartTrackRecord(trackRecordId string) (*model.TrackRecord, *model.AppError) {
 	trackRecord, err := a.Srv().Store.TrackRecord().Start(trackRecordId)
 	if err != nil {
@@ -91,4 +66,29 @@ func (a *App) EndTrackRecord(trackRecordId string) (*model.TrackRecord, *model.A
 		}
 	}
 	return trackRecord, nil
+}
+
+func (a *App) CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, trackRecordId string) (*model.TrackPoint, *model.AppError) {
+	// Find if track Record exist
+	trackRecord, err := a.GetTrackRecord(trackRecordId)
+	if err != nil {
+		return nil, err
+	}
+
+	if trackRecord.EndAt != 0 {
+		return nil, model.NewAppError("CreateTrackPointForTrackRecord", "app.trackrecord.create.recordclosed.app_error", nil, "trackrecord closed", http.StatusBadRequest)
+	}
+
+	// Create trackpoint for trackRecord
+	trackPoint.TargetId = trackRecordId
+
+	// Write trackpoint to DB
+	rTrackPoint, err := a.CreateTrackPoint(trackPoint)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO: Update the metric for track record
+
+	return rTrackPoint, nil
 }
