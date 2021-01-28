@@ -121,10 +121,10 @@ type ApiRoutes struct {
 
 	Cloud *mux.Router // 'api/v1/cloud'
 
-  Imports *mux.Router // 'api/v1/imports'
+	Imports *mux.Router // 'api/v1/imports'
 
-  TrackRecords  *mux.Router // 'api/v1/trackrecords'
-  TrackRecord   *mux.Router // 'api/v1/trackrecords/{trackrecord_id:[A-Za-z0-9]+}'
+	TrackRecords *mux.Router // 'api/v1/trackrecords'
+	TrackRecord  *mux.Router // 'api/v1/trackrecords/{trackrecord_id:[A-Za-z0-9]+}'
 }
 
 type API struct {
@@ -237,10 +237,10 @@ func ApiInit(configservice configservice.ConfigService, globalOptionsFunc app.Ap
 
 	api.BaseRoutes.Cloud = api.BaseRoutes.ApiRoot.PathPrefix("/cloud").Subrouter()
 
-  api.BaseRoutes.Imports = api.BaseRoutes.ApiRoot.PathPrefix("/imports").Subrouter()
+	api.BaseRoutes.Imports = api.BaseRoutes.ApiRoot.PathPrefix("/imports").Subrouter()
 
-  api.BaseRoutes.TrackRecords = api.BaseRoutes.ApiRoot.PathPrefix("/trackrecords").Subrouter()
-  api.BaseRoutes.TrackRecord = api.BaseRoutes.Posts.PathPrefix("/{post_id:[A-Za-z0-9]+}").Subrouter()
+	api.BaseRoutes.TrackRecords = api.BaseRoutes.ApiRoot.PathPrefix("/trackrecords").Subrouter()
+	api.BaseRoutes.TrackRecord = api.BaseRoutes.Posts.PathPrefix("/{post_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.InitUser()
 	// api.InitBot()

@@ -7,12 +7,12 @@ import (
 )
 
 type TrackPoint struct {
-	Id         string   `json:"id"`
-	TargetId   string   `json:"target_id"`
-	Point      GeoPoint `json:"point"`
-	CreateAt   int64    `json:"create_at"`
-  DeviceId   string   `json:"device_id"`
-  Duration   int64    `json:"duration"`
+	Id       string   `json:"id"`
+	TargetId string   `json:"target_id"`
+	Point    GeoPoint `json:"point"`
+	CreateAt int64    `json:"create_at"`
+	DeviceId string   `json:"device_id"`
+	Duration int64    `json:"duration"`
 }
 
 func (r *TrackPoint) ToJson() string {

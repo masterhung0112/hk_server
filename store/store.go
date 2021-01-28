@@ -784,11 +784,11 @@ type TrackPointStore interface {
 }
 
 type TrackRecordStore interface {
-  Save(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
-  Update(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
-  Get(trackRecordId string) (*model.TrackRecord, error)
-  Start(trackRecordId string) (*model.TrackRecord, error)
-  End(trackRecordId string) (*model.TrackRecord, error)
+	Save(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
+	Update(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
+	Get(trackRecordId string) (*model.TrackRecord, error)
+	Start(trackRecordId string) (*model.TrackRecord, error)
+	End(trackRecordId string) (*model.TrackRecord, error)
 }
 
 // ChannelSearchOpts contains options for searching channels.

@@ -56,7 +56,7 @@ func (s *SqlTrackRecordStore) Get(trackRecordId string) (*model.TrackRecord, err
 }
 
 func (s *SqlTrackRecordStore) Update(trackRecord *model.TrackRecord) (*model.TrackRecord, error) {
-  trackRecord.PreUpdate()
+	trackRecord.PreUpdate()
 
 	if err := trackRecord.IsValid(); err != nil {
 		return nil, err
@@ -72,10 +72,10 @@ func (s *SqlTrackRecordStore) Update(trackRecord *model.TrackRecord) (*model.Tra
 	}
 
 	oldTrackRecord := oldResult.(*model.TrackRecord)
-  trackRecord.CreateAt = oldTrackRecord.CreateAt
-  // User must use the specialized functions to update these fields
-  trackRecord.StartAt = oldTrackRecord.StartAt
-  trackRecord.EndAt = oldTrackRecord.EndAt
+	trackRecord.CreateAt = oldTrackRecord.CreateAt
+	// User must use the specialized functions to update these fields
+	trackRecord.StartAt = oldTrackRecord.StartAt
+	trackRecord.EndAt = oldTrackRecord.EndAt
 
 	count, err := s.GetMaster().Update(trackRecord)
 	if err != nil {
@@ -89,50 +89,49 @@ func (s *SqlTrackRecordStore) Update(trackRecord *model.TrackRecord) (*model.Tra
 }
 
 func (s *SqlTrackRecordStore) Start(trackRecordId string) (*model.TrackRecord, error) {
-  timestamp := model.GetMillis()
-  trackRecord, err := s.Get(trackRecordId)
-  if err != nil {
-    return nil, err
-  }
+	timestamp := model.GetMillis()
+	trackRecord, err := s.Get(trackRecordId)
+	if err != nil {
+		return nil, err
+	}
 
-  if trackRecord.StartAt != 0 {
-    return nil, errors.Wrapf(err, "TrackRecord id=%s has been started", trackRecord.Id)
-  }
+	if trackRecord.StartAt != 0 {
+		return nil, errors.Wrapf(err, "TrackRecord id=%s has been started", trackRecord.Id)
+	}
 
-  if trackRecord.EndAt != 0 {
-    return nil, errors.Wrapf(err, "TrackRecord id=%s has been ended", trackRecord.Id)
-  }
+	if trackRecord.EndAt != 0 {
+		return nil, errors.Wrapf(err, "TrackRecord id=%s has been ended", trackRecord.Id)
+	}
 
-  trackRecord.StartAt = timestamp
-  rtrackRecord, err := s.Update(trackRecord)
-  if err != nil {
-    return nil, err
-  }
+	trackRecord.StartAt = timestamp
+	rtrackRecord, err := s.Update(trackRecord)
+	if err != nil {
+		return nil, err
+	}
 
-  return rtrackRecord, nil
+	return rtrackRecord, nil
 }
 
 func (s *SqlTrackRecordStore) End(trackRecordId string) (*model.TrackRecord, error) {
-  timestamp := model.GetMillis()
-  trackRecord, err := s.Get(trackRecordId)
-  if err != nil {
-    return nil, err
-  }
+	timestamp := model.GetMillis()
+	trackRecord, err := s.Get(trackRecordId)
+	if err != nil {
+		return nil, err
+	}
 
-  if trackRecord.StartAt == 0 {
-    return nil, errors.Wrapf(err, "TrackRecord id=%s hasn't been started yet", trackRecord.Id)
-  }
+	if trackRecord.StartAt == 0 {
+		return nil, errors.Wrapf(err, "TrackRecord id=%s hasn't been started yet", trackRecord.Id)
+	}
 
-  if trackRecord.EndAt != 0 {
-    return nil, errors.Wrapf(err, "TrackRecord id=%s has been ended", trackRecord.Id)
-  }
+	if trackRecord.EndAt != 0 {
+		return nil, errors.Wrapf(err, "TrackRecord id=%s has been ended", trackRecord.Id)
+	}
 
-  trackRecord.EndAt = timestamp
-  rtrackRecord, err := s.Update(trackRecord)
-  if err != nil {
-    return nil, err
-  }
+	trackRecord.EndAt = timestamp
+	rtrackRecord, err := s.Update(trackRecord)
+	if err != nil {
+		return nil, err
+	}
 
-  return rtrackRecord, nil
+	return rtrackRecord, nil
 }
-

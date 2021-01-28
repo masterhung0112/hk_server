@@ -15,7 +15,7 @@ type TrackRecord struct {
 	EndAt                 int64
 	WeightedAverage       float64
 	WeightedAverageLastId string
-  WeightedAverageIsLast bool
+	WeightedAverageIsLast bool
 }
 
 func (r *TrackRecord) ToJson() string {
