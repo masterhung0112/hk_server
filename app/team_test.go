@@ -1,9 +1,10 @@
 package app
 
 import (
+	"testing"
+
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestCreateTeam(t *testing.T) {
