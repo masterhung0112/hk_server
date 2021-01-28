@@ -1,6 +1,8 @@
 package model
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 )
 
@@ -14,6 +16,17 @@ type TrackRecord struct {
 	WeightedAverage       float64
 	WeightedAverageLastId string
   WeightedAverageIsLast bool
+}
+
+func (r *TrackRecord) ToJson() string {
+	b, _ := json.Marshal(r)
+	return string(b)
+}
+
+func TrackRecordFromJson(data io.Reader) *TrackRecord {
+	var r *TrackRecord
+	json.NewDecoder(data).Decode(&r)
+	return r
 }
 
 func (o *TrackRecord) PreSave() {

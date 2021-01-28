@@ -79,7 +79,8 @@ type Params struct {
 	FilterAllowReference      bool
 	FilterParentTeamPermitted bool
 	CategoryId                string
-	WarnMetricId              string
+  WarnMetricId              string
+  TrackRecordId             string
 
 	// Cloud
 	InvoiceId string
@@ -341,6 +342,10 @@ func ParamsFromRequest(r *http.Request) *Params {
 
 	if val, ok := props["warn_metric_id"]; ok {
 		params.WarnMetricId = val
+  }
+
+  if val, ok := props["track_record_id"]; ok {
+		params.TrackRecordId = val
 	}
 
 	return params
