@@ -70,5 +70,5 @@ func createNewTrackPointForTrackRecord(c *Context, w http.ResponseWriter, r *htt
   }
 
   w.WriteHeader(http.StatusCreated)
-  w.Write([]byte(trackRecord.ToJson()))
+  w.Write([]byte(rTrackPoint.ToJson()))
 }

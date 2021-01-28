@@ -1,10 +1,11 @@
 package app
 
 import (
+	"net/http"
+
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 func (a *App) CreateTrackRecord(trackRecord *model.TrackRecord) (*model.TrackRecord, *model.AppError) {
@@ -46,7 +47,7 @@ func (a *App) CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, track
     return nil, err
   }
 
-  if trackRecord.IsClosed {
+  if trackRecord.EndAt != 0 {
     return nil, model.NewAppError("CreateTrackPointForTrackRecord", "app.trackrecord.create.recordclosed.app_error", nil, "trackrecord closed", http.StatusBadRequest)
   }
 

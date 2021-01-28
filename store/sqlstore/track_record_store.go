@@ -5,8 +5,7 @@ import (
 
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
-  "github.com/pkg/errors"
-  sq "github.com/Masterminds/squirrel"
+	"github.com/pkg/errors"
 )
 
 type SqlTrackRecordStore struct {

@@ -1,8 +1,9 @@
-package api
+package api1
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/model"
 )
