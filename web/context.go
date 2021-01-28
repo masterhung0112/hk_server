@@ -689,7 +689,7 @@ func (c *Context) RequireTrackRecordId() *Context {
 	}
 
 	if !model.IsValidId(c.Params.TrackRecordId) {
-		c.SetInvalidUrlParam("record_id")
+		c.SetInvalidUrlParam("track_record_id")
 	}
 	return c
 }

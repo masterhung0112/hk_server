@@ -124,7 +124,7 @@ type ApiRoutes struct {
 	Imports *mux.Router // 'api/v1/imports'
 
 	TrackRecords *mux.Router // 'api/v1/trackrecords'
-	TrackRecord  *mux.Router // 'api/v1/trackrecords/{trackrecord_id:[A-Za-z0-9]+}'
+	TrackRecord  *mux.Router // 'api/v1/trackrecords/{track_record_id:[A-Za-z0-9]+}'
 }
 
 type API struct {
@@ -240,7 +240,7 @@ func ApiInit(configservice configservice.ConfigService, globalOptionsFunc app.Ap
 	api.BaseRoutes.Imports = api.BaseRoutes.ApiRoot.PathPrefix("/imports").Subrouter()
 
 	api.BaseRoutes.TrackRecords = api.BaseRoutes.ApiRoot.PathPrefix("/trackrecords").Subrouter()
-	api.BaseRoutes.TrackRecord = api.BaseRoutes.Posts.PathPrefix("/{trackrecord_id:[A-Za-z0-9]+}").Subrouter()
+	api.BaseRoutes.TrackRecord = api.BaseRoutes.TrackRecords.PathPrefix("/{track_record_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.InitUser()
 	// api.InitBot()
