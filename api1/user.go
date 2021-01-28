@@ -1,14 +1,15 @@
-package api
+package api1
 
 import (
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/audit"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/masterhung0112/hk_server/web"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 func (api *API) InitUser() {

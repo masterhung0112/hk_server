@@ -1,12 +1,13 @@
 package web
 
 import (
-	"github.com/masterhung0112/hk_server/audit"
-	"github.com/masterhung0112/hk_server/utils"
 	"net/http"
 	"path"
 	"regexp"
 	"strings"
+
+	"github.com/masterhung0112/hk_server/audit"
+	"github.com/masterhung0112/hk_server/utils"
 
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/mlog"
@@ -679,5 +680,16 @@ func (c *Context) RequireInvoiceId() *Context {
 		c.SetInvalidUrlParam("invoice_id")
 	}
 
+	return c
+}
+
+func (c *Context) RequireTrackRecordId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if !model.IsValidId(c.Params.TrackRecordId) {
+		c.SetInvalidUrlParam("record_id")
+	}
 	return c
 }

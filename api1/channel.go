@@ -1,8 +1,9 @@
-package api
+package api1
 
 import (
-	"github.com/masterhung0112/hk_server/model"
 	"net/http"
+
+	"github.com/masterhung0112/hk_server/model"
 )
 
 func (api *API) InitChannel() {

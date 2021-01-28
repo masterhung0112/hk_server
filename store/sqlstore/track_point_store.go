@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/pkg/errors"
@@ -13,41 +14,35 @@ type SqlTrackPointStore struct {
 }
 
 type TrackPoint struct {
-	Id         string
-	TargetId   string
-	TargetType string
-	Lat        float64
-	Lng        float64
-	CreateAt   int64
-	DeviceId   string
-	DeviceType string
+	Id       string
+	TargetId string
+	Lat      float64
+	Lng      float64
+	CreateAt int64
+	DeviceId string
 }
 
 func NewTrackPointFromModel(trackPointModel *model.TrackPoint) *TrackPoint {
 	return &TrackPoint{
-		Id:         trackPointModel.Id,
-		TargetId:   trackPointModel.TargetId,
-		TargetType: trackPointModel.TargetType,
-		Lat:        trackPointModel.Point.Lat,
-		Lng:        trackPointModel.Point.Lng,
-		CreateAt:   trackPointModel.CreateAt,
-		DeviceId:   trackPointModel.DeviceId,
-		DeviceType: trackPointModel.DeviceType,
+		Id:       trackPointModel.Id,
+		TargetId: trackPointModel.TargetId,
+		Lat:      trackPointModel.Point.Lat,
+		Lng:      trackPointModel.Point.Lng,
+		CreateAt: trackPointModel.CreateAt,
+		DeviceId: trackPointModel.DeviceId,
 	}
 }
 
 func (trackPoint TrackPoint) ToModel() *model.TrackPoint {
 	return &model.TrackPoint{
-		Id:         trackPoint.Id,
-		TargetId:   trackPoint.TargetId,
-		TargetType: trackPoint.TargetType,
+		Id:       trackPoint.Id,
+		TargetId: trackPoint.TargetId,
 		Point: model.GeoPoint{
 			Lat: trackPoint.Lat,
 			Lng: trackPoint.Lng,
 		},
-		CreateAt:   trackPoint.CreateAt,
-		DeviceId:   trackPoint.DeviceId,
-		DeviceType: trackPoint.DeviceType,
+		CreateAt: trackPoint.CreateAt,
+		DeviceId: trackPoint.DeviceId,
 	}
 }
 
@@ -93,4 +88,16 @@ func (s *SqlTrackPointStore) Get(trackPointId string) (*model.TrackPoint, error)
 	}
 
 	return dbTrackPoint.ToModel(), nil
+}
+
+func (s *SqlTrackPointStore) GetByTargetId(targetId string) ([]*model.TrackPoint, error) {
+	query, args, _ := s.getQueryBuilder().
+		Select("*").
+		Where(sq.Eq{"TargetId": targetId}).
+		ToSql()
+	var result []*model.TrackPoint
+	if _, err := s.GetReplica().Select(&result, query, args...); err != nil {
+		return nil, errors.Wrap(err, "failed to fetch track points for target id")
+	}
+	return result, nil
 }

@@ -167,7 +167,7 @@ test-run-coverage:
 
 start-cmd-server:
 	docker-compose up -d
-	go run .\cmd\hkserver\main.go
+	go run ./cmd/hkserver/main.go
 
 run-fmt:
 	go fmt ./...

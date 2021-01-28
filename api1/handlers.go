@@ -1,8 +1,9 @@
-package api
+package api1
 
 import (
-	"github.com/masterhung0112/hk_server/web"
 	"net/http"
+
+	"github.com/masterhung0112/hk_server/web"
 )
 
 type Context = web.Context

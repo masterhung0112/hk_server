@@ -1,9 +1,10 @@
-package api
+package api1
 
 import (
+	"testing"
+
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/testlib"
-	"testing"
 )
 
 func TestMain(m *testing.M) {

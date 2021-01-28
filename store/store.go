@@ -780,11 +780,15 @@ type LinkMetadataStore interface {
 type TrackPointStore interface {
 	Save(trackPoint *model.TrackPoint) (*model.TrackPoint, error)
 	Get(trackPointId string) (*model.TrackPoint, error)
+	GetByTargetId(targetId string) ([]*model.TrackPoint, error)
 }
 
 type TrackRecordStore interface {
 	Save(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
+	Update(trackRecord *model.TrackRecord) (*model.TrackRecord, error)
 	Get(trackRecordId string) (*model.TrackRecord, error)
+	Start(trackRecordId string) (*model.TrackRecord, error)
+	End(trackRecordId string) (*model.TrackRecord, error)
 }
 
 // ChannelSearchOpts contains options for searching channels.

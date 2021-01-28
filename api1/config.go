@@ -1,14 +1,15 @@
-package api
+package api1
 
 import (
 	"fmt"
+	"net/http"
+	"reflect"
+	"strings"
+
 	"github.com/masterhung0112/hk_server/config"
 	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/utils"
-	"net/http"
-	"reflect"
-	"strings"
 )
 
 var writeFilter func(c *Context, structField reflect.StructField) bool
