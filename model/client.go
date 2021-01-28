@@ -5831,3 +5831,37 @@ func (c *Client1) UpdateThreadFollowForUser(userId, teamId, threadId string, sta
 
 	return BuildResponse(r)
 }
+
+// Track Record section
+
+// CreateUser creates a user in the system based on the provided user struct.
+func (c *Client1) CreateTrackRecord(trackRecord *TrackRecord) (*TrackRecord, *Response) {
+	r, err := c.DoApiPost(c.GetTrackRecordsRoute(), trackRecord.ToJson())
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+	return TrackRecordFromJson(r.Body), BuildResponse(r)
+}
+
+// Track Record section
+
+func (c *Client1) GetTrackRecordsRoute() string {
+	return "/trackrecords"
+}
+
+func (c *Client1) GetTrackRecordRoute(trackRecordId string) string {
+	return fmt.Sprintf(c.GetTrackRecordsRoute()+"/%v", trackRecordId)
+}
+
+func (c *Client1) GetTrackPointForRecordRoute(trackRecordId string) string {
+	return c.GetTrackRecordRoute(trackRecordId) + "/trackpoint"
+}
+
+func (c *Client1) GetTrackRecordStartRoute(trackRecordId string) string {
+	return c.GetTrackRecordRoute(trackRecordId) + "/start"
+}
+
+func (c *Client1) GetTrackRecordEndRoute(trackRecordId string) string {
+	return c.GetTrackRecordRoute(trackRecordId) + "/end"
+}

@@ -240,7 +240,7 @@ func ApiInit(configservice configservice.ConfigService, globalOptionsFunc app.Ap
 	api.BaseRoutes.Imports = api.BaseRoutes.ApiRoot.PathPrefix("/imports").Subrouter()
 
 	api.BaseRoutes.TrackRecords = api.BaseRoutes.ApiRoot.PathPrefix("/trackrecords").Subrouter()
-	api.BaseRoutes.TrackRecord = api.BaseRoutes.Posts.PathPrefix("/{post_id:[A-Za-z0-9]+}").Subrouter()
+	api.BaseRoutes.TrackRecord = api.BaseRoutes.Posts.PathPrefix("/{trackrecord_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.InitUser()
 	// api.InitBot()
@@ -278,7 +278,8 @@ func ApiInit(configservice configservice.ConfigService, globalOptionsFunc app.Ap
 	// api.InitGroup()
 	// api.InitAction()
 	// api.InitCloud()
-	// api.InitImport()
+  // api.InitImport()
+  api.InitTrackRecord()
 
 	root.Handle("/api/v1/{anything:.*}", http.HandlerFunc(api.Handle404))
 
