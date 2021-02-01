@@ -18,41 +18,41 @@ func TestNewPoint(t *testing.T) {
 	}
 
 	if p.Lat != 40.5 {
-		t.Errorf("Expected to be able to specify 40.5 as the lat value of a new GeoPoint, but got %f instead", p.lat)
+		t.Errorf("Expected to be able to specify 40.5 as the Lat value of a new GeoPoint, but got %f instead", p.Lat)
 	}
 
-	if p.lng != 120.5 {
-		t.Errorf("Expected to be able to specify 120.5 as the lng value of a new GeoPoint, but got %f instead", p.lng)
+	if p.Lng != 120.5 {
+		t.Errorf("Expected to be able to specify 120.5 as the Lng value of a new GeoPoint, but got %f instead", p.Lng)
 	}
 }
 
-// Tests that calling GetLat() after creating a new GeoPoint returns the expected lat value.
+// Tests that calling GetLat() after creating a new GeoPoint returns the expected Lat value.
 func TestLat(t *testing.T) {
 	p := NewPoint(40.5, 120.5)
 
-	lat := p.Lat()
+	Lat := p.Lat
 
-	if lat != 40.5 {
-		t.Errorf("Expected a call to GetLat() to return the same lat value as was set before, but got %f instead", lat)
+	if Lat != 40.5 {
+		t.Errorf("Expected a call to GetLat() to return the same Lat value as was set before, but got %f instead", Lat)
 	}
 }
 
-// Tests that calling GetLng() after creating a new GeoPoint returns the expected lng value.
+// Tests that calling GetLng() after creating a new GeoPoint returns the expected Lng value.
 func TestLng(t *testing.T) {
 	p := NewPoint(40.5, 120.5)
 
-	lng := p.Lng()
+	Lng := p.Lng
 
-	if lng != 120.5 {
-		t.Errorf("Expected a call to GetLng() to return the same lat value as was set before, but got %f instead", lng)
+	if Lng != 120.5 {
+		t.Errorf("Expected a call to GetLng() to return the same Lat value as was set before, but got %f instead", Lng)
 	}
 }
 
 // Seems brittle :\
 func TestGreatCircleDistance(t *testing.T) {
 	// Test that SEA and SFO are ~ 1091km apart, accurate to 100 meters.
-	sea := &GeoPoint{lat: 47.4489, lng: -122.3094}
-	sfo := &GeoPoint{lat: 37.6160933, lng: -122.3924223}
+	sea := &GeoPoint{Lat: 47.4489, Lng: -122.3094}
+	sfo := &GeoPoint{Lat: 37.6160933, Lng: -122.3924223}
 	sfoToSea := 1093.379199082169
 
 	dist := sea.GreatCircleDistance(sfo)
@@ -63,7 +63,7 @@ func TestGreatCircleDistance(t *testing.T) {
 }
 
 func TestPointAtDistanceAndBearing(t *testing.T) {
-	sea := &GeoPoint{lat: 47.44745785, lng: -122.308065668024}
+	sea := &GeoPoint{Lat: 47.44745785, Lng: -122.308065668024}
 	p := sea.PointAtDistanceAndBearing(1090.7, 180)
 
 	// Expected results of transposing GeoPoint
@@ -71,16 +71,16 @@ func TestPointAtDistanceAndBearing(t *testing.T) {
 	resultLat := 37.638557
 	resultLng := -122.308066
 
-	withinLatBounds := p.lat < resultLat+0.001 && p.lat > resultLat-0.001
-	withinLngBounds := p.lng < resultLng+0.001 && p.lng > resultLng-0.001
+	withinLatBounds := p.Lat < resultLat+0.001 && p.Lat > resultLat-0.001
+	withinLngBounds := p.Lng < resultLng+0.001 && p.Lng > resultLng-0.001
 	if !(withinLatBounds && withinLngBounds) {
-		t.Error("Unnacceptable result.", fmt.Sprintf("[%f, %f]", p.lat, p.lng))
+		t.Error("Unnacceptable result.", fmt.Sprintf("[%f, %f]", p.Lat, p.Lng))
 	}
 }
 
 func TestBearingTo(t *testing.T) {
-	p1 := &GeoPoint{lat: 40.7486, lng: -73.9864}
-	p2 := &GeoPoint{lat: 0.0, lng: 0.0}
+	p1 := &GeoPoint{Lat: 40.7486, Lng: -73.9864}
+	p2 := &GeoPoint{Lat: 0.0, Lng: 0.0}
 	bearing := p1.BearingTo(p2)
 
 	// Expected bearing 60 degrees
@@ -93,8 +93,8 @@ func TestBearingTo(t *testing.T) {
 }
 
 func TestMidpointTo(t *testing.T) {
-	p1 := &GeoPoint{lat: 52.205, lng: 0.119}
-	p2 := &GeoPoint{lat: 48.857, lng: 2.351}
+	p1 := &GeoPoint{Lat: 52.205, Lng: 0.119}
+	p2 := &GeoPoint{Lat: 48.857, Lng: 2.351}
 
 	p := p1.MidpointTo(p2)
 
@@ -102,10 +102,10 @@ func TestMidpointTo(t *testing.T) {
 	resultLat := 50.53632
 	resultLng := 1.274614
 
-	withinLatBounds := p.lat < resultLat+0.001 && p.lat > resultLat-0.001
-	withinLngBounds := p.lng < resultLng+0.001 && p.lng > resultLng-0.001
+	withinLatBounds := p.Lat < resultLat+0.001 && p.Lat > resultLat-0.001
+	withinLngBounds := p.Lng < resultLng+0.001 && p.Lng > resultLng-0.001
 	if !(withinLatBounds && withinLngBounds) {
-		t.Error("Unnacceptable result.", fmt.Sprintf("[%f, %f]", p.lat, p.lng))
+		t.Error("Unnacceptable result.", fmt.Sprintf("[%f, %f]", p.Lat, p.Lng))
 	}
 }
 
@@ -119,14 +119,14 @@ func TestMarshalJSON(t *testing.T) {
 		t.Error("Should not encounter an error when attempting to Marshal a GeoPoint to JSON")
 	}
 
-	if string(res) != `{"lat":40.7486,"lng":-73.9864}` {
+	if string(res) != `{"Lat":40.7486,"Lng":-73.9864}` {
 		t.Error("GeoPoint should correctly Marshal to JSON")
 	}
 }
 
 // Ensures that a GeoPoint can be unmarhalled from JSON
 func TestUnmarshalJSON(t *testing.T) {
-	data := []byte(`{"lat":40.7486,"lng":-73.9864}`)
+	data := []byte(`{"Lat":40.7486,"Lng":-73.9864}`)
 	p := &GeoPoint{}
 	err := p.UnmarshalJSON(data)
 
@@ -134,21 +134,21 @@ func TestUnmarshalJSON(t *testing.T) {
 		t.Errorf("Should not encounter an error when attempting to Unmarshal a GeoPoint from JSON")
 	}
 
-	if p.lat != 40.7486 || p.lng != -73.9864 {
+	if p.Lat != 40.7486 || p.Lng != -73.9864 {
 		t.Errorf("GeoPoint has mismatched data after Unmarshalling from JSON")
 	}
 }
 
 // Ensure that a GeoPoint can be marshalled into slice of binaries
 func TestMarshalBinary(t *testing.T) {
-	lat, long := 40.7486, -73.9864
-	p := NewPoint(lat, long)
+	Lat, long := 40.7486, -73.9864
+	p := NewPoint(Lat, long)
 	actual, err := p.MarshalBinary()
 	if err != nil {
 		t.Error("Should not encounter an error when attempting to Marshal a GeoPoint to binary", err)
 	}
 
-	expected, err := coordinatesToBytes(lat, long)
+	expected, err := coordinatesToBytes(Lat, long)
 	if err != nil {
 		t.Error("Unable to convert coordinates to bytes slice.", err)
 	}
@@ -160,8 +160,8 @@ func TestMarshalBinary(t *testing.T) {
 
 // Ensure that a GeoPoint can be unmarshalled from a slice of binaries
 func TestUnmarshalBinary(t *testing.T) {
-	lat, long := 40.7486, -73.9864
-	coordinates, err := coordinatesToBytes(lat, long)
+	Lat, long := 40.7486, -73.9864
+	coordinates, err := coordinatesToBytes(Lat, long)
 	if err != nil {
 		t.Error("Unable to convert coordinates to bytes slice.", err)
 	}
@@ -172,15 +172,15 @@ func TestUnmarshalBinary(t *testing.T) {
 		t.Error("Should not encounter an error when attempting to Unmarshal a GeoPoint from binary", err)
 	}
 
-	expected := NewPoint(lat, long)
+	expected := NewPoint(Lat, long)
 	if !assertPointsEqual(actual, expected, 4) {
 		t.Errorf("GeoPoint should correctly Marshal to Binary.\nExpected %+v\nBut got %+v", expected, actual)
 	}
 }
 
-func coordinatesToBytes(lat, long float64) ([]byte, error) {
+func coordinatesToBytes(Lat, long float64) ([]byte, error) {
 	var buf bytes.Buffer
-	if err := binary.Write(&buf, binary.LittleEndian, lat); err != nil {
+	if err := binary.Write(&buf, binary.LittleEndian, Lat); err != nil {
 		return nil, err
 	}
 	if err := binary.Write(&buf, binary.LittleEndian, long); err != nil {
@@ -193,7 +193,7 @@ func coordinatesToBytes(lat, long float64) ([]byte, error) {
 // Asserts true when the latitude and longtitude of p1 and p2 are equal up to a certain number of decimal places.
 // Precision is used to define that number of decimal places.
 func assertPointsEqual(p1, p2 *GeoPoint, precision int) bool {
-	roundedLat1, roundedLng1 := int(p1.lat*float64(precision))/precision, int(p1.lng*float64(precision))/precision
-	roundedLat2, roundedLng2 := int(p2.lat*float64(precision))/precision, int(p2.lng*float64(precision))/precision
+	roundedLat1, roundedLng1 := int(p1.Lat*float64(precision))/precision, int(p1.Lng*float64(precision))/precision
+	roundedLat2, roundedLng2 := int(p2.Lat*float64(precision))/precision, int(p2.Lng*float64(precision))/precision
 	return roundedLat1 == roundedLat2 && roundedLng1 == roundedLng2
 }
