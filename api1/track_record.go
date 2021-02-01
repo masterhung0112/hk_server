@@ -11,9 +11,9 @@ import (
 func (api *API) InitTrackRecord() {
 	api.BaseRoutes.TrackRecords.Handle("", api.ApiSessionRequired(createTrackRecord)).Methods("POST")
 	api.BaseRoutes.TrackRecord.Handle("", api.ApiSessionRequired(getTrackRecord)).Methods("GET")
-  api.BaseRoutes.TrackRecord.Handle("/trackpoint", api.ApiSessionRequired(createNewTrackPointForTrackRecord)).Methods("POST")
-  api.BaseRoutes.TrackRecord.Handle("/start", api.ApiSessionRequired(startTrackRecord)).Methods("POST")
-  api.BaseRoutes.TrackRecord.Handle("/end", api.ApiSessionRequired(endTrackRecord)).Methods("POST")
+	api.BaseRoutes.TrackRecord.Handle("/trackpoint", api.ApiSessionRequired(createNewTrackPointForTrackRecord)).Methods("POST")
+	api.BaseRoutes.TrackRecord.Handle("/start", api.ApiSessionRequired(startTrackRecord)).Methods("POST")
+	api.BaseRoutes.TrackRecord.Handle("/end", api.ApiSessionRequired(endTrackRecord)).Methods("POST")
 }
 
 func createTrackRecord(c *Context, w http.ResponseWriter, r *http.Request) {
