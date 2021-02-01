@@ -14,7 +14,7 @@ func TestPointInPolygon(t *testing.T) {
 		t.Error("brunei json file failed to parse: ", err)
 	}
 
-	GeoPoint := GeoPoint{lng: 114.9480600, lat: 4.9402900}
+	GeoPoint := GeoPoint{Lng: 114.9480600, Lat: 4.9402900}
 	if !brunei.Contains(&GeoPoint) {
 		t.Error("Expected the capital of Brunei to be in Brunei, but it wasn't.")
 	}
@@ -56,7 +56,7 @@ func TestPointInPolygonWithHole(t *testing.T) {
 	}
 
 	// Look at two contours
-	canberra := GeoPoint{lng: 149.128684300000030000, lat: -35.2819998}
+	canberra := GeoPoint{Lng: 149.128684300000030000, Lat: -35.2819998}
 	isnsw := nsw.Contains(&canberra)
 	isact := act.Contains(&canberra)
 	if !isnsw && !isact {
@@ -78,13 +78,13 @@ func TestPointInPolygonWithHole(t *testing.T) {
 		t.Error("Canberra should not be in NSW as it falls in the donut contour of the ACT")
 	}
 
-	sydney := GeoPoint{lng: 151.209, lat: -33.866}
+	sydney := GeoPoint{Lng: 151.209, Lat: -33.866}
 
 	if !nswmulti.Contains(&sydney) {
 		t.Error("Sydney should be in NSW")
 	}
 
-	losangeles := GeoPoint{lng: 118.28333, lat: 34.01667}
+	losangeles := GeoPoint{Lng: 118.28333, Lat: 34.01667}
 	isnsw = nswmulti.Contains(&losangeles)
 
 	if isnsw {
