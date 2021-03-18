@@ -27,10 +27,10 @@ func TestRoleStoreCache(t *testing.T) {
 		require.NoError(t, err)
 
 		role, err := cachedStore.Role().GetByName("role-name")
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, role, &fakeRole)
 		mockStore.Role().(*mocks.RoleStore).AssertNumberOfCalls(t, "GetByName", 1)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, role, &fakeRole)
 		cachedStore.Role().GetByName("role-name")
 		mockStore.Role().(*mocks.RoleStore).AssertNumberOfCalls(t, "GetByName", 1)

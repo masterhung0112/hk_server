@@ -80,9 +80,7 @@ func (role Role) ToModel() *model.Role {
 }
 
 func newSqlRoleStore(sqlStore *SqlStore) store.RoleStore {
-	s := &SqlRoleStore{
-		SqlStore: sqlStore,
-	}
+	s := &SqlRoleStore{sqlStore}
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(Role{}, "Roles").SetKeys(false, "Id")
@@ -101,7 +99,7 @@ func (s *SqlRoleStore) Save(role *model.Role) (*model.Role, error) {
 		return nil, store.NewErrInvalidInput("Role", "<any>", fmt.Sprintf("%v", role))
 	}
 
-	if len(role.Id) == 0 {
+	if role.Id == "" {
 		transaction, err := s.GetMaster().Begin()
 		if err != nil {
 			return nil, errors.Wrap(err, "begin_transaction")

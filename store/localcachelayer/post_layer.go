@@ -19,7 +19,7 @@ type LocalCachePostStore struct {
 }
 
 func (s *LocalCachePostStore) handleClusterInvalidateLastPostTime(msg *model.ClusterMessage) {
-	if msg.Data == CLEAR_CACHE_MESSAGE_DATA {
+	if msg.Data == ClearCacheMessageData {
 		s.rootStore.lastPostTimeCache.Purge()
 	} else {
 		s.rootStore.lastPostTimeCache.Remove(msg.Data)
@@ -27,7 +27,7 @@ func (s *LocalCachePostStore) handleClusterInvalidateLastPostTime(msg *model.Clu
 }
 
 func (s *LocalCachePostStore) handleClusterInvalidateLastPosts(msg *model.ClusterMessage) {
-	if msg.Data == CLEAR_CACHE_MESSAGE_DATA {
+	if msg.Data == ClearCacheMessageData {
 		s.rootStore.postLastPostsCache.Purge()
 	} else {
 		s.rootStore.postLastPostsCache.Remove(msg.Data)
@@ -60,7 +60,7 @@ func (s LocalCachePostStore) InvalidateLastPostTimeCache(channelId string) {
 	}
 }
 
-func (s LocalCachePostStore) GetEtag(channelId string, allowFromCache bool) string {
+func (s LocalCachePostStore) GetEtag(channelId string, allowFromCache, collapsedThreads bool) string {
 	if allowFromCache {
 		var lastTime int64
 		if err := s.rootStore.doStandardReadCache(s.rootStore.lastPostTimeCache, channelId, &lastTime); err == nil {
@@ -68,7 +68,7 @@ func (s LocalCachePostStore) GetEtag(channelId string, allowFromCache bool) stri
 		}
 	}
 
-	result := s.PostStore.GetEtag(channelId, allowFromCache)
+	result := s.PostStore.GetEtag(channelId, allowFromCache, collapsedThreads)
 
 	splittedResult := strings.Split(result, ".")
 

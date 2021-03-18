@@ -731,7 +731,7 @@ func (s *SqlGroupStore) TeamMembersToAdd(since int64, teamID *string) ([]*model.
 
 	var teamMembers []*model.UserTeamIDPair
 
-	_, err = s.GetReplica().Select(&teamMembers, query, params...)
+	_, err = s.GetMaster().Select(&teamMembers, query, params...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find UserTeamIDPairs")
 	}
@@ -768,7 +768,7 @@ func (s *SqlGroupStore) ChannelMembersToAdd(since int64, channelID *string) ([]*
 
 	var channelMembers []*model.UserChannelIDPair
 
-	_, err = s.GetReplica().Select(&channelMembers, query, params...)
+	_, err = s.GetMaster().Select(&channelMembers, query, params...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find UserChannelIDPairs")
 	}
@@ -983,7 +983,7 @@ func (s *SqlGroupStore) groupsBySyncableBaseQuery(st model.GroupSyncableType, t 
 		query = query.Where("ug.AllowReference = true")
 	}
 
-	if len(opts.Q) > 0 {
+	if opts.Q != "" {
 		pattern := fmt.Sprintf("%%%s%%", sanitizeSearchTerm(opts.Q, "\\"))
 		operatorKeyword := "ILIKE"
 		if s.DriverName() == model.DATABASE_DRIVER_MYSQL {
@@ -995,7 +995,7 @@ func (s *SqlGroupStore) groupsBySyncableBaseQuery(st model.GroupSyncableType, t 
 	return query
 }
 
-func (s *SqlGroupStore) getGroupsAssociatedToChannelsByTeam(st model.GroupSyncableType, teamID string, opts model.GroupSearchOpts) sq.SelectBuilder {
+func (s *SqlGroupStore) getGroupsAssociatedToChannelsByTeam(teamID string, opts model.GroupSearchOpts) sq.SelectBuilder {
 	query := s.getQueryBuilder().
 		Select("gc.ChannelId, ug.*, gc.SchemeAdmin AS SyncableSchemeAdmin").
 		From("UserGroups ug").
@@ -1048,7 +1048,7 @@ func (s *SqlGroupStore) getGroupsAssociatedToChannelsByTeam(st model.GroupSyncab
 		query = query.Where("ug.AllowReference = true")
 	}
 
-	if len(opts.Q) > 0 {
+	if opts.Q != "" {
 		pattern := fmt.Sprintf("%%%s%%", sanitizeSearchTerm(opts.Q, "\\"))
 		operatorKeyword := "ILIKE"
 		if s.DriverName() == model.DATABASE_DRIVER_MYSQL {
@@ -1100,7 +1100,7 @@ func (s *SqlGroupStore) GetGroupsByTeam(teamId string, opts model.GroupSearchOpt
 }
 
 func (s *SqlGroupStore) GetGroupsAssociatedToChannelsByTeam(teamId string, opts model.GroupSearchOpts) (map[string][]*model.GroupWithSchemeAdmin, error) {
-	query := s.getGroupsAssociatedToChannelsByTeam(model.GroupSyncableTypeTeam, teamId, opts)
+	query := s.getGroupsAssociatedToChannelsByTeam(teamId, opts)
 
 	if opts.PageOpts != nil {
 		offset := uint64(opts.PageOpts.Page * opts.PageOpts.PerPage)
@@ -1168,7 +1168,7 @@ func (s *SqlGroupStore) GetGroups(page, perPage int, opts model.GroupSearchOpts)
 		groupsQuery = groupsQuery.Where("g.AllowReference = true")
 	}
 
-	if len(opts.Q) > 0 {
+	if opts.Q != "" {
 		pattern := fmt.Sprintf("%%%s%%", sanitizeSearchTerm(opts.Q, "\\"))
 		operatorKeyword := "ILIKE"
 		if s.DriverName() == model.DATABASE_DRIVER_MYSQL {
@@ -1444,7 +1444,7 @@ func (s *SqlGroupStore) PermittedSyncableAdmins(syncableID string, syncableType 
 	}
 
 	var userIDs []string
-	if _, err = s.GetReplica().Select(&userIDs, query, args...); err != nil {
+	if _, err = s.GetMaster().Select(&userIDs, query, args...); err != nil {
 		return nil, errors.Wrapf(err, "failed to find User ids")
 	}
 

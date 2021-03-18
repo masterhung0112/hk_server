@@ -54,7 +54,7 @@ func (s SqlCommandStore) createIndexesIfNotExists() {
 }
 
 func (s SqlCommandStore) Save(command *model.Command) (*model.Command, error) {
-	if len(command.Id) > 0 {
+	if command.Id != "" {
 		return nil, store.NewErrInvalidInput("Command", "CommandId", command.Id)
 	}
 

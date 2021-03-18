@@ -30,7 +30,7 @@ func TestStoreUpgrade(t *testing.T) {
 		t.Run("upgrade from unsupported version", func(t *testing.T) {
 			saveSchemaVersion(sqlStore, "2.0.0")
 			err := upgradeDatabase(sqlStore, "5.8.0")
-			require.EqualError(t, err, "Database schema version 2.0.0 is no longer supported. This HungKnow server  supports automatic upgrades from schema version 3.0.0 through schema version 5.8.0. Please manually upgrade to at least version 3.0.0 before continuing.")
+			require.EqualError(t, err, "Database schema version 2.0.0 is no longer supported. This Mattermost server supports automatic upgrades from schema version 3.0.0 through schema version 5.8.0. Please manually upgrade to at least version 3.0.0 before continuing.")
 			require.Equal(t, "2.0.0", sqlStore.GetCurrentSchemaVersion())
 		})
 
@@ -74,7 +74,7 @@ func TestStoreUpgrade(t *testing.T) {
 		t.Run("upgrade schema running later major version", func(t *testing.T) {
 			saveSchemaVersion(sqlStore, "6.0.0")
 			err := upgradeDatabase(sqlStore, "5.8.0")
-			require.EqualError(t, err, "Database schema version 6.0.0 is not supported. This HungKnow server  supports only >=5.8.0, <6.0.0. Please upgrade to at least version 6.0.0 before continuing.")
+			require.EqualError(t, err, "Database schema version 6.0.0 is not supported. This Mattermost server supports only >=5.8.0, <6.0.0. Please upgrade to at least version 6.0.0 before continuing.")
 			require.Equal(t, "6.0.0", sqlStore.GetCurrentSchemaVersion())
 		})
 	})
@@ -87,7 +87,7 @@ func TestSaveSchemaVersion(t *testing.T) {
 		t.Run("set earliest version", func(t *testing.T) {
 			saveSchemaVersion(sqlStore, Version300)
 			props, err := ss.System().Get()
-			require.Nil(t, err)
+			require.NoError(t, err)
 
 			require.Equal(t, Version300, props["Version"])
 			require.Equal(t, Version300, sqlStore.GetCurrentSchemaVersion())
@@ -96,7 +96,7 @@ func TestSaveSchemaVersion(t *testing.T) {
 		t.Run("set current version", func(t *testing.T) {
 			saveSchemaVersion(sqlStore, CurrentSchemaVersion)
 			props, err := ss.System().Get()
-			require.Nil(t, err)
+			require.NoError(t, err)
 
 			require.Equal(t, CurrentSchemaVersion, props["Version"])
 			require.Equal(t, CurrentSchemaVersion, sqlStore.GetCurrentSchemaVersion())

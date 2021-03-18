@@ -18,7 +18,7 @@ type LocalCacheTermsOfServiceStore struct {
 }
 
 func (s *LocalCacheTermsOfServiceStore) handleClusterInvalidateTermsOfService(msg *model.ClusterMessage) {
-	if msg.Data == CLEAR_CACHE_MESSAGE_DATA {
+	if msg.Data == ClearCacheMessageData {
 		s.rootStore.termsOfServiceCache.Purge()
 	} else {
 		s.rootStore.termsOfServiceCache.Remove(msg.Data)

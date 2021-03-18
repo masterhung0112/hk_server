@@ -44,7 +44,7 @@ func (s SqlSchemeStore) createIndexesIfNotExists() {
 }
 
 func (s *SqlSchemeStore) Save(scheme *model.Scheme) (*model.Scheme, error) {
-	if len(scheme.Id) == 0 {
+	if scheme.Id == "" {
 		transaction, err := s.GetMaster().Begin()
 		if err != nil {
 			return nil, errors.Wrap(err, "begin_transaction")
@@ -82,9 +82,9 @@ func (s *SqlSchemeStore) createScheme(scheme *model.Scheme, transaction *gorp.Tr
 	// Fetch the default system scheme roles to populate default permissions.
 	defaultRoleNames := []string{model.TEAM_ADMIN_ROLE_ID, model.TEAM_USER_ROLE_ID, model.TEAM_GUEST_ROLE_ID, model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID, model.CHANNEL_GUEST_ROLE_ID}
 	defaultRoles := make(map[string]*model.Role)
-	roles, appErr := s.SqlStore.Role().GetByNames(defaultRoleNames)
-	if appErr != nil {
-		return nil, appErr
+	roles, err := s.SqlStore.Role().GetByNames(defaultRoleNames)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, role := range roles {
@@ -210,7 +210,7 @@ func (s *SqlSchemeStore) createScheme(scheme *model.Scheme, transaction *gorp.Tr
 	}
 
 	scheme.Id = model.NewId()
-	if len(scheme.Name) == 0 {
+	if scheme.Name == "" {
 		scheme.Name = model.NewId()
 	}
 	scheme.CreateAt = model.GetMillis()
@@ -329,7 +329,7 @@ func (s *SqlSchemeStore) GetAllPage(scope string, offset int, limit int) ([]*mod
 	var schemes []*model.Scheme
 
 	scopeClause := ""
-	if len(scope) > 0 {
+	if scope != "" {
 		scopeClause = " AND Scope=:Scope "
 	}
 
