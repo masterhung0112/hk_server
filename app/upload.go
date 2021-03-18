@@ -19,7 +19,7 @@ import (
 )
 
 const minFirstPartSize = 5 * 1024 * 1024 // 5MB
-const incompleteUploadSuffix = ".tmp"
+const IncompleteUploadSuffix = ".tmp"
 
 func (a *App) runPluginsHook(info *model.FileInfo, file io.Reader) *model.AppError {
 	pluginsEnvironment := a.GetPluginsEnvironment()
@@ -54,7 +54,7 @@ func (a *App) runPluginsHook(info *model.FileInfo, file io.Reader) *model.AppErr
 				info = newInfo
 			}
 			return true
-		}, plugin.FileWillBeUploadedId)
+		}, plugin.FileWillBeUploadedID)
 		if rejErr != nil {
 			errChan <- rejErr
 		}
@@ -69,7 +69,7 @@ func (a *App) runPluginsHook(info *model.FileInfo, file io.Reader) *model.AppErr
 	written, err := a.WriteFile(r, tmpPath)
 	if err != nil {
 		if fileErr := a.RemoveFile(tmpPath); fileErr != nil {
-			mlog.Error("Failed to remove file", mlog.Err(fileErr))
+			mlog.Warn("Failed to remove file", mlog.Err(fileErr))
 		}
 		return err
 	}
