@@ -80,6 +80,7 @@ type Params struct {
 	FilterParentTeamPermitted bool
 	CategoryId                string
 	WarnMetricId              string
+ExportName                string
 	TrackRecordId             string
 
 	// Cloud
@@ -342,6 +343,9 @@ func ParamsFromRequest(r *http.Request) *Params {
 
 	if val, ok := props["warn_metric_id"]; ok {
 		params.WarnMetricId = val
+	}
+	if val, ok := props["export_name"]; ok {
+		params.ExportName = val
 	}
 
 	if val, ok := props["track_record_id"]; ok {
