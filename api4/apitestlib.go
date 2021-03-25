@@ -1231,7 +1231,7 @@ func (th *TestHelper) SetupScheme(scope string) *model.Scheme {
 	return scheme
 }
 
-func (th *TestHelper) CreateTrackRecordWithClient(client *model.Client1) *model.TrackRecord {
+func (th *TestHelper) CreateTrackRecordWithClient(client *model.Client4) *model.TrackRecord {
   trackRecord := &model.TrackRecord{
     Id: "",
     OwnerId: th.BasicUser.Id,
