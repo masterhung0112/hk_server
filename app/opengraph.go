@@ -11,7 +11,7 @@ import (
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"golang.org/x/net/html/charset"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 const MaxOpenGraphResponseSize = 1024 * 1024 * 50

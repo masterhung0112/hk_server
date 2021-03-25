@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/masterhung0112/hk_server/shared/i18n"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
 // this functions loads translations from filesystem if they are not

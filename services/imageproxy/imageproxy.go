@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/configservice"
-	"github.com/masterhung0112/hk_server/services/httpservice"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/services/httpservice"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 var ErrNotEnabled = Error{errors.New("imageproxy.ImageProxy: image proxy not enabled")}

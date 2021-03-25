@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils/jsonutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils/jsonutils"
 	"github.com/pkg/errors"
 )
 

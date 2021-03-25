@@ -8,17 +8,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/httpservice"
-	"github.com/masterhung0112/hk_server/services/imageproxy"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/services/timezones"
-	"github.com/masterhung0112/hk_server/shared/i18n"
-	"github.com/masterhung0112/hk_server/shared/mail"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/shared/templates"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/httpservice"
+	"github.com/masterhung0112/hk_server/v5/services/imageproxy"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/services/timezones"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/shared/mail"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/templates"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 type App struct {

@@ -3,7 +3,7 @@
 
 package jobs
 
-import "github.com/masterhung0112/hk_server/model"
+import "github.com/masterhung0112/hk_server/v5/model"
 
 type CloudJobInterface interface {
 	MakeWorker() model.Worker

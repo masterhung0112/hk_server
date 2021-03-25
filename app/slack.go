@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/slackimport"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/slackimport"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 func (a *App) SlackImport(fileData multipart.File, fileSize int64, teamID string) (*model.AppError, *bytes.Buffer) {

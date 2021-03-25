@@ -3,8 +3,8 @@ package app
 import (
 	"net/http"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
 )
 
 func (a *App) TestElasticsearch(cfg *model.Config) *model.AppError {

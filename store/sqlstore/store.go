@@ -28,12 +28,12 @@ import (
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
 
-	"github.com/masterhung0112/hk_server/db/migrations"
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/i18n"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/db/migrations"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type migrationDirection string

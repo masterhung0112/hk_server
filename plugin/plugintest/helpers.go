@@ -5,8 +5,8 @@
 package plugintest
 
 import (
-	model "github.com/masterhung0112/hk_server/model"
-	plugin "github.com/masterhung0112/hk_server/plugin"
+	model "github.com/masterhung0112/hk_server/v5/model"
+	plugin "github.com/masterhung0112/hk_server/v5/plugin"
 	mock "github.com/stretchr/testify/mock"
 )
 

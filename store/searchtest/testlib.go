@@ -6,8 +6,8 @@ package searchtest
 import (
 	"testing"
 
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 const (

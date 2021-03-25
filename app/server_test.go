@@ -18,12 +18,12 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/filestore"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/filestore"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

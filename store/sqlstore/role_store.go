@@ -9,8 +9,8 @@ import (
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type SqlRoleStore struct {

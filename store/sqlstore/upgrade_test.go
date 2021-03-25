@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 func TestStoreUpgrade(t *testing.T) {

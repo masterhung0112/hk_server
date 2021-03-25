@@ -1,4 +1,4 @@
-package api1
+package api4
 
 import (
 	"net/http"
@@ -6,10 +6,10 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/mattermost/go-i18n/i18n"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/configservice"
-	"github.com/masterhung0112/hk_server/web"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/web"
 )
 
 type Routes struct {

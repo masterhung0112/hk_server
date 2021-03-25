@@ -17,7 +17,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/encrypt"
 	"github.com/pkg/errors"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 // S3FileBackend contains all necessary information to communicate with

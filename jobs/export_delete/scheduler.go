@@ -6,8 +6,8 @@ package export_delete
 import (
 	"time"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/stretchr/testify/require"
 )
 

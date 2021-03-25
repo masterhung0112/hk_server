@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 	gomail "gopkg.in/mail.v2"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 const (

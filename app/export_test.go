@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
 func TestReactionsOfPost(t *testing.T) {

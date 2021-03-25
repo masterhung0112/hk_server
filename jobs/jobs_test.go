@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/einterfaces/mocks"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	"github.com/masterhung0112/hk_server/utils/testutils"
+	"github.com/masterhung0112/hk_server/v5/einterfaces/mocks"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/utils/testutils"
 )
 
 func makeJobServer(t *testing.T) (*JobServer, *storetest.Store, *mocks.MetricsInterface) {

@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func TestWebSocketTrailingSlash(t *testing.T) {

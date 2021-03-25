@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,8 +38,8 @@ func TestPluginCommand(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type configuration struct {
@@ -119,8 +119,8 @@ func TestPluginCommand(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type configuration struct {
@@ -226,8 +226,8 @@ func TestPluginCommand(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type configuration struct {
@@ -291,8 +291,8 @@ func TestPluginCommand(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type MyPlugin struct {
@@ -336,8 +336,8 @@ func TestPluginCommand(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type MyPlugin struct {

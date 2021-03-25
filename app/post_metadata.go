@@ -13,11 +13,11 @@ import (
 
 	"github.com/dyatlov/go-opengraph/opengraph"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/cache"
-	"github.com/masterhung0112/hk_server/shared/markdown"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/utils/imgutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/cache"
+	"github.com/masterhung0112/hk_server/v5/shared/markdown"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils/imgutils"
 )
 
 type linkMetadataCache struct {

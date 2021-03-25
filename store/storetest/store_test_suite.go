@@ -3,8 +3,8 @@ package storetest
 import (
 	"testing"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/stretchr/testify/suite"
 )
 

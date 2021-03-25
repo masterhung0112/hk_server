@@ -8,10 +8,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/sqlstore"
-	"github.com/masterhung0112/hk_server/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
 )
 
 type storeType struct {

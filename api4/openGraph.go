@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/cache"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/cache"
 )
 
 const OpenGraphMetadataCacheSize = 10000

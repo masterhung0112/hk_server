@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/masterhung0112/hk_server/config/config_generator/generator"
+	"github.com/masterhung0112/hk_server/v5/config/config_generator/generator"
 )
 
 func main() {

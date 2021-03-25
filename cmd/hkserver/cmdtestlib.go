@@ -1,12 +1,13 @@
 package main
 
 import (
-	api1 "github.com/masterhung0112/hk_server/api1"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/testlib"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	api1 "github.com/masterhung0112/hk_server/v5/api1"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
 var mainHelper *testlib.MainHelper

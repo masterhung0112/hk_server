@@ -8,8 +8,8 @@ import (
 	"go/ast"
 	"go/token"
 
-	"github.com/masterhung0112/hk_server/plugin/checker/internal/asthelpers"
-	"github.com/masterhung0112/hk_server/plugin/checker/internal/version"
+	"github.com/masterhung0112/hk_server/v5/plugin/checker/internal/asthelpers"
+	"github.com/masterhung0112/hk_server/v5/plugin/checker/internal/version"
 )
 
 func checkAPIVersionComments(pkgPath string) (result, error) {

@@ -12,14 +12,14 @@ import (
 
 	rudder "github.com/rudderlabs/analytics-go"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/services/httpservice"
-	"github.com/masterhung0112/hk_server/services/marketplace"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/services/httpservice"
+	"github.com/masterhung0112/hk_server/v5/services/marketplace"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 const (

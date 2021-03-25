@@ -3,15 +3,16 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 const noSettingsNamed = "unable to find a setting named: %s"

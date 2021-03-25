@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/services/docextractor"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/services/docextractor"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 const minFirstPartSize = 5 * 1024 * 1024 // 5MB

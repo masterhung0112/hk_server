@@ -6,10 +6,10 @@ package app
 import (
 	"testing"
 
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/einterfaces/mocks"
-	"github.com/masterhung0112/hk_server/model"
-	storemocks "github.com/masterhung0112/hk_server/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	"github.com/masterhung0112/hk_server/v5/einterfaces/mocks"
+	"github.com/masterhung0112/hk_server/v5/model"
+	storemocks "github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

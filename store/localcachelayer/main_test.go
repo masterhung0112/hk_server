@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/services/cache"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store/sqlstore"
+	"github.com/masterhung0112/hk_server/v5/services/cache"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
 
-	"github.com/masterhung0112/hk_server/model"
-	cachemocks "github.com/masterhung0112/hk_server/services/cache/mocks"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/storetest/mocks"
-	"github.com/masterhung0112/hk_server/testlib"
+	"github.com/masterhung0112/hk_server/v5/model"
+	cachemocks "github.com/masterhung0112/hk_server/v5/services/cache/mocks"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 	"github.com/stretchr/testify/mock"
 )
 

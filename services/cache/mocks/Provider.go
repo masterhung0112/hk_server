@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	cache "github.com/masterhung0112/hk_server/services/cache"
+	cache "github.com/masterhung0112/hk_server/v5/services/cache"
 	mock "github.com/stretchr/testify/mock"
 )
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 func TestLoggingBeforeInitialized(t *testing.T) {

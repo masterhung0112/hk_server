@@ -14,7 +14,7 @@ import (
 	"github.com/uber/jaeger-client-go/zipkin"
 	"github.com/uber/jaeger-lib/metrics"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 // Tracer is a wrapper around Jaeger OpenTracing client, used to properly de-initialize jaeger on exit

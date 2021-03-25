@@ -16,9 +16,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
 var publicKey []byte = []byte(`-----BEGIN PUBLIC KEY-----

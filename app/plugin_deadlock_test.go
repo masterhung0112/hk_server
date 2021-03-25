@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func TestPluginDeadlock(t *testing.T) {
@@ -24,8 +24,8 @@ func TestPluginDeadlock(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type MyPlugin struct {
@@ -112,8 +112,8 @@ func TestPluginDeadlock(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type MyPlugin struct {
@@ -147,8 +147,8 @@ func TestPluginDeadlock(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type MyPlugin struct {
@@ -218,8 +218,8 @@ func TestPluginDeadlock(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type MyPlugin struct {

@@ -5,32 +5,32 @@ package imports
 
 import (
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/migrations"
+	_ "github.com/masterhung0112/hk_server/v5/migrations"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/plugin/scheduler"
+	_ "github.com/masterhung0112/hk_server/v5/plugin/scheduler"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/services/searchengine/bleveengine/indexer"
+	_ "github.com/masterhung0112/hk_server/v5/services/searchengine/bleveengine/indexer"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/jobs/expirynotify"
+	_ "github.com/masterhung0112/hk_server/v5/jobs/expirynotify"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/jobs/active_users"
+	_ "github.com/masterhung0112/hk_server/v5/jobs/active_users"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/jobs/product_notices"
+	_ "github.com/masterhung0112/hk_server/v5/jobs/product_notices"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/jobs/import_process"
+	_ "github.com/masterhung0112/hk_server/v5/jobs/import_process"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/jobs/import_delete"
+	_ "github.com/masterhung0112/hk_server/v5/jobs/import_delete"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/jobs/export_process"
+	_ "github.com/masterhung0112/hk_server/v5/jobs/export_process"
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
-	_ "github.com/masterhung0112/hk_server/jobs/export_delete"
+	_ "github.com/masterhung0112/hk_server/v5/jobs/export_delete"
 )

@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/mattermost/go-i18n/i18n"
 )
 

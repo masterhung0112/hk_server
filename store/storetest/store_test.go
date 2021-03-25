@@ -2,17 +2,18 @@ package storetest
 
 import (
 	"fmt"
-	"github.com/masterhung0112/hk_server/store/sqlstore"
 	"os"
 	"regexp"
 	"sync"
 	"testing"
 
+	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/searchtest"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/searchtest"
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

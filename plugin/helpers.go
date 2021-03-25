@@ -4,7 +4,7 @@
 package plugin
 
 import (
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 // Helpers provide a common patterns plugins use.

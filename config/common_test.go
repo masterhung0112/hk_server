@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 var emptyConfig, readOnlyConfig, minimalConfig, minimalConfigNoFF, invalidConfig, fixesRequiredConfig, ldapConfig, testConfig, customConfigDefaults *model.Config

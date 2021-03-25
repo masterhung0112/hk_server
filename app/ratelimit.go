@@ -13,10 +13,10 @@ import (
 	"github.com/throttled/throttled"
 	"github.com/throttled/throttled/store/memstore"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/i18n"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 type RateLimiter struct {

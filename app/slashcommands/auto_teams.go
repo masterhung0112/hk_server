@@ -4,8 +4,8 @@
 package slashcommands
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 type TeamEnvironment struct {

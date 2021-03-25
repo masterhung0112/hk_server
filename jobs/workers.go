@@ -6,9 +6,9 @@ package jobs
 import (
 	"sync"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/configservice"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 type Workers struct {

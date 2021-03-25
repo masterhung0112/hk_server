@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/utils/jsonutils"
+	"github.com/masterhung0112/hk_server/v5/utils/jsonutils"
 )
 
 const (

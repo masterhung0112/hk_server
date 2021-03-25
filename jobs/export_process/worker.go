@@ -7,11 +7,11 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/jobs"
-	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/jobs"
+	tjobs "github.com/masterhung0112/hk_server/v5/jobs/interfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 func init() {

@@ -3,7 +3,7 @@
 
 package app
 
-import "github.com/masterhung0112/hk_server/plugin"
+import "github.com/masterhung0112/hk_server/v5/plugin"
 
 func (a *App) PluginContext() *plugin.Context {
 	context := &plugin.Context{

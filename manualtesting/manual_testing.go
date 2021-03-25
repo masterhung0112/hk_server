@@ -12,14 +12,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/masterhung0112/hk_server/api4"
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/app/slashcommands"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/masterhung0112/hk_server/web"
+	"github.com/masterhung0112/hk_server/v5/api4"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/app/slashcommands"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/utils"
+	"github.com/masterhung0112/hk_server/v5/web"
 )
 
 // TestEnvironment is a helper struct used for tests in manualtesting.

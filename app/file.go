@@ -31,13 +31,13 @@ import (
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/services/docextractor"
-	"github.com/masterhung0112/hk_server/shared/filestore"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/services/docextractor"
+	"github.com/masterhung0112/hk_server/v5/shared/filestore"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 const (

@@ -1,13 +1,14 @@
 package storetest
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/suite"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/suite"
 )
 
 const (

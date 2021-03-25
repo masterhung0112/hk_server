@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/icrowley/fake"
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

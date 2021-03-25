@@ -4,12 +4,12 @@
 package jobs
 
 import (
-	"github.com/masterhung0112/hk_server/einterfaces"
-	ejobs "github.com/masterhung0112/hk_server/einterfaces/jobs"
-	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/configservice"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	ejobs "github.com/masterhung0112/hk_server/v5/einterfaces/jobs"
+	tjobs "github.com/masterhung0112/hk_server/v5/jobs/interfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type JobServer struct {

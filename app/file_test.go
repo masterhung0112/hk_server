@@ -16,10 +16,10 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine/mocks"
-	filesStoreMocks "github.com/masterhung0112/hk_server/shared/filestore/mocks"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine/mocks"
+	filesStoreMocks "github.com/masterhung0112/hk_server/v5/shared/filestore/mocks"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
 func TestGeneratePublicLinkHash(t *testing.T) {

@@ -6,13 +6,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/audit"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/audit"
+	"github.com/masterhung0112/hk_server/v5/utils"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/i18n"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 type Context struct {

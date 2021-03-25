@@ -20,11 +20,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/testlib"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/testlib"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
 func getHashedKey(key string) string {
@@ -696,8 +696,8 @@ func TestPluginPanicLogs(t *testing.T) {
 		package main
 
 		import (
-			"github.com/masterhung0112/hk_server/plugin"
-			"github.com/masterhung0112/hk_server/model"
+			"github.com/masterhung0112/hk_server/v5/plugin"
+			"github.com/masterhung0112/hk_server/v5/model"
 		)
 
 		type MyPlugin struct {

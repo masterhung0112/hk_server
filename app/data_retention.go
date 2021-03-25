@@ -6,7 +6,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func (a *App) GetDataRetentionPolicy() (*model.DataRetentionPolicy, *model.AppError) {

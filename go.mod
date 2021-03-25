@@ -1,4 +1,4 @@
-module github.com/masterhung0112/hk_server
+module github.com/masterhung0112/hk_server/v5
 
 go 1.15
 
@@ -10,6 +10,7 @@ require (
 	github.com/Joker/jade v1.0.1-0.20190614124447-d475f43051e7 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/squirrel v1.5.0
+	github.com/NYTimes/gziphandler v1.1.1
 	github.com/advancedlogic/GoOse v0.0.0-20200830213114-1225d531e0ad // indirect
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
 	github.com/aws/aws-sdk-go v1.36.29
@@ -31,7 +32,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/google/uuid v1.1.5
-	github.com/gorilla/handlers v1.4.2
+	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c
@@ -86,7 +87,7 @@ require (
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	golang.org/x/text v0.3.5
-	golang.org/x/tools v0.0.0-20201022035929-9cf592e881e9
+	golang.org/x/tools v0.1.0
 	gopkg.in/mail.v2 v2.3.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0

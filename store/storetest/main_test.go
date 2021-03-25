@@ -3,9 +3,9 @@ package storetest_test
 import (
 	"testing"
 
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	"github.com/masterhung0112/hk_server/testlib"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
 var mainHelper *testlib.MainHelper

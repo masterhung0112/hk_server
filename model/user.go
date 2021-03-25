@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/text/language"
 
-	"github.com/masterhung0112/hk_server/services/timezones"
+	"github.com/masterhung0112/hk_server/v5/services/timezones"
 )
 
 const (

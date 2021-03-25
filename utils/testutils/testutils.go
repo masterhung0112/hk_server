@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
 func ReadTestFile(name string) ([]byte, error) {

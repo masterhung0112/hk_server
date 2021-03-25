@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/searchlayer"
-	"github.com/masterhung0112/hk_server/store/sqlstore"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/searchlayer"
+	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/pkg/errors"
 )
 

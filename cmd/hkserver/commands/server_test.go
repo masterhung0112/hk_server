@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/jobs"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/jobs"
 )
 
 const (

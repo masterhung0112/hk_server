@@ -7,7 +7,7 @@ package mocks
 import (
 	context "context"
 
-	model "github.com/masterhung0112/hk_server/model"
+	model "github.com/masterhung0112/hk_server/v5/model"
 	mock "github.com/stretchr/testify/mock"
 )
 

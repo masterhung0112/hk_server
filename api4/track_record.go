@@ -1,11 +1,11 @@
-package api1
+package api4
 
 import (
 	"net/http"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/audit"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/audit"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func (api *API) InitTrackRecord() {

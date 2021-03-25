@@ -7,7 +7,7 @@ package mocks
 import (
 	io "io"
 
-	model "github.com/masterhung0112/hk_server/model"
+	model "github.com/masterhung0112/hk_server/v5/model"
 	mock "github.com/stretchr/testify/mock"
 )
 

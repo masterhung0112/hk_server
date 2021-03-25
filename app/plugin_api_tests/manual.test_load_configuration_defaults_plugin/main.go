@@ -4,9 +4,9 @@
 package main
 
 import (
-	"github.com/masterhung0112/hk_server/app/plugin_api_tests"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
+	"github.com/masterhung0112/hk_server/v5/app/plugin_api_tests"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
 )
 
 type configuration struct {

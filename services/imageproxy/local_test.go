@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/httpservice"
-	"github.com/masterhung0112/hk_server/utils/testutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/httpservice"
+	"github.com/masterhung0112/hk_server/v5/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

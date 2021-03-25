@@ -18,9 +18,9 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/i18n"
-	"github.com/masterhung0112/hk_server/testlib"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
 // This is a file used to fuzz test the web_hub code.

@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/plugin/plugintest"
-	"github.com/masterhung0112/hk_server/plugin/plugintest/mock"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/plugin/plugintest"
+	"github.com/masterhung0112/hk_server/v5/plugin/plugintest/mock"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
 func TestInstallPluginFromURL(t *testing.T) {

@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/mattermost/viper"
 	"github.com/spf13/cobra"
 )

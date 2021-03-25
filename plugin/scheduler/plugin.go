@@ -4,8 +4,8 @@
 package scheduler
 
 import (
-	"github.com/masterhung0112/hk_server/app"
-	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
+	"github.com/masterhung0112/hk_server/v5/app"
+	tjobs "github.com/masterhung0112/hk_server/v5/jobs/interfaces"
 )
 
 type PluginsJobInterfaceImpl struct {

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/app/plugin_api_tests"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/shared/mail"
+	"github.com/masterhung0112/hk_server/v5/app/plugin_api_tests"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/shared/mail"
 )
 
 type MyPlugin struct {

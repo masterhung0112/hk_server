@@ -4,12 +4,12 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/einterfaces"
-	ejobs "github.com/masterhung0112/hk_server/einterfaces/jobs"
-	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	ejobs "github.com/masterhung0112/hk_server/v5/einterfaces/jobs"
+	tjobs "github.com/masterhung0112/hk_server/v5/jobs/interfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 var accountMigrationInterface func(*App) einterfaces.AccountMigrationInterface

@@ -11,8 +11,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
 )
 
 func CheckOrigin(r *http.Request, allowedOrigins string) bool {

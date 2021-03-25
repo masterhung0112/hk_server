@@ -1,4 +1,4 @@
-package api1
+package api4
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/audit"
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/audit"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 var writeFilter func(c *Context, structField reflect.StructField) bool

@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masterhung0112/hk_server/shared/filestore"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/filestore"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/mattermost/ldap"
 )
 

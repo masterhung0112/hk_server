@@ -9,8 +9,8 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/masterhung0112/hk_server/audit"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/audit"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func (api *API) InitUpload() {

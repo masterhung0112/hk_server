@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const pluginPackagePath = "github.com/masterhung0112/hk_server/plugin"
+const pluginPackagePath = "github.com/masterhung0112/hk_server/v5/plugin"
 
 type result struct {
 	Warnings []string

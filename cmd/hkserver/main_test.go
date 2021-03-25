@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	api1 "github.com/masterhung0112/hk_server/api1"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/testlib"
+	api1 "github.com/masterhung0112/hk_server/v5/api1"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
 func TestMain(m *testing.M) {

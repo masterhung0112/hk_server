@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	plugin "github.com/hashicorp/go-plugin"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 // The API can be used to retrieve data or perform actions on behalf of the plugin. Most methods

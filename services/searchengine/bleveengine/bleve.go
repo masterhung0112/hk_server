@@ -17,9 +17,9 @@ import (
 	"github.com/blevesearch/bleve/analysis/analyzer/standard"
 	"github.com/blevesearch/bleve/mapping"
 
-	"github.com/masterhung0112/hk_server/jobs"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/jobs"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 const (

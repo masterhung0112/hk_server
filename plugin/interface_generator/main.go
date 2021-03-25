@@ -373,8 +373,8 @@ import (
 	"net/http"
 	timePkg "time"
 
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 type apiTimerLayer struct {
@@ -415,8 +415,8 @@ import (
 	"net/http"
 	timePkg "time"
 
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 type hooksTimerLayer struct {
@@ -563,7 +563,7 @@ func generatePluginTimerLayer(info *PluginInterfaceInfo) {
 }
 
 func getPluginPackageDir() string {
-	dirs, err := goList("github.com/masterhung0112/hk_server/plugin")
+	dirs, err := goList("github.com/masterhung0112/hk_server/v5/plugin")
 	if err != nil {
 		panic(err)
 	} else if len(dirs) != 1 {

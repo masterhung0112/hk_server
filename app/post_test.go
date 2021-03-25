@@ -14,14 +14,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin/plugintest/mock"
-	"github.com/masterhung0112/hk_server/services/imageproxy"
-	"github.com/masterhung0112/hk_server/services/searchengine/mocks"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	storemocks "github.com/masterhung0112/hk_server/store/storetest/mocks"
-	"github.com/masterhung0112/hk_server/testlib"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin/plugintest/mock"
+	"github.com/masterhung0112/hk_server/v5/services/imageproxy"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine/mocks"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	storemocks "github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
 func TestCreatePostDeduplicate(t *testing.T) {
@@ -55,8 +55,8 @@ func TestCreatePostDeduplicate(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 			)
 
 			type MyPlugin struct {
@@ -104,8 +104,8 @@ func TestCreatePostDeduplicate(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
-				"github.com/masterhung0112/hk_server/model"
+				"github.com/masterhung0112/hk_server/v5/plugin"
+				"github.com/masterhung0112/hk_server/v5/model"
 				"time"
 			)
 

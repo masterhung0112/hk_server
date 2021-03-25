@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/masterhung0112/hk_server/cmd/hkserver/commands"
+	"github.com/masterhung0112/hk_server/v5/cmd/hkserver/commands"
 )
 
 func main() {

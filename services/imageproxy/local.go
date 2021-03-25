@@ -14,8 +14,8 @@ import (
 	"net/url"
 	"path/filepath"
 
-	"github.com/masterhung0112/hk_server/services/httpservice"
-	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/services/httpservice"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"willnorris.com/go/imageproxy"
 )
 

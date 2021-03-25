@@ -8,7 +8,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 
-	"github.com/masterhung0112/hk_server/web"
+	"github.com/masterhung0112/hk_server/v5/web"
 )
 
 type Context = web.Context

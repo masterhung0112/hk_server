@@ -1,4 +1,4 @@
-package api1
+package api4
 
 import (
 	"context"
@@ -18,18 +18,18 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/localcachelayer"
-	"github.com/masterhung0112/hk_server/store/storetest/mocks"
-	"github.com/masterhung0112/hk_server/testlib"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/masterhung0112/hk_server/web"
-	"github.com/masterhung0112/hk_server/wsapi"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/localcachelayer"
+	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/v5/testlib"
+	"github.com/masterhung0112/hk_server/v5/utils"
+	"github.com/masterhung0112/hk_server/v5/web"
+	"github.com/masterhung0112/hk_server/v5/wsapi"
 )
 
 type TestHelper struct {
