@@ -56,7 +56,7 @@ func (s *SqlTrackRecordStore) Get(trackRecordId string) (*model.TrackRecord, err
 }
 
 func (s *SqlTrackRecordStore) update(trackRecord *model.TrackRecord, startUpdate bool, endUpdate bool) (*model.TrackRecord, error) {
-  trackRecord.PreUpdate()
+	trackRecord.PreUpdate()
 
 	if err := trackRecord.IsValid(); err != nil {
 		return nil, err
@@ -73,13 +73,13 @@ func (s *SqlTrackRecordStore) update(trackRecord *model.TrackRecord, startUpdate
 
 	oldTrackRecord := oldResult.(*model.TrackRecord)
 	trackRecord.CreateAt = oldTrackRecord.CreateAt
-  // User must use the specialized functions to update these fields
-  if (!startUpdate) {
-    trackRecord.StartAt = oldTrackRecord.StartAt
-  }
-  if (!endUpdate) {
-    trackRecord.EndAt = oldTrackRecord.EndAt
-  }
+	// User must use the specialized functions to update these fields
+	if !startUpdate {
+		trackRecord.StartAt = oldTrackRecord.StartAt
+	}
+	if !endUpdate {
+		trackRecord.EndAt = oldTrackRecord.EndAt
+	}
 
 	count, err := s.GetMaster().Update(trackRecord)
 	if err != nil {
@@ -87,11 +87,11 @@ func (s *SqlTrackRecordStore) update(trackRecord *model.TrackRecord, startUpdate
 	}
 	if count > 1 {
 		return nil, errors.Errorf("multiple TrackRecord updated with id=%s", trackRecord.Id)
-  }
+	}
 
-  // Try to get the new track record after updating from DB
-  newUpdatedResult, err := s.GetMaster().Get(model.TrackRecord{}, trackRecord.Id)
-  if err != nil {
+	// Try to get the new track record after updating from DB
+	newUpdatedResult, err := s.GetMaster().Get(model.TrackRecord{}, trackRecord.Id)
+	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get TrackRecord after updating with id=%s", trackRecord.Id)
 	}
 
