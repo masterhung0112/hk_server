@@ -121,9 +121,9 @@ type Routes struct {
 
 	Cloud *mux.Router // 'api/v4/cloud'
 
-	Imports *mux.Router // 'api/v4/imports'
-	Exports *mux.Router // 'api/v4/exports'
-	Export  *mux.Router // 'api/v4/exports/{export_name:.+\\.zip}'
+	Imports      *mux.Router // 'api/v4/imports'
+	Exports      *mux.Router // 'api/v4/exports'
+	Export       *mux.Router // 'api/v4/exports/{export_name:.+\\.zip}'
 	TrackRecords *mux.Router // 'api/v1/trackrecords'
 	TrackRecord  *mux.Router // 'api/v1/trackrecords/{track_record_id:[A-Za-z0-9]+}'
 }
@@ -281,8 +281,7 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.InitImport()
 	api.InitExport()
 
-
-        // api.InitTrackRecord()
+	// api.InitTrackRecord()
 
 	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 

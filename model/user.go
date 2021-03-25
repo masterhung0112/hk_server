@@ -19,7 +19,7 @@ import (
 )
 
 const (
-  ME                                 = "me"
+	ME                                 = "me"
 	USER_NOTIFY_ALL                    = "all"
 	USER_NOTIFY_HERE                   = "here"
 	USER_NOTIFY_MENTION                = "mention"

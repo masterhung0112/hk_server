@@ -152,19 +152,19 @@ func (p *GeoPoint) UnmarshalBinary(data []byte) error {
 }
 
 func (p *GeoPoint) IsValid() bool {
-  if p.Lat == float64(0.0) {
-    return false
-  }
+	if p.Lat == float64(0.0) {
+		return false
+	}
 
-  if p.Lng == float64(0.0) {
-    return false
-  }
+	if p.Lng == float64(0.0) {
+		return false
+	}
 
-  return true
+	return true
 }
 
 func (p *GeoPoint) ToString() string {
-  return fmt.Sprintf(`{"lat":%v, "lng":%v}`, p.Lat, p.Lng)
+	return fmt.Sprintf(`{"lat":%v, "lng":%v}`, p.Lat, p.Lng)
 }
 
 // MarshalJSON renders the current GeoPoint to valid JSON.

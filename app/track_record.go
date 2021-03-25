@@ -73,9 +73,9 @@ func (a *App) CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, track
 	trackRecord, err := a.GetTrackRecord(trackRecordId)
 	if err != nil {
 		return nil, err
-  }
+	}
 
-  if trackRecord.StartAt == 0 {
+	if trackRecord.StartAt == 0 {
 		return nil, model.NewAppError("CreateTrackPointForTrackRecord", "app.trackrecord.create.recordnotstart.app_error", nil, "trackrecord not start", http.StatusBadRequest)
 	}
 

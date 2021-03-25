@@ -41,7 +41,7 @@ func NewJobServer(configService configservice.ConfigService, store store.Store, 
 	return &JobServer{
 		ConfigService: configService,
 		Store:         store,
-    metrics:       metrics,
+		metrics:       metrics,
 	}
 }
 

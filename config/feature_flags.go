@@ -22,7 +22,7 @@ type FeatureFlagSyncParams struct {
 	SplitKey            string
 	SyncIntervalSeconds int
 	Log                 *mlog.Logger
-  Attributes          map[string]interface{}
+	Attributes          map[string]interface{}
 }
 
 type FeatureFlagSynchronizer struct {

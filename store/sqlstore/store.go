@@ -262,8 +262,8 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 }
 
 func setupConnection(connType string, dataSource string, settings *model.SqlSettings) *gorp.DbMap {
-  // mlog.Info("dataSource", mlog.String("dattaSource", dataSource))
-  // dataSource = "postgres://hkuser:mostest@localhost:7432/hungknow_test?sslmode=disable&connect_timeout=10"
+	// mlog.Info("dataSource", mlog.String("dattaSource", dataSource))
+	// dataSource = "postgres://hkuser:mostest@localhost:7432/hungknow_test?sslmode=disable&connect_timeout=10"
 	db, err := dbsql.Open(*settings.DriverName, dataSource)
 	if err != nil {
 		mlog.Critical("Failed to open SQL connection to err.", mlog.Err(err))

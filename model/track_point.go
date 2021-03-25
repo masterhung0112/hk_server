@@ -31,9 +31,9 @@ func (o *TrackPoint) PreSave() {
 		o.Id = NewId()
 	}
 
-  if o.CreateAt == 0 {
-    o.CreateAt = GetMillis()
-  }
+	if o.CreateAt == 0 {
+		o.CreateAt = GetMillis()
+	}
 }
 
 func (o *TrackPoint) IsValid() *AppError {
@@ -47,15 +47,15 @@ func (o *TrackPoint) IsValid() *AppError {
 func (o *TrackPoint) IsValidWithoutId() *AppError {
 	if o.CreateAt == 0 {
 		return NewAppError("TrackPoint.IsValid", "model.trackpoint.is_valid.create_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
-  }
+	}
 
-  if !IsValidId(o.TargetId) {
-    return NewAppError("TrackPoint.IsValid", "model.trackpoint.is_valid.target_id.app_error", nil, "target_id="+o.TargetId, http.StatusBadRequest)
-  }
+	if !IsValidId(o.TargetId) {
+		return NewAppError("TrackPoint.IsValid", "model.trackpoint.is_valid.target_id.app_error", nil, "target_id="+o.TargetId, http.StatusBadRequest)
+	}
 
-  if !o.Point.IsValid() {
-    return NewAppError("TrackPoint.IsValid", "model.trackpoint.is_valid.point.app_error", nil, "point="+o.Point.ToString(), http.StatusBadRequest)
-  }
+	if !o.Point.IsValid() {
+		return NewAppError("TrackPoint.IsValid", "model.trackpoint.is_valid.point.app_error", nil, "point="+o.Point.ToString(), http.StatusBadRequest)
+	}
 
 	return nil
 }

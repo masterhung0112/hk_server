@@ -80,7 +80,7 @@ type Params struct {
 	FilterParentTeamPermitted bool
 	CategoryId                string
 	WarnMetricId              string
-ExportName                string
+	ExportName                string
 	TrackRecordId             string
 
 	// Cloud

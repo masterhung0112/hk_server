@@ -1232,23 +1232,23 @@ func (th *TestHelper) SetupScheme(scope string) *model.Scheme {
 }
 
 func (th *TestHelper) CreateTrackRecordWithClient(client *model.Client4) *model.TrackRecord {
-  trackRecord := &model.TrackRecord{
-    Id: "",
-    OwnerId: th.BasicUser.Id,
-    Categories: []string{},
-    CreateAt: 0,
-    StartAt: 0,
-    EndAt: 0,
-    WeightedAverage: 0.0,
-    WeightedAverageLastId: "",
-  }
+	trackRecord := &model.TrackRecord{
+		Id:                    "",
+		OwnerId:               th.BasicUser.Id,
+		Categories:            []string{},
+		CreateAt:              0,
+		StartAt:               0,
+		EndAt:                 0,
+		WeightedAverage:       0.0,
+		WeightedAverageLastId: "",
+	}
 
 	utils.DisableDebugLogForTest()
 	rTrackRecord, response := client.CreateTrackRecord(trackRecord)
 	if response.Error != nil {
 		panic(response.Error)
 	}
-  utils.EnableDebugLogForTest()
+	utils.EnableDebugLogForTest()
 
 	return rTrackRecord
 }

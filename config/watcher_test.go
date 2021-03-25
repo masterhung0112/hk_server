@@ -50,7 +50,7 @@ func TestWatcher(t *testing.T) {
 	case <-time.After(1 * time.Second):
 	}
 
-  // Write to the watched file
+	// Write to the watched file
 	ioutil.WriteFile(f.Name(), []byte("data"), 0644)
 	select {
 	case <-called:
