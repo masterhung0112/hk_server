@@ -1421,7 +1421,7 @@ func (a *OpenTracingAppLayer) Cloud() einterfaces.CloudInterface {
 	return resultVar0
 }
 
-func (a *OpenTracingAppLayer) CompareAndDeletePluginKey(pluginID string, key string, oldValue []byte) (bool, *model.AppError) {
+func (a *OpenTracingAppLayer) CompareAndDeletePluginKey(pluginId string, key string, oldValue []byte) (bool, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.CompareAndDeletePluginKey")
 
@@ -1433,7 +1433,7 @@ func (a *OpenTracingAppLayer) CompareAndDeletePluginKey(pluginID string, key str
 	}()
 
 	defer span.Finish()
-	resultVar0, resultVar1 := a.app.CompareAndDeletePluginKey(pluginID, key, oldValue)
+	resultVar0, resultVar1 := a.app.CompareAndDeletePluginKey(pluginId, key, oldValue)
 
 	if resultVar1 != nil {
 		span.LogFields(spanlog.Error(resultVar1))
@@ -1443,7 +1443,7 @@ func (a *OpenTracingAppLayer) CompareAndDeletePluginKey(pluginID string, key str
 	return resultVar0, resultVar1
 }
 
-func (a *OpenTracingAppLayer) CompareAndSetPluginKey(pluginID string, key string, oldValue []byte, newValue []byte) (bool, *model.AppError) {
+func (a *OpenTracingAppLayer) CompareAndSetPluginKey(pluginId string, key string, oldValue []byte, newValue []byte) (bool, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.CompareAndSetPluginKey")
 
@@ -1455,7 +1455,7 @@ func (a *OpenTracingAppLayer) CompareAndSetPluginKey(pluginID string, key string
 	}()
 
 	defer span.Finish()
-	resultVar0, resultVar1 := a.app.CompareAndSetPluginKey(pluginID, key, oldValue, newValue)
+	resultVar0, resultVar1 := a.app.CompareAndSetPluginKey(pluginId, key, oldValue, newValue)
 
 	if resultVar1 != nil {
 		span.LogFields(spanlog.Error(resultVar1))
@@ -2256,6 +2256,72 @@ func (a *OpenTracingAppLayer) CreateTermsOfService(text string, userID string) (
 	return resultVar0, resultVar1
 }
 
+func (a *OpenTracingAppLayer) CreateTrackPoint(trackPoint *model.TrackPoint) (*model.TrackPoint, *model.AppError) {
+	origCtx := a.ctx
+	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.CreateTrackPoint")
+
+	a.ctx = newCtx
+	a.app.Srv().Store.SetContext(newCtx)
+	defer func() {
+		a.app.Srv().Store.SetContext(origCtx)
+		a.ctx = origCtx
+	}()
+
+	defer span.Finish()
+	resultVar0, resultVar1 := a.app.CreateTrackPoint(trackPoint)
+
+	if resultVar1 != nil {
+		span.LogFields(spanlog.Error(resultVar1))
+		ext.Error.Set(span, true)
+	}
+
+	return resultVar0, resultVar1
+}
+
+func (a *OpenTracingAppLayer) CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, trackRecordId string) (*model.TrackPoint, *model.AppError) {
+	origCtx := a.ctx
+	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.CreateTrackPointForTrackRecord")
+
+	a.ctx = newCtx
+	a.app.Srv().Store.SetContext(newCtx)
+	defer func() {
+		a.app.Srv().Store.SetContext(origCtx)
+		a.ctx = origCtx
+	}()
+
+	defer span.Finish()
+	resultVar0, resultVar1 := a.app.CreateTrackPointForTrackRecord(trackPoint, trackRecordId)
+
+	if resultVar1 != nil {
+		span.LogFields(spanlog.Error(resultVar1))
+		ext.Error.Set(span, true)
+	}
+
+	return resultVar0, resultVar1
+}
+
+func (a *OpenTracingAppLayer) CreateTrackRecord(trackRecord *model.TrackRecord) (*model.TrackRecord, *model.AppError) {
+	origCtx := a.ctx
+	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.CreateTrackRecord")
+
+	a.ctx = newCtx
+	a.app.Srv().Store.SetContext(newCtx)
+	defer func() {
+		a.app.Srv().Store.SetContext(origCtx)
+		a.ctx = origCtx
+	}()
+
+	defer span.Finish()
+	resultVar0, resultVar1 := a.app.CreateTrackRecord(trackRecord)
+
+	if resultVar1 != nil {
+		span.LogFields(spanlog.Error(resultVar1))
+		ext.Error.Set(span, true)
+	}
+
+	return resultVar0, resultVar1
+}
+
 func (a *OpenTracingAppLayer) CreateUploadSession(us *model.UploadSession) (*model.UploadSession, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.CreateUploadSession")
@@ -2603,7 +2669,7 @@ func (a *OpenTracingAppLayer) DeleteAllExpiredPluginKeys() *model.AppError {
 	return resultVar0
 }
 
-func (a *OpenTracingAppLayer) DeleteAllKeysForPlugin(pluginID string) *model.AppError {
+func (a *OpenTracingAppLayer) DeleteAllKeysForPlugin(pluginId string) *model.AppError {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.DeleteAllKeysForPlugin")
 
@@ -2615,7 +2681,7 @@ func (a *OpenTracingAppLayer) DeleteAllKeysForPlugin(pluginID string) *model.App
 	}()
 
 	defer span.Finish()
-	resultVar0 := a.app.DeleteAllKeysForPlugin(pluginID)
+	resultVar0 := a.app.DeleteAllKeysForPlugin(pluginId)
 
 	if resultVar0 != nil {
 		span.LogFields(spanlog.Error(resultVar0))
@@ -2963,7 +3029,7 @@ func (a *OpenTracingAppLayer) DeleteOutgoingWebhook(hookID string) *model.AppErr
 	return resultVar0
 }
 
-func (a *OpenTracingAppLayer) DeletePluginKey(pluginID string, key string) *model.AppError {
+func (a *OpenTracingAppLayer) DeletePluginKey(pluginId string, key string) *model.AppError {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.DeletePluginKey")
 
@@ -2975,7 +3041,7 @@ func (a *OpenTracingAppLayer) DeletePluginKey(pluginID string, key string) *mode
 	}()
 
 	defer span.Finish()
-	resultVar0 := a.app.DeletePluginKey(pluginID, key)
+	resultVar0 := a.app.DeletePluginKey(pluginId, key)
 
 	if resultVar0 != nil {
 		span.LogFields(spanlog.Error(resultVar0))
@@ -3601,6 +3667,28 @@ func (a *OpenTracingAppLayer) EnableUserAccessToken(token *model.UserAccessToken
 	}
 
 	return resultVar0
+}
+
+func (a *OpenTracingAppLayer) EndTrackRecord(trackRecordId string) (*model.TrackRecord, *model.AppError) {
+	origCtx := a.ctx
+	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.EndTrackRecord")
+
+	a.ctx = newCtx
+	a.app.Srv().Store.SetContext(newCtx)
+	defer func() {
+		a.app.Srv().Store.SetContext(origCtx)
+		a.ctx = origCtx
+	}()
+
+	defer span.Finish()
+	resultVar0, resultVar1 := a.app.EndTrackRecord(trackRecordId)
+
+	if resultVar1 != nil {
+		span.LogFields(spanlog.Error(resultVar1))
+		ext.Error.Set(span, true)
+	}
+
+	return resultVar0, resultVar1
 }
 
 func (a *OpenTracingAppLayer) EnvironmentConfig() map[string]interface{} {
@@ -6962,7 +7050,7 @@ func (a *OpenTracingAppLayer) GetPinnedPosts(channelID string) (*model.PostList,
 	return resultVar0, resultVar1
 }
 
-func (a *OpenTracingAppLayer) GetPluginKey(pluginID string, key string) ([]byte, *model.AppError) {
+func (a *OpenTracingAppLayer) GetPluginKey(pluginId string, key string) ([]byte, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.GetPluginKey")
 
@@ -6974,7 +7062,7 @@ func (a *OpenTracingAppLayer) GetPluginKey(pluginID string, key string) ([]byte,
 	}()
 
 	defer span.Finish()
-	resultVar0, resultVar1 := a.app.GetPluginKey(pluginID, key)
+	resultVar0, resultVar1 := a.app.GetPluginKey(pluginId, key)
 
 	if resultVar1 != nil {
 		span.LogFields(spanlog.Error(resultVar1))
@@ -8707,6 +8795,28 @@ func (a *OpenTracingAppLayer) GetTotalUsersStats(viewRestrictions *model.ViewUse
 
 	defer span.Finish()
 	resultVar0, resultVar1 := a.app.GetTotalUsersStats(viewRestrictions)
+
+	if resultVar1 != nil {
+		span.LogFields(spanlog.Error(resultVar1))
+		ext.Error.Set(span, true)
+	}
+
+	return resultVar0, resultVar1
+}
+
+func (a *OpenTracingAppLayer) GetTrackRecord(trackRecordId string) (*model.TrackRecord, *model.AppError) {
+	origCtx := a.ctx
+	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.GetTrackRecord")
+
+	a.ctx = newCtx
+	a.app.Srv().Store.SetContext(newCtx)
+	defer func() {
+		a.app.Srv().Store.SetContext(origCtx)
+		a.ctx = origCtx
+	}()
+
+	defer span.Finish()
+	resultVar0, resultVar1 := a.app.GetTrackRecord(trackRecordId)
 
 	if resultVar1 != nil {
 		span.LogFields(spanlog.Error(resultVar1))
@@ -10505,7 +10615,7 @@ func (a *OpenTracingAppLayer) ListImports() ([]string, *model.AppError) {
 	return resultVar0, resultVar1
 }
 
-func (a *OpenTracingAppLayer) ListPluginKeys(pluginID string, page int, perPage int) ([]string, *model.AppError) {
+func (a *OpenTracingAppLayer) ListPluginKeys(pluginId string, page int, perPage int) ([]string, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.ListPluginKeys")
 
@@ -10517,7 +10627,7 @@ func (a *OpenTracingAppLayer) ListPluginKeys(pluginID string, page int, perPage 
 	}()
 
 	defer span.Finish()
-	resultVar0, resultVar1 := a.app.ListPluginKeys(pluginID, page, perPage)
+	resultVar0, resultVar1 := a.app.ListPluginKeys(pluginId, page, perPage)
 
 	if resultVar1 != nil {
 		span.LogFields(spanlog.Error(resultVar1))
@@ -13894,7 +14004,7 @@ func (a *OpenTracingAppLayer) SetPhase2PermissionsMigrationStatus(isComplete boo
 	return resultVar0
 }
 
-func (a *OpenTracingAppLayer) SetPluginKey(pluginID string, key string, value []byte) *model.AppError {
+func (a *OpenTracingAppLayer) SetPluginKey(pluginId string, key string, value []byte) *model.AppError {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.SetPluginKey")
 
@@ -13906,7 +14016,7 @@ func (a *OpenTracingAppLayer) SetPluginKey(pluginID string, key string, value []
 	}()
 
 	defer span.Finish()
-	resultVar0 := a.app.SetPluginKey(pluginID, key, value)
+	resultVar0 := a.app.SetPluginKey(pluginId, key, value)
 
 	if resultVar0 != nil {
 		span.LogFields(spanlog.Error(resultVar0))
@@ -13916,7 +14026,7 @@ func (a *OpenTracingAppLayer) SetPluginKey(pluginID string, key string, value []
 	return resultVar0
 }
 
-func (a *OpenTracingAppLayer) SetPluginKeyWithExpiry(pluginID string, key string, value []byte, expireInSeconds int64) *model.AppError {
+func (a *OpenTracingAppLayer) SetPluginKeyWithExpiry(pluginId string, key string, value []byte, expireInSeconds int64) *model.AppError {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.SetPluginKeyWithExpiry")
 
@@ -13928,7 +14038,7 @@ func (a *OpenTracingAppLayer) SetPluginKeyWithExpiry(pluginID string, key string
 	}()
 
 	defer span.Finish()
-	resultVar0 := a.app.SetPluginKeyWithExpiry(pluginID, key, value, expireInSeconds)
+	resultVar0 := a.app.SetPluginKeyWithExpiry(pluginId, key, value, expireInSeconds)
 
 	if resultVar0 != nil {
 		span.LogFields(spanlog.Error(resultVar0))
@@ -13938,7 +14048,7 @@ func (a *OpenTracingAppLayer) SetPluginKeyWithExpiry(pluginID string, key string
 	return resultVar0
 }
 
-func (a *OpenTracingAppLayer) SetPluginKeyWithOptions(pluginID string, key string, value []byte, options model.PluginKVSetOptions) (bool, *model.AppError) {
+func (a *OpenTracingAppLayer) SetPluginKeyWithOptions(pluginId string, key string, value []byte, options model.PluginKVSetOptions) (bool, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.SetPluginKeyWithOptions")
 
@@ -13950,7 +14060,7 @@ func (a *OpenTracingAppLayer) SetPluginKeyWithOptions(pluginID string, key strin
 	}()
 
 	defer span.Finish()
-	resultVar0, resultVar1 := a.app.SetPluginKeyWithOptions(pluginID, key, value, options)
+	resultVar0, resultVar1 := a.app.SetPluginKeyWithOptions(pluginId, key, value, options)
 
 	if resultVar1 != nil {
 		span.LogFields(spanlog.Error(resultVar1))
@@ -14291,6 +14401,28 @@ func (a *OpenTracingAppLayer) SoftDeleteTeam(teamID string) *model.AppError {
 	}
 
 	return resultVar0
+}
+
+func (a *OpenTracingAppLayer) StartTrackRecord(trackRecordId string) (*model.TrackRecord, *model.AppError) {
+	origCtx := a.ctx
+	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.StartTrackRecord")
+
+	a.ctx = newCtx
+	a.app.Srv().Store.SetContext(newCtx)
+	defer func() {
+		a.app.Srv().Store.SetContext(origCtx)
+		a.ctx = origCtx
+	}()
+
+	defer span.Finish()
+	resultVar0, resultVar1 := a.app.StartTrackRecord(trackRecordId)
+
+	if resultVar1 != nil {
+		span.LogFields(spanlog.Error(resultVar1))
+		ext.Error.Set(span, true)
+	}
+
+	return resultVar0, resultVar1
 }
 
 func (a *OpenTracingAppLayer) SubmitInteractiveDialog(request model.SubmitDialogRequest) (*model.SubmitDialogResponse, *model.AppError) {
