@@ -15,9 +15,9 @@ import (
 
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/services/cache"
+	"github.com/masterhung0112/hk_server/shared/markdown"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils/imgutils"
-	"github.com/masterhung0112/hk_server/utils/markdown"
 )
 
 type linkMetadataCache struct {

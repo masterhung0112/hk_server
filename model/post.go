@@ -11,7 +11,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/masterhung0112/hk_server/utils/markdown"
+	"github.com/masterhung0112/hk_server/shared/markdown"
 )
 
 const (

@@ -10,9 +10,9 @@ import (
 
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/shared/i18n"
+	"github.com/masterhung0112/hk_server/shared/markdown"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/utils/markdown"
 	"github.com/pkg/errors"
 )
 

@@ -5,12 +5,14 @@ import (
 	"path/filepath"
 )
 
-var commonBaseSearchPaths = []string{
-	".",
-	"..",
-	"../..",
-	"../../../",
-}
+var (
+	commonBaseSearchPaths = []string{
+		".",
+		"..",
+		"../..",
+		"../../..",
+	}
+)
 
 func findPath(path string, baseSearchPaths []string, workingDirFirst bool, filter func(os.FileInfo) bool) string {
 	if filepath.IsAbs(path) {
@@ -36,7 +38,6 @@ func findPath(path string, baseSearchPaths []string, workingDirFirst bool, filte
 			}
 		}
 	}
-
 	if binaryDir != "" {
 		for _, baseSearchPath := range baseSearchPaths {
 			searchPaths = append(
@@ -72,6 +73,8 @@ func FindPath(path string, baseSearchPaths []string, filter func(os.FileInfo) bo
 	return findPath(path, baseSearchPaths, true, filter)
 }
 
+// FindFile looks for the given file in nearby ancestors relative to the current working
+// directory as well as the directory of the executable.
 func FindFile(path string) string {
 	return FindPath(path, commonBaseSearchPaths, func(fileInfo os.FileInfo) bool {
 		return !fileInfo.IsDir()
@@ -84,7 +87,6 @@ func FindDir(dir string) (string, bool) {
 	found := FindPath(dir, commonBaseSearchPaths, func(fileInfo os.FileInfo) bool {
 		return fileInfo.IsDir()
 	})
-
 	if found == "" {
 		return "./", false
 	}

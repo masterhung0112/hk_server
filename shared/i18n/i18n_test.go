@@ -6,9 +6,9 @@ package i18n
 import (
 	"testing"
 
-	"github.com/masterhung0112/hk_server/shared/i18n/bundle"
-	"github.com/masterhung0112/hk_server/shared/i18n/language"
-	"github.com/masterhung0112/hk_server/shared/i18n/translation"
+	"github.com/mattermost/go-i18n/i18n/bundle"
+	"github.com/mattermost/go-i18n/i18n/language"
+	"github.com/mattermost/go-i18n/i18n/translation"
 	"github.com/stretchr/testify/assert"
 )
 

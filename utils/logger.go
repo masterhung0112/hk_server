@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	LOG_ROTATE_SIZE           = 10000
-	LOG_FILENAME              = "hungknow.log"
-	LOG_NOTIFICATION_FILENAME = "notifications.log"
+	LogRotateSize           = 10000
+	LogFilename             = "mattermost.log"
+	LogNotificationFilename = "notifications.log"
 )
 
 type fileLocationFunc func(string) string
@@ -34,7 +34,7 @@ func GetLogFileLocation(fileLocation string) string {
 		fileLocation, _ = fileutils.FindDir("logs")
 	}
 
-	return filepath.Join(fileLocation, LOG_FILENAME)
+	return filepath.Join(fileLocation, LogFilename)
 }
 
 func GetNotificationsLogFileLocation(fileLocation string) string {
@@ -42,7 +42,7 @@ func GetNotificationsLogFileLocation(fileLocation string) string {
 		fileLocation, _ = fileutils.FindDir("logs")
 	}
 
-	return filepath.Join(fileLocation, LOG_NOTIFICATION_FILENAME)
+	return filepath.Join(fileLocation, LogNotificationFilename)
 }
 
 func GetLogSettingsFromNotificationsLogSettings(notificationLogSettings *model.NotificationLogSettings) *model.LogSettings {

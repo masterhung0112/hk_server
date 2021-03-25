@@ -40,7 +40,6 @@ import (
 	"github.com/masterhung0112/hk_server/utils"
 )
 
-
 const (
 	/*
 	  EXIF Image Orientations
