@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/mattermost/go-i18n/i18n"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 )
 
 func TestMuteCommandNoChannel(t *testing.T) {

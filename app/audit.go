@@ -10,6 +10,7 @@ import (
 	"os/user"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/masterhung0112/hk_server/audit"
 	"github.com/masterhung0112/hk_server/config"
 	"github.com/masterhung0112/hk_server/model"

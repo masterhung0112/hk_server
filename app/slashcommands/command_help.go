@@ -6,14 +6,14 @@ package slashcommands
 import (
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/model"
-	goi18n "github.com/mattermost/go-i18n/i18n"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 )
 
 type HelpProvider struct {
 }
 
 const (
-	CMD_HELP = "help"
+	CmdHelp = "help"
 )
 
 func init() {
@@ -21,12 +21,12 @@ func init() {
 }
 
 func (h *HelpProvider) GetTrigger() string {
-	return CMD_HELP
+	return CmdHelp
 }
 
-func (h *HelpProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (h *HelpProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_HELP,
+		Trigger:          CmdHelp,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_help.desc"),
 		DisplayName:      T("api.command_help.name"),

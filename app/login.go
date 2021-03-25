@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/avct/uasurfer"
@@ -18,20 +19,36 @@ import (
 
 const cwsTokenEnv = "CWS_CLOUD_TOKEN"
 
+func (a *App) CheckForClientSideCert(r *http.Request) (string, string, string) {
+	pem := r.Header.Get("X-SSL-Client-Cert")                // mapped to $ssl_client_cert from nginx
+	subject := r.Header.Get("X-SSL-Client-Cert-Subject-DN") // mapped to $ssl_client_s_dn from nginx
+	email := ""
+
+	if subject != "" {
+		for _, v := range strings.Split(subject, "/") {
+			kv := strings.Split(v, "=")
+			if len(kv) == 2 && kv[0] == "emailAddress" {
+				email = kv[1]
+			}
+		}
+	}
+
+	return pem, subject, email
+}
+
 func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken, cwsToken string, ldapOnly bool) (user *model.User, err *model.AppError) {
 	// Do statistics
-	//TODO: Open
-	// defer func() {
-	// 	if a.Metrics() != nil {
-	// 		if user == nil || err != nil {
-	// 			a.Metrics().IncrementLoginFail()
-	// 		} else {
-	// 			a.Metrics().IncrementLogin()
-	// 		}
-	// 	}
-	// }()
+	defer func() {
+		if a.Metrics() != nil {
+			if user == nil || err != nil {
+				a.Metrics().IncrementLoginFail()
+			} else {
+				a.Metrics().IncrementLogin()
+			}
+		}
+	}()
 
-	if len(password) == 0 && !IsCWSLogin(a, cwsToken) {
+	if password == "" && !IsCWSLogin(a, cwsToken) {
 		return nil, model.NewAppError("AuthenticateUserForLogin", "api.user.login.blank_pwd.app_error", nil, "", http.StatusBadRequest)
 	}
 
@@ -48,7 +65,7 @@ func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken, cwsToken
 		}
 		token, err := a.Srv().Store.Token().GetByToken(cwsToken)
 		if nfErr := new(store.ErrNotFound); err != nil && !errors.As(err, &nfErr) {
-			mlog.Error("error retrieving the cws token from the store", mlog.Err(err))
+			mlog.Debug("Error retrieving the cws token from the store", mlog.Err(err))
 			return nil, model.NewAppError("AuthenticateUserForLogin",
 				"api.user.login_by_cws.invalid_token.app_error", nil, "", http.StatusInternalServerError)
 		}
@@ -66,7 +83,7 @@ func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken, cwsToken
 			}
 			err := a.Srv().Store.Token().Save(token)
 			if err != nil {
-				mlog.Error("error storing the cws token in the store", mlog.Err(err))
+				mlog.Debug("Error storing the cws token in the store", mlog.Err(err))
 				return nil, model.NewAppError("AuthenticateUserForLogin",
 					"api.user.login_by_cws.invalid_token.app_error", nil, "", http.StatusInternalServerError)
 			}
@@ -79,15 +96,14 @@ func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken, cwsToken
 	// If client side cert is enable and it's checking as a primary source
 	// then trust the proxy and cert that the correct user is supplied and allow
 	// them access
-	//TODO: Open
-	// if *a.Config().ExperimentalSettings.ClientSideCertEnable && *a.Config().ExperimentalSettings.ClientSideCertCheck == model.CLIENT_SIDE_CERT_CHECK_PRIMARY_AUTH {
-	// 	// Unless the user is a bot.
-	// 	if err = checkUserNotBot(user); err != nil {
-	// 		return nil, err
-	// 	}
+	if *a.Config().ExperimentalSettings.ClientSideCertEnable && *a.Config().ExperimentalSettings.ClientSideCertCheck == model.CLIENT_SIDE_CERT_CHECK_PRIMARY_AUTH {
+		// Unless the user is a bot.
+		if err = checkUserNotBot(user); err != nil {
+			return nil, err
+		}
 
-	// 	return user, nil
-	// }
+		return user, nil
+	}
 
 	// and then authenticate them
 	if user, err = a.authenticateUser(user, password, mfaToken); err != nil {
@@ -102,7 +118,7 @@ func (a *App) GetUserForLogin(id, loginId string) (*model.User, *model.AppError)
 	enableEmail := *a.Config().EmailSettings.EnableSignInWithEmail
 
 	// If we are given a userID then fail if we can't find a user with that ID
-	if len(id) != 0 {
+	if id != "" {
 		user, err := a.GetUser(id)
 		if err != nil {
 			if err.Id != MissingAccountError {
@@ -121,23 +137,100 @@ func (a *App) GetUserForLogin(id, loginId string) (*model.User, *model.AppError)
 	}
 
 	// Try to get the user with LDAP if enabled
-	//TODO: Open
-	// if *a.Config().LdapSettings.Enable && a.Ldap() != nil {
-	// 	if ldapUser, err := a.Ldap().GetUser(loginId); err == nil {
-	// 		if user, err := a.GetUserByAuth(ldapUser.AuthData, model.USER_AUTH_SERVICE_LDAP); err == nil {
-	// 			return user, nil
-	// 		}
-	// 		return ldapUser, nil
-	// 	}
-	// }
+	if *a.Config().LdapSettings.Enable && a.Ldap() != nil {
+		if ldapUser, err := a.Ldap().GetUser(loginId); err == nil {
+			if user, err := a.GetUserByAuth(ldapUser.AuthData, model.USER_AUTH_SERVICE_LDAP); err == nil {
+				return user, nil
+			}
+			return ldapUser, nil
+		}
+	}
 
 	return nil, model.NewAppError("GetUserForLogin", "store.sql_user.get_for_login.app_error", nil, "", http.StatusBadRequest)
 }
 
-func IsCWSLogin(a *App, token string) bool {
-	return false
-	//TODO: Open
-	// return a.Srv().License() != nil && *a.Srv().License().Features.Cloud && token != ""
+func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, deviceID string, isMobile, isOAuthUser, isSaml bool) *model.AppError {
+	if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
+		var rejectionReason string
+		pluginContext := a.PluginContext()
+		pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
+			rejectionReason = hooks.UserWillLogIn(pluginContext, user)
+			return rejectionReason == ""
+		}, plugin.UserWillLogInID)
+
+		if rejectionReason != "" {
+			return model.NewAppError("DoLogin", "Login rejected by plugin: "+rejectionReason, nil, "", http.StatusBadRequest)
+		}
+	}
+
+	session := &model.Session{UserId: user.Id, Roles: user.GetRawRoles(), DeviceId: deviceID, IsOAuth: false, Props: map[string]string{
+		model.USER_AUTH_SERVICE_IS_MOBILE: strconv.FormatBool(isMobile),
+		model.USER_AUTH_SERVICE_IS_SAML:   strconv.FormatBool(isSaml),
+		model.USER_AUTH_SERVICE_IS_OAUTH:  strconv.FormatBool(isOAuthUser),
+	}}
+	session.GenerateCSRF()
+
+	if deviceID != "" {
+		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthMobileInDays)
+
+		// A special case where we logout of all other sessions with the same Id
+		if err := a.RevokeSessionsForDeviceId(user.Id, deviceID, ""); err != nil {
+			err.StatusCode = http.StatusInternalServerError
+			return err
+		}
+	} else if isMobile {
+		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthMobileInDays)
+	} else if isOAuthUser || isSaml {
+		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthSSOInDays)
+	} else {
+		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthWebInDays)
+	}
+
+	ua := uasurfer.Parse(r.UserAgent())
+
+	plat := getPlatformName(ua)
+	os := getOSName(ua)
+	bname := getBrowserName(ua, r.UserAgent())
+	bversion := getBrowserVersion(ua, r.UserAgent())
+
+	session.AddProp(model.SESSION_PROP_PLATFORM, plat)
+	session.AddProp(model.SESSION_PROP_OS, os)
+	session.AddProp(model.SESSION_PROP_BROWSER, fmt.Sprintf("%v/%v", bname, bversion))
+	if user.IsGuest() {
+		session.AddProp(model.SESSION_PROP_IS_GUEST, "true")
+	} else {
+		session.AddProp(model.SESSION_PROP_IS_GUEST, "false")
+	}
+
+	var err *model.AppError
+	if session, err = a.CreateSession(session); err != nil {
+		err.StatusCode = http.StatusInternalServerError
+		return err
+	}
+
+	w.Header().Set(model.HEADER_TOKEN, session.Token)
+
+	a.SetSession(session)
+
+	if a.Srv().License() != nil && *a.Srv().License().Features.LDAP && a.Ldap() != nil {
+		userVal := *user
+		sessionVal := *session
+		a.Srv().Go(func() {
+			a.Ldap().UpdateProfilePictureIfNecessary(userVal, sessionVal)
+		})
+	}
+
+	if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
+		a.Srv().Go(func() {
+			pluginContext := a.PluginContext()
+			pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
+				hooks.UserHasLoggedIn(pluginContext, user)
+				return true
+			}, plugin.UserHasLoggedInID)
+		})
+	}
+
+	return nil
 }
 
 func (a *App) AttachSessionCookies(w http.ResponseWriter, r *http.Request) {
@@ -194,87 +287,6 @@ func GetProtocol(r *http.Request) string {
 	return "http"
 }
 
-func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, deviceId string, isMobile, isOAuthUser, isSaml bool) *model.AppError {
-	//TODO: Open
-	// if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
-	// 	var rejectionReason string
-	// 	pluginContext := a.PluginContext()
-	// 	pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
-	// 		rejectionReason = hooks.UserWillLogIn(pluginContext, user)
-	// 		return rejectionReason == ""
-	// 	}, plugin.UserWillLogInId)
-
-	// 	if rejectionReason != "" {
-	// 		return model.NewAppError("DoLogin", "Login rejected by plugin: "+rejectionReason, nil, "", http.StatusBadRequest)
-	// 	}
-	// }
-
-	session := &model.Session{UserId: user.Id, Roles: user.GetRawRoles(), DeviceId: deviceId, IsOAuth: false, Props: map[string]string{
-		model.USER_AUTH_SERVICE_IS_MOBILE: strconv.FormatBool(isMobile),
-		model.USER_AUTH_SERVICE_IS_SAML:   strconv.FormatBool(isSaml),
-		model.USER_AUTH_SERVICE_IS_OAUTH:  strconv.FormatBool(isOAuthUser),
-	}}
-	session.GenerateCSRF()
-
-	if len(deviceId) > 0 {
-		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthMobileInDays)
-
-		// A special case where we logout of all other sessions with the same Id
-		if err := a.RevokeSessionsForDeviceId(user.Id, deviceId, ""); err != nil {
-			err.StatusCode = http.StatusInternalServerError
-			return err
-		}
-	} else if isMobile {
-		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthMobileInDays)
-	} else if isOAuthUser || isSaml {
-		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthSSOInDays)
-	} else {
-		a.SetSessionExpireInDays(session, *a.Config().ServiceSettings.SessionLengthWebInDays)
-	}
-
-	ua := uasurfer.Parse(r.UserAgent())
-
-	plat := getPlatformName(ua)
-	os := getOSName(ua)
-	bname := getBrowserName(ua, r.UserAgent())
-	bversion := getBrowserVersion(ua, r.UserAgent())
-
-	session.AddProp(model.SESSION_PROP_PLATFORM, plat)
-	session.AddProp(model.SESSION_PROP_OS, os)
-	session.AddProp(model.SESSION_PROP_BROWSER, fmt.Sprintf("%v/%v", bname, bversion))
-	if user.IsGuest() {
-		session.AddProp(model.SESSION_PROP_IS_GUEST, "true")
-	} else {
-		session.AddProp(model.SESSION_PROP_IS_GUEST, "false")
-	}
-
-	var err *model.AppError
-	if session, err = a.CreateSession(session); err != nil {
-		err.StatusCode = http.StatusInternalServerError
-		return err
-	}
-
-	w.Header().Set(model.HEADER_TOKEN, session.Token)
-
-	a.SetSession(session)
-
-	//TODO: Open
-	// if a.Srv().License() != nil && *a.Srv().License().Features.LDAP && a.Ldap() != nil {
-	// 	a.Srv().Go(func() {
-	// 		a.Ldap().UpdateProfilePictureIfNecessary(user, session)
-	// 	})
-	// }
-
-	//TODO: Open
-	// if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
-	// 	a.Srv().Go(func() {
-	// 		pluginContext := a.PluginContext()
-	// 		pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
-	// 			hooks.UserHasLoggedIn(pluginContext, user)
-	// 			return true
-	// 		}, plugin.UserHasLoggedInId)
-	// 	})
-	// }
-
-	return nil
+func IsCWSLogin(a *App, token string) bool {
+	return a.Srv().License() != nil && *a.Srv().License().Features.Cloud && token != ""
 }

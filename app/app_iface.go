@@ -13,20 +13,20 @@ import (
 	"net/url"
 	"time"
 
-	// "github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/gorilla/websocket"
 	"github.com/masterhung0112/hk_server/audit"
 	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/services/filesstore"
 	"github.com/masterhung0112/hk_server/services/httpservice"
 	"github.com/masterhung0112/hk_server/services/imageproxy"
 	"github.com/masterhung0112/hk_server/services/searchengine"
 	"github.com/masterhung0112/hk_server/services/timezones"
+	"github.com/masterhung0112/hk_server/shared/filestore"
+	"github.com/masterhung0112/hk_server/shared/i18n"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
-	"github.com/mattermost/go-i18n/i18n"
 )
 
 // AppIface is extracted from App struct and contains all it's exported methods. It's provided to allow partial interface passing and app layers creation.
@@ -52,6 +52,10 @@ type AppIface interface {
 	// The result can be used, for example, to determine the set of users who would be removed from a channel if the
 	// channel were group-constrained with the given groups.
 	ChannelMembersMinusGroupMembers(channelID string, groupIDs []string, page, perPage int) ([]*model.UserWithGroups, int64, *model.AppError)
+	// CheckProviderAttributes returns the empty string if the patch can be applied without
+	// overriding attributes set by the user's login provider; otherwise, the name of the offending
+	// field is returned.
+	CheckProviderAttributes(user *model.User, patch *model.UserPatch) string
 	// ClientConfigWithComputed gets the configuration in a format suitable for sending to the client.
 	ClientConfigWithComputed() map[string]string
 	// ConvertBotToUser converts a bot to user.
@@ -227,7 +231,7 @@ type AppIface interface {
 	// function is only exposed to sysadmins and the possibility of this edge case is relatively small.
 	MoveChannel(team *model.Team, channel *model.Channel, user *model.User) *model.AppError
 	// NewWebConn returns a new WebConn instance.
-	NewWebConn(ws net.Conn, session model.Session, t i18n.TranslateFunc, locale string) *WebConn
+	NewWebConn(ws *websocket.Conn, session model.Session, t i18n.TranslateFunc, locale string) *WebConn
 	// NewWebHub creates a new Hub.
 	NewWebHub() *Hub
 	// NotifySessionsExpired is called periodically from the job server to notify any mobile sessions that have expired.
@@ -349,16 +353,16 @@ type AppIface interface {
 	//GetUserStatusesByIds used by apiV4
 	GetUserStatusesByIds(userIDs []string) ([]*model.Status, *model.AppError)
 	AcceptLanguage() string
-	// AccountMigration() einterfaces.AccountMigrationInterface
+	AccountMigration() einterfaces.AccountMigrationInterface
 	ActivateMfa(userID, token string) *model.AppError
 	AddChannelMember(userID string, channel *model.Channel, userRequestorId string, postRootId string) (*model.ChannelMember, *model.AppError)
 	AddConfigListener(listener func(*model.Config, *model.Config)) string
 	AddDirectChannels(teamID string, user *model.User) *model.AppError
-	// AddLdapPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
-	// AddLdapPublicCertificate(fileData *multipart.FileHeader) *model.AppError
-	// AddSamlIdpCertificate(fileData *multipart.FileHeader) *model.AppError
-	// AddSamlPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
-	// AddSamlPublicCertificate(fileData *multipart.FileHeader) *model.AppError
+	AddLdapPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
+	AddLdapPublicCertificate(fileData *multipart.FileHeader) *model.AppError
+	AddSamlIdpCertificate(fileData *multipart.FileHeader) *model.AppError
+	AddSamlPrivateCertificate(fileData *multipart.FileHeader) *model.AppError
+	AddSamlPublicCertificate(fileData *multipart.FileHeader) *model.AppError
 	AddSessionToCache(session *model.Session)
 	AddStatusCache(status *model.Status)
 	AddStatusCacheSkipClusterSend(status *model.Status)
@@ -384,17 +388,17 @@ type AppIface interface {
 	AutocompleteUsersInChannel(teamID string, channelID string, term string, options *model.UserSearchOptions) (*model.UserAutocompleteInChannel, *model.AppError)
 	AutocompleteUsersInTeam(teamID string, term string, options *model.UserSearchOptions) (*model.UserAutocompleteInTeam, *model.AppError)
 	BroadcastStatus(status *model.Status)
-	// BuildPostReactions(postID string) (*[]ReactionImportData, *model.AppError)
+	BuildPostReactions(postID string) (*[]ReactionImportData, *model.AppError)
 	BuildPushNotificationMessage(contentsConfig string, post *model.Post, user *model.User, channel *model.Channel, channelName string, senderName string, explicitMention bool, channelWideMention bool, replyToThreadType string) (*model.PushNotification, *model.AppError)
-	// BuildSamlMetadataObject(idpMetadata []byte) (*model.SamlMetadataResponse, *model.AppError)
-	// BulkExport(writer io.Writer, file string, pathToEmojiDir string, dirNameToExportEmoji string) *model.AppError
-	// BulkImport(fileReader io.Reader, dryRun bool, workers int) (*model.AppError, int)
+	BuildSamlMetadataObject(idpMetadata []byte) (*model.SamlMetadataResponse, *model.AppError)
+	BulkExport(writer io.Writer, outPath string, opts BulkExportOpts) *model.AppError
+	BulkImport(fileReader io.Reader, dryRun bool, workers int) (*model.AppError, int)
 	BulkImportWithPath(fileReader io.Reader, dryRun bool, workers int, importPath string) (*model.AppError, int)
-	// CancelJob(jobId string) *model.AppError
+	CancelJob(jobId string) *model.AppError
 	ChannelMembersToAdd(since int64, channelID *string) ([]*model.UserChannelIDPair, *model.AppError)
 	ChannelMembersToRemove(teamID *string) ([]*model.ChannelMember, *model.AppError)
 	CheckAndSendUserLimitWarningEmails() *model.AppError
-	// CheckForClientSideCert(r *http.Request) (string, string, string)
+	CheckForClientSideCert(r *http.Request) (string, string, string)
 	CheckMandatoryS3Fields(settings *model.FileSettings) *model.AppError
 	CheckPasswordAndAllCriteria(user *model.User, password string, mfaToken string) *model.AppError
 	CheckRolesExist(roleNames []string) *model.AppError
@@ -417,10 +421,10 @@ type AppIface interface {
 	CompareAndSetPluginKey(pluginID string, key string, oldValue, newValue []byte) (bool, *model.AppError)
 	CompleteOAuth(service string, body io.ReadCloser, teamID string, props map[string]string, tokenUser *model.User) (*model.User, *model.AppError)
 	CompleteSwitchWithOAuth(service string, userData io.Reader, email string, tokenUser *model.User) (*model.User, *model.AppError)
-	// Compliance() einterfaces.ComplianceInterface
+	Compliance() einterfaces.ComplianceInterface
 	Config() *model.Config
-	// Context() context.Context
-	CopyFileInfos(userID string, fileIds []string) ([]string, *model.AppError)
+	Context() context.Context
+	CopyFileInfos(userID string, fileIDs []string) ([]string, *model.AppError)
 	CreateChannel(channel *model.Channel, addMember bool) (*model.Channel, *model.AppError)
 	CreateChannelWithUser(channel *model.Channel, userID string) (*model.Channel, *model.AppError)
 	CreateCommand(cmd *model.Command) (*model.Command, *model.AppError)
@@ -429,7 +433,7 @@ type AppIface interface {
 	CreateGroup(group *model.Group) (*model.Group, *model.AppError)
 	CreateGroupChannel(userIDs []string, creatorId string) (*model.Channel, *model.AppError)
 	CreateIncomingWebhookForChannel(creatorId string, channel *model.Channel, hook *model.IncomingWebhook) (*model.IncomingWebhook, *model.AppError)
-	// CreateJob(job *model.Job) (*model.Job, *model.AppError)
+	CreateJob(job *model.Job) (*model.Job, *model.AppError)
 	CreateOAuthApp(app *model.OAuthApp) (*model.OAuthApp, *model.AppError)
 	CreateOAuthStateToken(extra string) (*model.Token, *model.AppError)
 	CreateOAuthUser(service string, userData io.Reader, teamID string, tokenUser *model.User) (*model.User, *model.AppError)
@@ -444,7 +448,7 @@ type AppIface interface {
 	CreateSidebarCategory(userID, teamID string, newCategory *model.SidebarCategoryWithChannels) (*model.SidebarCategoryWithChannels, *model.AppError)
 	CreateTeam(team *model.Team) (*model.Team, *model.AppError)
 	CreateTeamWithUser(team *model.Team, userID string) (*model.Team, *model.AppError)
-	// CreateTermsOfService(text, userID string) (*model.TermsOfService, *model.AppError)
+	CreateTermsOfService(text, userID string) (*model.TermsOfService, *model.AppError)
 	CreateUploadSession(us *model.UploadSession) (*model.UploadSession, *model.AppError)
 	CreateUserAccessToken(token *model.UserAccessToken) (*model.UserAccessToken, *model.AppError)
 	CreateUserAsAdmin(user *model.User, redirect string) (*model.User, *model.AppError)
@@ -452,15 +456,15 @@ type AppIface interface {
 	CreateUserWithInviteId(user *model.User, inviteId, redirect string) (*model.User, *model.AppError)
 	CreateUserWithToken(user *model.User, token *model.Token) (*model.User, *model.AppError)
 	CreateWebhookPost(userID string, channel *model.Channel, text, overrideUsername, overrideIconURL, overrideIconEmoji string, props model.StringInterface, postType string, postRootId string) (*model.Post, *model.AppError)
-	// DBHealthCheckDelete() error
-	// DBHealthCheckWrite() error
-	// DataRetention() einterfaces.DataRetentionInterface
+	DBHealthCheckDelete() error
+	DBHealthCheckWrite() error
+	DataRetention() einterfaces.DataRetentionInterface
 	DeactivateGuests() *model.AppError
 	DeactivateMfa(userID string) *model.AppError
 	DeauthorizeOAuthAppForUser(userID, appID string) *model.AppError
 	DeleteAllExpiredPluginKeys() *model.AppError
 	DeleteAllKeysForPlugin(pluginID string) *model.AppError
-	// DeleteBrandImage() *model.AppError
+	DeleteBrandImage() *model.AppError
 	DeleteChannel(channel *model.Channel, userID string) *model.AppError
 	DeleteCommand(commandID string) *model.AppError
 	DeleteEmoji(emoji *model.Emoji) *model.AppError
@@ -485,7 +489,7 @@ type AppIface interface {
 	DisableUserAccessToken(token *model.UserAccessToken) *model.AppError
 	DoAppMigrations()
 	DoCommandRequest(cmd *model.Command, p url.Values) (*model.Command, *model.CommandResponse, *model.AppError)
-	// DoEmojisPermissionsMigration()
+	DoEmojisPermissionsMigration()
 	DoGuestRolesCreationMigration()
 	DoLocalRequest(rawURL string, body []byte) (*http.Response, *model.AppError)
 	DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, deviceID string, isMobile, isOAuthUser, isSaml bool) *model.AppError
@@ -496,9 +500,9 @@ type AppIface interface {
 	DoUploadFileExpectModification(now time.Time, rawTeamId string, rawChannelId string, rawUserId string, rawFilename string, data []byte) (*model.FileInfo, []byte, *model.AppError)
 	DownloadFromURL(downloadURL string) ([]byte, error)
 	EnableUserAccessToken(token *model.UserAccessToken) *model.AppError
-	// EnvironmentConfig() map[string]interface{}
-	// ExportPermissions(w io.Writer) error
-	// FetchSamlMetadataFromIdp(url string) ([]byte, *model.AppError)
+	EnvironmentConfig() map[string]interface{}
+	ExportPermissions(w io.Writer) error
+	FetchSamlMetadataFromIdp(url string) ([]byte, *model.AppError)
 	FileBackend() (filestore.FileBackend, *model.AppError)
 	FileExists(path string) (bool, *model.AppError)
 	FileModTime(path string) (time.Time, *model.AppError)
@@ -524,12 +528,12 @@ type AppIface interface {
 	GetAllTeams() ([]*model.Team, *model.AppError)
 	GetAllTeamsPage(offset int, limit int) ([]*model.Team, *model.AppError)
 	GetAllTeamsPageWithCount(offset int, limit int) (*model.TeamsWithCount, *model.AppError)
-	// GetAnalytics(name string, teamID string) (model.AnalyticsRows, *model.AppError)
+	GetAnalytics(name string, teamID string) (model.AnalyticsRows, *model.AppError)
 	GetAudits(userID string, limit int) (model.Audits, *model.AppError)
 	GetAuditsPage(userID string, page int, perPage int) (model.Audits, *model.AppError)
 	GetAuthorizationCode(w http.ResponseWriter, r *http.Request, service string, props map[string]string, loginHint string) (string, *model.AppError)
 	GetAuthorizedAppsForUser(userID string, page, perPage int) ([]*model.OAuthApp, *model.AppError)
-	// GetBrandImage() ([]byte, *model.AppError)
+	GetBrandImage() ([]byte, *model.AppError)
 	GetBulkReactionsForPosts(postIDs []string) (map[string][]*model.Reaction, *model.AppError)
 	GetChannel(channelID string) (*model.Channel, *model.AppError)
 	GetChannelByName(channelName, teamID string, includeDeleted bool) (*model.Channel, *model.AppError)
@@ -554,11 +558,11 @@ type AppIface interface {
 	GetClusterId() string
 	GetClusterStatus() []*model.ClusterInfo
 	GetCommand(commandID string) (*model.Command, *model.AppError)
-	// GetComplianceFile(job *model.Compliance) ([]byte, *model.AppError)
-	// GetComplianceReport(reportId string) (*model.Compliance, *model.AppError)
-	// GetComplianceReports(page, perPage int) (model.Compliances, *model.AppError)
+	GetComplianceFile(job *model.Compliance) ([]byte, *model.AppError)
+	GetComplianceReport(reportId string) (*model.Compliance, *model.AppError)
+	GetComplianceReports(page, perPage int) (model.Compliances, *model.AppError)
 	GetCookieDomain() string
-	// GetDataRetentionPolicy() (*model.DataRetentionPolicy, *model.AppError)
+	GetDataRetentionPolicy() (*model.DataRetentionPolicy, *model.AppError)
 	GetDefaultProfileImage(user *model.User) ([]byte, *model.AppError)
 	GetDeletedChannels(teamID string, offset int, limit int, userID string) (*model.ChannelList, *model.AppError)
 	GetEmoji(emojiId string) (*model.Emoji, *model.AppError)
@@ -595,12 +599,12 @@ type AppIface interface {
 	GetIncomingWebhooksForTeamPageByUser(teamID string, userID string, page, perPage int) ([]*model.IncomingWebhook, *model.AppError)
 	GetIncomingWebhooksPage(page, perPage int) ([]*model.IncomingWebhook, *model.AppError)
 	GetIncomingWebhooksPageByUser(userID string, page, perPage int) ([]*model.IncomingWebhook, *model.AppError)
-	// GetJob(id string) (*model.Job, *model.AppError)
-	// GetJobs(offset int, limit int) ([]*model.Job, *model.AppError)
-	// GetJobsByType(jobType string, offset int, limit int) ([]*model.Job, *model.AppError)
-	// GetJobsByTypePage(jobType string, page int, perPage int) ([]*model.Job, *model.AppError)
-	// GetJobsPage(page int, perPage int) ([]*model.Job, *model.AppError)
-	// GetLatestTermsOfService() (*model.TermsOfService, *model.AppError)
+	GetJob(id string) (*model.Job, *model.AppError)
+	GetJobs(offset int, limit int) ([]*model.Job, *model.AppError)
+	GetJobsByType(jobType string, offset int, limit int) ([]*model.Job, *model.AppError)
+	GetJobsByTypePage(jobType string, page int, perPage int) ([]*model.Job, *model.AppError)
+	GetJobsPage(page int, perPage int) ([]*model.Job, *model.AppError)
+	GetLatestTermsOfService() (*model.TermsOfService, *model.AppError)
 	GetLogs(page, perPage int) ([]string, *model.AppError)
 	GetLogsSkipSend(page, perPage int) ([]string, *model.AppError)
 	GetMemberCountsByGroup(channelID string, includeTimezones bool) ([]*model.ChannelMemberCountByGroup, *model.AppError)
@@ -620,8 +624,8 @@ type AppIface interface {
 	GetOAuthLoginEndpoint(w http.ResponseWriter, r *http.Request, service, teamID, action, redirectTo, loginHint string, isMobile bool) (string, *model.AppError)
 	GetOAuthSignupEndpoint(w http.ResponseWriter, r *http.Request, service, teamID string) (string, *model.AppError)
 	GetOAuthStateToken(token string) (*model.Token, *model.AppError)
-	// GetOpenGraphMetadata(requestURL string) *opengraph.OpenGraph
-	GetOrCreateDirectChannel(userID, otherUserId string) (*model.Channel, *model.AppError)
+	GetOpenGraphMetadata(requestURL string) *opengraph.OpenGraph
+	GetOrCreateDirectChannel(userID, otherUserID string) (*model.Channel, *model.AppError)
 	GetOutgoingWebhook(hookID string) (*model.OutgoingWebhook, *model.AppError)
 	GetOutgoingWebhooksForChannelPageByUser(channelID string, userID string, page, perPage int) ([]*model.OutgoingWebhook, *model.AppError)
 	GetOutgoingWebhooksForTeamPage(teamID string, page, perPage int) ([]*model.OutgoingWebhook, *model.AppError)
@@ -636,7 +640,7 @@ type AppIface interface {
 	GetPostAfterTime(channelID string, time int64, collapsedThreads bool) (*model.Post, *model.AppError)
 	GetPostIdAfterTime(channelID string, time int64, collapsedThreads bool) (string, *model.AppError)
 	GetPostIdBeforeTime(channelID string, time int64, collapsedThreads bool) (string, *model.AppError)
-	GetPostThread(postID string, skipFetchThreads, collapsedThreads, collapsedThreadsExtended bool) (*model.PostList, *model.AppError)
+	GetPostThread(postID string, skipFetchThreads, collapsedThreads, collapsedThreadsExtended bool, userID string) (*model.PostList, *model.AppError)
 	GetPosts(channelID string, offset int, limit int) (*model.PostList, *model.AppError)
 	GetPostsAfterPost(options model.GetPostsOptions) (*model.PostList, *model.AppError)
 	GetPostsAroundPost(before bool, options model.GetPostsOptions) (*model.PostList, *model.AppError)
@@ -736,7 +740,7 @@ type AppIface interface {
 	GetUsersWithoutTeamPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError)
 	GetVerifyEmailToken(token string) (*model.Token, *model.AppError)
 	GetViewUsersRestrictions(userID string) (*model.ViewUsersRestrictions, *model.AppError)
-	// GetWarnMetricsStatus() (map[string]*model.WarnMetricStatus, *model.AppError)
+	GetWarnMetricsStatus() (map[string]*model.WarnMetricStatus, *model.AppError)
 	HTTPService() httpservice.HTTPService
 	Handle404(w http.ResponseWriter, r *http.Request)
 	HandleCommandResponse(command *model.Command, args *model.CommandArgs, response *model.CommandResponse, builtIn bool) (*model.CommandResponse, *model.AppError)
@@ -747,9 +751,9 @@ type AppIface interface {
 	HandleMessageExportConfig(cfg *model.Config, appCfg *model.Config)
 	HasPermissionTo(askingUserId string, permission *model.Permission) bool
 	HasPermissionToChannel(askingUserId string, channelID string, permission *model.Permission) bool
-	// HasPermissionToChannelByPost(askingUserId string, postID string, permission *model.Permission) bool
+	HasPermissionToChannelByPost(askingUserId string, postID string, permission *model.Permission) bool
 	HasPermissionToTeam(askingUserId string, teamID string, permission *model.Permission) bool
-	// HasPermissionToUser(askingUserId string, userID string) bool
+	HasPermissionToUser(askingUserId string, userID string) bool
 	HubStop()
 	ImageProxy() *imageproxy.ImageProxy
 	ImageProxyAdder() func(string) string
@@ -793,7 +797,7 @@ type AppIface interface {
 	MaxPostSize() int
 	MessageExport() einterfaces.MessageExportInterface
 	Metrics() einterfaces.MetricsInterface
-	// MigrateIdLDAP(toAttribute string) *model.AppError
+	MigrateIdLDAP(toAttribute string) *model.AppError
 	MoveCommand(team *model.Team, command *model.Command) *model.AppError
 	MoveFile(oldPath, newPath string) *model.AppError
 	NewClusterDiscoveryService() *ClusterDiscoveryService
@@ -846,14 +850,14 @@ type AppIface interface {
 	RemoveCustomStatus(userID string) *model.AppError
 	RemoveDirectory(path string) *model.AppError
 	RemoveFile(path string) *model.AppError
-	// RemoveLdapPrivateCertificate() *model.AppError
-	// RemoveLdapPublicCertificate() *model.AppError
+	RemoveLdapPrivateCertificate() *model.AppError
+	RemoveLdapPublicCertificate() *model.AppError
 	RemovePlugin(id string) *model.AppError
 	RemovePluginFromData(data model.PluginEventData)
 	RemoveRecentCustomStatus(userID string, status *model.CustomStatus) *model.AppError
-	// RemoveSamlIdpCertificate() *model.AppError
-	// RemoveSamlPrivateCertificate() *model.AppError
-	// RemoveSamlPublicCertificate() *model.AppError
+	RemoveSamlIdpCertificate() *model.AppError
+	RemoveSamlPrivateCertificate() *model.AppError
+	RemoveSamlPublicCertificate() *model.AppError
 	RemoveTeamIcon(teamID string) *model.AppError
 	RemoveTeamMemberFromTeam(teamMember *model.TeamMember, requestorId string) *model.AppError
 	RemoveUserFromChannel(userIDToRemove string, removerUserId string, channel *model.Channel) *model.AppError
@@ -879,10 +883,10 @@ type AppIface interface {
 	SanitizeTeam(session model.Session, team *model.Team) *model.Team
 	SanitizeTeams(session model.Session, teams []*model.Team) []*model.Team
 	SaveAndBroadcastStatus(status *model.Status)
-	// SaveBrandImage(imageData *multipart.FileHeader) *model.AppError
-	// SaveComplianceReport(job *model.Compliance) (*model.Compliance, *model.AppError)
+	SaveBrandImage(imageData *multipart.FileHeader) *model.AppError
+	SaveComplianceReport(job *model.Compliance) (*model.Compliance, *model.AppError)
 	SaveReactionForPost(reaction *model.Reaction) (*model.Reaction, *model.AppError)
-	// SaveUserTermsOfService(userID, termsOfServiceId string, accepted bool) *model.AppError
+	SaveUserTermsOfService(userID, termsOfServiceId string, accepted bool) *model.AppError
 	SchemesIterator(scope string, batchSize int) func() []*model.Scheme
 	SearchArchivedChannels(teamID string, term string, userID string) (*model.ChannelList, *model.AppError)
 	SearchChannels(teamID string, term string) (*model.ChannelList, *model.AppError)
@@ -911,7 +915,7 @@ type AppIface interface {
 	SendEphemeralPost(userID string, post *model.Post) *model.Post
 	SendNotifications(post *model.Post, team *model.Team, channel *model.Channel, sender *model.User, parentPostList *model.PostList, setOnline bool) ([]string, error)
 	SendPasswordReset(email string, siteURL string) (bool, *model.AppError)
-	// SendPaymentFailedEmail(failedPayment *model.FailedPayment) *model.AppError
+	SendPaymentFailedEmail(failedPayment *model.FailedPayment) *model.AppError
 	ServeInterPluginRequest(w http.ResponseWriter, r *http.Request, sourcePluginId, destinationPluginId string)
 	ServePluginRequest(w http.ResponseWriter, r *http.Request)
 	Session() *model.Session
@@ -928,6 +932,7 @@ type AppIface interface {
 	SetActiveChannel(userID string, channelID string) *model.AppError
 	SetAutoResponderStatus(user *model.User, oldNotifyProps model.StringMap)
 	SetContext(c context.Context)
+	SetCustomStatus(userID string, cs *model.CustomStatus) *model.AppError
 	SetDefaultProfileImage(user *model.User) *model.AppError
 	SetIpAddress(s string)
 	SetPath(s string)
@@ -940,7 +945,7 @@ type AppIface interface {
 	SetProfileImageFromFile(userID string, file io.Reader) *model.AppError
 	SetProfileImageFromMultiPartFile(userID string, file multipart.File) *model.AppError
 	SetRequestId(s string)
-	// SetSamlIdpCertificateFromMetadata(data []byte) *model.AppError
+	SetSamlIdpCertificateFromMetadata(data []byte) *model.AppError
 	SetSearchEngine(se *searchengine.Broker)
 	SetServer(srv *Server)
 	SetSession(s *model.Session)
@@ -958,7 +963,7 @@ type AppIface interface {
 	SoftDeleteTeam(teamID string) *model.AppError
 	Srv() *Server
 	SubmitInteractiveDialog(request model.SubmitDialogRequest) (*model.SubmitDialogResponse, *model.AppError)
-	// SwitchEmailToLdap(email, password, code, ldapLoginId, ldapPassword string) (string, *model.AppError)
+	SwitchEmailToLdap(email, password, code, ldapLoginId, ldapPassword string) (string, *model.AppError)
 	SwitchEmailToOAuth(w http.ResponseWriter, r *http.Request, email, password, code, service string) (string, *model.AppError)
 	SwitchLdapToEmail(ldapPassword, code, email, newPassword string) (string, *model.AppError)
 	SwitchOAuthToEmail(email, password, requesterId string) (string, *model.AppError)

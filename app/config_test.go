@@ -1,14 +1,15 @@
 package app
 
 import (
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/store/storetest/mocks"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"strconv"
-	"testing"
-	"time"
 )
 
 func TestConfigListener(t *testing.T) {
@@ -146,7 +147,7 @@ func TestEnsureInstallationDate(t *testing.T) {
 				assert.NoError(t, err)
 
 				data, err := th.App.Srv().Store.System().GetByName(model.SYSTEM_INSTALLATION_DATE_KEY)
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				value, _ := strconv.ParseInt(data.Value, 10, 64)
 				assert.True(t, *tc.ExpectedInstallationDate <= value && *tc.ExpectedInstallationDate+1000 >= value)
 			}

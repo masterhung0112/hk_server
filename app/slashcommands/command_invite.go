@@ -6,10 +6,9 @@ package slashcommands
 import (
 	"strings"
 
-	goi18n "github.com/mattermost/go-i18n/i18n"
-
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
@@ -28,7 +27,7 @@ func (*InviteProvider) GetTrigger() string {
 	return CmdInvite
 }
 
-func (*InviteProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*InviteProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
 		Trigger:          CmdInvite,
 		AutoComplete:     true,

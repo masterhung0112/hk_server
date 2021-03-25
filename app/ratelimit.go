@@ -14,6 +14,7 @@ import (
 	"github.com/throttled/throttled/store/memstore"
 
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils"
 )
@@ -29,7 +30,7 @@ type RateLimiter struct {
 func NewRateLimiter(settings *model.RateLimitSettings, trustedProxyIPHeader []string) (*RateLimiter, error) {
 	store, err := memstore.New(*settings.MemoryStoreSize)
 	if err != nil {
-		return nil, errors.Wrap(err, utils.T("api.server.start_server.rate_limiting_memory_store"))
+		return nil, errors.Wrap(err, i18n.T("api.server.start_server.rate_limiting_memory_store"))
 	}
 
 	quota := throttled.RateQuota{
@@ -39,7 +40,7 @@ func NewRateLimiter(settings *model.RateLimitSettings, trustedProxyIPHeader []st
 
 	throttledRateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
 	if err != nil {
-		return nil, errors.Wrap(err, utils.T("api.server.start_server.rate_limiting_rate_limiter"))
+		return nil, errors.Wrap(err, i18n.T("api.server.start_server.rate_limiting_rate_limiter"))
 	}
 
 	return &RateLimiter{
@@ -59,10 +60,10 @@ func (rl *RateLimiter) GenerateKey(r *http.Request) string {
 		if tokenLocation != TokenLocationNotFound {
 			key += token
 		} else if rl.useIP { // If we don't find an authentication token and IP based is enabled, fall back to IP
-			key += utils.GetIpAddress(r, rl.trustedProxyIPHeader)
+			key += utils.GetIPAddress(r, rl.trustedProxyIPHeader)
 		}
 	} else if rl.useIP { // Only if Auth based is not enabed do we use a plain IP based
-		key += utils.GetIpAddress(r, rl.trustedProxyIPHeader)
+		key += utils.GetIPAddress(r, rl.trustedProxyIPHeader)
 	}
 
 	// Note that most of the time the user won't have to set this because the utils.GetIpAddress above tries the
@@ -77,25 +78,23 @@ func (rl *RateLimiter) GenerateKey(r *http.Request) string {
 func (rl *RateLimiter) RateLimitWriter(key string, w http.ResponseWriter) bool {
 	limited, context, err := rl.throttledRateLimiter.RateLimit(key, 1)
 	if err != nil {
-		mlog.Critical("Internal server error when rate limiting. Rate Limiting broken.", mlog.Err(err))
+		mlog.Error("Internal server error when rate limiting. Rate Limiting broken.", mlog.Err(err))
 		return false
 	}
 
 	setRateLimitHeaders(w, context)
 
 	if limited {
-		mlog.Error("Denied due to throttling settings code=429", mlog.String("key", key))
+		mlog.Debug("Denied due to throttling settings code=429", mlog.String("key", key))
 		http.Error(w, "limit exceeded", 429)
 	}
 
 	return limited
 }
 
-func (rl *RateLimiter) UserIdRateLimit(userId string, w http.ResponseWriter) bool {
+func (rl *RateLimiter) UserIdRateLimit(userID string, w http.ResponseWriter) bool {
 	if rl.useAuth {
-		if rl.RateLimitWriter(userId, w) {
-			return true
-		}
+		return rl.RateLimitWriter(userID, w)
 	}
 	return false
 }
@@ -103,9 +102,8 @@ func (rl *RateLimiter) UserIdRateLimit(userId string, w http.ResponseWriter) boo
 func (rl *RateLimiter) RateLimitHandler(wrappedHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		key := rl.GenerateKey(r)
-		limited := rl.RateLimitWriter(key, w)
 
-		if !limited {
+		if !rl.RateLimitWriter(key, w) {
 			wrappedHandler.ServeHTTP(w, r)
 		}
 	})

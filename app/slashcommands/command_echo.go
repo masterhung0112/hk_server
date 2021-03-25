@@ -10,8 +10,8 @@ import (
 
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mlog"
-	goi18n "github.com/mattermost/go-i18n/i18n"
 )
 
 var echoSem chan bool
@@ -20,7 +20,7 @@ type EchoProvider struct {
 }
 
 const (
-	CMD_ECHO = "echo"
+	CmdEcho = "echo"
 )
 
 func init() {
@@ -28,12 +28,12 @@ func init() {
 }
 
 func (*EchoProvider) GetTrigger() string {
-	return CMD_ECHO
+	return CmdEcho
 }
 
-func (*EchoProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*EchoProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_ECHO,
+		Trigger:          CmdEcho,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_echo.desc"),
 		AutoCompleteHint: T("api.command_echo.hint"),
@@ -42,7 +42,7 @@ func (*EchoProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Comma
 }
 
 func (*EchoProvider) DoCommand(a *app.App, args *model.CommandArgs, message string) *model.CommandResponse {
-	if len(message) == 0 {
+	if message == "" {
 		return &model.CommandResponse{Text: args.T("api.command_echo.message.app_error"), ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL}
 	}
 

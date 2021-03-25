@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/model"
 )
 
 func TestAvaliablePlugins(t *testing.T) {

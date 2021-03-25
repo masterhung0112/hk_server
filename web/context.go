@@ -11,6 +11,7 @@ import (
 
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
@@ -85,7 +86,7 @@ func (c *Context) LogAuditWithUserId(userId, extraInfo string) {
 
 func (c *Context) LogErrorByCode(err *model.AppError) {
 	code := err.StatusCode
-	msg := err.SystemMessage(utils.TDefault)
+	msg := err.SystemMessage(i18n.TDefault)
 	fields := []mlog.Field{
 		mlog.String("err_where", err.Where),
 		mlog.Int("http_code", err.StatusCode),

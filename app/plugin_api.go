@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils"
 )
@@ -76,7 +77,7 @@ func (api *PluginAPI) ExecuteSlashCommand(commandArgs *model.CommandArgs) (*mode
 	if appErr != nil {
 		return nil, appErr
 	}
-	commandArgs.T = utils.GetUserTranslations(user.Locale)
+	commandArgs.T = i18n.GetUserTranslations(user.Locale)
 	commandArgs.SiteURL = api.app.GetSiteURL()
 	response, appErr := api.app.ExecuteCommand(commandArgs)
 	if appErr != nil {

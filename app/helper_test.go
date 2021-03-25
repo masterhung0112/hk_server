@@ -39,7 +39,7 @@ type TestHelper struct {
 	tempWorkspace string
 }
 
-func setupTestHelper(dbStore store.Store, enterprise bool, includeCacheLayer bool, tb testing.TB, configSet func(*model.Config)) *TestHelper {
+func setupTestHelper(dbStore store.Store, enterprise bool, includeCacheLayer bool, tb testing.TB) *TestHelper {
 	tempWorkspace, err := ioutil.TempDir("", "apptest")
 	if err != nil {
 		panic(err)
@@ -48,11 +48,9 @@ func setupTestHelper(dbStore store.Store, enterprise bool, includeCacheLayer boo
 	configStore := config.NewTestMemoryStore()
 
 	config := configStore.Get()
-	if configSet != nil {
-		configSet(config)
-	}
 	*config.PluginSettings.Directory = filepath.Join(tempWorkspace, "plugins")
 	*config.PluginSettings.ClientDirectory = filepath.Join(tempWorkspace, "webapp")
+	*config.PluginSettings.AutomaticPrepackagedPlugins = false
 	*config.LogSettings.EnableSentry = false // disable error reporting during tests
 	*config.AnnouncementSettings.AdminNoticesEnabled = false
 	*config.AnnouncementSettings.UserNoticesEnabled = false
@@ -129,18 +127,6 @@ func setupTestHelper(dbStore store.Store, enterprise bool, includeCacheLayer boo
 	return th
 }
 
-func SetupEnterprise(tb testing.TB) *TestHelper {
-	if testing.Short() {
-		tb.SkipNow()
-	}
-	dbStore := mainHelper.GetStore()
-	dbStore.DropAllTables()
-	dbStore.MarkSystemRanUnitTests()
-	mainHelper.PreloadMigrations()
-
-	return setupTestHelper(dbStore, true, true, tb, nil)
-}
-
 func Setup(tb testing.TB) *TestHelper {
 	if testing.Short() {
 		tb.SkipNow()
@@ -150,7 +136,7 @@ func Setup(tb testing.TB) *TestHelper {
 	dbStore.MarkSystemRanUnitTests()
 	mainHelper.PreloadMigrations()
 
-	return setupTestHelper(dbStore, false, true, tb, nil)
+	return setupTestHelper(dbStore, false, true, tb)
 }
 
 func SetupWithoutPreloadMigrations(tb testing.TB) *TestHelper {
@@ -161,12 +147,12 @@ func SetupWithoutPreloadMigrations(tb testing.TB) *TestHelper {
 	dbStore.DropAllTables()
 	dbStore.MarkSystemRanUnitTests()
 
-	return setupTestHelper(dbStore, false, true, tb, nil)
+	return setupTestHelper(dbStore, false, true, tb)
 }
 
 func SetupWithStoreMock(tb testing.TB) *TestHelper {
 	mockStore := testlib.GetMockStoreForSetupFunctions()
-	th := setupTestHelper(mockStore, false, false, tb, nil)
+	th := setupTestHelper(mockStore, false, false, tb)
 	emptyMockStore := mocks.Store{}
 	emptyMockStore.On("Close").Return(nil)
 	th.App.Srv().Store = &emptyMockStore
@@ -175,7 +161,7 @@ func SetupWithStoreMock(tb testing.TB) *TestHelper {
 
 func SetupEnterpriseWithStoreMock(tb testing.TB) *TestHelper {
 	mockStore := testlib.GetMockStoreForSetupFunctions()
-	th := setupTestHelper(mockStore, true, false, tb, nil)
+	th := setupTestHelper(mockStore, true, false, tb)
 	emptyMockStore := mocks.Store{}
 	emptyMockStore.On("Close").Return(nil)
 	th.App.Srv().Store = &emptyMockStore
@@ -209,7 +195,7 @@ func (th *TestHelper) InitBasic() *TestHelper {
 	th.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
 	th.BasicUser = userCache.BasicUser.DeepCopy()
 	th.BasicUser2 = userCache.BasicUser2.DeepCopy()
-	mainHelper.GetSqlStore().GetMaster().Insert(th.SystemAdminUser, th.BasicUser, th.BasicUser2)
+	mainHelper.GetSQLStore().GetMaster().Insert(th.SystemAdminUser, th.BasicUser, th.BasicUser2)
 
 	th.BasicTeam = th.CreateTeam()
 
@@ -535,11 +521,26 @@ func (th *TestHelper) TearDown() {
 }
 
 func (*TestHelper) GetSqlStore() *sqlstore.SqlStore {
-	return mainHelper.GetSqlStore()
+	return mainHelper.GetSQLStore()
+}
+
+func (th *TestHelper) ConfigureInbucketMail() {
+	inbucket_host := os.Getenv("CI_INBUCKET_HOST")
+	if inbucket_host == "" {
+		inbucket_host = "localhost"
+	}
+	inbucket_port := os.Getenv("CI_INBUCKET_SMTP_PORT")
+	if inbucket_port == "" {
+		inbucket_port = "10025"
+	}
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.EmailSettings.SMTPServer = inbucket_host
+		*cfg.EmailSettings.SMTPPort = inbucket_port
+	})
 }
 
 func (*TestHelper) ResetRoleMigration() {
-	sqlStore := mainHelper.GetSqlStore()
+	sqlStore := mainHelper.GetSQLStore()
 	if _, err := sqlStore.GetMaster().Exec("DELETE from Roles"); err != nil {
 		panic(err)
 	}
@@ -552,7 +553,7 @@ func (*TestHelper) ResetRoleMigration() {
 }
 
 func (*TestHelper) ResetEmojisMigration() {
-	sqlStore := mainHelper.GetSqlStore()
+	sqlStore := mainHelper.GetSQLStore()
 	if _, err := sqlStore.GetMaster().Exec("UPDATE Roles SET Permissions=REPLACE(Permissions, ' create_emojis', '') WHERE builtin=True"); err != nil {
 		panic(err)
 	}
@@ -574,13 +575,13 @@ func (*TestHelper) ResetEmojisMigration() {
 
 func (th *TestHelper) CheckTeamCount(t *testing.T, expected int64) {
 	teamCount, err := th.App.Srv().Store.Team().AnalyticsTeamCount(false)
-	require.Nil(t, err, "Failed to get team count.")
+	require.NoError(t, err, "Failed to get team count.")
 	require.Equalf(t, teamCount, expected, "Unexpected number of teams. Expected: %v, found: %v", expected, teamCount)
 }
 
 func (th *TestHelper) CheckChannelsCount(t *testing.T, expected int64) {
 	count, err := th.App.Srv().Store.Channel().AnalyticsTypeCount("", model.CHANNEL_OPEN)
-	require.Nilf(t, err, "Failed to get channel count.")
+	require.NoError(t, err, "Failed to get channel count.")
 	require.Equalf(t, count, expected, "Unexpected number of channels. Expected: %v, found: %v", expected, count)
 }
 

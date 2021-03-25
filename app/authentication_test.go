@@ -9,8 +9,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/model"
 	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/model"
 )
 
 func TestParseAuthTokenFromRequest(t *testing.T) {

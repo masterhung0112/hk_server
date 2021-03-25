@@ -6,14 +6,14 @@ package slashcommands
 import (
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/model"
-	goi18n "github.com/mattermost/go-i18n/i18n"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 )
 
 type OfflineProvider struct {
 }
 
 const (
-	CMD_OFFLINE = "offline"
+	CmdOffline = "offline"
 )
 
 func init() {
@@ -21,12 +21,12 @@ func init() {
 }
 
 func (*OfflineProvider) GetTrigger() string {
-	return CMD_OFFLINE
+	return CmdOffline
 }
 
-func (*OfflineProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*OfflineProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_OFFLINE,
+		Trigger:          CmdOffline,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_offline.desc"),
 		DisplayName:      T("api.command_offline.name"),

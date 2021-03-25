@@ -6,14 +6,14 @@ package slashcommands
 import (
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/model"
-	goi18n "github.com/mattermost/go-i18n/i18n"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 )
 
 type ShortcutsProvider struct {
 }
 
 const (
-	CMD_SHORTCUTS = "shortcuts"
+	CmdShortcuts = "shortcuts"
 )
 
 func init() {
@@ -21,12 +21,12 @@ func init() {
 }
 
 func (*ShortcutsProvider) GetTrigger() string {
-	return CMD_SHORTCUTS
+	return CmdShortcuts
 }
 
-func (*ShortcutsProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*ShortcutsProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_SHORTCUTS,
+		Trigger:          CmdShortcuts,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_shortcuts.desc"),
 		AutoCompleteHint: "",

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -130,7 +131,7 @@ func TestMoveChannel(t *testing.T) {
 		require.Nil(t, err)
 
 		err = th.App.MoveChannel(targetTeam, channel1, th.BasicUser)
-		require.Error(t, err, "Should have failed due to mismatched members.")
+		require.NotNil(t, err, "Should have failed due to mismatched members.")
 
 		_, err = th.App.AddUserToTeam(targetTeam.Id, th.BasicUser2.Id, "")
 		require.Nil(t, err)
@@ -156,7 +157,7 @@ func TestMoveChannel(t *testing.T) {
 		require.Nil(t, err)
 
 		err = th.App.MoveChannel(targetTeam, channel2, th.BasicUser)
-		require.Error(t, err, "Should have failed due to mismatched deacivated member.")
+		require.NotNil(t, err, "Should have failed due to mismatched deacivated member.")
 
 		// Test moving a channel with no members.
 		channel3 := &model.Channel{
@@ -261,10 +262,10 @@ func TestJoinDefaultChannelsCreatesChannelMemberHistoryRecordTownSquare(t *testi
 
 	// figure out the initial number of users in town square
 	channel, err := th.App.Srv().Store.Channel().GetByName(th.BasicTeam.Id, "town-square", true)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	townSquareChannelId := channel.Id
 	users, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, townSquareChannelId)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	initialNumTownSquareUsers := len(users)
 
 	// create a new user that joins the default channels
@@ -273,7 +274,7 @@ func TestJoinDefaultChannelsCreatesChannelMemberHistoryRecordTownSquare(t *testi
 
 	// there should be a ChannelMemberHistory record for the user
 	histories, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, townSquareChannelId)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	assert.Len(t, histories, initialNumTownSquareUsers+1)
 
 	found := false
@@ -292,10 +293,10 @@ func TestJoinDefaultChannelsCreatesChannelMemberHistoryRecordOffTopic(t *testing
 
 	// figure out the initial number of users in off-topic
 	channel, err := th.App.Srv().Store.Channel().GetByName(th.BasicTeam.Id, "off-topic", true)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	offTopicChannelId := channel.Id
 	users, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, offTopicChannelId)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	initialNumTownSquareUsers := len(users)
 
 	// create a new user that joins the default channels
@@ -304,7 +305,7 @@ func TestJoinDefaultChannelsCreatesChannelMemberHistoryRecordOffTopic(t *testing
 
 	// there should be a ChannelMemberHistory record for the user
 	histories, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, offTopicChannelId)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	assert.Len(t, histories, initialNumTownSquareUsers+1)
 
 	found := false
@@ -349,7 +350,7 @@ func TestCreateChannelPublicCreatesChannelMemberHistoryRecord(t *testing.T) {
 
 	// there should be a ChannelMemberHistory record for the user
 	histories, err := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, publicChannel.Id)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Len(t, histories, 1)
 	assert.Equal(t, th.BasicUser.Id, histories[0].UserId)
 	assert.Equal(t, publicChannel.Id, histories[0].ChannelId)
@@ -364,7 +365,7 @@ func TestCreateChannelPrivateCreatesChannelMemberHistoryRecord(t *testing.T) {
 
 	// there should be a ChannelMemberHistory record for the user
 	histories, err := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, privateChannel.Id)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Len(t, histories, 1)
 	assert.Equal(t, th.BasicUser.Id, histories[0].UserId)
 	assert.Equal(t, privateChannel.Id, histories[0].ChannelId)
@@ -408,7 +409,7 @@ func TestCreateGroupChannelCreatesChannelMemberHistoryRecord(t *testing.T) {
 
 	require.Nil(t, err, "Failed to create group channel.")
 	histories, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, channel.Id)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	assert.Len(t, histories, 3)
 
 	channelMemberHistoryUserIds := make([]string, 0)
@@ -433,7 +434,7 @@ func TestCreateDirectChannelCreatesChannelMemberHistoryRecord(t *testing.T) {
 	require.Nil(t, err, "Failed to create direct channel.")
 
 	histories, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, channel.Id)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	assert.Len(t, histories, 2)
 
 	historyId0 := histories[0].UserId
@@ -461,7 +462,7 @@ func TestGetDirectChannelCreatesChannelMemberHistoryRecord(t *testing.T) {
 
 	// there should be a ChannelMemberHistory record for both users
 	histories, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, channel.Id)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	assert.Len(t, histories, 2)
 
 	historyId0 := histories[0].UserId
@@ -496,7 +497,7 @@ func TestAddUserToChannelCreatesChannelMemberHistoryRecord(t *testing.T) {
 
 	// there should be a ChannelMemberHistory record for the user
 	histories, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, channel.Id)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	assert.Len(t, histories, 2)
 	channelMemberHistoryUserIds := make([]string, 0)
 	for _, history := range histories {
@@ -584,7 +585,7 @@ func TestAddChannelMemberNoUserRequestor(t *testing.T) {
 
 	// there should be a ChannelMemberHistory record for the user
 	histories, nErr := th.App.Srv().Store.ChannelMemberHistory().GetUsersInChannelDuring(model.GetMillis()-100, model.GetMillis()+100, channel.Id)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 	assert.Len(t, histories, 2)
 	channelMemberHistoryUserIds := make([]string, 0)
 	for _, history := range histories {
@@ -594,7 +595,7 @@ func TestAddChannelMemberNoUserRequestor(t *testing.T) {
 	assert.Equal(t, groupUserIds, channelMemberHistoryUserIds)
 
 	postList, nErr := th.App.Srv().Store.Post().GetPosts(model.GetPostsOptions{ChannelId: channel.Id, Page: 0, PerPage: 1}, false)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 
 	if assert.Len(t, postList.Order, 1) {
 		post := postList.Posts[postList.Order[0]]
@@ -1907,7 +1908,7 @@ func TestMarkChannelsAsViewedPanic(t *testing.T) {
 
 	mockStore := th.App.Srv().Store.(*mocks.Store)
 	mockUserStore := mocks.UserStore{}
-	mockUserStore.On("Get", "userID").Return(nil, model.NewAppError("SqlUserStore.Get", "app.user.get.app_error", nil, "user_id=userID", http.StatusInternalServerError))
+	mockUserStore.On("Get", context.Background(), "userID").Return(nil, model.NewAppError("SqlUserStore.Get", "app.user.get.app_error", nil, "user_id=userID", http.StatusInternalServerError))
 	mockChannelStore := mocks.ChannelStore{}
 	mockChannelStore.On("Get", "channelID", true).Return(&model.Channel{}, nil)
 	mockChannelStore.On("GetMember", "channelID", "userID").Return(&model.ChannelMember{

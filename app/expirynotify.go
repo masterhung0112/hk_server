@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mlog"
-	"github.com/masterhung0112/hk_server/utils"
 )
 
 const (
@@ -80,7 +80,7 @@ func (a *App) getSessionExpiredPushMessage(session *model.Session) string {
 	if err == nil {
 		locale = user.Locale
 	}
-	T := utils.GetUserTranslations(locale)
+	T := i18n.GetUserTranslations(locale)
 
 	siteName := *a.Config().TeamSettings.SiteName
 	props := map[string]interface{}{"siteName": siteName, "daysCount": *a.Config().ServiceSettings.SessionLengthMobileInDays}

@@ -14,7 +14,7 @@ type TeamEnvironment struct {
 }
 
 type AutoTeamCreator struct {
-	client        *model.Client1
+	client        *model.Client4
 	Fuzzy         bool
 	NameLength    utils.Range
 	NameCharset   string
@@ -24,15 +24,15 @@ type AutoTeamCreator struct {
 	EmailCharset  string
 }
 
-func NewAutoTeamCreator(client *model.Client1) *AutoTeamCreator {
+func NewAutoTeamCreator(client *model.Client4) *AutoTeamCreator {
 	return &AutoTeamCreator{
 		client:        client,
 		Fuzzy:         false,
-		NameLength:    TEAM_NAME_LEN,
+		NameLength:    TeamNameLen,
 		NameCharset:   utils.LOWERCASE,
-		DomainLength:  TEAM_DOMAIN_NAME_LEN,
+		DomainLength:  TeamDomainNameLen,
 		DomainCharset: utils.LOWERCASE,
-		EmailLength:   TEAM_EMAIL_LEN,
+		EmailLength:   TeamEmailLen,
 		EmailCharset:  utils.LOWERCASE,
 	}
 }

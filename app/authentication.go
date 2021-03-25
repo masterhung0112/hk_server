@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/mfa"
+	"github.com/masterhung0112/hk_server/shared/mfa"
 	"github.com/masterhung0112/hk_server/utils"
 )
 

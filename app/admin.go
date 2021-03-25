@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mail"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils"
-	"github.com/mattermost/go-i18n/i18n"
 )
 
 func (s *Server) GetLogs(page, perPage int) ([]string, *model.AppError) {
@@ -188,7 +188,7 @@ func (a *App) RecycleDatabaseConnection() {
 }
 
 func (a *App) TestSiteURL(siteURL string) *model.AppError {
-	url := fmt.Sprintf("%s/api/v1/system/ping", siteURL)
+	url := fmt.Sprintf("%s/api/v4/system/ping", siteURL)
 	res, err := http.Get(url)
 	if err != nil || res.StatusCode != 200 {
 		return model.NewAppError("testSiteURL", "app.admin.test_site_url.failure", nil, "", http.StatusBadRequest)

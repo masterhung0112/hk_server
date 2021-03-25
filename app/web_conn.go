@@ -7,15 +7,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 
 	"github.com/gorilla/websocket"
-	goi18n "github.com/mattermost/go-i18n/i18n"
 )
 
 const (
@@ -36,7 +38,7 @@ type WebConn struct {
 	sessionExpiresAt int64 // This should stay at the top for 64-bit alignment of 64-bit words accessed atomically
 	App              *App
 	WebSocket        *websocket.Conn
-	T                goi18n.TranslateFunc
+	T                i18n.TranslateFunc
 	Locale           string
 	Sequence         int64
 	UserId           string
@@ -52,12 +54,23 @@ type WebConn struct {
 }
 
 // NewWebConn returns a new WebConn instance.
-func (a *App) NewWebConn(ws *websocket.Conn, session model.Session, t goi18n.TranslateFunc, locale string) *WebConn {
+func (a *App) NewWebConn(ws *websocket.Conn, session model.Session, t i18n.TranslateFunc, locale string) *WebConn {
 	if session.UserId != "" {
 		a.Srv().Go(func() {
 			a.SetStatusOnline(session.UserId, false)
 			a.UpdateLastActivityAtIfNeeded(session)
 		})
+	}
+
+	if a.srv.Config().FeatureFlags.WebSocketDelay {
+		// Disable TCP_NO_DELAY for higher throughput
+		tcpConn, ok := ws.UnderlyingConn().(*net.TCPConn)
+		if ok {
+			err := tcpConn.SetNoDelay(false)
+			if err != nil {
+				mlog.Warn("Error in setting NoDelay socket opts", mlog.Err(err))
+			}
+		}
 	}
 
 	wc := &WebConn{
@@ -133,6 +146,8 @@ func (wc *WebConn) Pump() {
 	wg.Wait()
 	wc.App.HubUnregister(wc)
 	close(wc.pumpFinished)
+
+	defer ReturnSessionToPool(wc.GetSession())
 }
 
 func (wc *WebConn) readPump() {
@@ -282,7 +297,12 @@ func (wc *WebConn) IsAuthenticated() bool {
 
 		session, err := wc.App.GetSession(wc.GetSessionToken())
 		if err != nil {
-			mlog.Error("Invalid session.", mlog.Err(err))
+			if err.StatusCode >= http.StatusBadRequest && err.StatusCode < http.StatusInternalServerError {
+				mlog.Debug("Invalid session.", mlog.Err(err))
+			} else {
+				mlog.Error("Could not get session", mlog.String("session_token", wc.GetSessionToken()), mlog.Err(err))
+			}
+
 			wc.SetSessionToken("")
 			wc.SetSession(nil)
 			wc.SetSessionExpiresAt(0)
@@ -303,24 +323,24 @@ func (wc *WebConn) createHelloMessage() *model.WebSocketEvent {
 }
 
 func (wc *WebConn) shouldSendEventToGuest(msg *model.WebSocketEvent) bool {
-	var userId string
+	var userID string
 	var canSee bool
 
 	switch msg.EventType() {
 	case model.WEBSOCKET_EVENT_USER_UPDATED:
 		user, ok := msg.GetData()["user"].(*model.User)
 		if !ok {
-			mlog.Error("webhub.shouldSendEvent: user not found in message", mlog.Any("user", msg.GetData()["user"]))
+			mlog.Debug("webhub.shouldSendEvent: user not found in message", mlog.Any("user", msg.GetData()["user"]))
 			return false
 		}
-		userId = user.Id
+		userID = user.Id
 	case model.WEBSOCKET_EVENT_NEW_USER:
-		userId = msg.GetData()["user_id"].(string)
+		userID = msg.GetData()["user_id"].(string)
 	default:
 		return true
 	}
 
-	canSee, err := wc.App.UserCanSeeOtherUser(wc.UserId, userId)
+	canSee, err := wc.App.UserCanSeeOtherUser(wc.UserId, userID)
 	if err != nil {
 		mlog.Error("webhub.shouldSendEvent.", mlog.Err(err))
 		return false
@@ -406,21 +426,25 @@ func (wc *WebConn) shouldSendEvent(msg *model.WebSocketEvent) bool {
 }
 
 // IsMemberOfTeam returns whether the user of the WebConn
-// is a member of the given teamId or not.
-func (wc *WebConn) isMemberOfTeam(teamId string) bool {
+// is a member of the given teamID or not.
+func (wc *WebConn) isMemberOfTeam(teamID string) bool {
 	currentSession := wc.GetSession()
 
 	if currentSession == nil || currentSession.Token == "" {
 		session, err := wc.App.GetSession(wc.GetSessionToken())
 		if err != nil {
-			mlog.Error("Invalid session.", mlog.Err(err))
+			if err.StatusCode >= http.StatusBadRequest && err.StatusCode < http.StatusInternalServerError {
+				mlog.Debug("Invalid session.", mlog.Err(err))
+			} else {
+				mlog.Error("Could not get session", mlog.String("session_token", wc.GetSessionToken()), mlog.Err(err))
+			}
 			return false
 		}
 		wc.SetSession(session)
 		currentSession = session
 	}
 
-	return currentSession.GetTeamByTeamId(teamId) != nil
+	return currentSession.GetTeamByTeamId(teamID) != nil
 }
 
 func (wc *WebConn) logSocketErr(source string, err error) {

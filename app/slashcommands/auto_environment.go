@@ -17,7 +17,7 @@ type TestEnvironment struct {
 	Environments []TeamEnvironment
 }
 
-func CreateTestEnvironmentWithTeams(a *app.App, client *model.Client1, rangeTeams utils.Range, rangeChannels utils.Range, rangeUsers utils.Range, rangePosts utils.Range, fuzzy bool) (TestEnvironment, error) {
+func CreateTestEnvironmentWithTeams(a *app.App, client *model.Client4, rangeTeams utils.Range, rangeChannels utils.Range, rangeUsers utils.Range, rangePosts utils.Range, fuzzy bool) (TestEnvironment, error) {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	teamCreator := NewAutoTeamCreator(client)
@@ -36,7 +36,7 @@ func CreateTestEnvironmentWithTeams(a *app.App, client *model.Client1, rangeTeam
 		if err != nil {
 			return TestEnvironment{}, err
 		}
-		client.LoginById(randomUser.Id, USER_PASSWORD)
+		client.LoginById(randomUser.Id, UserPassword)
 		teamEnvironment, err := CreateTestEnvironmentInTeam(a, client, team, rangeChannels, rangeUsers, rangePosts, fuzzy)
 		if err != nil {
 			return TestEnvironment{}, err
@@ -47,7 +47,7 @@ func CreateTestEnvironmentWithTeams(a *app.App, client *model.Client1, rangeTeam
 	return environment, nil
 }
 
-func CreateTestEnvironmentInTeam(a *app.App, client *model.Client1, team *model.Team, rangeChannels utils.Range, rangeUsers utils.Range, rangePosts utils.Range, fuzzy bool) (TeamEnvironment, error) {
+func CreateTestEnvironmentInTeam(a *app.App, client *model.Client4, team *model.Team, rangeChannels utils.Range, rangeUsers utils.Range, rangePosts utils.Range, fuzzy bool) (TeamEnvironment, error) {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// We need to create at least one user
@@ -76,7 +76,7 @@ func CreateTestEnvironmentInTeam(a *app.App, client *model.Client1, team *model.
 	// Have every user join every channel
 	for _, user := range users {
 		for _, channel := range channels {
-			_, resp := client.LoginById(user.Id, USER_PASSWORD)
+			_, resp := client.LoginById(user.Id, UserPassword)
 			if resp.Error != nil {
 				return TeamEnvironment{}, resp.Error
 			}
@@ -92,7 +92,7 @@ func CreateTestEnvironmentInTeam(a *app.App, client *model.Client1, team *model.
 	numImages := utils.RandIntFromRange(rangePosts) / 4
 	for j := 0; j < numPosts; j++ {
 		user := users[utils.RandIntFromRange(utils.Range{Begin: 0, End: len(users) - 1})]
-		_, resp := client.LoginById(user.Id, USER_PASSWORD)
+		_, resp := client.LoginById(user.Id, UserPassword)
 		if resp.Error != nil {
 			return TeamEnvironment{}, resp.Error
 		}

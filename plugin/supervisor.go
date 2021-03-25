@@ -13,6 +13,7 @@ import (
 	"time"
 
 	plugin "github.com/hashicorp/go-plugin"
+
 	"github.com/masterhung0112/hk_server/einterfaces"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/shared/mlog"
@@ -22,7 +23,7 @@ type supervisor struct {
 	lock        sync.RWMutex
 	client      *plugin.Client
 	hooks       Hooks
-	implemented [TotalHooksId]bool
+	implemented [TotalHooksID]bool
 	pid         int
 }
 
@@ -114,15 +115,14 @@ func (sup *supervisor) Hooks() Hooks {
 func (sup *supervisor) PerformHealthCheck() error {
 	// No need for a lock here because Ping is read-locked.
 	if pingErr := sup.Ping(); pingErr != nil {
-		for pingFails := 1; pingFails < HEALTH_CHECK_PING_FAIL_LIMIT; pingFails++ {
+		for pingFails := 1; pingFails < HealthCheckPingFailLimit; pingFails++ {
 			pingErr = sup.Ping()
 			if pingErr == nil {
 				break
 			}
 		}
 		if pingErr != nil {
-			mlog.Debug("Error pinging plugin", mlog.Err(pingErr))
-			return fmt.Errorf("Plugin RPC connection is not responding")
+			return fmt.Errorf("plugin RPC connection is not responding")
 		}
 	}
 

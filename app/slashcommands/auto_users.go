@@ -15,7 +15,7 @@ import (
 
 type AutoUserCreator struct {
 	app          *app.App
-	client       *model.Client1
+	client       *model.Client4
 	team         *model.Team
 	EmailLength  utils.Range
 	EmailCharset string
@@ -24,32 +24,32 @@ type AutoUserCreator struct {
 	Fuzzy        bool
 }
 
-func NewAutoUserCreator(a *app.App, client *model.Client1, team *model.Team) *AutoUserCreator {
+func NewAutoUserCreator(a *app.App, client *model.Client4, team *model.Team) *AutoUserCreator {
 	return &AutoUserCreator{
 		app:          a,
 		client:       client,
 		team:         team,
-		EmailLength:  USER_EMAIL_LEN,
+		EmailLength:  UserEmailLen,
 		EmailCharset: utils.LOWERCASE,
-		NameLength:   USER_NAME_LEN,
+		NameLength:   UserNameLen,
 		NameCharset:  utils.LOWERCASE,
 		Fuzzy:        false,
 	}
 }
 
 // Basic test team and user so you always know one
-func CreateBasicUser(a *app.App, client *model.Client1) *model.AppError {
-	found, _ := client.TeamExists(BTEST_TEAM_NAME, "")
+func CreateBasicUser(a *app.App, client *model.Client4) *model.AppError {
+	found, _ := client.TeamExists(BTestTeamName, "")
 	if found {
 		return nil
 	}
 
-	newteam := &model.Team{DisplayName: BTEST_TEAM_DISPLAY_NAME, Name: BTEST_TEAM_NAME, Email: BTEST_TEAM_EMAIL, Type: BTEST_TEAM_TYPE}
+	newteam := &model.Team{DisplayName: BTestTeamDisplayName, Name: BTestTeamName, Email: BTestTeamEmail, Type: BTestTeamType}
 	basicteam, resp := client.CreateTeam(newteam)
 	if resp.Error != nil {
 		return resp.Error
 	}
-	newuser := &model.User{Email: BTEST_USER_EMAIL, Nickname: BTEST_USER_NAME, Password: BTEST_USER_PASSWORD}
+	newuser := &model.User{Email: BTestUserEmail, Nickname: BTestUserName, Password: BTestUserPassword}
 	ruser, resp := client.CreateUser(newuser)
 	if resp.Error != nil {
 		return resp.Error
@@ -91,11 +91,11 @@ func (cfg *AutoUserCreator) createRandomUser() (*model.User, error) {
 	user := &model.User{
 		Email:    userEmail,
 		Nickname: userName,
-		Password: USER_PASSWORD}
+		Password: UserPassword}
 
-	ruser, resp := cfg.client.CreateUserWithInviteId(user, cfg.team.InviteId)
-	if resp.Error != nil {
-		return nil, resp.Error
+	ruser, appErr := cfg.app.CreateUserWithInviteId(user, cfg.team.InviteId, "")
+	if appErr != nil {
+		return nil, appErr
 	}
 
 	status := &model.Status{UserId: ruser.Id, Status: model.STATUS_ONLINE, Manual: false, LastActivityAt: model.GetMillis(), ActiveChannel: ""}

@@ -9,7 +9,7 @@ import (
 	"github.com/masterhung0112/hk_server/services/configservice"
 	"github.com/masterhung0112/hk_server/web"
 
-	_ "github.com/mattermost/go-i18n/i18n"
+	_ "github.com/masterhung0112/hk_server/shared/i18n"
 )
 
 type ApiRoutes struct {

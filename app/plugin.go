@@ -15,8 +15,8 @@ import (
 
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/services/filesstore"
 	"github.com/masterhung0112/hk_server/services/marketplace"
+	"github.com/masterhung0112/hk_server/shared/filestore"
 	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils/fileutils"
 
@@ -28,7 +28,7 @@ import (
 const prepackagedPluginsDir = "prepackaged_plugins"
 
 type pluginSignaturePath struct {
-	pluginId      string
+	pluginID      string
 	path          string
 	signaturePath string
 }
@@ -88,9 +88,9 @@ func (a *App) SyncPluginsActiveState() {
 		disabledPlugins := []*model.BundleInfo{}
 		enabledPlugins := []*model.BundleInfo{}
 		for _, plugin := range availablePlugins {
-			pluginId := plugin.Manifest.Id
+			pluginID := plugin.Manifest.Id
 			pluginEnabled := false
-			if state, ok := config.PluginStates[pluginId]; ok {
+			if state, ok := config.PluginStates[pluginID]; ok {
 				pluginEnabled = state.Enable
 			}
 
@@ -125,8 +125,8 @@ func (a *App) SyncPluginsActiveState() {
 			go func(plugin *model.BundleInfo) {
 				defer wg.Done()
 
-				pluginId := plugin.Manifest.Id
-				updatedManifest, activated, err := pluginsEnvironment.Activate(pluginId)
+				pluginID := plugin.Manifest.Id
+				updatedManifest, activated, err := pluginsEnvironment.Activate(pluginID)
 				if err != nil {
 					plugin.WrapLogger(a.Log()).Error("Unable to activate plugin", mlog.Err(err))
 					return
@@ -146,7 +146,7 @@ func (a *App) SyncPluginsActiveState() {
 	}
 
 	if err := a.notifyPluginStatusesChanged(); err != nil {
-		mlog.Error("failed to notify plugin status changed", mlog.Err(err))
+		mlog.Warn("failed to notify plugin status changed", mlog.Err(err))
 	}
 }
 
@@ -195,10 +195,13 @@ func (a *App) InitPlugins(pluginDir, webappPluginDir string) {
 	}
 	pluginsEnvironment.SetPrepackagedPlugins(plugins)
 
+	a.installFeatureFlagPlugins()
+
 	// Sync plugin active state when config changes. Also notify plugins.
 	a.Srv().PluginsLock.Lock()
 	a.RemoveConfigListener(a.Srv().PluginConfigListenerId)
 	a.Srv().PluginConfigListenerId = a.AddConfigListener(func(*model.Config, *model.Config) {
+		a.installFeatureFlagPlugins()
 		a.SyncPluginsActiveState()
 		if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
 			pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
@@ -206,7 +209,7 @@ func (a *App) InitPlugins(pluginDir, webappPluginDir string) {
 					a.Log().Error("Plugin OnConfigurationChange hook failed", mlog.Err(err))
 				}
 				return true
-			}, plugin.OnConfigurationChangeId)
+			}, plugin.OnConfigurationChangeID)
 		}
 	})
 	a.Srv().PluginsLock.Unlock()
@@ -267,7 +270,7 @@ func (a *App) SyncPlugins() *model.AppError {
 			}
 			defer reader.Close()
 
-			var signature filesstore.ReadCloseSeeker
+			var signature filestore.ReadCloseSeeker
 			if *a.Config().PluginSettings.RequirePluginSignature {
 				signature, appErr = a.FileReader(plugin.signaturePath)
 				if appErr != nil {
@@ -453,12 +456,20 @@ func (a *App) GetMarketplacePlugins(filter *model.MarketplacePluginFilter) ([]*m
 		plugins = p
 	}
 
-	appErr := a.mergePrepackagedPlugins(plugins)
-	if appErr != nil {
-		return nil, appErr
+	// Some plugin don't work on cloud. The remote Marketplace is aware of this fact,
+	// but prepackaged plugins are not. Hence, on a cloud installation prepackaged plugins
+	// shouldn't be shown in the Marketplace modal.
+	// This is a short term fix. The long term solution is to have a separate set of
+	// prepacked plugins for cloud: https://mattermost.atlassian.net/browse/MM-31331.
+	license := a.Srv().License()
+	if license == nil || !*license.Features.Cloud {
+		appErr := a.mergePrepackagedPlugins(plugins)
+		if appErr != nil {
+			return nil, appErr
+		}
 	}
 
-	appErr = a.mergeLocalPlugins(plugins)
+	appErr := a.mergeLocalPlugins(plugins)
 	if appErr != nil {
 		return nil, appErr
 	}
@@ -480,7 +491,7 @@ func (a *App) GetMarketplacePlugins(filter *model.MarketplacePluginFilter) ([]*m
 }
 
 // getPrepackagedPlugin returns a pre-packaged plugin.
-func (a *App) getPrepackagedPlugin(pluginId, version string) (*plugin.PrepackagedPlugin, *model.AppError) {
+func (a *App) getPrepackagedPlugin(pluginID, version string) (*plugin.PrepackagedPlugin, *model.AppError) {
 	pluginsEnvironment := a.GetPluginsEnvironment()
 	if pluginsEnvironment == nil {
 		return nil, model.NewAppError("getPrepackagedPlugin", "app.plugin.config.app_error", nil, "plugin environment is nil", http.StatusInternalServerError)
@@ -488,7 +499,7 @@ func (a *App) getPrepackagedPlugin(pluginId, version string) (*plugin.Prepackage
 
 	prepackagedPlugins := pluginsEnvironment.PrepackagedPlugins()
 	for _, p := range prepackagedPlugins {
-		if p.Manifest.Id == pluginId && p.Manifest.Version == version {
+		if p.Manifest.Id == pluginID && p.Manifest.Version == version {
 			return p, nil
 		}
 	}
@@ -497,7 +508,7 @@ func (a *App) getPrepackagedPlugin(pluginId, version string) (*plugin.Prepackage
 }
 
 // getRemoteMarketplacePlugin returns plugin from marketplace-server.
-func (a *App) getRemoteMarketplacePlugin(pluginId, version string) (*model.BaseMarketplacePlugin, *model.AppError) {
+func (a *App) getRemoteMarketplacePlugin(pluginID, version string) (*model.BaseMarketplacePlugin, *model.AppError) {
 	marketplaceClient, err := marketplace.NewClient(
 		*a.Config().PluginSettings.MarketplaceUrl,
 		a.HTTPService(),
@@ -507,7 +518,8 @@ func (a *App) getRemoteMarketplacePlugin(pluginId, version string) (*model.BaseM
 	}
 
 	filter := a.getBaseMarketplaceFilter()
-	filter.Filter = pluginId
+	filter.PluginId = pluginID
+	filter.ReturnAllVersions = true
 
 	plugin, err := marketplaceClient.GetPlugin(filter, version)
 	if err != nil {
@@ -765,7 +777,7 @@ func (a *App) getPluginsFromFilePaths(fileStorePaths []string) map[string]*plugi
 
 	fsPrefix := ""
 	if *a.Config().FileSettings.DriverName == model.IMAGE_DRIVER_S3 {
-		ptr := a.Config().FileSettings.S3PathPrefix
+		ptr := a.Config().FileSettings.AmazonS3PathPrefix
 		if ptr != nil && *ptr != "" {
 			fsPrefix = *ptr + "/"
 		}
@@ -776,7 +788,7 @@ func (a *App) getPluginsFromFilePaths(fileStorePaths []string) map[string]*plugi
 		if strings.HasSuffix(path, ".tar.gz") {
 			id := strings.TrimSuffix(filepath.Base(path), ".tar.gz")
 			helper := &pluginSignaturePath{
-				pluginId:      id,
+				pluginID:      id,
 				path:          path,
 				signaturePath: "",
 			}
@@ -788,7 +800,7 @@ func (a *App) getPluginsFromFilePaths(fileStorePaths []string) map[string]*plugi
 		if strings.HasSuffix(path, ".tar.gz.sig") {
 			id := strings.TrimSuffix(filepath.Base(path), ".tar.gz.sig")
 			if val, ok := pluginSignaturePathMap[id]; !ok {
-				mlog.Error("Unknown signature", mlog.String("path", path))
+				mlog.Warn("Unknown signature", mlog.String("path", path))
 			} else {
 				val.signaturePath = path
 			}
@@ -881,6 +893,69 @@ func (a *App) processPrepackagedPlugin(pluginPath *pluginSignaturePath) (*plugin
 	}
 
 	return plugin, nil
+}
+
+// installFeatureFlagPlugins handles the automatic installation/upgrade of plugins from feature flags
+func (a *App) installFeatureFlagPlugins() {
+	ffControledPlugins := a.Config().FeatureFlags.Plugins()
+
+	// Respect the automatic prepackaged disable setting
+	if !*a.Config().PluginSettings.AutomaticPrepackagedPlugins {
+		return
+	}
+
+	for pluginID, version := range ffControledPlugins {
+		// Skip installing if the plugin has been previously disabled.
+		pluginState := a.Config().PluginSettings.PluginStates[pluginID]
+		if pluginState != nil && !pluginState.Enable {
+			a.Log().Debug("Not auto installing/upgrade because plugin was disabled", mlog.String("plugin_id", pluginID), mlog.String("version", version))
+			continue
+		}
+
+		// Check if we already installed this version as InstallMarketplacePlugin can't handle re-installs well.
+		pluginStatus, err := a.Srv().GetPluginStatus(pluginID)
+		pluginExists := err == nil
+		if pluginExists && pluginStatus.Version == version {
+			continue
+		}
+
+		if version != "" && version != "control" {
+			// If we are on-prem skip installation if this is a downgrade
+			license := a.Srv().License()
+			inCloud := license != nil && *license.Features.Cloud
+			if !inCloud && pluginExists {
+				parsedVersion, err := semver.Parse(version)
+				if err != nil {
+					a.Log().Debug("Bad version from feature flag", mlog.String("plugin_id", pluginID), mlog.Err(err), mlog.String("version", version))
+					return
+				}
+				parsedExistingVersion, err := semver.Parse(pluginStatus.Version)
+				if err != nil {
+					a.Log().Debug("Bad version from plugin manifest", mlog.String("plugin_id", pluginID), mlog.Err(err), mlog.String("version", pluginStatus.Version))
+					return
+				}
+
+				if parsedVersion.LTE(parsedExistingVersion) {
+					a.Log().Debug("Skip installation because given version was a downgrade and on-prem installations should not downgrade.", mlog.String("plugin_id", pluginID), mlog.Err(err), mlog.String("version", pluginStatus.Version))
+					return
+				}
+			}
+
+			_, err := a.InstallMarketplacePlugin(&model.InstallMarketplacePluginRequest{
+				Id:      pluginID,
+				Version: version,
+			})
+			if err != nil {
+				a.Log().Debug("Unable to install plugin from FF manifest", mlog.String("plugin_id", pluginID), mlog.Err(err), mlog.String("version", version))
+			} else {
+				if err := a.EnablePlugin(pluginID); err != nil {
+					a.Log().Debug("Unable to enable plugin installed from feature flag.", mlog.String("plugin_id", pluginID), mlog.Err(err), mlog.String("version", version))
+				} else {
+					a.Log().Debug("Installed and enabled plugin.", mlog.String("plugin_id", pluginID), mlog.String("version", version))
+				}
+			}
+		}
+	}
 }
 
 // getPrepackagedPlugin builds a PrepackagedPlugin from the plugin at the given path, additionally returning the directory in which it was extracted.

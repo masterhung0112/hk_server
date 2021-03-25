@@ -10,9 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
-
 	"testing"
+	"time"
 
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/config"
@@ -164,7 +163,7 @@ func (th *TestHelper) initBasic() *TestHelper {
 	th.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
 	th.BasicUser = userCache.BasicUser.DeepCopy()
 	th.BasicUser2 = userCache.BasicUser2.DeepCopy()
-	mainHelper.GetSqlStore().GetMaster().Insert(th.SystemAdminUser, th.BasicUser, th.BasicUser2)
+	mainHelper.GetSQLStore().GetMaster().Insert(th.SystemAdminUser, th.BasicUser, th.BasicUser2)
 
 	th.BasicTeam = th.createTeam()
 
@@ -255,7 +254,7 @@ func (th *TestHelper) createChannel(team *model.Team, channelType string) *model
 	return channel
 }
 
-func (th *TestHelper) createChannelWithAnotherUser(team *model.Team, channelType, userId string) *model.Channel {
+func (th *TestHelper) createChannelWithAnotherUser(team *model.Team, channelType, userID string) *model.Channel {
 	id := model.NewId()
 
 	channel := &model.Channel{
@@ -263,7 +262,7 @@ func (th *TestHelper) createChannelWithAnotherUser(team *model.Team, channelType
 		Name:        "name_" + id,
 		Type:        channelType,
 		TeamId:      team.Id,
-		CreatorId:   userId,
+		CreatorId:   userID,
 	}
 
 	utils.DisableDebugLogForTest()

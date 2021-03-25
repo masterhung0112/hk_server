@@ -91,7 +91,7 @@ func TestOAuthRevokeAccessToken(t *testing.T) {
 	accessData.ExpiresAt = session.ExpiresAt
 
 	_, nErr := th.App.Srv().Store.OAuth().SaveAccessData(accessData)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 
 	err = th.App.RevokeAccessToken(accessData.Token)
 	require.Nil(t, err)
@@ -131,7 +131,7 @@ func TestOAuthDeleteApp(t *testing.T) {
 	accessData.ExpiresAt = session.ExpiresAt
 
 	_, nErr := th.App.Srv().Store.OAuth().SaveAccessData(accessData)
-	require.Nil(t, nErr)
+	require.NoError(t, nErr)
 
 	err = th.App.DeleteOAuthApp(a1.Id)
 	require.Nil(t, err)
@@ -174,12 +174,12 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		return token
 	}
 
-	makeRequest := func(t *testing.T, cookie string) *http.Request {
+	makeRequest := func(cookie string) *http.Request {
 		request, _ := http.NewRequest(http.MethodGet, "https://mattermost.example.com", nil)
 
 		if cookie != "" {
 			request.AddCookie(&http.Cookie{
-				Name:  COOKIE_OAUTH,
+				Name:  CookieOauth,
 				Value: cookie,
 			})
 		}
@@ -226,7 +226,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		token := model.NewToken("invalid", "")
-		require.Nil(t, th.App.Srv().Store.Token().Save(token))
+		require.NoError(t, th.App.Srv().Store.Token().Save(token))
 
 		state := makeState(token)
 
@@ -263,7 +263,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, "")
+		request := makeRequest("")
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(nil, request, model.SERVICE_GITLAB, "", state, "")
@@ -280,7 +280,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		token, err := th.App.CreateOAuthStateToken(model.NewId())
 		require.Nil(t, err)
 
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(token)
 
 		_, _, _, _, err = th.App.AuthorizeOAuthUser(nil, request, model.SERVICE_GITLAB, "", state, "")
@@ -293,7 +293,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -311,7 +311,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -330,7 +330,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -352,7 +352,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -373,7 +373,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -394,7 +394,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -422,7 +422,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -451,7 +451,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 		defer th.TearDown()
 
 		cookie := model.NewId()
-		request := makeRequest(t, cookie)
+		request := makeRequest(cookie)
 		state := makeState(makeToken(th, cookie))
 
 		_, _, _, _, err := th.App.AuthorizeOAuthUser(&httptest.ResponseRecorder{}, request, model.SERVICE_GITLAB, "", state, "")
@@ -495,7 +495,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 				})
 
 				cookie := model.NewId()
-				request := makeRequest(t, cookie)
+				request := makeRequest(cookie)
 
 				stateProps := map[string]string{
 					"team_id": model.NewId(),
@@ -508,7 +508,7 @@ func TestAuthorizeOAuthUser(t *testing.T) {
 
 				require.NotNil(t, body)
 				bodyBytes, bodyErr := ioutil.ReadAll(body)
-				require.Nil(t, bodyErr)
+				require.NoError(t, bodyErr)
 				assert.Equal(t, userData, string(bodyBytes))
 
 				assert.Equal(t, stateProps["team_id"], receivedTeamId)
