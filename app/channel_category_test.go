@@ -122,7 +122,7 @@ func TestGetSidebarCategories(t *testing.T) {
 		defer th.TearDown()
 
 		// Temporarily renaming a table to force a DB error.
-		sqlStore := mainHelper.GetSQLStore()
+		sqlStore := mainHelper.GetSqlStore()
 		_, err := sqlStore.GetMaster().Exec("ALTER TABLE SidebarCategories RENAME TO SidebarCategoriesTest")
 		require.NoError(t, err)
 		defer func() {

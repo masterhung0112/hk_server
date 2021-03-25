@@ -50,6 +50,8 @@ type Store struct {
 	UserTermsOfServiceStore   mocks.UserTermsOfServiceStore
 	LinkMetadataStore         mocks.LinkMetadataStore
 	ProductNoticesStore       mocks.ProductNoticesStore
+  TrackPointStore                mocks.TrackPointStore
+	TrackRecordStore               mocks.TrackRecordStore
 	context                   context.Context
 }
 
@@ -84,13 +86,15 @@ func (s *Store) UserAccessToken() store.UserAccessTokenStore       { return &s.U
 func (s *Store) Plugin() store.PluginStore                         { return &s.PluginStore }
 func (s *Store) Role() store.RoleStore                             { return &s.RoleStore }
 func (s *Store) Scheme() store.SchemeStore                         { return &s.SchemeStore }
-func (s *Store) TermsOfService() store.TermsOfServiceStore         { return &s.TermsOfServiceStore }
-func (s *Store) UserTermsOfService() store.UserTermsOfServiceStore { return &s.UserTermsOfServiceStore }
+func (s *Store) TrackPoint() store.TrackPointStore                { return &s.TrackPointStore }
+func (s *Store) TrackRecord() store.TrackRecordStore              { return &s.TrackRecordStore }
 func (s *Store) ChannelMemberHistory() store.ChannelMemberHistoryStore {
 	return &s.ChannelMemberHistoryStore
 }
 func (s *Store) Group() store.GroupStore               { return &s.GroupStore }
 func (s *Store) LinkMetadata() store.LinkMetadataStore { return &s.LinkMetadataStore }
+func (s *Store) TermsOfService() store.TermsOfServiceStore         { return &s.TermsOfServiceStore }
+func (s *Store) UserTermsOfService() store.UserTermsOfServiceStore { return &s.UserTermsOfServiceStore }
 func (s *Store) MarkSystemRanUnitTests()               { /* do nothing */ }
 func (s *Store) Close()                                { /* do nothing */ }
 func (s *Store) LockToMaster()                         { /* do nothing */ }
@@ -138,5 +142,7 @@ func (s *Store) AssertExpectations(t mock.TestingT) bool {
 		&s.SchemeStore,
 		&s.ThreadStore,
 		&s.ProductNoticesStore,
+    &s.TrackPointStore,
+    &s.TrackRecordStore,
 	)
 }

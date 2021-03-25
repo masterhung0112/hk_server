@@ -36,7 +36,7 @@ type TestHelper struct {
 	Server      *app.Server
 	ConfigStore *config.Store
 
-	Client               *model.Client1
+	Client               *model.Client4
 	BasicUser            *model.User
 	BasicUser2           *model.User
 	TeamAdminUser        *model.User
@@ -49,11 +49,11 @@ type TestHelper struct {
 	BasicPost            *model.Post
 	Group                *model.Group
 
-	SystemAdminClient *model.Client1
+	SystemAdminClient *model.Client4
 	SystemAdminUser   *model.User
 	tempWorkspace     string
 
-	LocalClient *model.Client1
+	LocalClient *model.Client4
 
 	IncludeCacheLayer bool
 }
@@ -388,12 +388,12 @@ func (th *TestHelper) waitForConnectivity() {
 	panic("unable to connect")
 }
 
-func (th *TestHelper) CreateClient() *model.Client1 {
-	return model.NewAPIv1Client(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
+func (th *TestHelper) CreateClient() *model.Client4 {
+	return model.NewAPIv4Client(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
 }
 
 // ToDo: maybe move this to NewAPIv4SocketClient and reuse it in mmctl
-func (th *TestHelper) CreateLocalClient(socketPath string) *model.Client1 {
+func (th *TestHelper) CreateLocalClient(socketPath string) *model.Client4 {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			Dial: func(network, addr string) (net.Conn, error) {
@@ -402,7 +402,7 @@ func (th *TestHelper) CreateLocalClient(socketPath string) *model.Client1 {
 		},
 	}
 
-	return &model.Client1{
+	return &model.Client4{
 		ApiUrl:     "http://_" + model.API_URL_SUFFIX,
 		HttpClient: httpClient,
 	}
@@ -416,7 +416,7 @@ func (th *TestHelper) CreateWebSocketSystemAdminClient() (*model.WebSocketClient
 	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), th.SystemAdminClient.AuthToken)
 }
 
-func (th *TestHelper) CreateWebSocketClientWithClient(client *model.Client1) (*model.WebSocketClient, *model.AppError) {
+func (th *TestHelper) CreateWebSocketClientWithClient(client *model.Client4) (*model.WebSocketClient, *model.AppError) {
 	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), client.AuthToken)
 }
 
@@ -424,7 +424,7 @@ func (th *TestHelper) CreateBotWithSystemAdminClient() *model.Bot {
 	return th.CreateBotWithClient((th.SystemAdminClient))
 }
 
-func (th *TestHelper) CreateBotWithClient(client *model.Client1) *model.Bot {
+func (th *TestHelper) CreateBotWithClient(client *model.Client4) *model.Bot {
 	bot := &model.Bot{
 		Username:    GenerateTestUsername(),
 		DisplayName: "a bot",
@@ -448,7 +448,7 @@ func (th *TestHelper) CreateTeam() *model.Team {
 	return th.CreateTeamWithClient(th.Client)
 }
 
-func (th *TestHelper) CreateTeamWithClient(client *model.Client1) *model.Team {
+func (th *TestHelper) CreateTeamWithClient(client *model.Client4) *model.Team {
 	id := model.NewId()
 	team := &model.Team{
 		DisplayName: "dn_" + id,
@@ -466,7 +466,7 @@ func (th *TestHelper) CreateTeamWithClient(client *model.Client1) *model.Team {
 	return rteam
 }
 
-func (th *TestHelper) CreateUserWithClient(client *model.Client1) *model.User {
+func (th *TestHelper) CreateUserWithClient(client *model.Client4) *model.User {
 	id := model.NewId()
 
 	user := &model.User{
@@ -501,11 +501,11 @@ func (th *TestHelper) CreatePrivateChannel() *model.Channel {
 	return th.CreateChannelWithClient(th.Client, model.CHANNEL_PRIVATE)
 }
 
-func (th *TestHelper) CreateChannelWithClient(client *model.Client1, channelType string) *model.Channel {
+func (th *TestHelper) CreateChannelWithClient(client *model.Client4, channelType string) *model.Channel {
 	return th.CreateChannelWithClientAndTeam(client, channelType, th.BasicTeam.Id)
 }
 
-func (th *TestHelper) CreateChannelWithClientAndTeam(client *model.Client1, channelType string, teamId string) *model.Channel {
+func (th *TestHelper) CreateChannelWithClientAndTeam(client *model.Client4, channelType string, teamId string) *model.Channel {
 	id := model.NewId()
 
 	channel := &model.Channel{
@@ -536,7 +536,7 @@ func (th *TestHelper) CreateMessagePost(message string) *model.Post {
 	return th.CreateMessagePostWithClient(th.Client, th.BasicChannel, message)
 }
 
-func (th *TestHelper) CreatePostWithClient(client *model.Client1, channel *model.Channel) *model.Post {
+func (th *TestHelper) CreatePostWithClient(client *model.Client4, channel *model.Channel) *model.Post {
 	id := model.NewId()
 
 	post := &model.Post{
@@ -553,7 +553,7 @@ func (th *TestHelper) CreatePostWithClient(client *model.Client1, channel *model
 	return rpost
 }
 
-func (th *TestHelper) CreatePinnedPostWithClient(client *model.Client1, channel *model.Channel) *model.Post {
+func (th *TestHelper) CreatePinnedPostWithClient(client *model.Client4, channel *model.Channel) *model.Post {
 	id := model.NewId()
 
 	post := &model.Post{
@@ -571,7 +571,7 @@ func (th *TestHelper) CreatePinnedPostWithClient(client *model.Client1, channel 
 	return rpost
 }
 
-func (th *TestHelper) CreateMessagePostWithClient(client *model.Client1, channel *model.Channel, message string) *model.Post {
+func (th *TestHelper) CreateMessagePostWithClient(client *model.Client4, channel *model.Channel, message string) *model.Post {
 	post := &model.Post{
 		ChannelId: channel.Id,
 		Message:   message,
@@ -628,7 +628,7 @@ func (th *TestHelper) LoginSystemAdmin() {
 	th.LoginSystemAdminWithClient(th.SystemAdminClient)
 }
 
-func (th *TestHelper) LoginBasicWithClient(client *model.Client1) {
+func (th *TestHelper) LoginBasicWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.BasicUser.Email, th.BasicUser.Password)
 	if resp.Error != nil {
@@ -637,7 +637,7 @@ func (th *TestHelper) LoginBasicWithClient(client *model.Client1) {
 	utils.EnableDebugLogForTest()
 }
 
-func (th *TestHelper) LoginBasic2WithClient(client *model.Client1) {
+func (th *TestHelper) LoginBasic2WithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.BasicUser2.Email, th.BasicUser2.Password)
 	if resp.Error != nil {
@@ -646,7 +646,7 @@ func (th *TestHelper) LoginBasic2WithClient(client *model.Client1) {
 	utils.EnableDebugLogForTest()
 }
 
-func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client1) {
+func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.TeamAdminUser.Email, th.TeamAdminUser.Password)
 	if resp.Error != nil {
@@ -655,7 +655,7 @@ func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client1) {
 	utils.EnableDebugLogForTest()
 }
 
-func (th *TestHelper) LoginSystemAdminWithClient(client *model.Client1) {
+func (th *TestHelper) LoginSystemAdminWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.SystemAdminUser.Email, th.SystemAdminUser.Password)
 	if resp.Error != nil {
@@ -728,7 +728,7 @@ func (th *TestHelper) CreateGroup() *model.Group {
 // SystemAdmin and Local clients. Several endpoints work in the same
 // way when used by a fully privileged user and through the local
 // mode, so this helper facilitates checking both
-func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client1), name ...string) {
+func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client4), name ...string) {
 	var testName string
 	if len(name) > 0 {
 		testName = name[0] + "/"
@@ -745,7 +745,7 @@ func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T
 
 // TestForAllClients runs a test function for all the clients
 // registered in the TestHelper
-func (th *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.Client1), name ...string) {
+func (th *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.Client4), name ...string) {
 	var testName string
 	if len(name) > 0 {
 		testName = name[0] + "/"
@@ -902,17 +902,17 @@ func s3New(endpoint, accessKey, secretKey string, secure bool, signV2 bool, regi
 func (th *TestHelper) cleanupTestFile(info *model.FileInfo) error {
 	cfg := th.App.Config()
 	if *cfg.FileSettings.DriverName == model.IMAGE_DRIVER_S3 {
-		endpoint := *cfg.FileSettings.S3Endpoint
-		accessKey := *cfg.FileSettings.S3AccessKeyId
-		secretKey := *cfg.FileSettings.S3SecretAccessKey
-		secure := *cfg.FileSettings.S3SSL
-		signV2 := *cfg.FileSettings.S3SignV2
-		region := *cfg.FileSettings.S3Region
+		endpoint := *cfg.FileSettings.AmazonS3Endpoint
+		accessKey := *cfg.FileSettings.AmazonS3AccessKeyId
+		secretKey := *cfg.FileSettings.AmazonS3SecretAccessKey
+		secure := *cfg.FileSettings.AmazonS3SSL
+		signV2 := *cfg.FileSettings.AmazonS3SignV2
+		region := *cfg.FileSettings.AmazonS3Region
 		s3Clnt, err := s3New(endpoint, accessKey, secretKey, secure, signV2, region)
 		if err != nil {
 			return err
 		}
-		bucket := *cfg.FileSettings.S3Bucket
+		bucket := *cfg.FileSettings.AmazonS3Bucket
 		if err := s3Clnt.RemoveObject(context.Background(), bucket, info.Path, s3.RemoveObjectOptions{}); err != nil {
 			return err
 		}

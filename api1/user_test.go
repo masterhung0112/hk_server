@@ -69,7 +69,7 @@ func TestCreateUser(t *testing.T) {
 	// th.App.UpdateConfig(func(cfg *model.Config) { *cfg.TeamSettings.EnableOpenServer = false })
 	// th.App.UpdateConfig(func(cfg *model.Config) { *cfg.TeamSettings.EnableUserCreation = false })
 
-	// th.TestForSystemAdminAndLocal(t, func(t *testing.T, client *model.Client1) {
+	// th.TestForSystemAdminAndLocal(t, func(t *testing.T, client *model.Client4) {
 	// 	user2 := &model.User{Email: th.GenerateTestEmail(), Password: "Password1", Username: GenerateTestUsername()}
 	// 	_, resp = client.CreateUser(user2)
 	// 	CheckNoError(t, resp)
@@ -98,7 +98,7 @@ func TestGetUsers(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
 
-	th.TestForAllClients(t, func(t *testing.T, client *model.Client1) {
+	th.TestForAllClients(t, func(t *testing.T, client *model.Client4) {
 		rusers, resp := client.GetUsers(0, 60, "")
 		CheckNoError(t, resp)
 		for _, u := range rusers {
