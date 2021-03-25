@@ -14,6 +14,10 @@ import (
 	"testing"
 	"time"
 
+	s3 "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/stretchr/testify/require"
+
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/config"
 	"github.com/masterhung0112/hk_server/model"
@@ -25,10 +29,7 @@ import (
 	"github.com/masterhung0112/hk_server/testlib"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/masterhung0112/hk_server/web"
-
-	s3 "github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/stretchr/testify/require"
+	"github.com/masterhung0112/hk_server/wsapi"
 )
 
 type TestHelper struct {
@@ -52,6 +53,9 @@ type TestHelper struct {
 	SystemAdminClient *model.Client4
 	SystemAdminUser   *model.User
 	tempWorkspace     string
+
+	SystemManagerClient *model.Client4
+	SystemManagerUser   *model.User
 
 	LocalClient *model.Client4
 
@@ -83,12 +87,13 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 	*memoryConfig.ServiceSettings.LocalModeSocketLocation = filepath.Join(tempWorkspace, "mattermost_local.sock")
 	*memoryConfig.AnnouncementSettings.AdminNoticesEnabled = false
 	*memoryConfig.AnnouncementSettings.UserNoticesEnabled = false
+	*memoryConfig.PluginSettings.AutomaticPrepackagedPlugins = false
 	if updateConfig != nil {
 		updateConfig(memoryConfig)
 	}
 	memoryStore.Set(memoryConfig)
 
-	configStore, err := config.NewStoreFromBacking(memoryStore, nil)
+	configStore, err := config.NewStoreFromBacking(memoryStore, nil, false)
 	if err != nil {
 		panic(err)
 	}
@@ -149,11 +154,10 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 		panic(err)
 	}
 
-	ApiInit(th.Server, th.Server.AppOptions, th.App.Srv().Router)
-	ApiInitLocal(th.Server, th.Server.AppOptions, th.App.Srv().LocalRouter)
+	Init(th.Server, th.Server.AppOptions, th.App.Srv().Router)
+	InitLocal(th.Server, th.Server.AppOptions, th.App.Srv().LocalRouter)
 	web.New(th.Server, th.Server.AppOptions, th.App.Srv().Router)
-	//TODO: Open
-	// wsapi.Init(th.App.Srv())
+	wsapi.Init(th.App.Srv())
 
 	if enterprise {
 		th.App.Srv().SetLicense(model.NewTestLicense())
@@ -163,6 +167,7 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 
 	th.Client = th.CreateClient()
 	th.SystemAdminClient = th.CreateClient()
+	th.SystemManagerClient = th.CreateClient()
 
 	// Verify handling of the supported true/false values by randomizing on each run.
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -170,7 +175,7 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 	falseValues := []string{"0", "f", "F", "FALSE", "false", "False"}
 	trueString := trueValues[rand.Intn(len(trueValues))]
 	falseString := falseValues[rand.Intn(len(falseValues))]
-	mlog.Debug("Configured Client1 bool string values", mlog.String("true", trueString), mlog.String("false", falseString))
+	mlog.Debug("Configured Client4 bool string values", mlog.String("true", trueString), mlog.String("false", falseString))
 	th.Client.SetBoolString(true, trueString)
 	th.Client.SetBoolString(false, falseString)
 
@@ -295,10 +300,11 @@ func (th *TestHelper) TearDown() {
 
 var initBasicOnce sync.Once
 var userCache struct {
-	SystemAdminUser *model.User
-	TeamAdminUser   *model.User
-	BasicUser       *model.User
-	BasicUser2      *model.User
+	SystemAdminUser   *model.User
+	SystemManagerUser *model.User
+	TeamAdminUser     *model.User
+	BasicUser         *model.User
+	BasicUser2        *model.User
 }
 
 func (th *TestHelper) InitLogin() *TestHelper {
@@ -310,6 +316,11 @@ func (th *TestHelper) InitLogin() *TestHelper {
 		th.App.UpdateUserRoles(th.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
 		th.SystemAdminUser, _ = th.App.GetUser(th.SystemAdminUser.Id)
 		userCache.SystemAdminUser = th.SystemAdminUser.DeepCopy()
+
+		th.SystemManagerUser = th.CreateUser()
+		th.App.UpdateUserRoles(th.SystemManagerUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_MANAGER_ROLE_ID, false)
+		th.SystemManagerUser, _ = th.App.GetUser(th.SystemManagerUser.Id)
+		userCache.SystemManagerUser = th.SystemManagerUser.DeepCopy()
 
 		th.TeamAdminUser = th.CreateUser()
 		th.App.UpdateUserRoles(th.TeamAdminUser.Id, model.SYSTEM_USER_ROLE_ID, false)
@@ -326,20 +337,26 @@ func (th *TestHelper) InitLogin() *TestHelper {
 	})
 	// restore cached users
 	th.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
+	th.SystemManagerUser = userCache.SystemManagerUser.DeepCopy()
 	th.TeamAdminUser = userCache.TeamAdminUser.DeepCopy()
 	th.BasicUser = userCache.BasicUser.DeepCopy()
 	th.BasicUser2 = userCache.BasicUser2.DeepCopy()
-	mainHelper.GetSqlStore().GetMaster().Insert(th.SystemAdminUser, th.TeamAdminUser, th.BasicUser, th.BasicUser2)
+	mainHelper.GetSQLStore().GetMaster().Insert(th.SystemAdminUser, th.TeamAdminUser, th.BasicUser, th.BasicUser2, th.SystemManagerUser)
 	// restore non hashed password for login
 	th.SystemAdminUser.Password = "Pa$$word11"
 	th.TeamAdminUser.Password = "Pa$$word11"
 	th.BasicUser.Password = "Pa$$word11"
 	th.BasicUser2.Password = "Pa$$word11"
+	th.SystemManagerUser.Password = "Pa$$word11"
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		th.LoginSystemAdmin()
+		wg.Done()
+	}()
+	go func() {
+		th.LoginSystemManager()
 		wg.Done()
 	}()
 	go func() {
@@ -414,6 +431,10 @@ func (th *TestHelper) CreateWebSocketClient() (*model.WebSocketClient, *model.Ap
 
 func (th *TestHelper) CreateWebSocketSystemAdminClient() (*model.WebSocketClient, *model.AppError) {
 	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), th.SystemAdminClient.AuthToken)
+}
+
+func (th *TestHelper) CreateWebSocketSystemManagerClient() (*model.WebSocketClient, *model.AppError) {
+	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), th.SystemManagerClient.AuthToken)
 }
 
 func (th *TestHelper) CreateWebSocketClientWithClient(client *model.Client4) (*model.WebSocketClient, *model.AppError) {
@@ -491,6 +512,72 @@ func (th *TestHelper) CreateUserWithClient(client *model.Client4) *model.User {
 	}
 	utils.EnableDebugLogForTest()
 	return ruser
+}
+
+func (th *TestHelper) CreateUserWithAuth(authService string) *model.User {
+	id := model.NewId()
+	user := &model.User{
+		Email:         "success+" + id + "@simulator.amazonses.com",
+		Username:      "un_" + id,
+		Nickname:      "nn_" + id,
+		EmailVerified: true,
+		AuthService:   authService,
+	}
+	user, err := th.App.CreateUser(user)
+	if err != nil {
+		panic(err)
+	}
+	return user
+}
+
+func (th *TestHelper) SetupLdapConfig() {
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.ServiceSettings.EnableMultifactorAuthentication = true
+		*cfg.LdapSettings.Enable = true
+		*cfg.LdapSettings.EnableSync = true
+		*cfg.LdapSettings.LdapServer = "dockerhost"
+		*cfg.LdapSettings.BaseDN = "dc=mm,dc=test,dc=com"
+		*cfg.LdapSettings.BindUsername = "cn=admin,dc=mm,dc=test,dc=com"
+		*cfg.LdapSettings.BindPassword = "mostest"
+		*cfg.LdapSettings.FirstNameAttribute = "cn"
+		*cfg.LdapSettings.LastNameAttribute = "sn"
+		*cfg.LdapSettings.NicknameAttribute = "cn"
+		*cfg.LdapSettings.EmailAttribute = "mail"
+		*cfg.LdapSettings.UsernameAttribute = "uid"
+		*cfg.LdapSettings.IdAttribute = "cn"
+		*cfg.LdapSettings.LoginIdAttribute = "uid"
+		*cfg.LdapSettings.SkipCertificateVerification = true
+		*cfg.LdapSettings.GroupFilter = ""
+		*cfg.LdapSettings.GroupDisplayNameAttribute = "cN"
+		*cfg.LdapSettings.GroupIdAttribute = "entRyUuId"
+		*cfg.LdapSettings.MaxPageSize = 0
+	})
+	th.App.Srv().SetLicense(model.NewTestLicense("ldap"))
+}
+
+func (th *TestHelper) SetupSamlConfig() {
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.SamlSettings.Enable = true
+		*cfg.SamlSettings.Verify = false
+		*cfg.SamlSettings.Encrypt = false
+		*cfg.SamlSettings.IdpUrl = "https://does.notmatter.com"
+		*cfg.SamlSettings.IdpDescriptorUrl = "https://localhost/adfs/services/trust"
+		*cfg.SamlSettings.AssertionConsumerServiceURL = "https://localhost/login/sso/saml"
+		*cfg.SamlSettings.ServiceProviderIdentifier = "https://localhost/login/sso/saml"
+		*cfg.SamlSettings.IdpCertificateFile = app.SamlIdpCertificateName
+		*cfg.SamlSettings.PrivateKeyFile = app.SamlPrivateKeyName
+		*cfg.SamlSettings.PublicCertificateFile = app.SamlPublicCertificateName
+		*cfg.SamlSettings.EmailAttribute = "Email"
+		*cfg.SamlSettings.UsernameAttribute = "Username"
+		*cfg.SamlSettings.FirstNameAttribute = "FirstName"
+		*cfg.SamlSettings.LastNameAttribute = "LastName"
+		*cfg.SamlSettings.NicknameAttribute = ""
+		*cfg.SamlSettings.PositionAttribute = ""
+		*cfg.SamlSettings.LocaleAttribute = ""
+		*cfg.SamlSettings.SignatureAlgorithm = model.SAML_SETTINGS_SIGNATURE_ALGORITHM_SHA256
+		*cfg.SamlSettings.CanonicalAlgorithm = model.SAML_SETTINGS_CANONICAL_ALGORITHM_C14N11
+	})
+	th.App.Srv().SetLicense(model.NewTestLicense("saml"))
 }
 
 func (th *TestHelper) CreatePublicChannel() *model.Channel {
@@ -628,6 +715,10 @@ func (th *TestHelper) LoginSystemAdmin() {
 	th.LoginSystemAdminWithClient(th.SystemAdminClient)
 }
 
+func (th *TestHelper) LoginSystemManager() {
+	th.LoginSystemManagerWithClient(th.SystemManagerClient)
+}
+
 func (th *TestHelper) LoginBasicWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.BasicUser.Email, th.BasicUser.Password)
@@ -649,6 +740,15 @@ func (th *TestHelper) LoginBasic2WithClient(client *model.Client4) {
 func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.TeamAdminUser.Email, th.TeamAdminUser.Password)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) LoginSystemManagerWithClient(client *model.Client4) {
+	utils.DisableDebugLogForTest()
+	_, resp := client.Login(th.SystemManagerUser.Email, th.SystemManagerUser.Password)
 	if resp.Error != nil {
 		panic(resp.Error)
 	}
@@ -969,7 +1069,7 @@ func (th *TestHelper) MakeUserChannelAdmin(user *model.User, channel *model.Chan
 func (th *TestHelper) UpdateUserToTeamAdmin(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	if tm, err := th.App.Srv().Store.Team().GetMember(team.Id, user.Id); err == nil {
+	if tm, err := th.App.Srv().Store.Team().GetMember(context.Background(), team.Id, user.Id); err == nil {
 		tm.SchemeAdmin = true
 		if _, err = th.App.Srv().Store.Team().UpdateMember(tm); err != nil {
 			utils.EnableDebugLogForTest()
@@ -986,7 +1086,7 @@ func (th *TestHelper) UpdateUserToTeamAdmin(user *model.User, team *model.Team) 
 func (th *TestHelper) UpdateUserToNonTeamAdmin(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	if tm, err := th.App.Srv().Store.Team().GetMember(team.Id, user.Id); err == nil {
+	if tm, err := th.App.Srv().Store.Team().GetMember(context.Background(), team.Id, user.Id); err == nil {
 		tm.SchemeAdmin = false
 		if _, err = th.App.Srv().Store.Team().UpdateMember(tm); err != nil {
 			utils.EnableDebugLogForTest()

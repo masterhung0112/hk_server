@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	api1 "github.com/masterhung0112/hk_server/api1"
+	"github.com/masterhung0112/hk_server/api4"
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/app/slashcommands"
 	"github.com/masterhung0112/hk_server/model"
@@ -34,8 +34,8 @@ type TestEnvironment struct {
 }
 
 // Init adds manualtest endpoint to the API.
-func Init(api1 *api1.API) {
-	api1.BaseRoutes.Root.Handle("/manualtest", api1.ApiHandler(manualTest)).Methods("GET")
+func Init(api4 *api4.API) {
+	api4.BaseRoutes.Root.Handle("/manualtest", api4.ApiHandler(manualTest)).Methods("GET")
 }
 
 func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {

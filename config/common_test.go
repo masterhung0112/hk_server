@@ -7,14 +7,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/masterhung0112/hk_server/config"
 	"github.com/masterhung0112/hk_server/model"
 )
 
-var emptyConfig, readOnlyConfig, minimalConfig, invalidConfig, fixesRequiredConfig, ldapConfig, testConfig, customConfigDefaults *model.Config
+var emptyConfig, readOnlyConfig, minimalConfig, minimalConfigNoFF, invalidConfig, fixesRequiredConfig, ldapConfig, testConfig, customConfigDefaults *model.Config
 
 func init() {
 	emptyConfig = &model.Config{}
