@@ -282,7 +282,7 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.InitExport()
 
 
-        api.InitTrackRecord()
+        // api.InitTrackRecord()
 
 	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
