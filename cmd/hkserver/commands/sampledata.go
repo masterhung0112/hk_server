@@ -1,7 +1,11 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -12,17 +16,17 @@ import (
 	"time"
 
 	"github.com/icrowley/fake"
-	"github.com/masterhung0112/hk_server/v5/app"
-	"github.com/masterhung0112/hk_server/v5/model"
-	"github.com/masterhung0112/hk_server/v5/shared/mlog"
-	"github.com/masterhung0112/hk_server/v5/utils"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/audit"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 const (
-	DEACTIVATED_USER = "deactivated"
-	GUEST_USER       = "guest"
+	DeactivatedUser = "deactivated"
+	GuestUser       = "guest"
 )
 
 var SampleDataCmd = &cobra.Command{
@@ -136,8 +140,6 @@ func randomMessage(users []string) string {
 }
 
 func sampleDataCmdF(command *cobra.Command, args []string) error {
-	mlog.Debug("Start running sampling data")
-
 	a, err := InitDBCommandContextCobra(command)
 	if err != nil {
 		return err
@@ -246,8 +248,7 @@ func sampleDataCmdF(command *cobra.Command, args []string) error {
 	var bulkFile *os.File
 	switch bulk {
 	case "":
-		bulkFile, err = ioutil.TempFile("", ".hungknow-sample-data-")
-		mlog.Debug(fmt.Sprintf("bulk file at %s", bulkFile.Name()))
+		bulkFile, err = ioutil.TempFile("", ".mattermost-sample-data-")
 		defer os.Remove(bulkFile.Name())
 		if err != nil {
 			return errors.New("Unable to open temporary file.")
@@ -256,8 +257,6 @@ func sampleDataCmdF(command *cobra.Command, args []string) error {
 		bulkFile = os.Stdout
 	default:
 		bulkFile, err = os.OpenFile(bulk, os.O_RDWR|os.O_CREATE, 0755)
-		mlog.Debug(fmt.Sprintf("bulk file at %s", bulk))
-
 		if err != nil {
 			return errors.New("Unable to write into the \"" + bulk + "\" file.")
 		}
@@ -298,12 +297,12 @@ func sampleDataCmdF(command *cobra.Command, args []string) error {
 		allUsers = append(allUsers, *userLine.User.Username)
 	}
 	for i := 0; i < guests; i++ {
-		userLine := createUser(i, teamMemberships, channelMemberships, teamsAndChannels, profileImages, GUEST_USER)
+		userLine := createUser(i, teamMemberships, channelMemberships, teamsAndChannels, profileImages, GuestUser)
 		encoder.Encode(userLine)
 		allUsers = append(allUsers, *userLine.User.Username)
 	}
 	for i := 0; i < deactivatedUsers; i++ {
-		userLine := createUser(i, teamMemberships, channelMemberships, teamsAndChannels, profileImages, DEACTIVATED_USER)
+		userLine := createUser(i, teamMemberships, channelMemberships, teamsAndChannels, profileImages, DeactivatedUser)
 		encoder.Encode(userLine)
 		allUsers = append(allUsers, *userLine.User.Username)
 	}
@@ -378,18 +377,15 @@ func sampleDataCmdF(command *cobra.Command, args []string) error {
 		if importErr != nil {
 			return fmt.Errorf("%s: %s, %s (line: %d)", importErr.Where, importErr.Message, importErr.DetailedError, lineNumber)
 		}
-		//TODO: Open
-		// auditRec := a.MakeAuditRecord("sampleData", audit.Success)
-		// auditRec.AddMeta("file", bulkFile.Name())
-		// a.LogAuditRec(auditRec, nil)
+		auditRec := a.MakeAuditRecord("sampleData", audit.Success)
+		auditRec.AddMeta("file", bulkFile.Name())
+		a.LogAuditRec(auditRec, nil)
 	} else if bulk != "-" {
 		err := bulkFile.Close()
 		if err != nil {
 			return errors.New("Unable to close correctly the output file")
 		}
 	}
-
-	mlog.Debug("Done running sampling data")
 
 	return nil
 }
@@ -406,16 +402,16 @@ func createUser(idx int, teamMemberships int, channelMemberships int, teamsAndCh
 	var email string
 
 	switch userType {
-	case GUEST_USER:
+	case GuestUser:
 		password = fmt.Sprintf("SampleGu@st-%d", idx)
-		email = fmt.Sprintf("guest-%d@sample.hungknow.com", idx)
+		email = fmt.Sprintf("guest-%d@sample.mattermost.com", idx)
 		roles = "system_guest"
 		if idx == 0 {
 			username = "guest"
 			password = "SampleGu@st1"
 			email = "guest@sample.mattermost.com"
 		}
-	case DEACTIVATED_USER:
+	case DeactivatedUser:
 		password = fmt.Sprintf("SampleDe@ctivated-%d", idx)
 		email = fmt.Sprintf("deactivated-%d@sample.hungknow.com", idx)
 	default:
@@ -497,12 +493,12 @@ func createUser(idx int, teamMemberships int, channelMemberships int, teamsAndCh
 		team := possibleTeams[position]
 		possibleTeams = append(possibleTeams[:position], possibleTeams[position+1:]...)
 		if teamChannels, err := teamsAndChannels[team]; err {
-			teams = append(teams, createTeamMembership(channelMemberships, teamChannels, &team, userType == GUEST_USER))
+			teams = append(teams, createTeamMembership(channelMemberships, teamChannels, &team, userType == GuestUser))
 		}
 	}
 
 	var deleteAt int64
-	if userType == DEACTIVATED_USER {
+	if userType == DeactivatedUser {
 		deleteAt = model.GetMillis()
 	}
 

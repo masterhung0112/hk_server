@@ -1,35 +1,16 @@
+// +build maincoverage
+
 package main
 
 import (
-	"flag"
-	"os"
 	"testing"
-
-	api4 "github.com/masterhung0112/hk_server/v5/api4"
-	"github.com/masterhung0112/hk_server/v5/shared/mlog"
-	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
-func TestMain(m *testing.M) {
-	// Command tests are run by re-invoking the test binary in question, so avoid creating
-	// another container when we detect same.
-	flag.Parse()
-	if filter := flag.Lookup("test.run").Value.String(); filter == "ExecCommand" {
-		status := m.Run()
-		os.Exit(status)
-		return
-	}
-
-	var options = testlib.HelperOptions{
-		EnableStore:     true,
-		EnableResources: true,
-	}
-
-	mlog.DisableZap()
-
-	mainHelper = testlib.NewMainHelperWithOptions(&options)
-	defer mainHelper.Close()
-	api4.SetMainHelper(mainHelper)
-
-	mainHelper.Main(m)
+// TestRunMain can be used to track code coverage in integration tests.
+// To run this:
+// go test -coverpkg="<>" -mod=vendor -ldflags '<>' -tags maincoverage -c ./cmd/mattermost/
+// ./mattermost.test -test.run="^TestRunMain$" -test.coverprofile=coverage.out
+// And then run your integration tests.
+func TestRunMain(t *testing.T) {
+	main()
 }

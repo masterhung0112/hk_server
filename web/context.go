@@ -683,3 +683,14 @@ func (c *Context) RequireInvoiceId() *Context {
 
 	return c
 }
+
+func (c *Context) RequireTrackRecordId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if !model.IsValidId(c.Params.TrackRecordId) {
+		c.SetInvalidUrlParam("track_record_id")
+	}
+	return c
+}

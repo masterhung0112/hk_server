@@ -37,10 +37,12 @@ require (
 	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c
+	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/hashicorp/go-hclog v0.15.0
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/go-plugin v1.4.0
 	github.com/hashicorp/hcl v1.0.0
+	github.com/hashicorp/memberlist v0.2.2
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20200412013138-3577fbdbcff7
@@ -50,8 +52,10 @@ require (
 	github.com/lib/pq v1.9.0
 	github.com/mattermost/go-i18n v1.11.0
 	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible
+	github.com/mattermost/gosaml2 v0.3.3
 	github.com/mattermost/ldap v0.0.0-20201202150706-ee0e6284187d
 	github.com/mattermost/logr v1.0.13
+	github.com/mattermost/mattermost-server/v5 v5.33.1 // indirect
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0
 	github.com/mattermost/viper v1.0.4
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
@@ -63,6 +67,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.9.0
 	github.com/reflog/dateconstraints v0.2.1
 	github.com/rs/cors v1.7.0
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
@@ -76,6 +81,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/throttled/throttled v2.2.5+incompatible
 	github.com/tinylib/msgp v1.1.5
+	github.com/tylerb/graceful v1.2.15
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.4.0+incompatible
 	github.com/vmihailenco/msgpack/v5 v5.1.4
@@ -91,6 +97,7 @@ require (
 	golang.org/x/tools v0.1.0
 	gopkg.in/mail.v2 v2.3.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/olivere/elastic.v6 v6.2.35
 	gopkg.in/yaml.v2 v2.4.0
 	willnorris.com/go/imageproxy v0.10.0
 )
