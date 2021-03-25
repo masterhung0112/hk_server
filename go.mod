@@ -34,6 +34,7 @@ require (
 	github.com/google/uuid v1.1.5
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c
 	github.com/hashicorp/go-hclog v0.15.0
