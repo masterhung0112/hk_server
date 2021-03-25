@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/subtle"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,12 +11,12 @@ import (
 	"time"
 
 	"github.com/avct/uasurfer"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/plugin"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/masterhung0112/hk_server/v5/utils"
-	"github.com/pkg/errors"
 )
 
 const cwsTokenEnv = "CWS_CLOUD_TOKEN"
