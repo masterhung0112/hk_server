@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mattermost/mattermost-server/v5/config"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/masterhung0112/hk_server/config"
+	"github.com/masterhung0112/hk_server/model"
 )
 
 type cleanUpFn func(store *config.Store)

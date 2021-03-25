@@ -25,7 +25,7 @@ import (
 // TestEnvironment is a helper struct used for tests in manualtesting.
 type TestEnvironment struct {
 	Params        map[string][]string
-	Client        *model.Client1
+	Client        *model.Client4
 	CreatedTeamID string
 	CreatedUserID string
 	Context       *web.Context
@@ -61,7 +61,7 @@ func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a client for tests to use
-	client := model.NewAPIv1Client("http://localhost" + *c.App.Config().ServiceSettings.ListenAddress)
+	client := model.NewAPIv4Client("http://localhost" + *c.App.Config().ServiceSettings.ListenAddress)
 
 	// Check for username parameter and create a user if present
 	username, ok1 := params["username"]
@@ -105,7 +105,7 @@ func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {
 		user := &model.User{
 			Email:    "success+" + model.NewId() + "simulator.amazonses.com",
 			Nickname: username[0],
-			Password: slashcommands.USER_PASSWORD}
+			Password: slashcommands.UserPassword}
 
 		user, resp := client.CreateUser(user)
 		if resp.Error != nil {
@@ -119,7 +119,7 @@ func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {
 		userID = user.Id
 
 		// Login as user to generate auth token
-		_, resp = client.LoginById(user.Id, slashcommands.USER_PASSWORD)
+		_, resp = client.LoginById(user.Id, slashcommands.UserPassword)
 		if resp.Error != nil {
 			c.Err = resp.Error
 			return

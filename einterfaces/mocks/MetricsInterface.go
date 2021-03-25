@@ -24,6 +24,11 @@ func (_m *MetricsInterface) AddMemCacheMissCounter(cacheName string, amount floa
 	_m.Called(cacheName, amount)
 }
 
+// DecrementJobActive provides a mock function with given fields: jobType
+func (_m *MetricsInterface) DecrementJobActive(jobType string) {
+	_m.Called(jobType)
+}
+
 // DecrementWebSocketBroadcastBufferSize provides a mock function with given fields: hub, amount
 func (_m *MetricsInterface) DecrementWebSocketBroadcastBufferSize(hub string, amount float64) {
 	_m.Called(hub, amount)
@@ -75,6 +80,16 @@ func (_m *MetricsInterface) IncrementEtagMissCounter(route string) {
 	_m.Called(route)
 }
 
+// IncrementFileIndexCounter provides a mock function with given fields:
+func (_m *MetricsInterface) IncrementFileIndexCounter() {
+	_m.Called()
+}
+
+// IncrementFilesSearchCounter provides a mock function with given fields:
+func (_m *MetricsInterface) IncrementFilesSearchCounter() {
+	_m.Called()
+}
+
 // IncrementHttpError provides a mock function with given fields:
 func (_m *MetricsInterface) IncrementHttpError() {
 	_m.Called()
@@ -83,6 +98,11 @@ func (_m *MetricsInterface) IncrementHttpError() {
 // IncrementHttpRequest provides a mock function with given fields:
 func (_m *MetricsInterface) IncrementHttpRequest() {
 	_m.Called()
+}
+
+// IncrementJobActive provides a mock function with given fields: jobType
+func (_m *MetricsInterface) IncrementJobActive(jobType string) {
+	_m.Called(jobType)
 }
 
 // IncrementLogin provides a mock function with given fields:
@@ -205,6 +225,11 @@ func (_m *MetricsInterface) ObserveEnabledUsers(users int64) {
 	_m.Called(users)
 }
 
+// ObserveFilesSearchDuration provides a mock function with given fields: elapsed
+func (_m *MetricsInterface) ObserveFilesSearchDuration(elapsed float64) {
+	_m.Called(elapsed)
+}
+
 // ObservePluginApiDuration provides a mock function with given fields: pluginID, apiName, success, elapsed
 func (_m *MetricsInterface) ObservePluginApiDuration(pluginID string, apiName string, success bool, elapsed float64) {
 	_m.Called(pluginID, apiName, success, elapsed)
@@ -235,12 +260,7 @@ func (_m *MetricsInterface) ObserveStoreMethodDuration(method string, success st
 	_m.Called(method, success, elapsed)
 }
 
-// StartServer provides a mock function with given fields:
-func (_m *MetricsInterface) StartServer() {
-	_m.Called()
-}
-
-// StopServer provides a mock function with given fields:
-func (_m *MetricsInterface) StopServer() {
+// Register provides a mock function with given fields:
+func (_m *MetricsInterface) Register() {
 	_m.Called()
 }
