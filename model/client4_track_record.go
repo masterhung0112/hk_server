@@ -5,7 +5,7 @@ import "fmt"
 // Track Record section
 
 // CreateTrackRecord creates a track record in the system based on the provided user struct.
-func (c *Client1) CreateTrackRecord(trackRecord *TrackRecord) (*TrackRecord, *Response) {
+func (c *Client4) CreateTrackRecord(trackRecord *TrackRecord) (*TrackRecord, *Response) {
 	r, err := c.DoApiPost(c.GetTrackRecordsRoute(), trackRecord.ToJson())
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -15,7 +15,7 @@ func (c *Client1) CreateTrackRecord(trackRecord *TrackRecord) (*TrackRecord, *Re
 }
 
 // CreateTrackRecord creates a track record in the system based on the provided user struct.
-func (c *Client1) CreateTrackPointForRecord(trackRecordId string, trackPoint *TrackPoint) (*TrackPoint, *Response) {
+func (c *Client4) CreateTrackPointForRecord(trackRecordId string, trackPoint *TrackPoint) (*TrackPoint, *Response) {
 	r, err := c.DoApiPost(c.CreateTrackPointForRecordRoute(trackRecordId), trackPoint.ToJson())
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -24,7 +24,7 @@ func (c *Client1) CreateTrackPointForRecord(trackRecordId string, trackPoint *Tr
 	return TrackPointFromJson(r.Body), BuildResponse(r)
 }
 
-func (c *Client1) StartTrackRecord(trackRecordId string) (*TrackRecord, *Response) {
+func (c *Client4) StartTrackRecord(trackRecordId string) (*TrackRecord, *Response) {
 	r, err := c.DoApiPost(c.GetTrackRecordStartRoute(trackRecordId), "")
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
@@ -33,7 +33,7 @@ func (c *Client1) StartTrackRecord(trackRecordId string) (*TrackRecord, *Respons
 	return TrackRecordFromJson(r.Body), BuildResponse(r)
 }
 
-func (c *Client1) EndTrackRecord(trackRecordId string) (*TrackRecord, *Response) {
+func (c *Client4) EndTrackRecord(trackRecordId string) (*TrackRecord, *Response) {
 	r, err := c.DoApiPost(c.GetTrackRecordEndRoute(trackRecordId), "")
 	if err != nil {
 		return nil, BuildErrorResponse(r, err)
