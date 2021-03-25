@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 func truncateTable(t *testing.T, table string) {
 	t.Helper()
 	sqlSetting := mainHelper.GetSQLSettings()
-	sqlStore := mainHelper.GetSqlStore()
+	sqlStore := mainHelper.GetSQLStore()
 
 	switch *sqlSetting.DriverName {
 	case model.DATABASE_DRIVER_MYSQL:

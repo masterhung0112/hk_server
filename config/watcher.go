@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// watcher monitors a file for changes
 type watcher struct {
 	emitter
 
@@ -16,24 +17,25 @@ type watcher struct {
 	closed    chan struct{}
 }
 
-func newWatcher(path string, callback func()) (*watcher, error) {
+// newWatcher creates a new instance of watcher to monitor for file changes.
+func newWatcher(path string, callback func()) (w *watcher, err error) {
 	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to create fs notify watcher for %s", path)
+		return nil, errors.Wrapf(err, "failed to create fsnotify watcher for %s", path)
 	}
 
 	path = filepath.Clean(path)
 
-	// Watch the entire containing directory
+	// Watch the entire containing directory.
 	configDir, _ := filepath.Split(path)
 	if err := fsWatcher.Add(configDir); err != nil {
 		if closeErr := fsWatcher.Close(); closeErr != nil {
-			mlog.Error("Failed to stop fsnotify watcher for %s", mlog.String("path", path), mlog.Err(closeErr))
+			mlog.Error("failed to stop fsnotify watcher for %s", mlog.String("path", path), mlog.Err(closeErr))
 		}
-		return nil, errors.Wrapf(err, "Failed to watch directory %s", configDir)
+		return nil, errors.Wrapf(err, "failed to watch directory %s", configDir)
 	}
 
-	w := &watcher{
+	w = &watcher{
 		fsWatcher: fsWatcher,
 		close:     make(chan struct{}),
 		closed:    make(chan struct{}),
@@ -68,9 +70,9 @@ func newWatcher(path string, callback func()) (*watcher, error) {
 	return w, nil
 }
 
-func (watcher *watcher) Close() error {
-	close(watcher.close)
-	<-watcher.closed
+func (w *watcher) Close() error {
+	close(w.close)
+	<-w.closed
 
 	return nil
 }
