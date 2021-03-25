@@ -151,6 +151,22 @@ func (p *GeoPoint) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+func (p *GeoPoint) IsValid() bool {
+  if p.Lat == float64(0.0) {
+    return false
+  }
+
+  if p.Lng == float64(0.0) {
+    return false
+  }
+
+  return true
+}
+
+func (p *GeoPoint) ToString() string {
+  return fmt.Sprintf(`{"lat":%v, "lng":%v}`, p.Lat, p.Lng)
+}
+
 // MarshalJSON renders the current GeoPoint to valid JSON.
 // Implements the json.Marshaller Interface.
 func (p *GeoPoint) MarshalJSON() ([]byte, error) {
