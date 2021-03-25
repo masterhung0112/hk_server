@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/pkg/errors"
 )
 

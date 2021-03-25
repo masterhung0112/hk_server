@@ -6,9 +6,9 @@ package searchlayer
 import (
 	"context"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/services/searchengine"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/pkg/errors"
 )
@@ -109,7 +109,7 @@ func (s SearchPostStore) Delete(postId string, date int64, deletedByID string) e
 	err := s.PostStore.Delete(postId, date, deletedByID)
 
 	if err == nil {
-		postList, err2 := s.PostStore.Get(context.Background(), postId, true, false, false)
+		postList, err2 := s.PostStore.Get(context.Background(), postId, true, false, false, "")
 		if postList != nil && len(postList.Order) > 0 {
 			if err2 != nil {
 				s.deletePostIndex(postList.Posts[postList.Order[0]])

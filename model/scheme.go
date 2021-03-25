@@ -42,6 +42,7 @@ type SchemeIDPatch struct {
 	SchemeID *string `json:"scheme_id"`
 }
 
+// SchemeConveyor is used for importing and exporting a Scheme and its associated Roles.
 type SchemeConveyor struct {
 	Name         string  `json:"name"`
 	DisplayName  string  `json:"display_name"`
@@ -97,9 +98,8 @@ func SchemesFromJson(data io.Reader) []*Scheme {
 	var schemes []*Scheme
 	if err := json.NewDecoder(data).Decode(&schemes); err == nil {
 		return schemes
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (scheme *Scheme) IsValid() bool {
@@ -111,7 +111,7 @@ func (scheme *Scheme) IsValid() bool {
 }
 
 func (scheme *Scheme) IsValidForCreate() bool {
-	if len(scheme.DisplayName) == 0 || len(scheme.DisplayName) > SCHEME_DISPLAY_NAME_MAX_LENGTH {
+	if scheme.DisplayName == "" || len(scheme.DisplayName) > SCHEME_DISPLAY_NAME_MAX_LENGTH {
 		return false
 	}
 
@@ -156,15 +156,15 @@ func (scheme *Scheme) IsValidForCreate() bool {
 	}
 
 	if scheme.Scope == SCHEME_SCOPE_CHANNEL {
-		if len(scheme.DefaultTeamAdminRole) != 0 {
+		if scheme.DefaultTeamAdminRole != "" {
 			return false
 		}
 
-		if len(scheme.DefaultTeamUserRole) != 0 {
+		if scheme.DefaultTeamUserRole != "" {
 			return false
 		}
 
-		if len(scheme.DefaultTeamGuestRole) != 0 {
+		if scheme.DefaultTeamGuestRole != "" {
 			return false
 		}
 	}

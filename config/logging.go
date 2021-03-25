@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 type LogSrcListener func(old, new mlog.LogTargetCfg)

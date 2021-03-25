@@ -193,7 +193,7 @@ func (s SqlCommandStore) AnalyticsCommandCount(teamId string) (int64, error) {
 		From("Commands").
 		Where(sq.Eq{"DeleteAt": 0})
 
-	if len(teamId) > 0 {
+	if teamId != "" {
 		query = query.Where(sq.Eq{"TeamId": teamId})
 	}
 

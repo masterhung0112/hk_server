@@ -10,9 +10,11 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mail"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils"
+	"github.com/mattermost/go-i18n/i18n"
 )
 
 func (s *Server) GetLogs(page, perPage int) ([]string, *model.AppError) {

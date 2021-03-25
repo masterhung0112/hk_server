@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/pkg/errors"
 
 	"github.com/masterhung0112/hk_server/config"

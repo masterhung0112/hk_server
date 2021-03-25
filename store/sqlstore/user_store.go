@@ -8,13 +8,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/einterfaces"
-
 	sq "github.com/Masterminds/squirrel"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/masterhung0112/hk_server/einterfaces"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/store"
 )
 
 const (

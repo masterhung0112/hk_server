@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/mattermost/ldap"
 )
 
@@ -1084,6 +1084,7 @@ type SqlSettings struct {
 	DataSourceSearchReplicas    []string `access:"environment,write_restrictable,cloud_restrictable"`
 	MaxIdleConns                *int     `access:"environment,write_restrictable,cloud_restrictable"`
 	ConnMaxLifetimeMilliseconds *int     `access:"environment,write_restrictable,cloud_restrictable"`
+  ConnMaxIdleTimeMilliseconds *int     `access:"environment,write_restrictable,cloud_restrictable"`
 	MaxOpenConns                *int     `access:"environment,write_restrictable,cloud_restrictable"`
 	Trace                       *bool    `access:"environment,write_restrictable,cloud_restrictable"`
 	AtRestEncryptKey            *string  `access:"environment,write_restrictable,cloud_restrictable"`
@@ -1128,6 +1129,10 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
 
 	if s.ConnMaxLifetimeMilliseconds == nil {
 		s.ConnMaxLifetimeMilliseconds = NewInt(3600000)
+	}
+
+	if s.ConnMaxIdleTimeMilliseconds == nil {
+		s.ConnMaxIdleTimeMilliseconds = NewInt(300000)
 	}
 
 	if s.Trace == nil {

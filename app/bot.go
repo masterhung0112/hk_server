@@ -10,8 +10,8 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/masterhung0112/hk_server/utils"
 )

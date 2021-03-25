@@ -14,8 +14,8 @@ import (
 
 	plugin "github.com/hashicorp/go-plugin"
 	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 type supervisor struct {

@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 // Default polling interval for jobs termination.

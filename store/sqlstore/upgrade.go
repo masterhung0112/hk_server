@@ -13,9 +13,9 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/services/timezones"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 const (

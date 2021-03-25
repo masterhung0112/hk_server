@@ -6,7 +6,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 type splitLogger struct {

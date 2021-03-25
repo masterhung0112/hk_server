@@ -17,8 +17,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/marketplacemetering/marketplacemeteringiface"
 	"github.com/pkg/errors"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
 )
 

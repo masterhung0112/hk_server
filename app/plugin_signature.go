@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"

@@ -17,16 +17,26 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/go-sql-driver/mysql"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database"
+	mysqlmigrate "github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/lib/pq"
-	"github.com/masterhung0112/hk_server/db/migrations"
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/shared/i18n"
-	"github.com/masterhung0112/hk_server/store"
+	_ "github.com/lib/pq"
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/db/migrations"
+	"github.com/masterhung0112/hk_server/einterfaces"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/i18n"
+	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/store"
 )
+
+type migrationDirection string
 
 const (
 	IndexTypeFullText      = "full_text"
@@ -217,7 +227,6 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 		os.Exit(ExitGenericFailure)
 	}
 
-	store.stores.team.(*SqlTeamStore).createIndexesIfNotExists()
 	store.stores.channel.(*SqlChannelStore).createIndexesIfNotExists()
 	store.stores.post.(*SqlPostStore).createIndexesIfNotExists()
 	store.stores.thread.(*SqlThreadStore).createIndexesIfNotExists()

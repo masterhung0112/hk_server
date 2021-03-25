@@ -42,7 +42,7 @@ const (
 	POST_EPHEMERAL              = "system_ephemeral"
 	POST_CHANGE_CHANNEL_PRIVACY = "system_change_chan_privacy"
 	POST_ADD_BOT_TEAMS_CHANNELS = "add_bot_teams_channels"
-	POST_FILEIDS_MAX_RUNES      = 150
+	POST_FILEIDS_MAX_RUNES      = 300
 	POST_FILENAMES_MAX_RUNES    = 4000
 	POST_HASHTAGS_MAX_RUNES     = 1000
 	POST_MESSAGE_MAX_RUNES_V1   = 4000
@@ -95,8 +95,11 @@ type Post struct {
 	HasReactions  bool            `json:"has_reactions,omitempty"`
 
 	// Transient data populated before sending a post to the client
-	ReplyCount int64         `json:"reply_count" db:"-"`
-	Metadata   *PostMetadata `json:"metadata,omitempty" db:"-"`
+	ReplyCount   int64         `json:"reply_count" db:"-"`
+	LastReplyAt  int64         `json:"last_reply_at" db:"-"`
+	Participants []*User       `json:"participants" db:"-"`
+	IsFollowing  bool          `json:"is_following" db:"-"` // for root posts in collapsed thread mode indicates if the current user is following this thread
+	Metadata     *PostMetadata `json:"metadata,omitempty" db:"-"`
 }
 
 type PostEphemeral struct {
@@ -160,6 +163,12 @@ type PostForIndexing struct {
 	ParentCreateAt *int64 `json:"parent_create_at"`
 }
 
+type FileForIndexing struct {
+	FileInfo
+	ChannelId string `json:"channel_id"`
+	Content   string `json:"content"`
+}
+
 // ShallowCopy is an utility function to shallow copy a Post to the given
 // destination without touching the internal RWMutex.
 func (o *Post) ShallowCopy(dst *Post) error {
@@ -191,6 +200,8 @@ func (o *Post) ShallowCopy(dst *Post) error {
 	dst.PendingPostId = o.PendingPostId
 	dst.HasReactions = o.HasReactions
 	dst.ReplyCount = o.ReplyCount
+	dst.Participants = o.Participants
+	dst.LastReplyAt = o.LastReplyAt
 	dst.Metadata = o.Metadata
 	return nil
 }
@@ -215,17 +226,23 @@ func (o *Post) ToUnsanitizedJson() string {
 }
 
 type GetPostsSinceOptions struct {
-	ChannelId        string
-	Time             int64
-	SkipFetchThreads bool
+	UserId                   string
+	ChannelId                string
+	Time                     int64
+	SkipFetchThreads         bool
+	CollapsedThreads         bool
+	CollapsedThreadsExtended bool
 }
 
 type GetPostsOptions struct {
-	ChannelId        string
-	PostId           string
-	Page             int
-	PerPage          int
-	SkipFetchThreads bool
+	UserId                   string
+	ChannelId                string
+	PostId                   string
+	Page                     int
+	PerPage                  int
+	SkipFetchThreads         bool
+	CollapsedThreads         bool
+	CollapsedThreadsExtended bool
 }
 
 func PostFromJson(data io.Reader) *Post {
@@ -259,19 +276,19 @@ func (o *Post) IsValid(maxPostSize int) *AppError {
 		return NewAppError("Post.IsValid", "model.post.is_valid.channel_id.app_error", nil, "", http.StatusBadRequest)
 	}
 
-	if !(IsValidId(o.RootId) || len(o.RootId) == 0) {
+	if !(IsValidId(o.RootId) || o.RootId == "") {
 		return NewAppError("Post.IsValid", "model.post.is_valid.root_id.app_error", nil, "", http.StatusBadRequest)
 	}
 
-	if !(IsValidId(o.ParentId) || len(o.ParentId) == 0) {
+	if !(IsValidId(o.ParentId) || o.ParentId == "") {
 		return NewAppError("Post.IsValid", "model.post.is_valid.parent_id.app_error", nil, "", http.StatusBadRequest)
 	}
 
-	if len(o.ParentId) == 26 && len(o.RootId) == 0 {
+	if len(o.ParentId) == 26 && o.RootId == "" {
 		return NewAppError("Post.IsValid", "model.post.is_valid.root_parent.app_error", nil, "", http.StatusBadRequest)
 	}
 
-	if !(len(o.OriginalId) == 26 || len(o.OriginalId) == 0) {
+	if !(len(o.OriginalId) == 26 || o.OriginalId == "") {
 		return NewAppError("Post.IsValid", "model.post.is_valid.original_id.app_error", nil, "", http.StatusBadRequest)
 	}
 
@@ -333,6 +350,61 @@ func (o *Post) IsValid(maxPostSize int) *AppError {
 	return nil
 }
 
+func (o *Post) SanitizeProps() {
+	membersToSanitize := []string{
+		PROPS_ADD_CHANNEL_MEMBER,
+	}
+
+	for _, member := range membersToSanitize {
+		if _, ok := o.GetProps()[member]; ok {
+			o.DelProp(member)
+		}
+	}
+	for _, p := range o.Participants {
+		p.Sanitize(map[string]bool{})
+	}
+}
+
+func (o *Post) PreSave() {
+	if o.Id == "" {
+		o.Id = NewId()
+	}
+
+	o.OriginalId = ""
+
+	if o.CreateAt == 0 {
+		o.CreateAt = GetMillis()
+	}
+
+	o.UpdateAt = o.CreateAt
+	o.PreCommit()
+}
+
+func (o *Post) PreCommit() {
+	if o.GetProps() == nil {
+		o.SetProps(make(map[string]interface{}))
+	}
+
+	if o.Filenames == nil {
+		o.Filenames = []string{}
+	}
+
+	if o.FileIds == nil {
+		o.FileIds = []string{}
+	}
+
+	o.GenerateActionIds()
+
+	// There's a rare bug where the client sends up duplicate FileIds so protect against that
+	o.FileIds = RemoveDuplicateStrings(o.FileIds)
+}
+
+func (o *Post) MakeNonNil() {
+	if o.GetProps() == nil {
+		o.SetProps(make(map[string]interface{}))
+	}
+}
+
 func (o *Post) DelProp(key string) {
 	o.propsMu.Lock()
 	defer o.propsMu.Unlock()
@@ -388,148 +460,6 @@ func (o *Post) IsJoinLeaveMessage() bool {
 		o.Type == POST_REMOVE_FROM_CHANNEL ||
 		o.Type == POST_ADD_TO_TEAM ||
 		o.Type == POST_REMOVE_FROM_TEAM
-}
-
-// DisableMentionHighlights disables a posts mention highlighting and returns the first channel mention that was present in the message.
-func (o *Post) DisableMentionHighlights() string {
-	mention, hasMentions := findAtChannelMention(o.Message)
-	if hasMentions {
-		o.AddProp(POST_PROPS_MENTION_HIGHLIGHT_DISABLED, true)
-	}
-	return mention
-}
-
-// DisableMentionHighlights disables mention highlighting for a post patch if required.
-func (o *PostPatch) DisableMentionHighlights() {
-	if o.Message == nil {
-		return
-	}
-	if _, hasMentions := findAtChannelMention(*o.Message); hasMentions {
-		if o.Props == nil {
-			o.Props = &StringInterface{}
-		}
-		(*o.Props)[POST_PROPS_MENTION_HIGHLIGHT_DISABLED] = true
-	}
-}
-
-func findAtChannelMention(message string) (mention string, found bool) {
-	re := regexp.MustCompile(`(?i)\B@(channel|all|here)\b`)
-	matched := re.FindStringSubmatch(message)
-	if found = (len(matched) > 0); found {
-		mention = strings.ToLower(matched[0])
-	}
-	return
-}
-
-func (o *Post) Attachments() []*SlackAttachment {
-	if attachments, ok := o.GetProp("attachments").([]*SlackAttachment); ok {
-		return attachments
-	}
-	var ret []*SlackAttachment
-	if attachments, ok := o.GetProp("attachments").([]interface{}); ok {
-		for _, attachment := range attachments {
-			if enc, err := json.Marshal(attachment); err == nil {
-				var decoded SlackAttachment
-				if json.Unmarshal(enc, &decoded) == nil {
-					ret = append(ret, &decoded)
-				}
-			}
-		}
-	}
-	return ret
-}
-
-func (o *Post) AttachmentsEqual(input *Post) bool {
-	attachments := o.Attachments()
-	inputAttachments := input.Attachments()
-
-	if len(attachments) != len(inputAttachments) {
-		return false
-	}
-
-	for i := range attachments {
-		if !attachments[i].Equals(inputAttachments[i]) {
-			return false
-		}
-	}
-
-	return true
-}
-
-var markdownDestinationEscaper = strings.NewReplacer(
-	`\`, `\\`,
-	`<`, `\<`,
-	`>`, `\>`,
-	`(`, `\(`,
-	`)`, `\)`,
-)
-
-// WithRewrittenImageURLs returns a new shallow copy of the post where the message has been
-// rewritten via RewriteImageURLs.
-func (o *Post) WithRewrittenImageURLs(f func(string) string) *Post {
-	copy := o.Clone()
-	copy.Message = RewriteImageURLs(o.Message, f)
-	if copy.MessageSource == "" && copy.Message != o.Message {
-		copy.MessageSource = o.Message
-	}
-	return copy
-}
-
-func (o *PostEphemeral) ToUnsanitizedJson() string {
-	b, _ := json.Marshal(o)
-	return string(b)
-}
-
-func (o *Post) SanitizeProps() {
-	membersToSanitize := []string{
-		PROPS_ADD_CHANNEL_MEMBER,
-	}
-
-	for _, member := range membersToSanitize {
-		if _, ok := o.GetProps()[member]; ok {
-			o.DelProp(member)
-		}
-	}
-}
-
-func (o *Post) PreSave() {
-	if o.Id == "" {
-		o.Id = NewId()
-	}
-
-	o.OriginalId = ""
-
-	if o.CreateAt == 0 {
-		o.CreateAt = GetMillis()
-	}
-
-	o.UpdateAt = o.CreateAt
-	o.PreCommit()
-}
-
-func (o *Post) PreCommit() {
-	if o.GetProps() == nil {
-		o.SetProps(make(map[string]interface{}))
-	}
-
-	if o.Filenames == nil {
-		o.Filenames = []string{}
-	}
-
-	if o.FileIds == nil {
-		o.FileIds = []string{}
-	}
-
-	o.GenerateActionIds()
-
-	// There's a rare bug where the client sends up duplicate FileIds so protect against that
-	o.FileIds = RemoveDuplicateStrings(o.FileIds)
-}
-
-func (o *Post) MakeNonNil() {
-	if o.GetProps() == nil {
-		o.SetProps(make(map[string]interface{}))
-	}
 }
 
 func (o *Post) Patch(patch *PostPatch) {
@@ -598,6 +528,104 @@ func (o *Post) ChannelMentions() []string {
 	return ChannelMentions(o.Message)
 }
 
+// DisableMentionHighlights disables a posts mention highlighting and returns the first channel mention that was present in the message.
+func (o *Post) DisableMentionHighlights() string {
+	mention, hasMentions := findAtChannelMention(o.Message)
+	if hasMentions {
+		o.AddProp(POST_PROPS_MENTION_HIGHLIGHT_DISABLED, true)
+	}
+	return mention
+}
+
+// DisableMentionHighlights disables mention highlighting for a post patch if required.
+func (o *PostPatch) DisableMentionHighlights() {
+	if o.Message == nil {
+		return
+	}
+	if _, hasMentions := findAtChannelMention(*o.Message); hasMentions {
+		if o.Props == nil {
+			o.Props = &StringInterface{}
+		}
+		(*o.Props)[POST_PROPS_MENTION_HIGHLIGHT_DISABLED] = true
+	}
+}
+
+func findAtChannelMention(message string) (mention string, found bool) {
+	re := regexp.MustCompile(`(?i)\B@(channel|all|here)\b`)
+	matched := re.FindStringSubmatch(message)
+	if found = (len(matched) > 0); found {
+		mention = strings.ToLower(matched[0])
+	}
+	return
+}
+
+func (o *Post) Attachments() []*SlackAttachment {
+	if attachments, ok := o.GetProp("attachments").([]*SlackAttachment); ok {
+		return attachments
+	}
+	var ret []*SlackAttachment
+	if attachments, ok := o.GetProp("attachments").([]interface{}); ok {
+		for _, attachment := range attachments {
+			if enc, err := json.Marshal(attachment); err == nil {
+				var decoded SlackAttachment
+				if json.Unmarshal(enc, &decoded) == nil {
+					i := 0
+					for _, action := range decoded.Actions {
+						if action != nil {
+							decoded.Actions[i] = action
+							i++
+						}
+					}
+					decoded.Actions = decoded.Actions[:i]
+					ret = append(ret, &decoded)
+				}
+			}
+		}
+	}
+	return ret
+}
+
+func (o *Post) AttachmentsEqual(input *Post) bool {
+	attachments := o.Attachments()
+	inputAttachments := input.Attachments()
+
+	if len(attachments) != len(inputAttachments) {
+		return false
+	}
+
+	for i := range attachments {
+		if !attachments[i].Equals(inputAttachments[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+var markdownDestinationEscaper = strings.NewReplacer(
+	`\`, `\\`,
+	`<`, `\<`,
+	`>`, `\>`,
+	`(`, `\(`,
+	`)`, `\)`,
+)
+
+// WithRewrittenImageURLs returns a new shallow copy of the post where the message has been
+// rewritten via RewriteImageURLs.
+func (o *Post) WithRewrittenImageURLs(f func(string) string) *Post {
+	copy := o.Clone()
+	copy.Message = RewriteImageURLs(o.Message, f)
+	if copy.MessageSource == "" && copy.Message != o.Message {
+		copy.MessageSource = o.Message
+	}
+	return copy
+}
+
+func (o *PostEphemeral) ToUnsanitizedJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}
+
 // RewriteImageURLs takes a message and returns a copy that has all of the image URLs replaced
 // according to the function f. For each image URL, f will be invoked, and the resulting markdown
 // will contain the URL returned by that invocation instead.
@@ -661,4 +689,9 @@ func RewriteImageURLs(message string, f func(string) string) string {
 	copy(result[offset:], message[ranges[len(ranges)-1].End:])
 
 	return string(result)
+}
+
+func (o *Post) IsFromOAuthBot() bool {
+	props := o.GetProps()
+	return props["from_webhook"] == "true" && props["override_username"] != ""
 }

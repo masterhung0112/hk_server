@@ -27,10 +27,10 @@ import (
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/plugin"
 	"github.com/masterhung0112/hk_server/services/filesstore"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/masterhung0112/hk_server/utils"
 )

@@ -15,8 +15,8 @@ import (
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/jobs"
 	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils"
 )
 

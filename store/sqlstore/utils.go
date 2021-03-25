@@ -2,11 +2,12 @@ package sqlstore
 
 import (
 	"database/sql"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/mattermost/gorp"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/mattermost/gorp"
 )
 
 var escapeLikeSearchChar = []string{

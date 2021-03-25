@@ -79,7 +79,7 @@ func TestAtmosCamoBackend_GetImageDirect(t *testing.T) {
 
 	body, contentType, err := backend.GetImageDirect("https://example.com/image.png")
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "image/png", contentType)
 
 	require.NotNil(t, body)
@@ -137,7 +137,7 @@ func TestGetAtmosCamoImageURL(t *testing.T) {
 			Expected: "https://mattermost.example.com/static/logo.png",
 		},
 		{
-			Name:     "should not proxy an image on the HungKnow server  when a subpath is set",
+			Name:     "should not proxy an image on the HungKnow server when a subpath is set",
 			Input:    "https://mattermost.example.com/static/logo.png",
 			SiteURL:  defaultSiteURL + "/static",
 			Expected: "https://mattermost.example.com/static/logo.png",

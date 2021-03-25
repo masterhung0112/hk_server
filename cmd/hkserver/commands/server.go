@@ -11,7 +11,7 @@ import (
 	"github.com/masterhung0112/hk_server/app"
 	"github.com/masterhung0112/hk_server/config"
 	"github.com/masterhung0112/hk_server/manualtesting"
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/masterhung0112/hk_server/web"
 	"github.com/pkg/errors"

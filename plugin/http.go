@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"net/rpc"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 type hijackedResponse struct {

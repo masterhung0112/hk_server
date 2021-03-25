@@ -23,8 +23,8 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 const mattermostBuildPublicKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -189,8 +189,8 @@ func UpgradeToE0() error {
 		if filename != "" {
 			os.Remove(filename)
 		}
-		upgradeError = fmt.Errorf("error downloading the new HungKnow server  binary file (percentage: %d)", upgradePercentage)
-		mlog.Error("Unable to download the HungKnow server  binary file", mlog.Int64("percentage", upgradePercentage), mlog.String("url", getCurrentVersionTgzUrl()), mlog.Err(err))
+		upgradeError = fmt.Errorf("error downloading the new HungKnow server binary file (percentage: %d)", upgradePercentage)
+		mlog.Error("Unable to download the HungKnow server binary file", mlog.Int64("percentage", upgradePercentage), mlog.String("url", getCurrentVersionTgzUrl()), mlog.Err(err))
 		upgradePercentage = 0
 		return err
 	}

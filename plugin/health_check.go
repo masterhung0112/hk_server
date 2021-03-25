@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/model"
 )
 

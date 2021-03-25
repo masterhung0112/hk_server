@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 func slackParseChannels(data io.Reader, channelType string) ([]slackChannel, error) {

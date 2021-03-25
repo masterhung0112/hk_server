@@ -5,12 +5,13 @@ package searchlayer
 
 import (
 	"context"
-	"errors"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/services/searchengine"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
 )
 

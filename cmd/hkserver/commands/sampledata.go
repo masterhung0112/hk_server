@@ -3,13 +3,6 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/icrowley/fake"
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -17,6 +10,14 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/icrowley/fake"
+	"github.com/masterhung0112/hk_server/app"
+	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/utils"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 const (

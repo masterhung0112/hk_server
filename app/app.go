@@ -9,12 +9,14 @@ import (
 	"time"
 
 	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/services/httpservice"
 	"github.com/masterhung0112/hk_server/services/imageproxy"
 	"github.com/masterhung0112/hk_server/services/searchengine"
 	"github.com/masterhung0112/hk_server/services/timezones"
+	"github.com/masterhung0112/hk_server/shared/mail"
+	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/shared/templates"
 	"github.com/masterhung0112/hk_server/utils"
 	"github.com/mattermost/go-i18n/i18n"
 )

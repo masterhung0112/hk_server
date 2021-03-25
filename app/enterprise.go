@@ -7,9 +7,9 @@ import (
 	"github.com/masterhung0112/hk_server/einterfaces"
 	ejobs "github.com/masterhung0112/hk_server/einterfaces/jobs"
 	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/services/searchengine"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 var accountMigrationInterface func(*App) einterfaces.AccountMigrationInterface

@@ -18,13 +18,13 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
 	"github.com/masterhung0112/hk_server/plugin"
 	"github.com/masterhung0112/hk_server/plugin/plugintest"
 	"github.com/masterhung0112/hk_server/services/httpservice"
 	"github.com/masterhung0112/hk_server/services/searchengine"
 	"github.com/masterhung0112/hk_server/services/telemetry/mocks"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	storeMocks "github.com/masterhung0112/hk_server/store/storetest/mocks"
 )
 

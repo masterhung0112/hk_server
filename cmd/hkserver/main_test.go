@@ -2,11 +2,12 @@ package main
 
 import (
 	"flag"
-	api1 "github.com/masterhung0112/hk_server/api1"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/testlib"
 	"os"
 	"testing"
+
+	api1 "github.com/masterhung0112/hk_server/api1"
+	"github.com/masterhung0112/hk_server/shared/mlog"
+	"github.com/masterhung0112/hk_server/testlib"
 )
 
 func TestMain(m *testing.M) {

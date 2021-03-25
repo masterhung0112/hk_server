@@ -20,8 +20,8 @@ import (
 
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/hashicorp/go-plugin"
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 var hookNameToId map[string]int = make(map[string]int)

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/shared/mlog"
 )
 
 // setupFeatureFlags called on startup and when the cluster leader changes.

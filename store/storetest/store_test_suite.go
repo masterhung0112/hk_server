@@ -1,10 +1,11 @@
 package storetest
 
 import (
-	"github.com/masterhung0112/hk_server/mlog"
+	"testing"
+
+	"github.com/masterhung0112/hk_server/shared/mlog"
 	"github.com/masterhung0112/hk_server/store"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type StoreTestBaseSuite interface {

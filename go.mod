@@ -1,6 +1,6 @@
 module github.com/masterhung0112/hk_server
 
-go 1.14
+go 1.15
 
 require (
 	code.sajari.com/docconv v1.1.1-0.20200701232649-d9ea05fbd50a
@@ -15,6 +15,7 @@ require (
 	github.com/aws/aws-sdk-go v1.36.29
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blevesearch/bleve v1.0.14
+	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/cespare/xxhash/v2 v2.1.1
 	github.com/corpix/uarand v0.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -27,6 +28,7 @@ require (
 	github.com/getsentry/sentry-go v0.9.0
 	github.com/go-gorp/gorp v2.2.0+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/google/uuid v1.1.5
 	github.com/gorilla/mux v1.8.0
@@ -76,11 +78,12 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.1.4
 	github.com/wiggin77/merror v1.0.3
 	github.com/wiggin77/srslog v1.0.1
-	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/image v0.0.0-20201208152932-35266b937fa6
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	golang.org/x/text v0.3.5
 	gopkg.in/mail.v2 v2.3.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
