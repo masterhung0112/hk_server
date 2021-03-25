@@ -23,7 +23,7 @@ type Container struct {
 func main() {
 	validServices := map[string]int{
 		"mysql":         3306,
-		"postgres":      5432,
+		"postgres":      7432,
 		"minio":         9000,
 		"inbucket":      10080,
 		"openldap":      389,

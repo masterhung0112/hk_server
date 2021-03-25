@@ -21,16 +21,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
 	"github.com/masterhung0112/hk_server/v5/einterfaces/mocks"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/plugin"
 	"github.com/masterhung0112/hk_server/v5/shared/i18n"
 	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func getDefaultPluginSettingsSchema() string {

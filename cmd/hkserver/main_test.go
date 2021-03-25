@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	api1 "github.com/masterhung0112/hk_server/v5/api1"
+	api4 "github.com/masterhung0112/hk_server/v5/api4"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/testlib"
 )
@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 
 	mainHelper = testlib.NewMainHelperWithOptions(&options)
 	defer mainHelper.Close()
-	api1.SetMainHelper(mainHelper)
+	api4.SetMainHelper(mainHelper)
 
 	mainHelper.Main(m)
 }

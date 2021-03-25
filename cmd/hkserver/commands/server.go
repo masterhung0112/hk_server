@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"syscall"
 
-	api1 "github.com/masterhung0112/hk_server/v5/api1"
+	api4 "github.com/masterhung0112/hk_server/v5/api4"
 	"github.com/masterhung0112/hk_server/v5/app"
 	"github.com/masterhung0112/hk_server/v5/config"
 	"github.com/masterhung0112/hk_server/v5/manualtesting"
@@ -78,11 +78,11 @@ func runServer(configStore *config.Store, usedPlatform bool, interruptChan chan 
 		mlog.Error("The platform binary has been deprecated, please switch to using the mattermost binary.")
 	}
 
-	api := api1.ApiInit(server, server.AppOptions, server.Router)
+	api := api4.ApiInit(server, server.AppOptions, server.Router)
 	//TODO: Open
 	// wsapi.Init(server)
 	web.New(server, server.AppOptions, server.Router)
-	api1.ApiInitLocal(server, server.AppOptions, server.LocalRouter)
+	api4.ApiInitLocal(server, server.AppOptions, server.LocalRouter)
 
 	serverErr := server.Start()
 	if serverErr != nil {

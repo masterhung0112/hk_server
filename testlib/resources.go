@@ -11,9 +11,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/pkg/errors"
 
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/filestore"
 	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
@@ -67,6 +68,7 @@ func findDir(dir string) (string, bool) {
 		if srcPath == "" {
 			return "./", false
 		}
+
 		return path.Dir(srcPath), true
 	}
 
@@ -116,6 +118,17 @@ func getTestResourcesToSetup() []testResourceDetails {
 	}
 
 	return testResourcesToSetup
+}
+
+func CopyFile(src, dst string) error {
+	fileBackend, err := filestore.NewFileBackend(filestore.FileBackendSettings{DriverName: "local", Directory: ""})
+	if err != nil {
+		return errors.Wrapf(err, "failed to copy file %s to %s", src, dst)
+	}
+	if err = fileBackend.CopyFile(src, dst); err != nil {
+		return errors.Wrapf(err, "failed to copy file %s to %s", src, dst)
+	}
+	return nil
 }
 
 func SetupTestResources() (string, error) {
