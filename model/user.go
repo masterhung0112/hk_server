@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	ME                                 = "me"
+  ME                                 = "me"
 	USER_NOTIFY_ALL                    = "all"
 	USER_NOTIFY_HERE                   = "here"
 	USER_NOTIFY_MENTION                = "mention"
@@ -53,6 +53,7 @@ const (
 	USER_NAME_MIN_LENGTH      = 1
 	USER_PASSWORD_MAX_LENGTH  = 72
 	USER_LOCALE_MAX_LENGTH    = 5
+	USER_TIMEZONE_MAX_RUNES   = 256
 )
 
 //msgp:tuple User
