@@ -1121,7 +1121,6 @@ func (s *SqlSettings) SetDefaults(isUpdate bool) {
 		s.DriverName = NewString(DATABASE_DRIVER_POSTGRES)
 	}
 
-  // mlog.Info("s.DataSource", mlog.String("datasource", *s.DataSource))
 	if s.DataSource == nil {
 		s.DataSource = NewString(SQL_SETTINGS_DEFAULT_DATA_SOURCE)
 	}
