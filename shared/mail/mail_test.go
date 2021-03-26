@@ -27,7 +27,7 @@ func getConfig() *SMTPConfig {
 	}
 	port := os.Getenv("MM_EMAILSETTINGS_SMTPPORT")
 	if port == "" {
-		port = "10025"
+		port = "20025"
 	}
 
 	return &SMTPConfig{

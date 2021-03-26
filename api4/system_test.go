@@ -170,7 +170,7 @@ func TestEmailTest(t *testing.T) {
 
 		inbucket_port := os.Getenv("CI_INBUCKET_SMTP_PORT")
 		if inbucket_port == "" {
-			inbucket_port = "10025"
+			inbucket_port = "20025"
 		}
 
 		*config.EmailSettings.SMTPServer = inbucket_host

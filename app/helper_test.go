@@ -531,7 +531,7 @@ func (th *TestHelper) ConfigureInbucketMail() {
 	}
 	inbucket_port := os.Getenv("CI_INBUCKET_SMTP_PORT")
 	if inbucket_port == "" {
-		inbucket_port = "10025"
+		inbucket_port = "20025"
 	}
 	th.App.UpdateConfig(func(cfg *model.Config) {
 		*cfg.EmailSettings.SMTPServer = inbucket_host

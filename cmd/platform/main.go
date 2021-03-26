@@ -22,17 +22,17 @@ The platform binary will be removed in a future version.
 
 	// Execve the real MM binary
 	args := os.Args
-	args[0] = "mattermost"
+	args[0] = "hkserver"
 	args = append(args, "--platform")
 
-	realMattermost := fileutils.FindFile("mattermost")
+	realMattermost := fileutils.FindFile("hkserver")
 	if realMattermost == "" {
-		realMattermost = fileutils.FindFile("bin/mattermost")
+		realMattermost = fileutils.FindFile("bin/hkserver")
 	}
 
 	if realMattermost == "" {
-		fmt.Println("Could not start Mattermost, use the mattermost command directly: failed to find mattermost")
+		fmt.Println("Could not start HungKnow, use the hkserver command directly: failed to find mattermost")
 	} else if err := syscall.Exec(realMattermost, args, nil); err != nil {
-		fmt.Printf("Could not start Mattermost, use the mattermost command directly: %s\n", err.Error())
+		fmt.Printf("Could not start HungKnow, use the hkserver command directly: %s\n", err.Error())
 	}
 }

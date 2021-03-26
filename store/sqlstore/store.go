@@ -262,7 +262,7 @@ func New(settings model.SqlSettings, metrics einterfaces.MetricsInterface) *SqlS
 }
 
 func setupConnection(connType string, dataSource string, settings *model.SqlSettings) *gorp.DbMap {
-	// mlog.Info("dataSource", mlog.String("dattaSource", dataSource))
+	// mlog.Info("dataSource", mlog.String("connType", connType), mlog.String("dattaSource", dataSource))
 	// dataSource = "postgres://hkuser:mostest@localhost:7432/hungknow_test?sslmode=disable&connect_timeout=10"
 	db, err := dbsql.Open(*settings.DriverName, dataSource)
 	if err != nil {
@@ -326,7 +326,7 @@ func (ss *SqlStore) Context() context.Context {
 
 func (ss *SqlStore) initConnection() {
 	ss.master = setupConnection("master", *ss.settings.DataSource, ss.settings)
-
+  mlog.Info("ss.settings.DataSource", mlog.String("datasource", *ss.settings.DataSource))
 	if len(ss.settings.DataSourceReplicas) > 0 {
 		ss.Replicas = make([]*gorp.DbMap, len(ss.settings.DataSourceReplicas))
 		for i, replica := range ss.settings.DataSourceReplicas {
