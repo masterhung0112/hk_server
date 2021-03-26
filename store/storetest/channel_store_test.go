@@ -24,11 +24,11 @@ func (s *ChannelStoreTestSuite) SetupTest() {
 	createDefaultRoles(s.Store())
 }
 
-func TestChannelStoreTestSuite(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &ChannelStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-		suite.Run(t, testSuite)
-	})
-}
+// func TestChannelStoreTestSuite(t *testing.T) {
+// 	StoreTestSuiteWithSqlSupplier(t, &ChannelStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+// 		suite.Run(t, testSuite)
+// 	})
+// }
 
 func (s *ChannelStoreTestSuite) cleanupChannels() {
 	list, err := s.Store().Channel().GetAllChannels(0, 100000, store.ChannelSearchOpts{IncludeDeleted: true})
