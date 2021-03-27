@@ -1298,11 +1298,11 @@ type UserStoreGetProfilesTS struct {
 	teamId string
 }
 
-func TestUserStoreGetProfilesTS(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-		suite.Run(t, testSuite)
-	})
-}
+// func TestUserStoreGetProfilesTS(t *testing.T) {
+// 	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+// 		suite.Run(t, testSuite)
+// 	})
+// }
 
 func (s *UserStoreGetProfilesTS) SetupSuite() {
 	teamId := model.NewId()
@@ -1501,11 +1501,11 @@ type UserStoreGetProfilesByIdsTS struct {
 	teamId string
 }
 
-func TestUserStoreGetProfilesByIdsTS(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesByIdsTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-		suite.Run(t, testSuite)
-	})
-}
+// func TestUserStoreGetProfilesByIdsTS(t *testing.T) {
+// 	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesByIdsTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+// 		suite.Run(t, testSuite)
+// 	})
+// }
 
 func (s *UserStoreGetProfilesByIdsTS) SetupSuite() {
 	teamId := model.NewId()

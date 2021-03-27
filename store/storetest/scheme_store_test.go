@@ -1,8 +1,6 @@
 package storetest
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/suite"
 
 	"github.com/masterhung0112/hk_server/v5/model"

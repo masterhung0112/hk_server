@@ -18,3 +18,15 @@ func TestUserStoreGetAllProfilesTS(t *testing.T) {
 		suite.Run(t, testSuite)
 	})
 }
+
+func TestUserStoreGetProfilesTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &storetest.UserStoreGetProfilesTS{}, func(t *testing.T, testSuite storetest.StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
+
+func TestUserStoreGetProfilesByIdsTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &storetest.UserStoreGetProfilesByIdsTS{}, func(t *testing.T, testSuite storetest.StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}

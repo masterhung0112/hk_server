@@ -1,8 +1,6 @@
 package storetest
 
 import (
-	"testing"
-
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/stretchr/testify/suite"
 )
@@ -12,11 +10,11 @@ type TeamStoreTestSuite struct {
 	StoreTestSuite
 }
 
-func TestTeamStoreTestSuite(t *testing.T) {
-	StoreTestSuiteWithSqlSupplier(t, &TeamStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-		suite.Run(t, testSuite)
-	})
-}
+// func TestTeamStoreTestSuite(t *testing.T) {
+// 	StoreTestSuiteWithSqlSupplier(t, &TeamStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+// 		suite.Run(t, testSuite)
+// 	})
+// }
 
 // Each user should have a mention count of exactly 1 in the DB at this point.
 func (s *TeamStoreTestSuite) TestGetMembersOrderByUserId() {
