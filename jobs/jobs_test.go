@@ -11,14 +11,14 @@ import (
 	"github.com/masterhung0112/hk_server/v5/einterfaces/mocks"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/store"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/store/storetest/mockstore"
 	"github.com/masterhung0112/hk_server/v5/utils/testutils"
 )
 
-func makeJobServer(t *testing.T) (*JobServer, *storetest.Store, *mocks.MetricsInterface) {
+func makeJobServer(t *testing.T) (*JobServer, *mockstore.Store, *mocks.MetricsInterface) {
 	configService := &testutils.StaticConfigService{}
 
-	mockStore := &storetest.Store{}
+	mockStore := &mockstore.Store{}
 	t.Cleanup(func() {
 		mockStore.AssertExpectations(t)
 	})
@@ -39,10 +39,10 @@ func expectErrorId(t *testing.T, errId string, appErr *model.AppError) {
 	require.Equal(t, errId, appErr.Id)
 }
 
-func makeTeamEditionJobServer(t *testing.T) (*JobServer, *storetest.Store) {
+func makeTeamEditionJobServer(t *testing.T) (*JobServer, *mockstore.Store) {
 	configService := &testutils.StaticConfigService{}
 
-	mockStore := &storetest.Store{}
+	mockStore := &mockstore.Store{}
 	t.Cleanup(func() {
 		mockStore.AssertExpectations(t)
 	})

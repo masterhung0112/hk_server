@@ -11,7 +11,7 @@ import (
 	"github.com/masterhung0112/hk_server/v5/einterfaces/mocks"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/plugin/plugintest/mock"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/store/storetest/mockstore"
 	"github.com/masterhung0112/hk_server/v5/utils/testutils"
 )
 
@@ -41,7 +41,7 @@ func (scheduler *MockScheduler) ScheduleJob(cfg *model.Config, pendingJobs bool,
 }
 
 func TestScheduler(t *testing.T) {
-	mockStore := &storetest.Store{}
+	mockStore := &mockstore.Store{}
 	defer mockStore.AssertExpectations(t)
 
 	job := &model.Job{
