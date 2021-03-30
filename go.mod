@@ -5,6 +5,7 @@ go 1.15
 require (
 	code.sajari.com/docconv v1.1.1-0.20200701232649-d9ea05fbd50a
 	github.com/CloudyKit/jet v2.1.3-0.20180809161101-62edd43e4f88+incompatible // indirect
+	github.com/EventStore/EventStore-Client-Go v0.0.0-20210219122213-700926402daf // indirect
 	github.com/GoogleCloudPlatform/functions-framework-go v1.0.1
 	github.com/JalfResi/justext v0.0.0-20170829062021-c0282dea7198 // indirect
 	github.com/Joker/jade v1.0.1-0.20190614124447-d475f43051e7 // indirect
