@@ -1,6 +1,8 @@
 package storetest
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/suite"
 
 	"github.com/masterhung0112/hk_server/v5/model"
@@ -12,11 +14,11 @@ type SchemeStoreTestSuite struct {
 	StoreTestSuite
 }
 
-// func TestSchemeStoreTestSuite(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &SchemeStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-// 		suite.Run(t, testSuite)
-// 	})
-// }
+func TestSchemeStoreTestSuite(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &SchemeStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
 
 func (s *SchemeStoreTestSuite) SetupSuite() {
 	createDefaultRoles(s.Store())

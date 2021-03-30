@@ -18,11 +18,11 @@ type PostStoreTestSuite struct {
 	StoreTestSuite
 }
 
-// func TestPostStoreTestSuite(t *testing.T) {
-// 	sqlstore.StoreTestSuiteWithSqlSupplier(t, &PostStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-// 		suite.Run(t, testSuite)
-// 	})
-// }
+func TestPostStoreTestSuite(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &PostStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
 
 func generateMultiplePosts() (*model.Post, *model.Post, *model.Post, *model.Post) {
 	p1 := &model.Post{}

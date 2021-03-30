@@ -1,4 +1,4 @@
-package sqlstore_test
+package storetest
 
 func InitTest() {
 	initStores()

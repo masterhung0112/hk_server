@@ -1,10 +1,10 @@
-package sqlstore_test
+package storetest_test
 
 import (
 	"testing"
 
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
-	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
@@ -15,8 +15,8 @@ func TestMain(m *testing.M) {
 	mainHelper = testlib.NewMainHelperWithOptions(nil)
 	defer mainHelper.Close()
 
-	sqlstore.InitTest()
+	storetest.InitTest()
 
 	mainHelper.Main(m)
-	sqlstore.TearDownTest()
+	storetest.TearDownTest()
 }

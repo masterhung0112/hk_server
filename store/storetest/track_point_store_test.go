@@ -1,6 +1,8 @@
 package storetest
 
 import (
+	"testing"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/stretchr/testify/suite"
 )
@@ -10,11 +12,11 @@ type TrackPointStoreTestSuite struct {
 	StoreTestSuite
 }
 
-// func TestTrackPointStoreTestSuite(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &TrackPointStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-// 		suite.Run(t, testSuite)
-// 	})
-// }
+func TestTrackPointStoreTestSuite(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &TrackPointStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
 
 func (s *TrackPointStoreTestSuite) TestSave() {
 	tp1 := &model.TrackPoint{

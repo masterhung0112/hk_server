@@ -1,6 +1,8 @@
 package storetest
 
 import (
+	"testing"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/stretchr/testify/suite"
 )
@@ -10,11 +12,11 @@ type RoleStoreTestSuite struct {
 	StoreTestSuite
 }
 
-// func TestRoleStoreTestSuite(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &RoleStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-// 		suite.Run(t, testSuite)
-// 	})
-// }
+func TestRoleStoreTestSuite(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &RoleStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
 
 func (s *RoleStoreTestSuite) TestRoleStoreSave() {
 	// Save a new role.
