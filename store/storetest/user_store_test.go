@@ -4510,7 +4510,7 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 
 		updatedUser, err := s.Store().User().DemoteUserToGuest(user.Id)
 		s.Require().NoError(err)
-    s.Require().Equal("system_guest", updatedUser.Roles)
+		s.Require().Equal("system_guest", updatedUser.Roles)
 		s.Require().True(user.UpdateAt < updatedUser.UpdateAt)
 
 		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)

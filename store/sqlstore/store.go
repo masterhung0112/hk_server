@@ -325,7 +325,7 @@ func (ss *SqlStore) Context() context.Context {
 func (ss *SqlStore) initConnection() {
 	ss.master = setupConnection("master", *ss.settings.DataSource, ss.settings)
 
-  if len(ss.settings.DataSourceReplicas) > 0 {
+	if len(ss.settings.DataSourceReplicas) > 0 {
 		ss.Replicas = make([]*gorp.DbMap, len(ss.settings.DataSourceReplicas))
 		for i, replica := range ss.settings.DataSourceReplicas {
 			ss.Replicas[i] = setupConnection(fmt.Sprintf("replica-%v", i), replica, ss.settings)

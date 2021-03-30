@@ -126,9 +126,9 @@ func initStores() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-      sqlStore := sqlstore.New(*st.SqlSettings, nil)
+			sqlStore := sqlstore.New(*st.SqlSettings, nil)
 			st.Store = sqlStore
-      st.SqlStore = sqlStore
+			st.SqlStore = sqlStore
 			st.Store.DropAllTables()
 			st.Store.MarkSystemRanUnitTests()
 		}()
@@ -467,7 +467,6 @@ func TestGetAllConns(t *testing.T) {
 			4,
 		},
 	}
-
 
 	for _, testCase := range testCases {
 		testCase := testCase

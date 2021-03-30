@@ -20,13 +20,13 @@ func TestTrackPointStoreTestSuite(t *testing.T) {
 
 func (s *TrackPointStoreTestSuite) TestSave() {
 	tp1 := &model.TrackPoint{
-		TargetId:   "111",
+		TargetId: "111",
 		// TargetType: "work_bike",
 		Point: model.GeoPoint{
 			Lat: 123.456,
 			Lng: 456.678,
 		},
-		DeviceId:   "",
+		DeviceId: "",
 		// DeviceType: "mobile",
 	}
 
