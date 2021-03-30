@@ -1,11 +1,13 @@
 package utils
 
 import (
-	"github.com/masterhung0112/hk_server/model"
 	"strings"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/masterhung0112/hk_server/v5/model"
+
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsPasswordValidWithSettings(t *testing.T) {
@@ -24,6 +26,36 @@ func TestIsPasswordValidWithSettings(t *testing.T) {
 				Symbol:        model.NewBool(false),
 			},
 		},
+		"Long": {
+			Password: strings.Repeat("x", model.PASSWORD_MAXIMUM_LENGTH),
+			Settings: &model.PasswordSettings{
+				Lowercase: model.NewBool(false),
+				Uppercase: model.NewBool(false),
+				Number:    model.NewBool(false),
+				Symbol:    model.NewBool(false),
+			},
+		},
+		"TooShort": {
+			Password: strings.Repeat("x", 2),
+			Settings: &model.PasswordSettings{
+				MinimumLength: model.NewInt(3),
+				Lowercase:     model.NewBool(false),
+				Uppercase:     model.NewBool(false),
+				Number:        model.NewBool(false),
+				Symbol:        model.NewBool(false),
+			},
+			ExpectedError: "model.user.is_valid.pwd.app_error",
+		},
+		"TooLong": {
+			Password: strings.Repeat("x", model.PASSWORD_MAXIMUM_LENGTH+1),
+			Settings: &model.PasswordSettings{
+				Lowercase: model.NewBool(false),
+				Uppercase: model.NewBool(false),
+				Number:    model.NewBool(false),
+				Symbol:    model.NewBool(false),
+			},
+			ExpectedError: "model.user.is_valid.pwd.app_error",
+		},
 		"MissingLower": {
 			Password: "AAAAAAAAAAASD123!@#",
 			Settings: &model.PasswordSettings{
@@ -33,6 +65,55 @@ func TestIsPasswordValidWithSettings(t *testing.T) {
 				Symbol:    model.NewBool(false),
 			},
 			ExpectedError: "model.user.is_valid.pwd_lowercase.app_error",
+		},
+		"MissingUpper": {
+			Password: "aaaaaaaaaaaaasd123!@#",
+			Settings: &model.PasswordSettings{
+				Uppercase: model.NewBool(true),
+				Lowercase: model.NewBool(false),
+				Number:    model.NewBool(false),
+				Symbol:    model.NewBool(false),
+			},
+			ExpectedError: "model.user.is_valid.pwd_uppercase.app_error",
+		},
+		"MissingNumber": {
+			Password: "asasdasdsadASD!@#",
+			Settings: &model.PasswordSettings{
+				Number:    model.NewBool(true),
+				Lowercase: model.NewBool(false),
+				Uppercase: model.NewBool(false),
+				Symbol:    model.NewBool(false),
+			},
+			ExpectedError: "model.user.is_valid.pwd_number.app_error",
+		},
+		"MissingSymbol": {
+			Password: "asdasdasdasdasdASD123",
+			Settings: &model.PasswordSettings{
+				Symbol:    model.NewBool(true),
+				Lowercase: model.NewBool(false),
+				Uppercase: model.NewBool(false),
+				Number:    model.NewBool(false),
+			},
+			ExpectedError: "model.user.is_valid.pwd_symbol.app_error",
+		},
+		"MissingMultiple": {
+			Password: "asdasdasdasdasdasd",
+			Settings: &model.PasswordSettings{
+				Lowercase: model.NewBool(true),
+				Uppercase: model.NewBool(true),
+				Number:    model.NewBool(true),
+				Symbol:    model.NewBool(true),
+			},
+			ExpectedError: "model.user.is_valid.pwd_lowercase_uppercase_number_symbol.app_error",
+		},
+		"Everything": {
+			Password: "asdASD!@#123",
+			Settings: &model.PasswordSettings{
+				Lowercase: model.NewBool(true),
+				Uppercase: model.NewBool(true),
+				Number:    model.NewBool(true),
+				Symbol:    model.NewBool(true),
+			},
 		},
 	} {
 		tc.Settings.SetDefaults()

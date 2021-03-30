@@ -18,14 +18,14 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/plugin/plugintest"
-	"github.com/masterhung0112/hk_server/services/httpservice"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/services/telemetry/mocks"
-	storeMocks "github.com/masterhung0112/hk_server/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/plugin/plugintest"
+	"github.com/masterhung0112/hk_server/v5/services/httpservice"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/services/telemetry/mocks"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	storeMocks "github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 )
 
 type FakeConfigService struct {

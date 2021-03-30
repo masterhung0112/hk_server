@@ -24,7 +24,7 @@ func TestPluginShutdownTest(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
+				"github.com/masterhung0112/hk_server/v5/plugin"
 			)
 
 			type MyPlugin struct {
@@ -39,7 +39,7 @@ func TestPluginShutdownTest(t *testing.T) {
 			package main
 
 			import (
-				"github.com/masterhung0112/hk_server/plugin"
+				"github.com/masterhung0112/hk_server/v5/plugin"
 			)
 
 			type MyPlugin struct {

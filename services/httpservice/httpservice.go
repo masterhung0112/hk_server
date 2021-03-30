@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/masterhung0112/hk_server/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/services/configservice"
 )
 
 // HTTPService wraps the functionality for making http requests to provide some improvements to the default client

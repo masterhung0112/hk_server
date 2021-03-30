@@ -12,20 +12,20 @@ import (
 	"strconv"
 	"time"
 
-	api1 "github.com/masterhung0112/hk_server/api1"
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/app/slashcommands"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/masterhung0112/hk_server/web"
+	"github.com/masterhung0112/hk_server/v5/api4"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/app/slashcommands"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/utils"
+	"github.com/masterhung0112/hk_server/v5/web"
 )
 
 // TestEnvironment is a helper struct used for tests in manualtesting.
 type TestEnvironment struct {
 	Params        map[string][]string
-	Client        *model.Client1
+	Client        *model.Client4
 	CreatedTeamID string
 	CreatedUserID string
 	Context       *web.Context
@@ -34,8 +34,8 @@ type TestEnvironment struct {
 }
 
 // Init adds manualtest endpoint to the API.
-func Init(api1 *api1.API) {
-	api1.BaseRoutes.Root.Handle("/manualtest", api1.ApiHandler(manualTest)).Methods("GET")
+func Init(api4 *api4.API) {
+	api4.BaseRoutes.Root.Handle("/manualtest", api4.ApiHandler(manualTest)).Methods("GET")
 }
 
 func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {
@@ -61,7 +61,7 @@ func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a client for tests to use
-	client := model.NewAPIv1Client("http://localhost" + *c.App.Config().ServiceSettings.ListenAddress)
+	client := model.NewAPIv4Client("http://localhost" + *c.App.Config().ServiceSettings.ListenAddress)
 
 	// Check for username parameter and create a user if present
 	username, ok1 := params["username"]
@@ -105,7 +105,7 @@ func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {
 		user := &model.User{
 			Email:    "success+" + model.NewId() + "simulator.amazonses.com",
 			Nickname: username[0],
-			Password: slashcommands.USER_PASSWORD}
+			Password: slashcommands.UserPassword}
 
 		user, resp := client.CreateUser(user)
 		if resp.Error != nil {
@@ -119,7 +119,7 @@ func manualTest(c *web.Context, w http.ResponseWriter, r *http.Request) {
 		userID = user.Id
 
 		// Login as user to generate auth token
-		_, resp = client.LoginById(user.Id, slashcommands.USER_PASSWORD)
+		_, resp = client.LoginById(user.Id, slashcommands.UserPassword)
 		if resp.Error != nil {
 			c.Err = resp.Error
 			return

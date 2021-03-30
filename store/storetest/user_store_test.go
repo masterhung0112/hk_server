@@ -1,13 +1,15 @@
 package storetest
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/suite"
+	"context"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -467,16 +469,16 @@ func (s *UserStoreTS) TestResetLastPictureUpdate() {
 	u1 := &model.User{}
 	u1.Email = MakeEmail()
 	_, err := s.Store().User().Save(u1)
-	s.Require().Nil(err)
-	defer func() { s.Require().Nil(s.Store().User().PermanentDelete(u1.Id)) }()
+	s.Require().NoError(err)
+	defer func() { s.Require().NoError(s.Store().User().PermanentDelete(u1.Id)) }()
 	_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: model.NewId(), UserId: u1.Id}, -1)
-	s.Require().Nil(nErr)
+	s.Require().NoError(nErr)
 
 	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 
-	user, err := s.Store().User().Get(u1.Id)
-	s.Require().Nil(err)
+	user, err := s.Store().User().Get(context.Background(), u1.Id)
+	s.Require().NoError(err)
 
 	s.Assert().NotZero(user.LastPictureUpdate)
 	s.Assert().NotZero(user.UpdateAt)
@@ -485,12 +487,12 @@ func (s *UserStoreTS) TestResetLastPictureUpdate() {
 	time.Sleep(time.Millisecond)
 
 	err = s.Store().User().ResetLastPictureUpdate(u1.Id)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 
 	s.Store().User().InvalidateProfileCacheForUser(u1.Id)
 
-	user2, err := s.Store().User().Get(u1.Id)
-	s.Require().Nil(err)
+	user2, err := s.Store().User().Get(context.Background(), u1.Id)
+	s.Require().NoError(err)
 
 	s.Assert().True(user2.UpdateAt > user.UpdateAt)
 	s.Assert().Zero(user2.LastPictureUpdate)
@@ -529,7 +531,7 @@ func (s *UserStoreTS) TestUpdateUpdateAt() {
 	_, err = s.Store().User().UpdateUpdateAt(u1.Id)
 	s.Require().Nil(err)
 
-	user, err := s.Store().User().Get(u1.Id)
+	user, err := s.Store().User().Get(context.Background(), u1.Id)
 	s.Require().Nil(err)
 	s.Require().Less(u1.UpdateAt, user.UpdateAt, "UpdateAt not updated correctly")
 }
@@ -1561,41 +1563,41 @@ func (s *UserStoreGetProfilesByIdsTS) TearDownSuite() {
 
 // get u1 by id, no caching
 func (s *UserStoreGetProfilesByIdsTS) TestGetU1ByIdNoCaching() {
-	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id}, nil, false)
+	users, err := s.Store().User().GetProfileByIds(context.Background(), []string{s.u1.Id}, nil, false)
 	s.Require().Nil(err)
 	s.Assert().Equal([]*model.User{s.u1}, users)
 }
 
 func (s *UserStoreGetProfilesByIdsTS) TestGetU1ByIdCaching() {
-	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id}, nil, true)
+	users, err := s.Store().User().GetProfileByIds(context.Background(), []string{s.u1.Id}, nil, true)
 	s.Require().Nil(err)
 	s.Assert().Equal([]*model.User{s.u1}, users)
 }
 
 // get u1, u2, u3 by id, no caching
 func (s *UserStoreGetProfilesByIdsTS) TestGetU1U2U3ByIdNoCaching() {
-	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id, s.u2.Id, s.u3.Id}, nil, false)
+	users, err := s.Store().User().GetProfileByIds(context.Background(), []string{s.u1.Id, s.u2.Id, s.u3.Id}, nil, false)
 	s.Require().Nil(err)
 	s.Assert().Equal([]*model.User{s.u1, s.u2, s.u3}, users)
 }
 
 // get u1, u2, u3 by id, caching
 func (s *UserStoreGetProfilesByIdsTS) TestGetU1U2U3ByIdCaching() {
-	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id, s.u2.Id, s.u3.Id}, nil, true)
+	users, err := s.Store().User().GetProfileByIds(context.Background(), []string{s.u1.Id, s.u2.Id, s.u3.Id}, nil, true)
 	s.Require().Nil(err)
 	s.Assert().Equal([]*model.User{s.u1, s.u2, s.u3}, users)
 }
 
 // get unknown id, caching
 func (s *UserStoreGetProfilesByIdsTS) TestGetUnknownByIdCaching() {
-	users, err := s.Store().User().GetProfileByIds([]string{"123"}, nil, true)
+	users, err := s.Store().User().GetProfileByIds(context.Background(), []string{"123"}, nil, true)
 	s.Require().Nil(err)
 	s.Assert().Equal([]*model.User{}, users)
 }
 
 // should only return users with UpdateAt greater than the since time
 func (s *UserStoreGetProfilesByIdsTS) TestReturnUsersUpdateAtGreater() {
-	users, err := s.Store().User().GetProfileByIds([]string{s.u1.Id, s.u2.Id, s.u3.Id, s.u4.Id}, &store.UserGetByIdsOpts{
+	users, err := s.Store().User().GetProfileByIds(context.Background(), []string{s.u1.Id, s.u2.Id, s.u3.Id, s.u4.Id}, &store.UserGetByIdsOpts{
 		Since: s.u2.CreateAt,
 	}, true)
 	s.Require().Nil(err)
@@ -2118,7 +2120,7 @@ func (s *UserStoreTS) TestUpdateFailedPasswordAttempts() {
 	err = s.Store().User().UpdateFailedPasswordAttempts(u1.Id, 3)
 	s.Require().Nil(err)
 
-	user, err := s.Store().User().Get(u1.Id)
+	user, err := s.Store().User().Get(context.Background(), u1.Id)
 	s.Require().Nil(err)
 	s.Require().Equal(3, user.FailedAttempts, "FailedAttempts not updated correctly")
 }
@@ -4193,12 +4195,12 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 
 		err = s.Store().User().PromoteGuestToUser(user.Id)
 		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().Get(context.Background(), user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user", updatedUser.Roles)
 		s.Require().True(user.UpdateAt < updatedUser.UpdateAt)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
@@ -4239,11 +4241,11 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 
 		err = s.Store().User().PromoteGuestToUser(user.Id)
 		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().Get(context.Background(), user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user system_admin", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
@@ -4270,7 +4272,7 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 
 		err = s.Store().User().PromoteGuestToUser(user.Id)
 		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().Get(context.Background(), user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user", updatedUser.Roles)
 	})
@@ -4295,11 +4297,11 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 
 		err = s.Store().User().PromoteGuestToUser(user.Id)
 		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().Get(context.Background(), user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
@@ -4335,11 +4337,11 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 
 		err = s.Store().User().PromoteGuestToUser(user.Id)
 		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().Get(context.Background(), user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
@@ -4380,11 +4382,11 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 
 		err = s.Store().User().PromoteGuestToUser(user.Id)
 		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().Get(context.Background(), user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user custom_role", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
@@ -4446,11 +4448,11 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 
 		err = s.Store().User().PromoteGuestToUser(user1.Id)
 		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user1.Id)
+		updatedUser, err := s.Store().User().Get(context.Background(), user1.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId1, user1.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId1, user1.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
@@ -4460,11 +4462,11 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 		s.Require().False(updatedChannelMember.SchemeGuest)
 		s.Require().True(updatedChannelMember.SchemeUser)
 
-		notUpdatedUser, err := s.Store().User().Get(user2.Id)
+		notUpdatedUser, err := s.Store().User().Get(context.Background(), user2.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_guest", notUpdatedUser.Roles)
 
-		notUpdatedTeamMember, nErr := s.Store().Team().GetMember(teamId2, user2.Id)
+		notUpdatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId2, user2.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(notUpdatedTeamMember.SchemeGuest)
 		s.Require().False(notUpdatedTeamMember.SchemeUser)
@@ -4506,14 +4508,12 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
 		s.Require().Nil(nErr)
 
-		err = s.Store().User().DemoteUserToGuest(user.Id)
-		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
-		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().NoError(err)
 		s.Require().Equal("system_guest", updatedUser.Roles)
 		s.Require().True(user.UpdateAt < updatedUser.UpdateAt)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
@@ -4552,13 +4552,11 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: true, SchemeUser: false, NotifyProps: model.GetDefaultChannelNotifyProps()})
 		s.Require().Nil(nErr)
 
-		err = s.Store().User().DemoteUserToGuest(user.Id)
-		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
-		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().NoError(err)
 		s.Require().Equal("system_guest", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
@@ -4583,10 +4581,8 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().Nil(err)
 		defer func() { s.Require().Nil(s.Store().User().PermanentDelete(user.Id)) }()
 
-		err = s.Store().User().DemoteUserToGuest(user.Id)
-		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
-		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().NoError(err)
 		s.Require().Equal("system_guest", updatedUser.Roles)
 	})
 
@@ -4608,13 +4604,11 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		_, nErr := s.Store().Team().SaveMember(&model.TeamMember{TeamId: teamId, UserId: user.Id, SchemeGuest: false, SchemeUser: true}, 999)
 		s.Require().Nil(nErr)
 
-		err = s.Store().User().DemoteUserToGuest(user.Id)
-		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
-		s.Require().Nil(err)
+		updatedUser, err := s.Store().User().DemoteUserToGuest(user.Id)
+		s.Require().NoError(err)
 		s.Require().Equal("system_guest", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
@@ -4648,13 +4642,11 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
 		s.Require().Nil(nErr)
 
-		err = s.Store().User().DemoteUserToGuest(user.Id)
-		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().DemoteUserToGuest(user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_guest", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
@@ -4693,13 +4685,11 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
 		s.Require().Nil(nErr)
 
-		err = s.Store().User().DemoteUserToGuest(user.Id)
-		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user.Id)
+		updatedUser, err := s.Store().User().DemoteUserToGuest(user.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_guest custom_role", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId, user.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
@@ -4759,13 +4749,11 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		_, nErr = s.Store().Channel().SaveMember(&model.ChannelMember{ChannelId: channel.Id, UserId: user2.Id, SchemeGuest: false, SchemeUser: true, NotifyProps: model.GetDefaultChannelNotifyProps()})
 		s.Require().Nil(nErr)
 
-		err = s.Store().User().DemoteUserToGuest(user1.Id)
-		s.Require().Nil(err)
-		updatedUser, err := s.Store().User().Get(user1.Id)
+		updatedUser, err := s.Store().User().DemoteUserToGuest(user1.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_guest", updatedUser.Roles)
 
-		updatedTeamMember, nErr := s.Store().Team().GetMember(teamId1, user1.Id)
+		updatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId1, user1.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
@@ -4775,11 +4763,11 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().True(updatedChannelMember.SchemeGuest)
 		s.Require().False(updatedChannelMember.SchemeUser)
 
-		notUpdatedUser, err := s.Store().User().Get(user2.Id)
+		notUpdatedUser, err := s.Store().User().Get(context.Background(), user2.Id)
 		s.Require().Nil(err)
 		s.Require().Equal("system_user", notUpdatedUser.Roles)
 
-		notUpdatedTeamMember, nErr := s.Store().Team().GetMember(teamId2, user2.Id)
+		notUpdatedTeamMember, nErr := s.Store().Team().GetMember(context.Background(), teamId2, user2.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(notUpdatedTeamMember.SchemeGuest)
 		s.Require().True(notUpdatedTeamMember.SchemeUser)
@@ -4851,19 +4839,19 @@ func (s *UserStoreTS) TestDeactivateGuests() {
 		s.Require().Nil(err)
 		s.Assert().ElementsMatch([]string{guest1.Id, guest2.Id}, ids)
 
-		u, err := s.Store().User().Get(guest1.Id)
+		u, err := s.Store().User().Get(context.Background(), guest1.Id)
 		s.Require().Nil(err)
 		s.Assert().NotEqual(u.DeleteAt, int64(0))
 
-		u, err = s.Store().User().Get(guest2.Id)
+		u, err = s.Store().User().Get(context.Background(), guest2.Id)
 		s.Require().Nil(err)
 		s.Assert().NotEqual(u.DeleteAt, int64(0))
 
-		u, err = s.Store().User().Get(guest3.Id)
+		u, err = s.Store().User().Get(context.Background(), guest3.Id)
 		s.Require().Nil(err)
 		s.Assert().Equal(u.DeleteAt, int64(10))
 
-		u, err = s.Store().User().Get(regularUser.Id)
+		u, err = s.Store().User().Get(context.Background(), regularUser.Id)
 		s.Require().Nil(err)
 		s.Assert().Equal(u.DeleteAt, int64(0))
 	})
@@ -4881,7 +4869,7 @@ func (s *UserStoreTS) TestUserStoreResetLastPictureUpdate() {
 	err = s.Store().User().UpdateLastPictureUpdate(u1.Id)
 	s.Require().Nil(err)
 
-	user, err := s.Store().User().Get(u1.Id)
+	user, err := s.Store().User().Get(context.Background(), u1.Id)
 	s.Require().Nil(err)
 
 	s.Assert().NotZero(user.LastPictureUpdate)
@@ -4895,7 +4883,7 @@ func (s *UserStoreTS) TestUserStoreResetLastPictureUpdate() {
 
 	s.Store().User().InvalidateProfileCacheForUser(u1.Id)
 
-	user2, err := s.Store().User().Get(u1.Id)
+	user2, err := s.Store().User().Get(context.Background(), u1.Id)
 	s.Require().Nil(err)
 
 	s.Assert().True(user2.UpdateAt > user.UpdateAt)

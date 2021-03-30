@@ -4,52 +4,52 @@
 package sqlstore
 
 import (
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 
 	sq "github.com/Masterminds/squirrel"
 )
 
-type relationalCheckConfig struct {
-	parentName         string
-	parentIdAttr       string
-	childName          string
-	childIdAttr        string
-	canParentIdBeEmpty bool
-	sortRecords        bool
-	filter             interface{}
+type RelationalCheckConfig struct {
+	ParentName         string
+	ParentIdAttr       string
+	ChildName          string
+	ChildIdAttr        string
+	CanParentIdBeEmpty bool
+	SortRecords        bool
+	Filter             interface{}
 }
 
-func getOrphanedRecords(ss *SqlStore, cfg relationalCheckConfig) ([]model.OrphanedRecord, error) {
+func getOrphanedRecords(ss *SqlStore, cfg RelationalCheckConfig) ([]model.OrphanedRecord, error) {
 	var records []model.OrphanedRecord
 
 	sub := ss.getQueryBuilder().
 		Select("TRUE").
-		From(cfg.parentName + " AS PT").
+		From(cfg.ParentName + " AS PT").
 		Prefix("NOT EXISTS (").
 		Suffix(")").
-		Where("PT.id = CT." + cfg.parentIdAttr)
+		Where("PT.id = CT." + cfg.ParentIdAttr)
 
 	main := ss.getQueryBuilder().
 		Select().
-		Column("CT." + cfg.parentIdAttr + " AS ParentId").
-		From(cfg.childName + " AS CT").
+		Column("CT." + cfg.ParentIdAttr + " AS ParentId").
+		From(cfg.ChildName + " AS CT").
 		Where(sub)
 
-	if cfg.childIdAttr != "" {
-		main = main.Column("CT." + cfg.childIdAttr + " AS ChildId")
+	if cfg.ChildIdAttr != "" {
+		main = main.Column("CT." + cfg.ChildIdAttr + " AS ChildId")
 	}
 
-	if cfg.canParentIdBeEmpty {
-		main = main.Where(sq.NotEq{"CT." + cfg.parentIdAttr: ""})
+	if cfg.CanParentIdBeEmpty {
+		main = main.Where(sq.NotEq{"CT." + cfg.ParentIdAttr: ""})
 	}
 
-	if cfg.filter != nil {
-		main = main.Where(cfg.filter)
+	if cfg.Filter != nil {
+		main = main.Where(cfg.Filter)
 	}
 
-	if cfg.sortRecords {
-		main = main.OrderBy("CT." + cfg.parentIdAttr)
+	if cfg.SortRecords {
+		main = main.OrderBy("CT." + cfg.ParentIdAttr)
 	}
 
 	query, args, _ := main.ToSql()
@@ -59,171 +59,171 @@ func getOrphanedRecords(ss *SqlStore, cfg relationalCheckConfig) ([]model.Orphan
 	return records, err
 }
 
-func checkParentChildIntegrity(ss *SqlStore, config relationalCheckConfig) model.IntegrityCheckResult {
+func checkParentChildIntegrity(ss *SqlStore, config RelationalCheckConfig) model.IntegrityCheckResult {
 	var result model.IntegrityCheckResult
 	var data model.RelationalIntegrityCheckData
 
-	config.sortRecords = true
+	config.SortRecords = true
 	data.Records, result.Err = getOrphanedRecords(ss, config)
 	if result.Err != nil {
-		mlog.Error(result.Err.Error())
+		mlog.Error("Error while getting orphaned records", mlog.Err(result.Err))
 		return result
 	}
-	data.ParentName = config.parentName
-	data.ChildName = config.childName
-	data.ParentIdAttr = config.parentIdAttr
-	data.ChildIdAttr = config.childIdAttr
+	data.ParentName = config.ParentName
+	data.ChildName = config.ChildName
+	data.ParentIdAttr = config.ParentIdAttr
+	data.ChildIdAttr = config.ChildIdAttr
 	result.Data = data
 
 	return result
 }
 
 func checkChannelsCommandWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Channels",
-		parentIdAttr: "ChannelId",
-		childName:    "CommandWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Channels",
+		ParentIdAttr: "ChannelId",
+		ChildName:    "CommandWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkChannelsChannelMemberHistoryIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Channels",
-		parentIdAttr: "ChannelId",
-		childName:    "ChannelMemberHistory",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Channels",
+		ParentIdAttr: "ChannelId",
+		ChildName:    "ChannelMemberHistory",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkChannelsChannelMembersIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Channels",
-		parentIdAttr: "ChannelId",
-		childName:    "ChannelMembers",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Channels",
+		ParentIdAttr: "ChannelId",
+		ChildName:    "ChannelMembers",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkChannelsIncomingWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Channels",
-		parentIdAttr: "ChannelId",
-		childName:    "IncomingWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Channels",
+		ParentIdAttr: "ChannelId",
+		ChildName:    "IncomingWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkChannelsOutgoingWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Channels",
-		parentIdAttr: "ChannelId",
-		childName:    "OutgoingWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Channels",
+		ParentIdAttr: "ChannelId",
+		ChildName:    "OutgoingWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkChannelsPostsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Channels",
-		parentIdAttr: "ChannelId",
-		childName:    "Posts",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Channels",
+		ParentIdAttr: "ChannelId",
+		ChildName:    "Posts",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkCommandsCommandWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Commands",
-		parentIdAttr: "CommandId",
-		childName:    "CommandWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Commands",
+		ParentIdAttr: "CommandId",
+		ChildName:    "CommandWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkPostsFileInfoIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Posts",
-		parentIdAttr: "PostId",
-		childName:    "FileInfo",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Posts",
+		ParentIdAttr: "PostId",
+		ChildName:    "FileInfo",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkPostsPostsParentIdIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Posts",
-		parentIdAttr:       "ParentId",
-		childName:          "Posts",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Posts",
+		ParentIdAttr:       "ParentId",
+		ChildName:          "Posts",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
 	})
 }
 
 func checkPostsPostsRootIdIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Posts",
-		parentIdAttr:       "RootId",
-		childName:          "Posts",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Posts",
+		ParentIdAttr:       "RootId",
+		ChildName:          "Posts",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
 	})
 }
 
 func checkPostsReactionsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Posts",
-		parentIdAttr: "PostId",
-		childName:    "Reactions",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Posts",
+		ParentIdAttr: "PostId",
+		ChildName:    "Reactions",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkSchemesChannelsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Schemes",
-		parentIdAttr:       "SchemeId",
-		childName:          "Channels",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Schemes",
+		ParentIdAttr:       "SchemeId",
+		ChildName:          "Channels",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
 	})
 }
 
 func checkSchemesTeamsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Schemes",
-		parentIdAttr:       "SchemeId",
-		childName:          "Teams",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Schemes",
+		ParentIdAttr:       "SchemeId",
+		ChildName:          "Teams",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
 	})
 }
 
 func checkSessionsAuditsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Sessions",
-		parentIdAttr:       "SessionId",
-		childName:          "Audits",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Sessions",
+		ParentIdAttr:       "SessionId",
+		ChildName:          "Audits",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
 	})
 }
 
 func checkTeamsChannelsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	res1 := checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Teams",
-		parentIdAttr: "TeamId",
-		childName:    "Channels",
-		childIdAttr:  "Id",
-		filter:       sq.NotEq{"CT.Type": []string{model.CHANNEL_DIRECT, model.CHANNEL_GROUP}},
+	res1 := checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Teams",
+		ParentIdAttr: "TeamId",
+		ChildName:    "Channels",
+		ChildIdAttr:  "Id",
+		Filter:       sq.NotEq{"CT.Type": []string{model.CHANNEL_DIRECT, model.CHANNEL_GROUP}},
 	})
-	res2 := checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Teams",
-		parentIdAttr:       "TeamId",
-		childName:          "Channels",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
-		filter:             sq.Eq{"CT.Type": []string{model.CHANNEL_DIRECT, model.CHANNEL_GROUP}},
+	res2 := checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Teams",
+		ParentIdAttr:       "TeamId",
+		ChildName:          "Channels",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
+		Filter:             sq.Eq{"CT.Type": []string{model.CHANNEL_DIRECT, model.CHANNEL_GROUP}},
 	})
 	data1 := res1.Data.(model.RelationalIntegrityCheckData)
 	data2 := res2.Data.(model.RelationalIntegrityCheckData)
@@ -233,229 +233,229 @@ func checkTeamsChannelsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
 }
 
 func checkTeamsCommandsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Teams",
-		parentIdAttr: "TeamId",
-		childName:    "Commands",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Teams",
+		ParentIdAttr: "TeamId",
+		ChildName:    "Commands",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkTeamsIncomingWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Teams",
-		parentIdAttr: "TeamId",
-		childName:    "IncomingWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Teams",
+		ParentIdAttr: "TeamId",
+		ChildName:    "IncomingWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkTeamsOutgoingWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Teams",
-		parentIdAttr: "TeamId",
-		childName:    "OutgoingWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Teams",
+		ParentIdAttr: "TeamId",
+		ChildName:    "OutgoingWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkTeamsTeamMembersIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Teams",
-		parentIdAttr: "TeamId",
-		childName:    "TeamMembers",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Teams",
+		ParentIdAttr: "TeamId",
+		ChildName:    "TeamMembers",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkUsersAuditsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Users",
-		parentIdAttr:       "UserId",
-		childName:          "Audits",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Users",
+		ParentIdAttr:       "UserId",
+		ChildName:          "Audits",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
 	})
 }
 
 func checkUsersCommandWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "CommandWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "CommandWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersChannelMemberHistoryIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "ChannelMemberHistory",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "ChannelMemberHistory",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkUsersChannelMembersIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "ChannelMembers",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "ChannelMembers",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkUsersChannelsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:         "Users",
-		parentIdAttr:       "CreatorId",
-		childName:          "Channels",
-		childIdAttr:        "Id",
-		canParentIdBeEmpty: true,
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:         "Users",
+		ParentIdAttr:       "CreatorId",
+		ChildName:          "Channels",
+		ChildIdAttr:        "Id",
+		CanParentIdBeEmpty: true,
 	})
 }
 
 func checkUsersCommandsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "CreatorId",
-		childName:    "Commands",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "CreatorId",
+		ChildName:    "Commands",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersCompliancesIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "Compliances",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "Compliances",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersEmojiIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "CreatorId",
-		childName:    "Emoji",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "CreatorId",
+		ChildName:    "Emoji",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersFileInfoIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "CreatorId",
-		childName:    "FileInfo",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "CreatorId",
+		ChildName:    "FileInfo",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersIncomingWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "IncomingWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "IncomingWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersOAuthAccessDataIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "OAuthAccessData",
-		childIdAttr:  "Token",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "OAuthAccessData",
+		ChildIdAttr:  "Token",
 	})
 }
 
 func checkUsersOAuthAppsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "CreatorId",
-		childName:    "OAuthApps",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "CreatorId",
+		ChildName:    "OAuthApps",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersOAuthAuthDataIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "OAuthAuthData",
-		childIdAttr:  "Code",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "OAuthAuthData",
+		ChildIdAttr:  "Code",
 	})
 }
 
 func checkUsersOutgoingWebhooksIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "CreatorId",
-		childName:    "OutgoingWebhooks",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "CreatorId",
+		ChildName:    "OutgoingWebhooks",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersPostsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "Posts",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "Posts",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersPreferencesIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "Preferences",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "Preferences",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkUsersReactionsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "Reactions",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "Reactions",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkUsersSessionsIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "Sessions",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "Sessions",
+		ChildIdAttr:  "Id",
 	})
 }
 
 func checkUsersStatusIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "Status",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "Status",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkUsersTeamMembersIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "TeamMembers",
-		childIdAttr:  "",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "TeamMembers",
+		ChildIdAttr:  "",
 	})
 }
 
 func checkUsersUserAccessTokensIntegrity(ss *SqlStore) model.IntegrityCheckResult {
-	return checkParentChildIntegrity(ss, relationalCheckConfig{
-		parentName:   "Users",
-		parentIdAttr: "UserId",
-		childName:    "UserAccessTokens",
-		childIdAttr:  "Id",
+	return checkParentChildIntegrity(ss, RelationalCheckConfig{
+		ParentName:   "Users",
+		ParentIdAttr: "UserId",
+		ChildName:    "UserAccessTokens",
+		ChildIdAttr:  "Id",
 	})
 }
 

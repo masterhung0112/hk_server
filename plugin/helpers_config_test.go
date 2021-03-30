@@ -6,10 +6,11 @@ package plugin_test
 import (
 	"testing"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
-	"github.com/masterhung0112/hk_server/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
+	"github.com/masterhung0112/hk_server/v5/plugin/plugintest"
 )
 
 func TestCheckRequiredServerConfiguration(t *testing.T) {
@@ -113,9 +114,9 @@ func TestCheckRequiredServerConfiguration(t *testing.T) {
 
 			assert.Equal(t, test.ShouldReturn, ok)
 			if test.ShouldError {
-				assert.NotNil(t, err)
+				assert.Error(t, err)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}

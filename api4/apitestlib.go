@@ -1,4 +1,4 @@
-package api1
+package api4
 
 import (
 	"context"
@@ -14,21 +14,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/localcachelayer"
-	"github.com/masterhung0112/hk_server/store/storetest/mocks"
-	"github.com/masterhung0112/hk_server/testlib"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/masterhung0112/hk_server/web"
-
 	s3 "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/localcachelayer"
+	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/v5/testlib"
+	"github.com/masterhung0112/hk_server/v5/utils"
+	"github.com/masterhung0112/hk_server/v5/web"
+	"github.com/masterhung0112/hk_server/v5/wsapi"
 )
 
 type TestHelper struct {
@@ -36,7 +37,7 @@ type TestHelper struct {
 	Server      *app.Server
 	ConfigStore *config.Store
 
-	Client               *model.Client1
+	Client               *model.Client4
 	BasicUser            *model.User
 	BasicUser2           *model.User
 	TeamAdminUser        *model.User
@@ -49,11 +50,14 @@ type TestHelper struct {
 	BasicPost            *model.Post
 	Group                *model.Group
 
-	SystemAdminClient *model.Client1
+	SystemAdminClient *model.Client4
 	SystemAdminUser   *model.User
 	tempWorkspace     string
 
-	LocalClient *model.Client1
+	SystemManagerClient *model.Client4
+	SystemManagerUser   *model.User
+
+	LocalClient *model.Client4
 
 	IncludeCacheLayer bool
 }
@@ -83,12 +87,13 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 	*memoryConfig.ServiceSettings.LocalModeSocketLocation = filepath.Join(tempWorkspace, "mattermost_local.sock")
 	*memoryConfig.AnnouncementSettings.AdminNoticesEnabled = false
 	*memoryConfig.AnnouncementSettings.UserNoticesEnabled = false
+	*memoryConfig.PluginSettings.AutomaticPrepackagedPlugins = false
 	if updateConfig != nil {
 		updateConfig(memoryConfig)
 	}
 	memoryStore.Set(memoryConfig)
 
-	configStore, err := config.NewStoreFromBacking(memoryStore, nil)
+	configStore, err := config.NewStoreFromBacking(memoryStore, nil, false)
 	if err != nil {
 		panic(err)
 	}
@@ -149,11 +154,10 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 		panic(err)
 	}
 
-	ApiInit(th.Server, th.Server.AppOptions, th.App.Srv().Router)
-	ApiInitLocal(th.Server, th.Server.AppOptions, th.App.Srv().LocalRouter)
+	Init(th.Server, th.Server.AppOptions, th.App.Srv().Router)
+	InitLocal(th.Server, th.Server.AppOptions, th.App.Srv().LocalRouter)
 	web.New(th.Server, th.Server.AppOptions, th.App.Srv().Router)
-	//TODO: Open
-	// wsapi.Init(th.App.Srv())
+	wsapi.Init(th.App.Srv())
 
 	if enterprise {
 		th.App.Srv().SetLicense(model.NewTestLicense())
@@ -163,6 +167,7 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 
 	th.Client = th.CreateClient()
 	th.SystemAdminClient = th.CreateClient()
+	th.SystemManagerClient = th.CreateClient()
 
 	// Verify handling of the supported true/false values by randomizing on each run.
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -170,7 +175,7 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 	falseValues := []string{"0", "f", "F", "FALSE", "false", "False"}
 	trueString := trueValues[rand.Intn(len(trueValues))]
 	falseString := falseValues[rand.Intn(len(falseValues))]
-	mlog.Debug("Configured Client1 bool string values", mlog.String("true", trueString), mlog.String("false", falseString))
+	mlog.Debug("Configured Client4 bool string values", mlog.String("true", trueString), mlog.String("false", falseString))
 	th.Client.SetBoolString(true, trueString)
 	th.Client.SetBoolString(false, falseString)
 
@@ -295,10 +300,11 @@ func (th *TestHelper) TearDown() {
 
 var initBasicOnce sync.Once
 var userCache struct {
-	SystemAdminUser *model.User
-	TeamAdminUser   *model.User
-	BasicUser       *model.User
-	BasicUser2      *model.User
+	SystemAdminUser   *model.User
+	SystemManagerUser *model.User
+	TeamAdminUser     *model.User
+	BasicUser         *model.User
+	BasicUser2        *model.User
 }
 
 func (th *TestHelper) InitLogin() *TestHelper {
@@ -310,6 +316,11 @@ func (th *TestHelper) InitLogin() *TestHelper {
 		th.App.UpdateUserRoles(th.SystemAdminUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_ADMIN_ROLE_ID, false)
 		th.SystemAdminUser, _ = th.App.GetUser(th.SystemAdminUser.Id)
 		userCache.SystemAdminUser = th.SystemAdminUser.DeepCopy()
+
+		th.SystemManagerUser = th.CreateUser()
+		th.App.UpdateUserRoles(th.SystemManagerUser.Id, model.SYSTEM_USER_ROLE_ID+" "+model.SYSTEM_MANAGER_ROLE_ID, false)
+		th.SystemManagerUser, _ = th.App.GetUser(th.SystemManagerUser.Id)
+		userCache.SystemManagerUser = th.SystemManagerUser.DeepCopy()
 
 		th.TeamAdminUser = th.CreateUser()
 		th.App.UpdateUserRoles(th.TeamAdminUser.Id, model.SYSTEM_USER_ROLE_ID, false)
@@ -326,20 +337,26 @@ func (th *TestHelper) InitLogin() *TestHelper {
 	})
 	// restore cached users
 	th.SystemAdminUser = userCache.SystemAdminUser.DeepCopy()
+	th.SystemManagerUser = userCache.SystemManagerUser.DeepCopy()
 	th.TeamAdminUser = userCache.TeamAdminUser.DeepCopy()
 	th.BasicUser = userCache.BasicUser.DeepCopy()
 	th.BasicUser2 = userCache.BasicUser2.DeepCopy()
-	mainHelper.GetSqlStore().GetMaster().Insert(th.SystemAdminUser, th.TeamAdminUser, th.BasicUser, th.BasicUser2)
+	mainHelper.GetSQLStore().GetMaster().Insert(th.SystemAdminUser, th.TeamAdminUser, th.BasicUser, th.BasicUser2, th.SystemManagerUser)
 	// restore non hashed password for login
 	th.SystemAdminUser.Password = "Pa$$word11"
 	th.TeamAdminUser.Password = "Pa$$word11"
 	th.BasicUser.Password = "Pa$$word11"
 	th.BasicUser2.Password = "Pa$$word11"
+	th.SystemManagerUser.Password = "Pa$$word11"
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		th.LoginSystemAdmin()
+		wg.Done()
+	}()
+	go func() {
+		th.LoginSystemManager()
 		wg.Done()
 	}()
 	go func() {
@@ -388,12 +405,12 @@ func (th *TestHelper) waitForConnectivity() {
 	panic("unable to connect")
 }
 
-func (th *TestHelper) CreateClient() *model.Client1 {
-	return model.NewAPIv1Client(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
+func (th *TestHelper) CreateClient() *model.Client4 {
+	return model.NewAPIv4Client(fmt.Sprintf("http://localhost:%v", th.App.Srv().ListenAddr.Port))
 }
 
 // ToDo: maybe move this to NewAPIv4SocketClient and reuse it in mmctl
-func (th *TestHelper) CreateLocalClient(socketPath string) *model.Client1 {
+func (th *TestHelper) CreateLocalClient(socketPath string) *model.Client4 {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			Dial: func(network, addr string) (net.Conn, error) {
@@ -402,7 +419,7 @@ func (th *TestHelper) CreateLocalClient(socketPath string) *model.Client1 {
 		},
 	}
 
-	return &model.Client1{
+	return &model.Client4{
 		ApiUrl:     "http://_" + model.API_URL_SUFFIX,
 		HttpClient: httpClient,
 	}
@@ -416,7 +433,11 @@ func (th *TestHelper) CreateWebSocketSystemAdminClient() (*model.WebSocketClient
 	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), th.SystemAdminClient.AuthToken)
 }
 
-func (th *TestHelper) CreateWebSocketClientWithClient(client *model.Client1) (*model.WebSocketClient, *model.AppError) {
+func (th *TestHelper) CreateWebSocketSystemManagerClient() (*model.WebSocketClient, *model.AppError) {
+	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), th.SystemManagerClient.AuthToken)
+}
+
+func (th *TestHelper) CreateWebSocketClientWithClient(client *model.Client4) (*model.WebSocketClient, *model.AppError) {
 	return model.NewWebSocketClient4(fmt.Sprintf("ws://localhost:%v", th.App.Srv().ListenAddr.Port), client.AuthToken)
 }
 
@@ -424,7 +445,7 @@ func (th *TestHelper) CreateBotWithSystemAdminClient() *model.Bot {
 	return th.CreateBotWithClient((th.SystemAdminClient))
 }
 
-func (th *TestHelper) CreateBotWithClient(client *model.Client1) *model.Bot {
+func (th *TestHelper) CreateBotWithClient(client *model.Client4) *model.Bot {
 	bot := &model.Bot{
 		Username:    GenerateTestUsername(),
 		DisplayName: "a bot",
@@ -448,7 +469,7 @@ func (th *TestHelper) CreateTeam() *model.Team {
 	return th.CreateTeamWithClient(th.Client)
 }
 
-func (th *TestHelper) CreateTeamWithClient(client *model.Client1) *model.Team {
+func (th *TestHelper) CreateTeamWithClient(client *model.Client4) *model.Team {
 	id := model.NewId()
 	team := &model.Team{
 		DisplayName: "dn_" + id,
@@ -466,7 +487,7 @@ func (th *TestHelper) CreateTeamWithClient(client *model.Client1) *model.Team {
 	return rteam
 }
 
-func (th *TestHelper) CreateUserWithClient(client *model.Client1) *model.User {
+func (th *TestHelper) CreateUserWithClient(client *model.Client4) *model.User {
 	id := model.NewId()
 
 	user := &model.User{
@@ -493,6 +514,72 @@ func (th *TestHelper) CreateUserWithClient(client *model.Client1) *model.User {
 	return ruser
 }
 
+func (th *TestHelper) CreateUserWithAuth(authService string) *model.User {
+	id := model.NewId()
+	user := &model.User{
+		Email:         "success+" + id + "@simulator.amazonses.com",
+		Username:      "un_" + id,
+		Nickname:      "nn_" + id,
+		EmailVerified: true,
+		AuthService:   authService,
+	}
+	user, err := th.App.CreateUser(user)
+	if err != nil {
+		panic(err)
+	}
+	return user
+}
+
+func (th *TestHelper) SetupLdapConfig() {
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.ServiceSettings.EnableMultifactorAuthentication = true
+		*cfg.LdapSettings.Enable = true
+		*cfg.LdapSettings.EnableSync = true
+		*cfg.LdapSettings.LdapServer = "dockerhost"
+		*cfg.LdapSettings.BaseDN = "dc=mm,dc=test,dc=com"
+		*cfg.LdapSettings.BindUsername = "cn=admin,dc=mm,dc=test,dc=com"
+		*cfg.LdapSettings.BindPassword = "mostest"
+		*cfg.LdapSettings.FirstNameAttribute = "cn"
+		*cfg.LdapSettings.LastNameAttribute = "sn"
+		*cfg.LdapSettings.NicknameAttribute = "cn"
+		*cfg.LdapSettings.EmailAttribute = "mail"
+		*cfg.LdapSettings.UsernameAttribute = "uid"
+		*cfg.LdapSettings.IdAttribute = "cn"
+		*cfg.LdapSettings.LoginIdAttribute = "uid"
+		*cfg.LdapSettings.SkipCertificateVerification = true
+		*cfg.LdapSettings.GroupFilter = ""
+		*cfg.LdapSettings.GroupDisplayNameAttribute = "cN"
+		*cfg.LdapSettings.GroupIdAttribute = "entRyUuId"
+		*cfg.LdapSettings.MaxPageSize = 0
+	})
+	th.App.Srv().SetLicense(model.NewTestLicense("ldap"))
+}
+
+func (th *TestHelper) SetupSamlConfig() {
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.SamlSettings.Enable = true
+		*cfg.SamlSettings.Verify = false
+		*cfg.SamlSettings.Encrypt = false
+		*cfg.SamlSettings.IdpUrl = "https://does.notmatter.com"
+		*cfg.SamlSettings.IdpDescriptorUrl = "https://localhost/adfs/services/trust"
+		*cfg.SamlSettings.AssertionConsumerServiceURL = "https://localhost/login/sso/saml"
+		*cfg.SamlSettings.ServiceProviderIdentifier = "https://localhost/login/sso/saml"
+		*cfg.SamlSettings.IdpCertificateFile = app.SamlIdpCertificateName
+		*cfg.SamlSettings.PrivateKeyFile = app.SamlPrivateKeyName
+		*cfg.SamlSettings.PublicCertificateFile = app.SamlPublicCertificateName
+		*cfg.SamlSettings.EmailAttribute = "Email"
+		*cfg.SamlSettings.UsernameAttribute = "Username"
+		*cfg.SamlSettings.FirstNameAttribute = "FirstName"
+		*cfg.SamlSettings.LastNameAttribute = "LastName"
+		*cfg.SamlSettings.NicknameAttribute = ""
+		*cfg.SamlSettings.PositionAttribute = ""
+		*cfg.SamlSettings.LocaleAttribute = ""
+		*cfg.SamlSettings.SignatureAlgorithm = model.SAML_SETTINGS_SIGNATURE_ALGORITHM_SHA256
+		*cfg.SamlSettings.CanonicalAlgorithm = model.SAML_SETTINGS_CANONICAL_ALGORITHM_C14N11
+	})
+	th.App.Srv().SetLicense(model.NewTestLicense("saml"))
+}
+
 func (th *TestHelper) CreatePublicChannel() *model.Channel {
 	return th.CreateChannelWithClient(th.Client, model.CHANNEL_OPEN)
 }
@@ -501,11 +588,11 @@ func (th *TestHelper) CreatePrivateChannel() *model.Channel {
 	return th.CreateChannelWithClient(th.Client, model.CHANNEL_PRIVATE)
 }
 
-func (th *TestHelper) CreateChannelWithClient(client *model.Client1, channelType string) *model.Channel {
+func (th *TestHelper) CreateChannelWithClient(client *model.Client4, channelType string) *model.Channel {
 	return th.CreateChannelWithClientAndTeam(client, channelType, th.BasicTeam.Id)
 }
 
-func (th *TestHelper) CreateChannelWithClientAndTeam(client *model.Client1, channelType string, teamId string) *model.Channel {
+func (th *TestHelper) CreateChannelWithClientAndTeam(client *model.Client4, channelType string, teamId string) *model.Channel {
 	id := model.NewId()
 
 	channel := &model.Channel{
@@ -536,7 +623,7 @@ func (th *TestHelper) CreateMessagePost(message string) *model.Post {
 	return th.CreateMessagePostWithClient(th.Client, th.BasicChannel, message)
 }
 
-func (th *TestHelper) CreatePostWithClient(client *model.Client1, channel *model.Channel) *model.Post {
+func (th *TestHelper) CreatePostWithClient(client *model.Client4, channel *model.Channel) *model.Post {
 	id := model.NewId()
 
 	post := &model.Post{
@@ -553,7 +640,7 @@ func (th *TestHelper) CreatePostWithClient(client *model.Client1, channel *model
 	return rpost
 }
 
-func (th *TestHelper) CreatePinnedPostWithClient(client *model.Client1, channel *model.Channel) *model.Post {
+func (th *TestHelper) CreatePinnedPostWithClient(client *model.Client4, channel *model.Channel) *model.Post {
 	id := model.NewId()
 
 	post := &model.Post{
@@ -571,7 +658,7 @@ func (th *TestHelper) CreatePinnedPostWithClient(client *model.Client1, channel 
 	return rpost
 }
 
-func (th *TestHelper) CreateMessagePostWithClient(client *model.Client1, channel *model.Channel, message string) *model.Post {
+func (th *TestHelper) CreateMessagePostWithClient(client *model.Client4, channel *model.Channel, message string) *model.Post {
 	post := &model.Post{
 		ChannelId: channel.Id,
 		Message:   message,
@@ -628,7 +715,11 @@ func (th *TestHelper) LoginSystemAdmin() {
 	th.LoginSystemAdminWithClient(th.SystemAdminClient)
 }
 
-func (th *TestHelper) LoginBasicWithClient(client *model.Client1) {
+func (th *TestHelper) LoginSystemManager() {
+	th.LoginSystemManagerWithClient(th.SystemManagerClient)
+}
+
+func (th *TestHelper) LoginBasicWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.BasicUser.Email, th.BasicUser.Password)
 	if resp.Error != nil {
@@ -637,7 +728,7 @@ func (th *TestHelper) LoginBasicWithClient(client *model.Client1) {
 	utils.EnableDebugLogForTest()
 }
 
-func (th *TestHelper) LoginBasic2WithClient(client *model.Client1) {
+func (th *TestHelper) LoginBasic2WithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.BasicUser2.Email, th.BasicUser2.Password)
 	if resp.Error != nil {
@@ -646,7 +737,7 @@ func (th *TestHelper) LoginBasic2WithClient(client *model.Client1) {
 	utils.EnableDebugLogForTest()
 }
 
-func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client1) {
+func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.TeamAdminUser.Email, th.TeamAdminUser.Password)
 	if resp.Error != nil {
@@ -655,7 +746,16 @@ func (th *TestHelper) LoginTeamAdminWithClient(client *model.Client1) {
 	utils.EnableDebugLogForTest()
 }
 
-func (th *TestHelper) LoginSystemAdminWithClient(client *model.Client1) {
+func (th *TestHelper) LoginSystemManagerWithClient(client *model.Client4) {
+	utils.DisableDebugLogForTest()
+	_, resp := client.Login(th.SystemManagerUser.Email, th.SystemManagerUser.Password)
+	if resp.Error != nil {
+		panic(resp.Error)
+	}
+	utils.EnableDebugLogForTest()
+}
+
+func (th *TestHelper) LoginSystemAdminWithClient(client *model.Client4) {
 	utils.DisableDebugLogForTest()
 	_, resp := client.Login(th.SystemAdminUser.Email, th.SystemAdminUser.Password)
 	if resp.Error != nil {
@@ -728,7 +828,7 @@ func (th *TestHelper) CreateGroup() *model.Group {
 // SystemAdmin and Local clients. Several endpoints work in the same
 // way when used by a fully privileged user and through the local
 // mode, so this helper facilitates checking both
-func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client1), name ...string) {
+func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T, *model.Client4), name ...string) {
 	var testName string
 	if len(name) > 0 {
 		testName = name[0] + "/"
@@ -745,7 +845,7 @@ func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T
 
 // TestForAllClients runs a test function for all the clients
 // registered in the TestHelper
-func (th *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.Client1), name ...string) {
+func (th *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.Client4), name ...string) {
 	var testName string
 	if len(name) > 0 {
 		testName = name[0] + "/"
@@ -902,17 +1002,17 @@ func s3New(endpoint, accessKey, secretKey string, secure bool, signV2 bool, regi
 func (th *TestHelper) cleanupTestFile(info *model.FileInfo) error {
 	cfg := th.App.Config()
 	if *cfg.FileSettings.DriverName == model.IMAGE_DRIVER_S3 {
-		endpoint := *cfg.FileSettings.S3Endpoint
-		accessKey := *cfg.FileSettings.S3AccessKeyId
-		secretKey := *cfg.FileSettings.S3SecretAccessKey
-		secure := *cfg.FileSettings.S3SSL
-		signV2 := *cfg.FileSettings.S3SignV2
-		region := *cfg.FileSettings.S3Region
+		endpoint := *cfg.FileSettings.AmazonS3Endpoint
+		accessKey := *cfg.FileSettings.AmazonS3AccessKeyId
+		secretKey := *cfg.FileSettings.AmazonS3SecretAccessKey
+		secure := *cfg.FileSettings.AmazonS3SSL
+		signV2 := *cfg.FileSettings.AmazonS3SignV2
+		region := *cfg.FileSettings.AmazonS3Region
 		s3Clnt, err := s3New(endpoint, accessKey, secretKey, secure, signV2, region)
 		if err != nil {
 			return err
 		}
-		bucket := *cfg.FileSettings.S3Bucket
+		bucket := *cfg.FileSettings.AmazonS3Bucket
 		if err := s3Clnt.RemoveObject(context.Background(), bucket, info.Path, s3.RemoveObjectOptions{}); err != nil {
 			return err
 		}
@@ -969,7 +1069,7 @@ func (th *TestHelper) MakeUserChannelAdmin(user *model.User, channel *model.Chan
 func (th *TestHelper) UpdateUserToTeamAdmin(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	if tm, err := th.App.Srv().Store.Team().GetMember(team.Id, user.Id); err == nil {
+	if tm, err := th.App.Srv().Store.Team().GetMember(context.Background(), team.Id, user.Id); err == nil {
 		tm.SchemeAdmin = true
 		if _, err = th.App.Srv().Store.Team().UpdateMember(tm); err != nil {
 			utils.EnableDebugLogForTest()
@@ -986,7 +1086,7 @@ func (th *TestHelper) UpdateUserToTeamAdmin(user *model.User, team *model.Team) 
 func (th *TestHelper) UpdateUserToNonTeamAdmin(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	if tm, err := th.App.Srv().Store.Team().GetMember(team.Id, user.Id); err == nil {
+	if tm, err := th.App.Srv().Store.Team().GetMember(context.Background(), team.Id, user.Id); err == nil {
 		tm.SchemeAdmin = false
 		if _, err = th.App.Srv().Store.Team().UpdateMember(tm); err != nil {
 			utils.EnableDebugLogForTest()
@@ -1131,24 +1231,24 @@ func (th *TestHelper) SetupScheme(scope string) *model.Scheme {
 	return scheme
 }
 
-func (th *TestHelper) CreateTrackRecordWithClient(client *model.Client1) *model.TrackRecord {
-  trackRecord := &model.TrackRecord{
-    Id: "",
-    OwnerId: th.BasicUser.Id,
-    Categories: []string{},
-    CreateAt: 0,
-    StartAt: 0,
-    EndAt: 0,
-    WeightedAverage: 0.0,
-    WeightedAverageLastId: "",
-  }
+func (th *TestHelper) CreateTrackRecordWithClient(client *model.Client4) *model.TrackRecord {
+	trackRecord := &model.TrackRecord{
+		Id:                    "",
+		OwnerId:               th.BasicUser.Id,
+		Categories:            []string{},
+		CreateAt:              0,
+		StartAt:               0,
+		EndAt:                 0,
+		WeightedAverage:       0.0,
+		WeightedAverageLastId: "",
+	}
 
 	utils.DisableDebugLogForTest()
 	rTrackRecord, response := client.CreateTrackRecord(trackRecord)
 	if response.Error != nil {
 		panic(response.Error)
 	}
-  utils.EnableDebugLogForTest()
+	utils.EnableDebugLogForTest()
 
 	return rTrackRecord
 }

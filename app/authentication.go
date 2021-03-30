@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/mfa"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mfa"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 type TokenLocation int
@@ -188,10 +188,13 @@ func (a *App) CheckUserMfa(user *model.User, token string) *model.AppError {
 		return nil
 	}
 
-	mfaService := mfa.New(a, a.Srv().Store)
-	ok, err := mfaService.ValidateToken(user.MfaSecret, token)
+	if !*a.Config().ServiceSettings.EnableMultifactorAuthentication {
+		return model.NewAppError("CheckUserMfa", "mfa.mfa_disabled.app_error", nil, "", http.StatusNotImplemented)
+	}
+
+	ok, err := mfa.New(a.Srv().Store.User()).ValidateToken(user.MfaSecret, token)
 	if err != nil {
-		return err
+		return model.NewAppError("CheckUserMfa", "mfa.validate_token.authenticate.app_error", nil, err.Error(), http.StatusBadRequest)
 	}
 
 	if !ok {

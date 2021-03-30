@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/mattermost/logr"
 	"github.com/mattermost/logr/format"
 )

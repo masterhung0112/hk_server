@@ -1,9 +1,20 @@
+.PHONY: build package run stop run-client run-server run-haserver stop-client stop-server restart restart-server restart-client restart-haserver start-docker clean-dist clean nuke check-style check-client-style check-server-style check-unit-tests test dist prepare-enteprise run-client-tests setup-run-client-tests cleanup-run-client-tests test-client build-linux build-osx build-windows internal-test-web-client vet run-server-for-web-client-tests diff-config prepackaged-plugins prepackaged-binaries test-server test-server-ee test-server-quick test-server-race start-docker-check migrations-bindata new-migration migration-prereqs
+
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 ifeq ($(OS),Windows_NT)
 	PLATFORM := Windows
 else
 	PLATFORM := $(shell uname)
+endif
+
+# Set an environment variable on Linux used to resolve `docker.host.internal` inconsistencies with
+# docker. This can be reworked once https://github.com/docker/for-linux/issues/264 is resolved
+# satisfactorily.
+ifeq ($(PLATFORM),Linux)
+	export IS_LINUX = -linux
+else
+	export IS_LINUX =
 endif
 
 IS_CI ?= false
@@ -54,16 +65,16 @@ GOFLAGS ?= $(GOFLAGS:)
 export GOBIN ?= $(PWD)/bin
 GO=go
 
-LDFLAGS += -X "github.com/masterhung0112/hk_server/model.BuildNumber=$(BUILD_NUMBER)"
-LDFLAGS += -X "github.com/masterhung0112/hk_server/model.BuildDate=$(BUILD_DATE)"
-LDFLAGS += -X "github.com/masterhung0112/hk_server/model.BuildHash=$(BUILD_HASH)"
-LDFLAGS += -X "github.com/masterhung0112/hk_server/model.BuildHashEnterprise=$(BUILD_HASH_ENTERPRISE)"
-LDFLAGS += -X "github.com/masterhung0112/hk_server/model.BuildEnterpriseReady=$(BUILD_ENTERPRISE_READY)"
+LDFLAGS += -X "github.com/masterhung0112/hk_server/v5/model.BuildNumber=$(BUILD_NUMBER)"
+LDFLAGS += -X "github.com/masterhung0112/hk_server/v5/model.BuildDate=$(BUILD_DATE)"
+LDFLAGS += -X "github.com/masterhung0112/hk_server/v5/model.BuildHash=$(BUILD_HASH)"
+LDFLAGS += -X "github.com/masterhung0112/hk_server/v5/model.BuildHashEnterprise=$(BUILD_HASH_ENTERPRISE)"
+LDFLAGS += -X "github.com/masterhung0112/hk_server/v5/model.BuildEnterpriseReady=$(BUILD_ENTERPRISE_READY)"
 
 GO_MAJOR_VERSION = $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
 GO_MINOR_VERSION = $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
 MINIMUM_SUPPORTED_GO_MAJOR_VERSION = 1
-MINIMUM_SUPPORTED_GO_MINOR_VERSION = 13
+MINIMUM_SUPPORTED_GO_MINOR_VERSION = 15
 GO_VERSION_VALIDATION_ERR_MSG = Golang version is not supported, please update to at least $(MINIMUM_SUPPORTED_GO_MAJOR_VERSION).$(MINIMUM_SUPPORTED_GO_MINOR_VERSION)
 
 # GOOS/GOARCH of the build host, used to determine whether we're cross-compiling or not
@@ -80,6 +91,23 @@ TESTS=.
 
 # Packages lists
 TE_PACKAGES=$(shell $(GO) list ./... | grep -v ./data)
+
+TEMPLATES_DIR=templates
+
+# Plugins Packages
+PLUGIN_PACKAGES ?= mattermost-plugin-antivirus-v0.1.2
+PLUGIN_PACKAGES += mattermost-plugin-autolink-v1.2.1
+PLUGIN_PACKAGES += mattermost-plugin-aws-SNS-v1.2.0
+PLUGIN_PACKAGES += mattermost-plugin-channel-export-v0.2.2
+PLUGIN_PACKAGES += mattermost-plugin-custom-attributes-v1.3.0
+PLUGIN_PACKAGES += mattermost-plugin-github-v2.0.0
+PLUGIN_PACKAGES += mattermost-plugin-gitlab-v1.3.0
+PLUGIN_PACKAGES += mattermost-plugin-incident-collaboration-v1.6.0
+PLUGIN_PACKAGES += mattermost-plugin-jenkins-v1.1.0
+PLUGIN_PACKAGES += mattermost-plugin-jira-v2.4.0
+PLUGIN_PACKAGES += mattermost-plugin-nps-v1.1.0
+PLUGIN_PACKAGES += mattermost-plugin-welcomebot-v1.2.0
+PLUGIN_PACKAGES += mattermost-plugin-zoom-v1.5.0
 
 # Prepares the enterprise build if exists. The IGNORE stuff is a hack to get the Makefile to execute the commands outside a target
 ifeq ($(BUILD_ENTERPRISE_READY),true)
@@ -137,6 +165,16 @@ else
 ifneq (,$(findstring openldap,$(ENABLED_DOCKER_SERVICES)))
 	cat tests/${LDAP_DATA}-data.ldif | docker-compose -f docker-compose.makefile.yml exec -T openldap bash -c 'ldapadd -x -D "cn=admin,dc=mm,dc=test,dc=com" -w mostest || true';
 endif
+ifneq (,$(findstring mysql-read-replica,$(ENABLED_DOCKER_SERVICES)))
+	./scripts/replica-mysql-config.sh
+endif
+endif
+
+run-haserver: run-client
+ifeq ($(BUILD_ENTERPRISE_READY),true)
+	@echo Starting mattermost in an HA topology
+
+	docker-compose -f docker-compose.yaml up haproxy
 endif
 
 stop-docker: ## Stops the docker containers for local development.

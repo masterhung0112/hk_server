@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 const (
@@ -27,6 +27,9 @@ const (
 	SESSION_ACTIVITY_TIMEOUT          = 1000 * 60 * 5 // 5 minutes
 	SESSION_USER_ACCESS_TOKEN_EXPIRY  = 100 * 365     // 100 years
 )
+
+//msgp StringMap
+type StringMap map[string]string
 
 //msgp:tuple Session
 
@@ -149,7 +152,7 @@ func (s *Session) GetTeamByTeamId(teamId string) *TeamMember {
 }
 
 func (s *Session) IsMobileApp() bool {
-	return len(s.DeviceId) > 0 || s.IsMobile()
+	return s.DeviceId != "" || s.IsMobile()
 }
 
 func (s *Session) IsMobile() bool {
@@ -159,7 +162,7 @@ func (s *Session) IsMobile() bool {
 	}
 	isMobile, err := strconv.ParseBool(val)
 	if err != nil {
-		mlog.Error("Error parsing boolean property from Session", mlog.Err(err))
+		mlog.Debug("Error parsing boolean property from Session", mlog.Err(err))
 		return false
 	}
 	return isMobile
@@ -172,7 +175,7 @@ func (s *Session) IsSaml() bool {
 	}
 	isSaml, err := strconv.ParseBool(val)
 	if err != nil {
-		mlog.Error("Error parsing boolean property from Session", mlog.Err(err))
+		mlog.Debug("Error parsing boolean property from Session", mlog.Err(err))
 		return false
 	}
 	return isSaml
@@ -185,7 +188,7 @@ func (s *Session) IsOAuthUser() bool {
 	}
 	isOAuthUser, err := strconv.ParseBool(val)
 	if err != nil {
-		mlog.Error("Error parsing boolean property from Session", mlog.Err(err))
+		mlog.Debug("Error parsing boolean property from Session", mlog.Err(err))
 		return false
 	}
 	return isOAuthUser

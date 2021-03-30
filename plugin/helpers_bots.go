@@ -9,8 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 type ensureBotOptions struct {
@@ -133,7 +133,7 @@ func (p *HelpersImpl) ShouldProcessMessage(post *model.Post, options ...ShouldPr
 		option(messageProcessOptions)
 	}
 
-	botIDBytes, kvGetErr := p.API.KVGet(BOT_USER_KEY)
+	botIDBytes, kvGetErr := p.API.KVGet(BotUserKey)
 	if kvGetErr != nil {
 		return false, errors.Wrap(kvGetErr, "failed to get bot")
 	}
@@ -212,9 +212,10 @@ func (p *HelpersImpl) ensureBot(bot *model.Bot) (retBotID string, retErr error) 
 			var botIDBytes []byte
 
 			err = utils.ProgressiveRetry(func() error {
-				botIDBytes, err = p.API.KVGet(BOT_USER_KEY)
-				if err != nil {
-					return err
+				var appErr *model.AppError
+				botIDBytes, appErr = p.API.KVGet(BotUserKey)
+				if appErr != nil {
+					return appErr
 				}
 				return nil
 			})
@@ -226,7 +227,7 @@ func (p *HelpersImpl) ensureBot(bot *model.Bot) (retBotID string, retErr error) 
 		}
 	}()
 
-	botIDBytes, kvGetErr := p.API.KVGet(BOT_USER_KEY)
+	botIDBytes, kvGetErr := p.API.KVGet(BotUserKey)
 	if kvGetErr != nil {
 		return "", errors.Wrap(kvGetErr, "failed to get bot")
 	}
@@ -252,11 +253,11 @@ func (p *HelpersImpl) ensureBot(bot *model.Bot) (retBotID string, retErr error) 
 	// Check for an existing bot user with that username. If one exists, then use that.
 	if user, userGetErr := p.API.GetUserByUsername(bot.Username); userGetErr == nil && user != nil {
 		if user.IsBot {
-			if kvSetErr := p.API.KVSet(BOT_USER_KEY, []byte(user.Id)); kvSetErr != nil {
+			if kvSetErr := p.API.KVSet(BotUserKey, []byte(user.Id)); kvSetErr != nil {
 				p.API.LogWarn("Failed to set claimed bot user id.", "userid", user.Id, "err", kvSetErr)
 			}
 		} else {
-			p.API.LogError("Plugin attempted to use an account that already exists. Convert user to a bot account in the CLI by running 'mattermost user convert <username> --bot'. If the user is an existing user account you want to preserve, change its username and restart the HungKnow server , after which the plugin will create a bot account with that name. For more information about bot accounts, see https://mattermost.com/pl/default-bot-accounts", "username", bot.Username, "user_id", user.Id)
+			p.API.LogError("Plugin attempted to use an account that already exists. Convert user to a bot account in the CLI by running 'mattermost user convert <username> --bot'. If the user is an existing user account you want to preserve, change its username and restart the Mattermost server, after which the plugin will create a bot account with that name. For more information about bot accounts, see https://mattermost.com/pl/default-bot-accounts", "username", bot.Username, "user_id", user.Id)
 		}
 		return user.Id, nil
 	}
@@ -267,7 +268,7 @@ func (p *HelpersImpl) ensureBot(bot *model.Bot) (retBotID string, retErr error) 
 		return "", errors.Wrap(createBotErr, "failed to create bot")
 	}
 
-	if kvSetErr := p.API.KVSet(BOT_USER_KEY, []byte(createdBot.UserId)); kvSetErr != nil {
+	if kvSetErr := p.API.KVSet(BotUserKey, []byte(createdBot.UserId)); kvSetErr != nil {
 		p.API.LogWarn("Failed to set created bot user id.", "userid", createdBot.UserId, "err", kvSetErr)
 	}
 

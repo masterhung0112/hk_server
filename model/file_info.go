@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 const (

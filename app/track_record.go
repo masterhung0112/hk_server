@@ -3,8 +3,8 @@ package app
 import (
 	"net/http"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/pkg/errors"
 )
 
@@ -73,9 +73,9 @@ func (a *App) CreateTrackPointForTrackRecord(trackPoint *model.TrackPoint, track
 	trackRecord, err := a.GetTrackRecord(trackRecordId)
 	if err != nil {
 		return nil, err
-  }
+	}
 
-  if trackRecord.StartAt == 0 {
+	if trackRecord.StartAt == 0 {
 		return nil, model.NewAppError("CreateTrackPointForTrackRecord", "app.trackrecord.create.recordnotstart.app_error", nil, "trackrecord not start", http.StatusBadRequest)
 	}
 

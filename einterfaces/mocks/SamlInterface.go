@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	model "github.com/masterhung0112/hk_server/model"
+	model "github.com/masterhung0112/hk_server/v5/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,6 +37,20 @@ func (_m *SamlInterface) BuildRequest(relayState string) (*model.SamlAuthRequest
 	}
 
 	return r0, r1
+}
+
+// CheckProviderAttributes provides a mock function with given fields: SS, ouser, patch
+func (_m *SamlInterface) CheckProviderAttributes(SS *model.SamlSettings, ouser *model.User, patch *model.UserPatch) string {
+	ret := _m.Called(SS, ouser, patch)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(*model.SamlSettings, *model.User, *model.UserPatch) string); ok {
+		r0 = rf(SS, ouser, patch)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // ConfigureSP provides a mock function with given fields:

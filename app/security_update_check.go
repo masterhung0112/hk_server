@@ -10,10 +10,10 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/mailservice"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/shared/mail"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 const (
@@ -55,7 +55,7 @@ func (s *Server) DoSecurityUpdateCheck() {
 		v.Set(PropSecurityDatabase, *s.Config().SqlSettings.DriverName)
 		v.Set(PropSecurityOS, runtime.GOOS)
 
-		if len(props[model.SYSTEM_RAN_UNIT_TESTS]) > 0 {
+		if props[model.SYSTEM_RAN_UNIT_TESTS] != "" {
 			v.Set(PropSecurityUnitTests, "1")
 		} else {
 			v.Set(PropSecurityUnitTests, "0")
@@ -115,7 +115,8 @@ func (s *Server) DoSecurityUpdateCheck() {
 					for _, user := range users {
 						mlog.Info("Sending security bulletin", mlog.String("bulletin_id", bulletin.Id), mlog.String("user_email", user.Email))
 						license := s.License()
-						mailservice.SendMailUsingConfig(user.Email, utils.T("mattermost.bulletin.subject"), string(body), s.Config(), license != nil && *license.Features.Compliance, "")
+						mailConfig := s.MailServiceConfig()
+						mail.SendMailUsingConfig(user.Email, i18n.T("mattermost.bulletin.subject"), string(body), mailConfig, license != nil && *license.Features.Compliance, "")
 					}
 
 					bulletinSeen := &model.System{Name: "SecurityBulletin_" + bulletin.Id, Value: bulletin.Id}

@@ -1,128 +1,129 @@
-package api1
+package api4
 
 import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/configservice"
-	"github.com/masterhung0112/hk_server/web"
-
 	_ "github.com/mattermost/go-i18n/i18n"
+
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/web"
 )
 
-type ApiRoutes struct {
+type Routes struct {
 	Root    *mux.Router // ''
-	ApiRoot *mux.Router // 'api/v1'
+	ApiRoot *mux.Router // 'api/v4'
 
-	Users          *mux.Router // 'api/v1/users'
-	User           *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}'
-	UserByUsername *mux.Router // 'api/v1/users/username/{username:[A-Za-z0-9\\_\\-\\.]+}'
-	UserByEmail    *mux.Router // 'api/v1/users/email/{email:.+}'
+	Users          *mux.Router // 'api/v4/users'
+	User           *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}'
+	UserByUsername *mux.Router // 'api/v4/users/username/{username:[A-Za-z0-9\\_\\-\\.]+}'
+	UserByEmail    *mux.Router // 'api/v4/users/email/{email:.+}'
 
-	Bots *mux.Router // 'api/v1/bots'
-	Bot  *mux.Router // 'api/v1/bots/{bot_user_id:[A-Za-z0-9]+}'
+	Bots *mux.Router // 'api/v4/bots'
+	Bot  *mux.Router // 'api/v4/bots/{bot_user_id:[A-Za-z0-9]+}'
 
-	Teams              *mux.Router // 'api/v1/teams'
-	TeamsForUser       *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/teams'
-	Team               *mux.Router // 'api/v1/teams/{team_id:[A-Za-z0-9]+}'
-	TeamForUser        *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}'
-	UserThreads        *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/threads'
-	UserThread         *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/threads/{thread_id:[A-Za-z0-9]+}'
-	TeamByName         *mux.Router // 'api/v1/teams/name/{team_name:[A-Za-z0-9_-]+}'
-	TeamMembers        *mux.Router // 'api/v1/teams/{team_id:[A-Za-z0-9]+}/members'
-	TeamMember         *mux.Router // 'api/v1/teams/{team_id:[A-Za-z0-9]+}/members/{user_id:[A-Za-z0-9]+}'
-	TeamMembersForUser *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/teams/members'
+	Teams              *mux.Router // 'api/v4/teams'
+	TeamsForUser       *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams'
+	Team               *mux.Router // 'api/v4/teams/{team_id:[A-Za-z0-9]+}'
+	TeamForUser        *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}'
+	UserThreads        *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/threads'
+	UserThread         *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/threads/{thread_id:[A-Za-z0-9]+}'
+	TeamByName         *mux.Router // 'api/v4/teams/name/{team_name:[A-Za-z0-9_-]+}'
+	TeamMembers        *mux.Router // 'api/v4/teams/{team_id:[A-Za-z0-9]+}/members'
+	TeamMember         *mux.Router // 'api/v4/teams/{team_id:[A-Za-z0-9]+}/members/{user_id:[A-Za-z0-9]+}'
+	TeamMembersForUser *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams/members'
 
-	Channels                 *mux.Router // 'api/v1/channels'
-	Channel                  *mux.Router // 'api/v1/channels/{channel_id:[A-Za-z0-9]+}'
-	ChannelForUser           *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/channels/{channel_id:[A-Za-z0-9]+}'
-	ChannelByName            *mux.Router // 'api/v1/teams/{team_id:[A-Za-z0-9]+}/channels/name/{channel_name:[A-Za-z0-9_-]+}'
-	ChannelByNameForTeamName *mux.Router // 'api/v1/teams/name/{team_name:[A-Za-z0-9_-]+}/channels/name/{channel_name:[A-Za-z0-9_-]+}'
-	ChannelsForTeam          *mux.Router // 'api/v1/teams/{team_id:[A-Za-z0-9]+}/channels'
-	ChannelMembers           *mux.Router // 'api/v1/channels/{channel_id:[A-Za-z0-9]+}/members'
-	ChannelMember            *mux.Router // 'api/v1/channels/{channel_id:[A-Za-z0-9]+}/members/{user_id:[A-Za-z0-9]+}'
-	ChannelMembersForUser    *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/channels/members'
-	ChannelModerations       *mux.Router // 'api/v1/channels/{channel_id:[A-Za-z0-9]+}/moderations'
-	ChannelCategories        *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/channels/categories'
+	Channels                 *mux.Router // 'api/v4/channels'
+	Channel                  *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}'
+	ChannelForUser           *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/channels/{channel_id:[A-Za-z0-9]+}'
+	ChannelByName            *mux.Router // 'api/v4/teams/{team_id:[A-Za-z0-9]+}/channels/name/{channel_name:[A-Za-z0-9_-]+}'
+	ChannelByNameForTeamName *mux.Router // 'api/v4/teams/name/{team_name:[A-Za-z0-9_-]+}/channels/name/{channel_name:[A-Za-z0-9_-]+}'
+	ChannelsForTeam          *mux.Router // 'api/v4/teams/{team_id:[A-Za-z0-9]+}/channels'
+	ChannelMembers           *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}/members'
+	ChannelMember            *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}/members/{user_id:[A-Za-z0-9]+}'
+	ChannelMembersForUser    *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/channels/members'
+	ChannelModerations       *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}/moderations'
+	ChannelCategories        *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/channels/categories'
 
-	Posts           *mux.Router // 'api/v1/posts'
-	Post            *mux.Router // 'api/v1/posts/{post_id:[A-Za-z0-9]+}'
-	PostsForChannel *mux.Router // 'api/v1/channels/{channel_id:[A-Za-z0-9]+}/posts'
-	PostsForUser    *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/posts'
-	PostForUser     *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/posts/{post_id:[A-Za-z0-9]+}'
+	Posts           *mux.Router // 'api/v4/posts'
+	Post            *mux.Router // 'api/v4/posts/{post_id:[A-Za-z0-9]+}'
+	PostsForChannel *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}/posts'
+	PostsForUser    *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/posts'
+	PostForUser     *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/posts/{post_id:[A-Za-z0-9]+}'
 
-	Files *mux.Router // 'api/v1/files'
-	File  *mux.Router // 'api/v1/files/{file_id:[A-Za-z0-9]+}'
+	Files *mux.Router // 'api/v4/files'
+	File  *mux.Router // 'api/v4/files/{file_id:[A-Za-z0-9]+}'
 
-	Uploads *mux.Router // 'api/v1/uploads'
-	Upload  *mux.Router // 'api/v1/uploads/{upload_id:[A-Za-z0-9]+}'
+	Uploads *mux.Router // 'api/v4/uploads'
+	Upload  *mux.Router // 'api/v4/uploads/{upload_id:[A-Za-z0-9]+}'
 
-	Plugins *mux.Router // 'api/v1/plugins'
-	Plugin  *mux.Router // 'api/v1/plugins/{plugin_id:[A-Za-z0-9\\_\\-\\.]+}'
+	Plugins *mux.Router // 'api/v4/plugins'
+	Plugin  *mux.Router // 'api/v4/plugins/{plugin_id:[A-Za-z0-9\\_\\-\\.]+}'
 
 	PublicFile *mux.Router // '/files/{file_id:[A-Za-z0-9]+}/public'
 
-	Commands *mux.Router // 'api/v1/commands'
-	Command  *mux.Router // 'api/v1/commands/{command_id:[A-Za-z0-9]+}'
+	Commands *mux.Router // 'api/v4/commands'
+	Command  *mux.Router // 'api/v4/commands/{command_id:[A-Za-z0-9]+}'
 
-	Hooks         *mux.Router // 'api/v1/hooks'
-	IncomingHooks *mux.Router // 'api/v1/hooks/incoming'
-	IncomingHook  *mux.Router // 'api/v1/hooks/incoming/{hook_id:[A-Za-z0-9]+}'
-	OutgoingHooks *mux.Router // 'api/v1/hooks/outgoing'
-	OutgoingHook  *mux.Router // 'api/v1/hooks/outgoing/{hook_id:[A-Za-z0-9]+}'
+	Hooks         *mux.Router // 'api/v4/hooks'
+	IncomingHooks *mux.Router // 'api/v4/hooks/incoming'
+	IncomingHook  *mux.Router // 'api/v4/hooks/incoming/{hook_id:[A-Za-z0-9]+}'
+	OutgoingHooks *mux.Router // 'api/v4/hooks/outgoing'
+	OutgoingHook  *mux.Router // 'api/v4/hooks/outgoing/{hook_id:[A-Za-z0-9]+}'
 
-	OAuth     *mux.Router // 'api/v1/oauth'
-	OAuthApps *mux.Router // 'api/v1/oauth/apps'
-	OAuthApp  *mux.Router // 'api/v1/oauth/apps/{app_id:[A-Za-z0-9]+}'
+	OAuth     *mux.Router // 'api/v4/oauth'
+	OAuthApps *mux.Router // 'api/v4/oauth/apps'
+	OAuthApp  *mux.Router // 'api/v4/oauth/apps/{app_id:[A-Za-z0-9]+}'
 
-	OpenGraph *mux.Router // 'api/v1/opengraph'
+	OpenGraph *mux.Router // 'api/v4/opengraph'
 
-	SAML       *mux.Router // 'api/v1/saml'
-	Compliance *mux.Router // 'api/v1/compliance'
-	Cluster    *mux.Router // 'api/v1/cluster'
+	SAML       *mux.Router // 'api/v4/saml'
+	Compliance *mux.Router // 'api/v4/compliance'
+	Cluster    *mux.Router // 'api/v4/cluster'
 
-	Image *mux.Router // 'api/v1/image'
+	Image *mux.Router // 'api/v4/image'
 
-	LDAP *mux.Router // 'api/v1/ldap'
+	LDAP *mux.Router // 'api/v4/ldap'
 
-	Elasticsearch *mux.Router // 'api/v1/elasticsearch'
+	Elasticsearch *mux.Router // 'api/v4/elasticsearch'
 
-	Bleve *mux.Router // 'api/v1/bleve'
+	Bleve *mux.Router // 'api/v4/bleve'
 
-	DataRetention *mux.Router // 'api/v1/data_retention'
+	DataRetention *mux.Router // 'api/v4/data_retention'
 
-	Brand *mux.Router // 'api/v1/brand'
+	Brand *mux.Router // 'api/v4/brand'
 
-	System *mux.Router // 'api/v1/system'
+	System *mux.Router // 'api/v4/system'
 
-	Jobs *mux.Router // 'api/v1/jobs'
+	Jobs *mux.Router // 'api/v4/jobs'
 
-	Preferences *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/preferences'
+	Preferences *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/preferences'
 
-	License *mux.Router // 'api/v1/license'
+	License *mux.Router // 'api/v4/license'
 
-	Public *mux.Router // 'api/v1/public'
+	Public *mux.Router // 'api/v4/public'
 
-	Reactions *mux.Router // 'api/v1/reactions'
+	Reactions *mux.Router // 'api/v4/reactions'
 
-	Roles   *mux.Router // 'api/v1/roles'
-	Schemes *mux.Router // 'api/v1/schemes'
+	Roles   *mux.Router // 'api/v4/roles'
+	Schemes *mux.Router // 'api/v4/schemes'
 
-	Emojis      *mux.Router // 'api/v1/emoji'
-	Emoji       *mux.Router // 'api/v1/emoji/{emoji_id:[A-Za-z0-9]+}'
-	EmojiByName *mux.Router // 'api/v1/emoji/name/{emoji_name:[A-Za-z0-9\\_\\-\\+]+}'
+	Emojis      *mux.Router // 'api/v4/emoji'
+	Emoji       *mux.Router // 'api/v4/emoji/{emoji_id:[A-Za-z0-9]+}'
+	EmojiByName *mux.Router // 'api/v4/emoji/name/{emoji_name:[A-Za-z0-9\\_\\-\\+]+}'
 
-	ReactionByNameForPostForUser *mux.Router // 'api/v1/users/{user_id:[A-Za-z0-9]+}/posts/{post_id:[A-Za-z0-9]+}/reactions/{emoji_name:[A-Za-z0-9\\_\\-\\+]+}'
+	ReactionByNameForPostForUser *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/posts/{post_id:[A-Za-z0-9]+}/reactions/{emoji_name:[A-Za-z0-9\\_\\-\\+]+}'
 
-	TermsOfService *mux.Router // 'api/v1/terms_of_service'
-	Groups         *mux.Router // 'api/v1/groups'
+	TermsOfService *mux.Router // 'api/v4/terms_of_service'
+	Groups         *mux.Router // 'api/v4/groups'
 
-	Cloud *mux.Router // 'api/v1/cloud'
+	Cloud *mux.Router // 'api/v4/cloud'
 
-	Imports *mux.Router // 'api/v1/imports'
-
+	Imports      *mux.Router // 'api/v4/imports'
+	Exports      *mux.Router // 'api/v4/exports'
+	Export       *mux.Router // 'api/v4/exports/{export_name:.+\\.zip}'
 	TrackRecords *mux.Router // 'api/v1/trackrecords'
 	TrackRecord  *mux.Router // 'api/v1/trackrecords/{track_record_id:[A-Za-z0-9]+}'
 }
@@ -130,14 +131,14 @@ type ApiRoutes struct {
 type API struct {
 	ConfigService       configservice.ConfigService
 	GetGlobalAppOptions app.AppOptionCreator
-	BaseRoutes          *ApiRoutes
+	BaseRoutes          *Routes
 }
 
-func ApiInit(configservice configservice.ConfigService, globalOptionsFunc app.AppOptionCreator, root *mux.Router) *API {
+func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOptionCreator, root *mux.Router) *API {
 	api := &API{
 		ConfigService:       configservice,
-		BaseRoutes:          &ApiRoutes{},
 		GetGlobalAppOptions: globalOptionsFunc,
+		BaseRoutes:          &Routes{},
 	}
 
 	api.BaseRoutes.Root = root
@@ -238,59 +239,60 @@ func ApiInit(configservice configservice.ConfigService, globalOptionsFunc app.Ap
 	api.BaseRoutes.Cloud = api.BaseRoutes.ApiRoot.PathPrefix("/cloud").Subrouter()
 
 	api.BaseRoutes.Imports = api.BaseRoutes.ApiRoot.PathPrefix("/imports").Subrouter()
-
-	api.BaseRoutes.TrackRecords = api.BaseRoutes.ApiRoot.PathPrefix("/trackrecords").Subrouter()
-	api.BaseRoutes.TrackRecord = api.BaseRoutes.TrackRecords.PathPrefix("/{track_record_id:[A-Za-z0-9]+}").Subrouter()
+	api.BaseRoutes.Exports = api.BaseRoutes.ApiRoot.PathPrefix("/exports").Subrouter()
+	api.BaseRoutes.Export = api.BaseRoutes.Exports.PathPrefix("/{export_name:.+\\.zip}").Subrouter()
 
 	api.InitUser()
-	// api.InitBot()
+	api.InitBot()
 	api.InitTeam()
 	api.InitChannel()
 	api.InitPost()
-	// api.InitFile()
-	// api.InitUpload()
-	// api.InitSystem()
-	// api.InitLicense()
+	api.InitFile()
+	api.InitUpload()
+	api.InitSystem()
+	api.InitLicense()
 	api.InitConfig()
-	// api.InitWebhook()
-	// api.InitPreference()
-	// api.InitSaml()
-	// api.InitCompliance()
-	// api.InitCluster()
-	// api.InitLdap()
-	// api.InitElasticsearch()
-	// api.InitBleve()
-	// api.InitDataRetention()
-	// api.InitBrand()
-	// api.InitJob()
-	// api.InitCommand()
-	// api.InitStatus()
-	// api.InitWebSocket()
-	// api.InitEmoji()
-	// api.InitOAuth()
-	// api.InitReaction()
-	// api.InitOpenGraph()
-	// api.InitPlugin()
-	// api.InitRole()
-	// api.InitScheme()
-	// api.InitImage()
-	// api.InitTermsOfService()
-	// api.InitGroup()
-	// api.InitAction()
-	// api.InitCloud()
-  // api.InitImport()
-  api.InitTrackRecord()
+	api.InitWebhook()
+	api.InitPreference()
+	api.InitSaml()
+	api.InitCompliance()
+	api.InitCluster()
+	api.InitLdap()
+	api.InitElasticsearch()
+	api.InitBleve()
+	api.InitDataRetention()
+	api.InitBrand()
+	api.InitJob()
+	api.InitCommand()
+	api.InitStatus()
+	api.InitWebSocket()
+	api.InitEmoji()
+	api.InitOAuth()
+	api.InitReaction()
+	api.InitOpenGraph()
+	api.InitPlugin()
+	api.InitRole()
+	api.InitScheme()
+	api.InitImage()
+	api.InitTermsOfService()
+	api.InitGroup()
+	api.InitAction()
+	api.InitCloud()
+	api.InitImport()
+	api.InitExport()
 
-	root.Handle("/api/v1/{anything:.*}", http.HandlerFunc(api.Handle404))
+	// api.InitTrackRecord()
+
+	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
 	return api
 }
 
-func ApiInitLocal(configservice configservice.ConfigService, globalOptionsFunc app.AppOptionCreator, root *mux.Router) *API {
+func InitLocal(configservice configservice.ConfigService, globalOptionsFunc app.AppOptionCreator, root *mux.Router) *API {
 	api := &API{
 		ConfigService:       configservice,
 		GetGlobalAppOptions: globalOptionsFunc,
-		BaseRoutes:          &ApiRoutes{},
+		BaseRoutes:          &Routes{},
 	}
 
 	api.BaseRoutes.Root = root
@@ -348,28 +350,31 @@ func ApiInitLocal(configservice configservice.ConfigService, globalOptionsFunc a
 	api.BaseRoutes.Upload = api.BaseRoutes.Uploads.PathPrefix("/{upload_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.BaseRoutes.Imports = api.BaseRoutes.ApiRoot.PathPrefix("/imports").Subrouter()
+	api.BaseRoutes.Exports = api.BaseRoutes.ApiRoot.PathPrefix("/exports").Subrouter()
+	api.BaseRoutes.Export = api.BaseRoutes.Exports.PathPrefix("/{export_name:.+\\.zip}").Subrouter()
 
 	api.BaseRoutes.Jobs = api.BaseRoutes.ApiRoot.PathPrefix("/jobs").Subrouter()
 
-	// api.InitUserLocal()
-	// api.InitTeamLocal()
-	// api.InitChannelLocal()
-	// api.InitConfigLocal()
-	// api.InitWebhookLocal()
-	// api.InitPluginLocal()
-	// api.InitCommandLocal()
-	// api.InitLicenseLocal()
-	// api.InitBotLocal()
-	// api.InitGroupLocal()
-	// api.InitLdapLocal()
-	// api.InitSystemLocal()
-	// api.InitPostLocal()
-	// api.InitRoleLocal()
-	// api.InitUploadLocal()
-	// api.InitImportLocal()
-	// api.InitJobLocal()
+	api.InitUserLocal()
+	api.InitTeamLocal()
+	api.InitChannelLocal()
+	api.InitConfigLocal()
+	api.InitWebhookLocal()
+	api.InitPluginLocal()
+	api.InitCommandLocal()
+	api.InitLicenseLocal()
+	api.InitBotLocal()
+	api.InitGroupLocal()
+	api.InitLdapLocal()
+	api.InitSystemLocal()
+	api.InitPostLocal()
+	api.InitRoleLocal()
+	api.InitUploadLocal()
+	api.InitImportLocal()
+	api.InitExportLocal()
+	api.InitJobLocal()
 
-	root.Handle("/api/v1/{anything:.*}", http.HandlerFunc(api.Handle404))
+	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
 	return api
 }

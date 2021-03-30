@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
@@ -84,7 +84,7 @@ func (a *App) VerifyPlugin(plugin, signature io.ReadSeeker) *model.AppError {
 	for _, pk := range publicKeys {
 		pkBytes, appErr := a.GetPublicKey(pk)
 		if appErr != nil {
-			mlog.Error("Unable to get public key for ", mlog.String("filename", pk))
+			mlog.Warn("Unable to get public key for ", mlog.String("filename", pk))
 			continue
 		}
 		publicKey := bytes.NewReader(pkBytes)

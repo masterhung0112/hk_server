@@ -1,14 +1,16 @@
 package storetest
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/utils"
-	"github.com/stretchr/testify/suite"
+	"context"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/utils"
+	"github.com/stretchr/testify/suite"
 )
 
 type PostStoreTestSuite struct {
@@ -377,15 +379,15 @@ func (s *PostStoreTestSuite) TestUpdate() {
 	o3, err = s.Store().Post().Save(o3)
 	s.Require().Nil(err)
 
-	r1, err := s.Store().Post().Get(o1.Id, false)
+	r1, err := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro1 := r1.Posts[o1.Id]
 
-	r2, err := s.Store().Post().Get(o1.Id, false)
+	r2, err := s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro2 := r2.Posts[o2.Id]
 
-	r3, err := s.Store().Post().Get(o3.Id, false)
+	r3, err := s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro3 := r3.Posts[o3.Id]
 
@@ -396,7 +398,7 @@ func (s *PostStoreTestSuite) TestUpdate() {
 	_, err = s.Store().Post().Update(o1a, ro1)
 	s.Require().Nil(err)
 
-	r1, err = s.Store().Post().Get(o1.Id, false)
+	r1, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 
 	ro1a := r1.Posts[o1.Id]
@@ -407,7 +409,7 @@ func (s *PostStoreTestSuite) TestUpdate() {
 	_, err = s.Store().Post().Update(o2a, ro2)
 	s.Require().Nil(err)
 
-	r2, err = s.Store().Post().Get(o1.Id, false)
+	r2, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro2a := r2.Posts[o2.Id]
 
@@ -418,7 +420,7 @@ func (s *PostStoreTestSuite) TestUpdate() {
 	_, err = s.Store().Post().Update(o3a, ro3)
 	s.Require().Nil(err)
 
-	r3, err = s.Store().Post().Get(o3.Id, false)
+	r3, err = s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro3a := r3.Posts[o3.Id]
 
@@ -434,7 +436,7 @@ func (s *PostStoreTestSuite) TestUpdate() {
 	})
 	s.Require().Nil(err)
 
-	r4, err := s.Store().Post().Get(o4.Id, false)
+	r4, err := s.Store().Post().Get(context.Background(), o4.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro4 := r4.Posts[o4.Id]
 
@@ -444,7 +446,7 @@ func (s *PostStoreTestSuite) TestUpdate() {
 	_, err = s.Store().Post().Update(o4a, ro4)
 	s.Require().Nil(err)
 
-	r4, err = s.Store().Post().Get(o4.Id, false)
+	r4, err = s.Store().Post().Get(context.Background(), o4.Id, false, false, false, "")
 	s.Require().Nil(err)
 
 	ro4a := r4.Posts[o4.Id]
@@ -459,13 +461,13 @@ func (s *PostStoreTestSuite) TestDelete() {
 	o1.Message = "zz" + model.NewId() + "b"
 	deleteByID := model.NewId()
 
-	etag1 := s.Store().Post().GetEtag(o1.ChannelId, false)
+	etag1 := s.Store().Post().GetEtag(o1.ChannelId, false, false)
 	s.Require().Equal(0, strings.Index(etag1, model.CurrentVersion+"."), "Invalid Etag")
 
 	o1, err := s.Store().Post().Save(o1)
 	s.Require().Nil(err)
 
-	r1, err := s.Store().Post().Get(o1.Id, false)
+	r1, err := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 	s.Require().Equal(r1.Posts[o1.Id].CreateAt, o1.CreateAt, "invalid returned post")
 
@@ -478,10 +480,10 @@ func (s *PostStoreTestSuite) TestDelete() {
 
 	s.Assert().Equal(deleteByID, actual, "Expected (*Post).Props[model.POST_PROPS_DELETE_BY] to be %v but got %v.", deleteByID, actual)
 
-	r3, err := s.Store().Post().Get(o1.Id, false)
+	r3, err := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().NotNil(err, "Missing id should have failed - PostList %v", r3)
 
-	etag2 := s.Store().Post().GetEtag(o1.ChannelId, false)
+	etag2 := s.Store().Post().GetEtag(o1.ChannelId, false, false)
 	s.Require().Equal(0, strings.Index(etag2, model.CurrentVersion+"."), "Invalid Etag")
 }
 
@@ -505,10 +507,10 @@ func (s *PostStoreTestSuite) TestDelete1Level() {
 	err = s.Store().Post().Delete(o1.Id, model.GetMillis(), "")
 	s.Require().Nil(err)
 
-	_, err = s.Store().Post().Get(o1.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 
-	_, err = s.Store().Post().Get(o2.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 }
 
@@ -548,16 +550,16 @@ func (s *PostStoreTestSuite) TestDelete2Level() {
 	err = s.Store().Post().Delete(o1.Id, model.GetMillis(), "")
 	s.Require().Nil(err)
 
-	_, err = s.Store().Post().Get(o1.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 
-	_, err = s.Store().Post().Get(o2.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 
-	_, err = s.Store().Post().Get(o3.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 
-	_, err = s.Store().Post().Get(o4.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o4.Id, false, false, false, "")
 	s.Require().Nil(err)
 }
 
@@ -588,16 +590,16 @@ func (s *PostStoreTestSuite) TestPermDelete1Level() {
 	err2 := s.Store().Post().PermanentDeleteByUser(o2.UserId)
 	s.Require().Nil(err2)
 
-	_, err = s.Store().Post().Get(o1.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err, "Deleted id shouldn't have failed")
 
-	_, err = s.Store().Post().Get(o2.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 
 	err = s.Store().Post().PermanentDeleteByChannel(o3.ChannelId)
 	s.Require().Nil(err)
 
-	_, err = s.Store().Post().Get(o3.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 }
 
@@ -628,13 +630,13 @@ func (s *PostStoreTestSuite) TestPermDelete1Level2() {
 	err2 := s.Store().Post().PermanentDeleteByUser(o1.UserId)
 	s.Require().Nil(err2)
 
-	_, err = s.Store().Post().Get(o1.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 
-	_, err = s.Store().Post().Get(o2.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().NotNil(err, "Deleted id should have failed")
 
-	_, err = s.Store().Post().Get(o3.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().Nil(err, "Deleted id should have failed")
 }
 
@@ -664,7 +666,7 @@ func (s *PostStoreTestSuite) TestGetWithChildren() {
 	o3, err = s.Store().Post().Save(o3)
 	s.Require().Nil(err)
 
-	pl, err := s.Store().Post().Get(o1.Id, false)
+	pl, err := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 
 	s.Require().Len(pl.Posts, 3, "invalid returned post")
@@ -672,7 +674,7 @@ func (s *PostStoreTestSuite) TestGetWithChildren() {
 	dErr := s.Store().Post().Delete(o3.Id, model.GetMillis(), "")
 	s.Require().Nil(dErr)
 
-	pl, err = s.Store().Post().Get(o1.Id, false)
+	pl, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 
 	s.Require().Len(pl.Posts, 2, "invalid returned post")
@@ -680,7 +682,7 @@ func (s *PostStoreTestSuite) TestGetWithChildren() {
 	dErr = s.Store().Post().Delete(o2.Id, model.GetMillis(), "")
 	s.Require().Nil(dErr)
 
-	pl, err = s.Store().Post().Get(o1.Id, false)
+	pl, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 
 	s.Require().Len(pl.Posts, 1, "invalid returned post")
@@ -1393,39 +1395,39 @@ func (s *PostStoreTestSuite) TestGetPostBeforeAfter() {
 	_, err = s.Store().Post().Save(o2a)
 	s.Require().Nil(err)
 
-	rPostId1, err := s.Store().Post().GetPostIdBeforeTime(channelId, o0a.CreateAt)
+	rPostId1, err := s.Store().Post().GetPostIdBeforeTime(channelId, o0a.CreateAt, false)
 	s.Require().Equal(rPostId1, o1.Id, "should return before post o1")
 	s.Require().Nil(err)
 
-	rPostId1, err = s.Store().Post().GetPostIdAfterTime(channelId, o0b.CreateAt)
+	rPostId1, err = s.Store().Post().GetPostIdAfterTime(channelId, o0b.CreateAt, false)
 	s.Require().Equal(rPostId1, o2.Id, "should return before post o2")
 	s.Require().Nil(err)
 
-	rPost1, err := s.Store().Post().GetPostAfterTime(channelId, o0b.CreateAt)
+	rPost1, err := s.Store().Post().GetPostAfterTime(channelId, o0b.CreateAt, false)
 	s.Require().Equal(rPost1.Id, o2.Id, "should return before post o2")
 	s.Require().Nil(err)
 
-	rPostId2, err := s.Store().Post().GetPostIdBeforeTime(channelId, o0.CreateAt)
+	rPostId2, err := s.Store().Post().GetPostIdBeforeTime(channelId, o0.CreateAt, false)
 	s.Require().Empty(rPostId2, "should return no post")
 	s.Require().Nil(err)
 
-	rPostId2, err = s.Store().Post().GetPostIdAfterTime(channelId, o0.CreateAt)
+	rPostId2, err = s.Store().Post().GetPostIdAfterTime(channelId, o0.CreateAt, false)
 	s.Require().Equal(rPostId2, o1.Id, "should return before post o1")
 	s.Require().Nil(err)
 
-	rPost2, err := s.Store().Post().GetPostAfterTime(channelId, o0.CreateAt)
+	rPost2, err := s.Store().Post().GetPostAfterTime(channelId, o0.CreateAt, false)
 	s.Require().Equal(rPost2.Id, o1.Id, "should return before post o1")
 	s.Require().Nil(err)
 
-	rPostId3, err := s.Store().Post().GetPostIdBeforeTime(channelId, o2a.CreateAt)
+	rPostId3, err := s.Store().Post().GetPostIdBeforeTime(channelId, o2a.CreateAt, false)
 	s.Require().Equal(rPostId3, o2.Id, "should return before post o2")
 	s.Require().Nil(err)
 
-	rPostId3, err = s.Store().Post().GetPostIdAfterTime(channelId, o2a.CreateAt)
+	rPostId3, err = s.Store().Post().GetPostIdAfterTime(channelId, o2a.CreateAt, false)
 	s.Require().Empty(rPostId3, "should return no post")
 	s.Require().Nil(err)
 
-	rPost3, err := s.Store().Post().GetPostAfterTime(channelId, o2a.CreateAt)
+	rPost3, err := s.Store().Post().GetPostAfterTime(channelId, o2a.CreateAt, false)
 	s.Require().Empty(rPost3, "should return no post")
 	s.Require().Nil(err)
 }
@@ -2030,23 +2032,23 @@ func (s *PostStoreTestSuite) TestOverwriteMultiple() {
 	})
 	s.Require().Nil(err)
 
-	r1, err := s.Store().Post().Get(o1.Id, false)
+	r1, err := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro1 := r1.Posts[o1.Id]
 
-	r2, err := s.Store().Post().Get(o2.Id, false)
+	r2, err := s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro2 := r2.Posts[o2.Id]
 
-	r3, err := s.Store().Post().Get(o3.Id, false)
+	r3, err := s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro3 := r3.Posts[o3.Id]
 
-	r4, err := s.Store().Post().Get(o4.Id, false)
+	r4, err := s.Store().Post().Get(context.Background(), o4.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro4 := r4.Posts[o4.Id]
 
-	r5, err := s.Store().Post().Get(o5.Id, false)
+	r5, err := s.Store().Post().Get(context.Background(), o5.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro5 := r5.Posts[o5.Id]
 
@@ -2072,15 +2074,15 @@ func (s *PostStoreTestSuite) TestOverwriteMultiple() {
 		s.Require().Nil(err)
 		s.Require().Equal(-1, errIdx)
 
-		r1, nErr := s.Store().Post().Get(o1.Id, false)
+		r1, nErr := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 		s.Require().Nil(nErr)
 		ro1a := r1.Posts[o1.Id]
 
-		r2, nErr = s.Store().Post().Get(o1.Id, false)
+		r2, nErr = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 		s.Require().Nil(nErr)
 		ro2a := r2.Posts[o2.Id]
 
-		r3, nErr = s.Store().Post().Get(o3.Id, false)
+		r3, nErr = s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 		s.Require().Nil(nErr)
 		ro3a := r3.Posts[o3.Id]
 
@@ -2102,11 +2104,11 @@ func (s *PostStoreTestSuite) TestOverwriteMultiple() {
 		s.Require().Nil(err)
 		s.Require().Equal(-1, errIdx)
 
-		r4, nErr := s.Store().Post().Get(o4.Id, false)
+		r4, nErr := s.Store().Post().Get(context.Background(), o4.Id, false, false, false, "")
 		s.Require().Nil(nErr)
 		ro4a := r4.Posts[o4.Id]
 
-		r5, nErr = s.Store().Post().Get(o5.Id, false)
+		r5, nErr = s.Store().Post().Get(context.Background(), o5.Id, false, false, false, "")
 		s.Require().Nil(nErr)
 		ro5a := r5.Posts[o5.Id]
 
@@ -2149,19 +2151,19 @@ func (s *PostStoreTestSuite) TestOverwrite() {
 	})
 	s.Require().Nil(err)
 
-	r1, err := s.Store().Post().Get(o1.Id, false)
+	r1, err := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro1 := r1.Posts[o1.Id]
 
-	r2, err := s.Store().Post().Get(o2.Id, false)
+	r2, err := s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro2 := r2.Posts[o2.Id]
 
-	r3, err := s.Store().Post().Get(o3.Id, false)
+	r3, err := s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro3 := r3.Posts[o3.Id]
 
-	r4, err := s.Store().Post().Get(o4.Id, false)
+	r4, err := s.Store().Post().Get(context.Background(), o4.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro4 := r4.Posts[o4.Id]
 
@@ -2186,15 +2188,15 @@ func (s *PostStoreTestSuite) TestOverwrite() {
 		_, err = s.Store().Post().Overwrite(o3a)
 		s.Require().Nil(err)
 
-		r1, err = s.Store().Post().Get(o1.Id, false)
+		r1, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 		s.Require().Nil(err)
 		ro1a := r1.Posts[o1.Id]
 
-		r2, err = s.Store().Post().Get(o1.Id, false)
+		r2, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 		s.Require().Nil(err)
 		ro2a := r2.Posts[o2.Id]
 
-		r3, err = s.Store().Post().Get(o3.Id, false)
+		r3, err = s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 		s.Require().Nil(err)
 		ro3a := r3.Posts[o3.Id]
 
@@ -2210,7 +2212,7 @@ func (s *PostStoreTestSuite) TestOverwrite() {
 		_, err = s.Store().Post().Overwrite(o4a)
 		s.Require().Nil(err)
 
-		r4, err = s.Store().Post().Get(o4.Id, false)
+		r4, err = s.Store().Post().Get(context.Background(), o4.Id, false, false, false, "")
 		s.Require().Nil(err)
 
 		ro4a := r4.Posts[o4.Id]
@@ -2241,15 +2243,15 @@ func (s *PostStoreTestSuite) TestGetPostsByIds() {
 	o3, err = s.Store().Post().Save(o3)
 	s.Require().Nil(err)
 
-	r1, err := s.Store().Post().Get(o1.Id, false)
+	r1, err := s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro1 := r1.Posts[o1.Id]
 
-	r2, err := s.Store().Post().Get(o2.Id, false)
+	r2, err := s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro2 := r2.Posts[o2.Id]
 
-	r3, err := s.Store().Post().Get(o3.Id, false)
+	r3, err := s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().Nil(err)
 	ro3 := r3.Posts[o3.Id]
 
@@ -2356,13 +2358,13 @@ func (s *PostStoreTestSuite) TestPermanentDeleteBatch() {
 	_, err = s.Store().Post().PermanentDeleteBatch(2000, 1000)
 	s.Require().Nil(err)
 
-	_, err = s.Store().Post().Get(o1.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o1.Id, false, false, false, "")
 	s.Require().NotNil(err, "Should have not found post 1 after purge")
 
-	_, err = s.Store().Post().Get(o2.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o2.Id, false, false, false, "")
 	s.Require().NotNil(err, "Should have not found post 2 after purge")
 
-	_, err = s.Store().Post().Get(o3.Id, false)
+	_, err = s.Store().Post().Get(context.Background(), o3.Id, false, false, false, "")
 	s.Require().Nil(err, "Should have not found post 3 after purge")
 }
 

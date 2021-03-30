@@ -4,7 +4,7 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 // notifyClusterPluginEvent publishes `event` to other clusters.

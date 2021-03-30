@@ -61,7 +61,7 @@ function start_docker() {
     console.log('Starting docker containers')
   }
   //TODO: Open
-  sh(`${GO} run ./build/docker-compose-generator/main.go $(ENABLED_DOCKER_SERVICES) | docker-compose -f docker-compose.makefile.yml -f /dev/stdin run --rm start_dependencies`, { nopipe: true })
+  sh(`${GO} run ./build/docker-compose-generator/main.go ${ENABLED_DOCKER_SERVICES} | docker-compose -f docker-compose.makefile.yml -f /dev/stdin run --rm start_dependencies`, { nopipe: true })
 
   // if ($(findstring openldap,$(ENABLED_DOCKER_SERVICES))) {
     // sh(`cat tests/${LDAP_DATA}-data.ldif | docker-compose -f docker-compose.makefile.yml exec -T openldap bash -c 'ldapadd -x -D "cn=admin,dc=mm,dc=test,dc=com" -w mostest || true'`, { nopipe: true })
@@ -102,6 +102,13 @@ function einterfaces_mocks() {
 }
 help(einterfaces_mocks, 'Creates mock files for einterfaces')
 
+function app_layers() {
+  sh(`${GO} get -modfile=go.tools.mod github.com/reflog/struct2interface`, { nopipe: true })
+  sh(`${GOBIN}/struct2interface -f "app" -o "app/app_iface.go" -p "app" -s "App" -i "AppIface" -t ./app/layer_generators/app_iface.go.tmpl`, { nopipe: true })
+  sh(`${GO} run ./app/layer_generators -in ./app/app_iface.go -out ./app/opentracing/opentracing_layer.go -template ./app/layer_generators/opentracing_layer.go.tmpl`, { nopipe: true })
+}
+help(app_layers, 'Extract interface from App struct')
+
 cli({
   start_docker,
   start_server,
@@ -109,4 +116,5 @@ cli({
 
   store_mocks,
   einterfaces_mocks,
+  app_layers,
 })

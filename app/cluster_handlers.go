@@ -6,7 +6,7 @@ package app
 import (
 	"strings"
 
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 // RegisterAllClusterMessageHandlers registers the cluster message handlers that are handled by the App layer.

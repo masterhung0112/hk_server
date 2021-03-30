@@ -6,8 +6,8 @@ package config
 import (
 	"sync"
 
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 // emitter enables threadsafe registration and broadcasting to configuration listeners

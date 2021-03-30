@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	model "github.com/masterhung0112/hk_server/model"
+	model "github.com/masterhung0112/hk_server/v5/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -41,6 +41,20 @@ func (_m *LdapInterface) CheckPasswordAuthData(authData string, password string)
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.AppError)
 		}
+	}
+
+	return r0
+}
+
+// CheckProviderAttributes provides a mock function with given fields: LS, ouser, patch
+func (_m *LdapInterface) CheckProviderAttributes(LS *model.LdapSettings, ouser *model.User, patch *model.UserPatch) string {
+	ret := _m.Called(LS, ouser, patch)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(*model.LdapSettings, *model.User, *model.UserPatch) string); ok {
+		r0 = rf(LS, ouser, patch)
+	} else {
+		r0 = ret.Get(0).(string)
 	}
 
 	return r0
@@ -228,6 +242,27 @@ func (_m *LdapInterface) GetUserAttributes(id string, attributes []string) (map[
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*model.AppError)
 		}
+	}
+
+	return r0, r1
+}
+
+// GetVendorNameAndVendorVersion provides a mock function with given fields:
+func (_m *LdapInterface) GetVendorNameAndVendorVersion() (string, string) {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 string
+	if rf, ok := ret.Get(1).(func() string); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Get(1).(string)
 	}
 
 	return r0, r1

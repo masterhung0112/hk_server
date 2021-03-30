@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/testlib"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 func truncateTable(t *testing.T, table string) {
 	t.Helper()
 	sqlSetting := mainHelper.GetSQLSettings()
-	sqlStore := mainHelper.GetSqlStore()
+	sqlStore := mainHelper.GetSQLStore()
 
 	switch *sqlSetting.DriverName {
 	case model.DATABASE_DRIVER_MYSQL:

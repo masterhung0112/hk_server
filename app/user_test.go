@@ -1,10 +1,11 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateUser(t *testing.T) {

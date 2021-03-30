@@ -4,8 +4,8 @@
 package localcachelayer
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type LocalCacheWebhookStore struct {
@@ -14,7 +14,7 @@ type LocalCacheWebhookStore struct {
 }
 
 func (s *LocalCacheWebhookStore) handleClusterInvalidateWebhook(msg *model.ClusterMessage) {
-	if msg.Data == CLEAR_CACHE_MESSAGE_DATA {
+	if msg.Data == ClearCacheMessageData {
 		s.rootStore.webhookCache.Purge()
 	} else {
 		s.rootStore.webhookCache.Remove(msg.Data)

@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
-	"github.com/avct/uasurfer"
 	"strings"
+
+	"github.com/avct/uasurfer"
 )
 
 var platformNames = map[uasurfer.Platform]string{
@@ -79,6 +80,32 @@ func getOSName(ua *uasurfer.UserAgent) string {
 	return osNames[uasurfer.OSUnknown]
 }
 
+func getBrowserVersion(ua *uasurfer.UserAgent, userAgentString string) string {
+	if index := strings.Index(userAgentString, "Mattermost/"); index != -1 {
+		afterVersion := userAgentString[index+len("Mattermost/"):]
+		return strings.Fields(afterVersion)[0]
+	}
+
+	if index := strings.Index(userAgentString, "mmctl/"); index != -1 {
+		afterVersion := userAgentString[index+len("mmctl/"):]
+		return strings.Fields(afterVersion)[0]
+	}
+
+	if index := strings.Index(userAgentString, "Franz/"); index != -1 {
+		afterVersion := userAgentString[index+len("Franz/"):]
+		return strings.Fields(afterVersion)[0]
+	}
+
+	return getUAVersion(ua.Browser.Version)
+}
+
+func getUAVersion(version uasurfer.Version) string {
+	if version.Patch == 0 {
+		return fmt.Sprintf("%v.%v", version.Major, version.Minor)
+	}
+	return fmt.Sprintf("%v.%v.%v", version.Major, version.Minor, version.Patch)
+}
+
 var browserNames = map[uasurfer.BrowserName]string{
 	uasurfer.BrowserUnknown:    "Unknown",
 	uasurfer.BrowserChrome:     "Chrome",
@@ -110,30 +137,5 @@ func getBrowserName(ua *uasurfer.UserAgent, userAgentString string) string {
 	}
 
 	return browserNames[uasurfer.BrowserUnknown]
-}
 
-func getBrowserVersion(ua *uasurfer.UserAgent, userAgentString string) string {
-	if index := strings.Index(userAgentString, "Mattermost/"); index != -1 {
-		afterVersion := userAgentString[index+len("Mattermost/"):]
-		return strings.Fields(afterVersion)[0]
-	}
-
-	if index := strings.Index(userAgentString, "mmctl/"); index != -1 {
-		afterVersion := userAgentString[index+len("mmctl/"):]
-		return strings.Fields(afterVersion)[0]
-	}
-
-	if index := strings.Index(userAgentString, "Franz/"); index != -1 {
-		afterVersion := userAgentString[index+len("Franz/"):]
-		return strings.Fields(afterVersion)[0]
-	}
-
-	return getUAVersion(ua.Browser.Version)
-}
-
-func getUAVersion(version uasurfer.Version) string {
-	if version.Patch == 0 {
-		return fmt.Sprintf("%v.%v", version.Major, version.Minor)
-	}
-	return fmt.Sprintf("%v.%v.%v", version.Major, version.Minor, version.Patch)
 }

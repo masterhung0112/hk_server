@@ -7,18 +7,18 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
-	goi18n "github.com/mattermost/go-i18n/i18n"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type msgProvider struct {
 }
 
 const (
-	CMD_MSG = "msg"
+	CmdMsg = "msg"
 )
 
 func init() {
@@ -26,12 +26,12 @@ func init() {
 }
 
 func (*msgProvider) GetTrigger() string {
-	return CMD_MSG
+	return CmdMsg
 }
 
-func (*msgProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*msgProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_MSG,
+		Trigger:          CmdMsg,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_msg.desc"),
 		AutoCompleteHint: T("api.command_msg.hint"),
@@ -95,7 +95,7 @@ func (*msgProvider) DoCommand(a *app.App, args *model.CommandArgs, message strin
 		targetChannelId = channel.Id
 	}
 
-	if len(parsedMessage) > 0 {
+	if parsedMessage != "" {
 		post := &model.Post{}
 		post.Message = parsedMessage
 		post.ChannelId = targetChannelId

@@ -12,11 +12,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
 	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 var ErrNotFound = errors.New("Item not found")
@@ -45,7 +46,7 @@ type PrepackagedPlugin struct {
 
 // Environment represents the execution environment of active plugins.
 //
-// It is meant for use by the HungKnow server  to manipulate, interact with and report on the set
+// It is meant for use by the Mattermost server to manipulate, interact with and report on the set
 // of active plugins.
 type Environment struct {
 	registeredPlugins      sync.Map
@@ -504,7 +505,7 @@ func newRegisteredPlugin(bundle *model.BundleInfo) registeredPlugin {
 func (env *Environment) InitPluginHealthCheckJob(enable bool) {
 	// Config is set to enable. No job exists, start a new job.
 	if enable && env.pluginHealthCheckJob == nil {
-		mlog.Debug("Enabling plugin health check job", mlog.Duration("interval_s", HEALTH_CHECK_INTERVAL))
+		mlog.Debug("Enabling plugin health check job", mlog.Duration("interval_s", HealthCheckInterval))
 
 		job := newPluginHealthCheckJob(env)
 		env.pluginHealthCheckJob = job

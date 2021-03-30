@@ -19,7 +19,7 @@ It is possible to manually test specific sections of any test, instead of using 
 
 ## Test plugins
 
-There are two test plugins: `testplugin.tar.gz` and `testplugin2.tar.gz`. These are use in some integration tests in the `api1` package. Any changes to the plugin bundles require updating the coresponding signatures.
+There are two test plugins: `testplugin.tar.gz` and `testplugin2.tar.gz`. These are use in some integration tests in the `api4` package. Any changes to the plugin bundles require updating the coresponding signatures.
 
 First, import the public and privat development key:
 ```

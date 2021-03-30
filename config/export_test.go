@@ -5,7 +5,7 @@ package config
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 // MarshalConfig exposes the internal marshalConfig to tests only.

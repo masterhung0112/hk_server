@@ -7,5 +7,5 @@
 // https://godoc.org/github.com/stretchr/testify/mock
 //
 // If you need to import the mock package, you can import it with
-// "github.com/masterhung0112/hk_server/plugin/plugintest/mock".
+// "github.com/masterhung0112/hk_server/v5/plugin/plugintest/mock".
 package plugintest

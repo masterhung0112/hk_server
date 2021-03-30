@@ -1,18 +1,19 @@
 package main
 
 import (
-	api1 "github.com/masterhung0112/hk_server/api1"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/testlib"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	api4 "github.com/masterhung0112/hk_server/v5/api4"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
 var mainHelper *testlib.MainHelper
 
 type testHelper struct {
-	*api1.TestHelper
+	*api4.TestHelper
 
 	config            *model.Config
 	tempDir           string
@@ -27,10 +28,10 @@ func Setup(t testing.TB) *testHelper {
 		panic("failed to create temporary directory: " + err.Error())
 	}
 
-	api1TestHelper := api1.Setup(t)
+	api4TestHelper := api4.Setup(t)
 
 	testHelper := &testHelper{
-		TestHelper:     api1TestHelper,
+		TestHelper:     api4TestHelper,
 		tempDir:        dir,
 		configFilePath: filepath.Join(dir, "config-helper.json"),
 	}

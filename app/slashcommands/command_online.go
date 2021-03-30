@@ -4,16 +4,16 @@
 package slashcommands
 
 import (
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	goi18n "github.com/mattermost/go-i18n/i18n"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
 )
 
 type OnlineProvider struct {
 }
 
 const (
-	CMD_ONLINE = "online"
+	CmdOnline = "online"
 )
 
 func init() {
@@ -21,12 +21,12 @@ func init() {
 }
 
 func (*OnlineProvider) GetTrigger() string {
-	return CMD_ONLINE
+	return CmdOnline
 }
 
-func (*OnlineProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*OnlineProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_ONLINE,
+		Trigger:          CmdOnline,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_online.desc"),
 		DisplayName:      T("api.command_online.name"),

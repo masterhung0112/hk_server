@@ -10,11 +10,12 @@ import (
 	"os/user"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/masterhung0112/hk_server/audit"
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+
+	"github.com/masterhung0112/hk_server/v5/audit"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 const (
@@ -31,8 +32,8 @@ var (
 	LevelCLI     = mlog.LvlAuditCLI
 )
 
-func (a *App) GetAudits(userId string, limit int) (model.Audits, *model.AppError) {
-	audits, err := a.Srv().Store.Audit().Get(userId, 0, limit)
+func (a *App) GetAudits(userID string, limit int) (model.Audits, *model.AppError) {
+	audits, err := a.Srv().Store.Audit().Get(userID, 0, limit)
 	if err != nil {
 		var outErr *store.ErrOutOfBounds
 		switch {
@@ -45,8 +46,8 @@ func (a *App) GetAudits(userId string, limit int) (model.Audits, *model.AppError
 	return audits, nil
 }
 
-func (a *App) GetAuditsPage(userId string, page int, perPage int) (model.Audits, *model.AppError) {
-	audits, err := a.Srv().Store.Audit().Get(userId, page*perPage, perPage)
+func (a *App) GetAuditsPage(userID string, page int, perPage int) (model.Audits, *model.AppError) {
+	audits, err := a.Srv().Store.Audit().Get(userID, page*perPage, perPage)
 	if err != nil {
 		var outErr *store.ErrOutOfBounds
 		switch {

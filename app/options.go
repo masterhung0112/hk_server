@@ -1,12 +1,12 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/mlog"
 	"github.com/pkg/errors"
 
-	"github.com/masterhung0112/hk_server/config"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type Option func(s *Server) error
@@ -40,9 +40,9 @@ func StoreOverride(override interface{}) Option {
 // or a database connection string. It receives as well a set of
 // custom defaults that will be applied for any unset property of the
 // config loaded from the dsn on top of the normal defaults
-func Config(dsn string, watch bool, configDefaults *model.Config) Option {
+func Config(dsn string, watch, readOnly bool, configDefaults *model.Config) Option {
 	return func(s *Server) error {
-		configStore, err := config.NewStore(dsn, watch, configDefaults)
+		configStore, err := config.NewStore(dsn, watch, readOnly, configDefaults)
 		if err != nil {
 			return errors.Wrap(err, "failed to apply Config option")
 		}

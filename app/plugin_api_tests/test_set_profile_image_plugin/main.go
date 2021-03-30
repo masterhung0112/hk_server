@@ -10,9 +10,9 @@ import (
 	"image/color"
 	"image/png"
 
-	"github.com/masterhung0112/hk_server/app/plugin_api_tests"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/plugin"
+	"github.com/masterhung0112/hk_server/v5/app/plugin_api_tests"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
 )
 
 type MyPlugin struct {
@@ -27,7 +27,7 @@ func (p *MyPlugin) OnConfigurationChange() error {
 	return nil
 }
 
-func (p *MyPlugin) MessageWillBePosted(c *plugin.Context, post *model.Post) (*model.Post, string) {
+func (p *MyPlugin) MessageWillBePosted(_ *plugin.Context, _ *model.Post) (*model.Post, string) {
 
 	// Create an 128 x 128 image
 	img := image.NewRGBA(image.Rect(0, 0, 128, 128))

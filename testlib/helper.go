@@ -9,15 +9,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/store"
-	"github.com/masterhung0112/hk_server/store/searchlayer"
-	"github.com/masterhung0112/hk_server/store/sqlstore"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	"github.com/masterhung0112/hk_server/utils"
 	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/masterhung0112/hk_server/v5/store/searchlayer"
+	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 type MainHelper struct {
@@ -29,12 +30,13 @@ type MainHelper struct {
 
 	status           int
 	testResourcePath string
-	originalPath     string
+	replicas         []string
 }
 
 type HelperOptions struct {
 	EnableStore     bool
 	EnableResources bool
+	WithReadReplica bool
 }
 
 func NewMainHelper() *MainHelper {
@@ -62,7 +64,7 @@ func NewMainHelperWithOptions(options *HelperOptions) *MainHelper {
 
 	if options != nil {
 		if options.EnableStore && !testing.Short() {
-			mainHelper.setupStore()
+			mainHelper.setupStore(options.WithReadReplica)
 		}
 
 		if options.EnableResources {
@@ -80,8 +82,6 @@ func (h *MainHelper) Main(m *testing.M) {
 			panic("Failed to get current working directory: " + err.Error())
 		}
 
-		h.originalPath = prevDir
-
 		err = os.Chdir(h.testResourcePath)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to set current working directory to %s: %s", h.testResourcePath, err.Error()))
@@ -98,13 +98,14 @@ func (h *MainHelper) Main(m *testing.M) {
 	h.status = m.Run()
 }
 
-func (h *MainHelper) setupStore() {
+func (h *MainHelper) setupStore(withReadReplica bool) {
 	driverName := os.Getenv("MM_SQLSETTINGS_DRIVERNAME")
 	if driverName == "" {
 		driverName = model.DATABASE_DRIVER_POSTGRES
 	}
 
-	h.Settings = storetest.MakeSqlSettings(driverName)
+	h.Settings = storetest.MakeSqlSettings(driverName, withReadReplica)
+	h.replicas = h.Settings.DataSourceReplicas
 
 	config := &model.Config{}
 	config.SetDefaults()
@@ -115,6 +116,26 @@ func (h *MainHelper) setupStore() {
 	h.Store = searchlayer.NewSearchLayer(&TestStore{
 		h.SQLStore,
 	}, h.SearchEngine, config)
+}
+
+func (h *MainHelper) ToggleReplicasOff() {
+	if h.SQLStore.GetLicense() == nil {
+		panic("expecting a license to use this")
+	}
+	h.Settings.DataSourceReplicas = []string{}
+	lic := h.SQLStore.GetLicense()
+	h.SQLStore = sqlstore.New(*h.Settings, nil)
+	h.SQLStore.UpdateLicense(lic)
+}
+
+func (h *MainHelper) ToggleReplicasOn() {
+	if h.SQLStore.GetLicense() == nil {
+		panic("expecting a license to use this")
+	}
+	h.Settings.DataSourceReplicas = h.replicas
+	lic := h.SQLStore.GetLicense()
+	h.SQLStore = sqlstore.New(*h.Settings, nil)
+	h.SQLStore.UpdateLicense(lic)
 }
 
 func (h *MainHelper) setupResources() {
@@ -210,7 +231,7 @@ func (h *MainHelper) GetStore() store.Store {
 	return h.Store
 }
 
-func (h *MainHelper) GetSqlStore() *sqlstore.SqlStore {
+func (h *MainHelper) GetSQLStore() *sqlstore.SqlStore {
 	if h.SQLStore == nil {
 		panic("MainHelper not initialized with sql store.")
 	}
@@ -232,4 +253,37 @@ func (h *MainHelper) GetSearchEngine() *searchengine.Broker {
 	}
 
 	return h.SearchEngine
+}
+
+func (h *MainHelper) SetReplicationLagForTesting(seconds int) error {
+	if dn := h.SQLStore.DriverName(); dn != model.DATABASE_DRIVER_MYSQL {
+		return fmt.Errorf("method not implemented for %q database driver, only %q is supported", dn, model.DATABASE_DRIVER_MYSQL)
+	}
+
+	err := h.execOnEachReplica("STOP SLAVE SQL_THREAD FOR CHANNEL ''")
+	if err != nil {
+		return err
+	}
+
+	err = h.execOnEachReplica(fmt.Sprintf("CHANGE MASTER TO MASTER_DELAY = %d", seconds))
+	if err != nil {
+		return err
+	}
+
+	err = h.execOnEachReplica("START SLAVE SQL_THREAD FOR CHANNEL ''")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *MainHelper) execOnEachReplica(query string, args ...interface{}) error {
+	for _, replica := range h.SQLStore.Replicas {
+		_, err := replica.Exec(query, args...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

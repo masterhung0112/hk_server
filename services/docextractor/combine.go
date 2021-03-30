@@ -6,7 +6,7 @@ package docextractor
 import (
 	"io"
 
-	"github.com/masterhung0112/hk_server/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 type combineExtractor struct {

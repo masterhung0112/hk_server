@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
-
 	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 const (
@@ -266,7 +266,7 @@ func (s *Server) GenerateRenewalToken(expiration time.Duration) (string, *model.
 	if license == nil {
 		// Clean renewal token if there is no license present
 		if _, err := s.Store.System().PermanentDeleteByName(model.SYSTEM_LICENSE_RENEWAL_TOKEN); err != nil {
-			mlog.Error("error removing the renewal token", mlog.Err(err))
+			mlog.Warn("error removing the renewal token", mlog.Err(err))
 		}
 		return "", model.NewAppError("GenerateRenewalToken", "app.license.generate_renewal_token.no_license", nil, "", http.StatusBadRequest)
 	}
@@ -330,4 +330,14 @@ func (s *Server) renewalTokenValid(tokenString, signingKey string) (bool, error)
 		return false, nil
 	}
 	return true, nil
+}
+
+// GenerateLicenseRenewalLink returns a link that points to the CWS where clients can renew license
+func (s *Server) GenerateLicenseRenewalLink() (string, *model.AppError) {
+	renewalToken, err := s.GenerateRenewalToken(JWTDefaultTokenExpiration)
+	if err != nil {
+		return "", err
+	}
+	renewalLink := LicenseRenewalURL + "?token=" + renewalToken
+	return renewalLink, nil
 }

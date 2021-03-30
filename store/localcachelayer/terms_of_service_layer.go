@@ -4,8 +4,8 @@
 package localcachelayer
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 const (
@@ -18,7 +18,7 @@ type LocalCacheTermsOfServiceStore struct {
 }
 
 func (s *LocalCacheTermsOfServiceStore) handleClusterInvalidateTermsOfService(msg *model.ClusterMessage) {
-	if msg.Data == CLEAR_CACHE_MESSAGE_DATA {
+	if msg.Data == ClearCacheMessageData {
 		s.rootStore.termsOfServiceCache.Purge()
 	} else {
 		s.rootStore.termsOfServiceCache.Remove(msg.Data)

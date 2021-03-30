@@ -1,9 +1,10 @@
 package storetest
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/stretchr/testify/suite"
 )
 
 type TrackPointStoreTestSuite struct {
@@ -19,23 +20,23 @@ func TestTrackPointStoreTestSuite(t *testing.T) {
 
 func (s *TrackPointStoreTestSuite) TestSave() {
 	tp1 := &model.TrackPoint{
-		TargetId:   "111",
-		TargetType: "work_bike",
+		TargetId: "111",
+		// TargetType: "work_bike",
 		Point: model.GeoPoint{
 			Lat: 123.456,
 			Lng: 456.678,
 		},
-		DeviceId:   "",
-		DeviceType: "mobile",
+		DeviceId: "",
+		// DeviceType: "mobile",
 	}
 
 	etp1, err := s.Store().TrackPoint().Save(tp1)
 	if s.Nil(err) && s.NotNil(etp1) {
 		s.Len(etp1.Id, 26)
 		s.Equal(etp1.TargetId, tp1.TargetId)
-		s.Equal(etp1.TargetType, tp1.TargetType)
+		// s.Equal(etp1.TargetType, tp1.TargetType)
 		s.Equal(etp1.DeviceId, tp1.DeviceId)
-		s.Equal(etp1.DeviceType, tp1.DeviceType)
+		// s.Equal(etp1.DeviceType, tp1.DeviceType)
 		s.NotEqual(etp1.CreateAt, 0)
 	}
 }

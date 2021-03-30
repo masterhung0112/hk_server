@@ -8,9 +8,9 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/store"
 
 	"github.com/pkg/errors"
 )
@@ -40,7 +40,7 @@ func (s SqlCommandWebhookStore) createIndexesIfNotExists() {
 }
 
 func (s SqlCommandWebhookStore) Save(webhook *model.CommandWebhook) (*model.CommandWebhook, error) {
-	if len(webhook.Id) > 0 {
+	if webhook.Id != "" {
 		return nil, store.NewErrInvalidInput("CommandWebhook", "id", webhook.Id)
 	}
 

@@ -13,8 +13,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils/fileutils"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -128,7 +128,7 @@ func TestInstallPluginLocally(t *testing.T) {
 		pluginsEnvironment := th.App.GetPluginsEnvironment()
 		require.NotNil(t, pluginsEnvironment)
 		bundleInfos, err := pluginsEnvironment.Available()
-		require.Nil(t, err)
+		require.NoError(t, err)
 
 		for _, bundleInfo := range bundleInfos {
 			err := th.App.removePluginLocally(bundleInfo.Manifest.Id)
@@ -140,7 +140,7 @@ func TestInstallPluginLocally(t *testing.T) {
 		pluginsEnvironment := th.App.GetPluginsEnvironment()
 		require.NotNil(t, pluginsEnvironment)
 		bundleInfos, err := pluginsEnvironment.Available()
-		require.Nil(t, err)
+		require.NoError(t, err)
 
 		sort.Sort(byBundleInfoId(bundleInfos))
 
@@ -281,7 +281,7 @@ func TestInstallPluginAlreadyActive(t *testing.T) {
 	pluginsEnvironment := th.App.GetPluginsEnvironment()
 	require.NotNil(t, pluginsEnvironment)
 	bundleInfos, err := pluginsEnvironment.Available()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotEmpty(t, bundleInfos)
 	for _, bundleInfo := range bundleInfos {
 		if bundleInfo.Manifest.Id == actualManifest.Id {

@@ -6,9 +6,9 @@ package slashcommands
 import (
 	"strconv"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	goi18n "github.com/mattermost/go-i18n/i18n"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
 )
 
 type ExpandProvider struct {
@@ -18,8 +18,8 @@ type CollapseProvider struct {
 }
 
 const (
-	CMD_EXPAND   = "expand"
-	CMD_COLLAPSE = "collapse"
+	CmdExpand   = "expand"
+	CmdCollapse = "collapse"
 )
 
 func init() {
@@ -28,25 +28,25 @@ func init() {
 }
 
 func (*ExpandProvider) GetTrigger() string {
-	return CMD_EXPAND
+	return CmdExpand
 }
 
 func (*CollapseProvider) GetTrigger() string {
-	return CMD_COLLAPSE
+	return CmdCollapse
 }
 
-func (*ExpandProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*ExpandProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_EXPAND,
+		Trigger:          CmdExpand,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_expand.desc"),
 		DisplayName:      T("api.command_expand.name"),
 	}
 }
 
-func (*CollapseProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*CollapseProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_COLLAPSE,
+		Trigger:          CmdCollapse,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_collapse.desc"),
 		DisplayName:      T("api.command_collapse.name"),

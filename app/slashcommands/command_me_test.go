@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func TestMeProviderDoCommand(t *testing.T) {
@@ -24,7 +24,4 @@ func TestMeProviderDoCommand(t *testing.T) {
 	assert.Equal(t, model.COMMAND_RESPONSE_TYPE_IN_CHANNEL, resp.ResponseType)
 	assert.Equal(t, model.POST_ME, resp.Type)
 	assert.Equal(t, "*"+msg+"*", resp.Text)
-	assert.Equal(t, model.StringInterface{
-		"message": msg,
-	}, resp.Props)
 }

@@ -8,12 +8,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/store/searchlayer"
-	"github.com/masterhung0112/hk_server/store/sqlstore"
-	"github.com/masterhung0112/hk_server/store/storetest"
-	"github.com/masterhung0112/hk_server/testlib"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/store/searchlayer"
+	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
+	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
 // Test to verify race condition on UpdateConfig. The test must run with -race flag in order to verify
@@ -23,7 +23,7 @@ func TestUpdateConfigRace(t *testing.T) {
 	if driverName == "" {
 		driverName = model.DATABASE_DRIVER_POSTGRES
 	}
-	settings := storetest.MakeSqlSettings(driverName)
+	settings := storetest.MakeSqlSettings(driverName, false)
 	store := sqlstore.New(*settings, nil)
 
 	cfg := &model.Config{}

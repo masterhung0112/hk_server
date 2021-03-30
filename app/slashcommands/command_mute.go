@@ -6,16 +6,16 @@ package slashcommands
 import (
 	"strings"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/model"
-	goi18n "github.com/mattermost/go-i18n/i18n"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
 )
 
 type MuteProvider struct {
 }
 
 const (
-	CMD_MUTE = "mute"
+	CmdMute = "mute"
 )
 
 func init() {
@@ -23,12 +23,12 @@ func init() {
 }
 
 func (*MuteProvider) GetTrigger() string {
-	return CMD_MUTE
+	return CmdMute
 }
 
-func (*MuteProvider) GetCommand(a *app.App, T goi18n.TranslateFunc) *model.Command {
+func (*MuteProvider) GetCommand(a *app.App, T i18n.TranslateFunc) *model.Command {
 	return &model.Command{
-		Trigger:          CMD_MUTE,
+		Trigger:          CmdMute,
 		AutoComplete:     true,
 		AutoCompleteDesc: T("api.command_mute.desc"),
 		AutoCompleteHint: T("api.command_mute.hint"),
@@ -53,7 +53,7 @@ func (*MuteProvider) DoCommand(a *app.App, args *model.CommandArgs, message stri
 		channelName = splitMessage[0]
 	}
 
-	if len(channelName) > 0 && len(message) > 0 {
+	if channelName != "" && message != "" {
 		channel, _ = a.Srv().Store.Channel().GetByName(channel.TeamId, channelName, true)
 
 		if channel == nil {

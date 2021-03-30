@@ -4,8 +4,8 @@
 package searchlayer
 
 import (
-	model "github.com/masterhung0112/hk_server/model"
-	store "github.com/masterhung0112/hk_server/store"
+	model "github.com/masterhung0112/hk_server/v5/model"
+	store "github.com/masterhung0112/hk_server/v5/store"
 )
 
 type SearchTeamStore struct {

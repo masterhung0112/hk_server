@@ -12,12 +12,12 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/masterhung0112/hk_server/app"
-	"github.com/masterhung0112/hk_server/jobs"
-	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/jobs"
+	tjobs "github.com/masterhung0112/hk_server/v5/jobs/interfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 func init() {
@@ -165,7 +165,7 @@ func (w *ImportProcessWorker) doJob(job *model.Job) {
 	}
 
 	// do the actual import.
-	appErr, lineNumber := w.app.BulkImportWithPath(jsonFile, false, runtime.NumCPU(), dir)
+	appErr, lineNumber := w.app.BulkImportWithPath(jsonFile, false, runtime.NumCPU(), filepath.Join(dir, app.ExportDataDir))
 	if appErr != nil {
 		job.Data["line_number"] = strconv.Itoa(lineNumber)
 		w.setJobError(job, appErr)

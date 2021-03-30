@@ -4,8 +4,8 @@
 package localcachelayer
 
 import (
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type LocalCacheFileInfoStore struct {
@@ -14,7 +14,7 @@ type LocalCacheFileInfoStore struct {
 }
 
 func (s *LocalCacheFileInfoStore) handleClusterInvalidateFileInfo(msg *model.ClusterMessage) {
-	if msg.Data == CLEAR_CACHE_MESSAGE_DATA {
+	if msg.Data == ClearCacheMessageData {
 		s.rootStore.fileInfoCache.Purge()
 		return
 	}

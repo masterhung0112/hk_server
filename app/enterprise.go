@@ -4,12 +4,12 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/einterfaces"
-	ejobs "github.com/masterhung0112/hk_server/einterfaces/jobs"
-	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	ejobs "github.com/masterhung0112/hk_server/v5/einterfaces/jobs"
+	tjobs "github.com/masterhung0112/hk_server/v5/jobs/interfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 var accountMigrationInterface func(*App) einterfaces.AccountMigrationInterface
@@ -114,6 +114,24 @@ func RegisterJobsImportProcessInterface(f func(*App) tjobs.ImportProcessInterfac
 	jobsImportProcessInterface = f
 }
 
+var jobsImportDeleteInterface func(*App) tjobs.ImportDeleteInterface
+
+func RegisterJobsImportDeleteInterface(f func(*App) tjobs.ImportDeleteInterface) {
+	jobsImportDeleteInterface = f
+}
+
+var jobsExportProcessInterface func(*App) tjobs.ExportProcessInterface
+
+func RegisterJobsExportProcessInterface(f func(*App) tjobs.ExportProcessInterface) {
+	jobsExportProcessInterface = f
+}
+
+var jobsExportDeleteInterface func(*App) tjobs.ExportDeleteInterface
+
+func RegisterJobsExportDeleteInterface(f func(*App) tjobs.ExportDeleteInterface) {
+	jobsExportDeleteInterface = f
+}
+
 var productNoticesJobInterface func(*App) tjobs.ProductNoticesJobInterface
 
 func RegisterProductNoticesJobInterface(f func(*App) tjobs.ProductNoticesJobInterface) {
@@ -132,9 +150,9 @@ func RegisterMessageExportInterface(f func(*Server) einterfaces.MessageExportInt
 	messageExportInterface = f
 }
 
-var cloudInterface func(*App) einterfaces.CloudInterface
+var cloudInterface func(*Server) einterfaces.CloudInterface
 
-func RegisterCloudInterface(f func(*App) einterfaces.CloudInterface) {
+func RegisterCloudInterface(f func(*Server) einterfaces.CloudInterface) {
 	cloudInterface = f
 }
 
@@ -198,8 +216,5 @@ func (a *App) initEnterprise() {
 				mlog.Error("An error occurred while configuring SAML Service Provider", mlog.Err(err))
 			}
 		})
-	}
-	if cloudInterface != nil {
-		a.srv.Cloud = cloudInterface(a)
 	}
 }

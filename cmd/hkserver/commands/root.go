@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/mattermost/viper"
 	"github.com/spf13/cobra"
 )
 
@@ -15,12 +14,12 @@ func Run(args []string) error {
 var RootCmd = &cobra.Command{
 	Use:   "hkserver",
 	Short: "Self-hosted server",
+	Long:  `Mattermost offers workplace messaging across web, PC and phones with archiving, search and integration with your existing systems. Documentation available at https://docs.mattermost.com`,
 }
 
 func init() {
-	RootCmd.PersistentFlags().StringP("config", "c", "config.json", "Configuration file to use.")
-
-	viper.SetEnvPrefix("hk")
-	viper.BindEnv("config")
-	viper.BindPFlag("config", RootCmd.PersistentFlags().Lookup("config"))
+	RootCmd.PersistentFlags().StringP("config", "c", "", "Configuration file to use.")
+	RootCmd.PersistentFlags().Bool("disableconfigwatch", false, "When set config.json will not be loaded from disk when the file is changed.")
+	RootCmd.PersistentFlags().Bool("platform", false, "This flag signifies that the user tried to start the command from the platform binary, so we can log a mssage")
+	RootCmd.PersistentFlags().MarkHidden("platform")
 }

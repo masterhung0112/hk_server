@@ -50,10 +50,11 @@ func TestWatcher(t *testing.T) {
 	case <-time.After(1 * time.Second):
 	}
 
+	// Write to the watched file
 	ioutil.WriteFile(f.Name(), []byte("data"), 0644)
 	select {
 	case <-called:
-	case <-time.After(1 * time.Second):
+	case <-time.After(5 * time.Second):
 		require.Fail(t, "callback should have been called when file written")
 	}
 }

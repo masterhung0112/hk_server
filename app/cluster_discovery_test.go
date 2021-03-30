@@ -5,10 +5,9 @@ package app
 
 import (
 	"testing"
-
 	"time"
 
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func TestClusterDiscoveryService(t *testing.T) {

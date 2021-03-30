@@ -4,7 +4,7 @@
 package einterfaces
 
 import (
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 type SamlInterface interface {
@@ -12,4 +12,5 @@ type SamlInterface interface {
 	BuildRequest(relayState string) (*model.SamlAuthRequest, *model.AppError)
 	DoLogin(encodedXML string, relayState map[string]string) (*model.User, *model.AppError)
 	GetMetadata() (string, *model.AppError)
+	CheckProviderAttributes(SS *model.SamlSettings, ouser *model.User, patch *model.UserPatch) string
 }

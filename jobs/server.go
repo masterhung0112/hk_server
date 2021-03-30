@@ -4,16 +4,18 @@
 package jobs
 
 import (
-	ejobs "github.com/masterhung0112/hk_server/einterfaces/jobs"
-	tjobs "github.com/masterhung0112/hk_server/jobs/interfaces"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/configservice"
-	"github.com/masterhung0112/hk_server/store"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	ejobs "github.com/masterhung0112/hk_server/v5/einterfaces/jobs"
+	tjobs "github.com/masterhung0112/hk_server/v5/jobs/interfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/store"
 )
 
 type JobServer struct {
 	ConfigService configservice.ConfigService
 	Store         store.Store
+	metrics       einterfaces.MetricsInterface
 	Workers       *Workers
 	Schedulers    *Schedulers
 
@@ -29,13 +31,17 @@ type JobServer struct {
 	ProductNotices          tjobs.ProductNoticesJobInterface
 	ActiveUsers             tjobs.ActiveUsersJobInterface
 	ImportProcess           tjobs.ImportProcessInterface
+	ImportDelete            tjobs.ImportDeleteInterface
+	ExportProcess           tjobs.ExportProcessInterface
+	ExportDelete            tjobs.ExportDeleteInterface
 	Cloud                   ejobs.CloudJobInterface
 }
 
-func NewJobServer(configService configservice.ConfigService, store store.Store) *JobServer {
+func NewJobServer(configService configservice.ConfigService, store store.Store, metrics einterfaces.MetricsInterface) *JobServer {
 	return &JobServer{
 		ConfigService: configService,
 		Store:         store,
+		metrics:       metrics,
 	}
 }
 

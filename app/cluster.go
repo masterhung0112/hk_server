@@ -4,7 +4,7 @@
 package app
 
 import (
-	"github.com/masterhung0112/hk_server/model"
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 // Registers a given function to be called when the cluster leader may have changed. Returns a unique ID for the

@@ -3,24 +3,22 @@ package app
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/mattermost/go-i18n/i18n"
-	goi18n "github.com/mattermost/go-i18n/i18n"
-
-	"github.com/masterhung0112/hk_server/einterfaces"
-	"github.com/masterhung0112/hk_server/mlog"
-	"github.com/masterhung0112/hk_server/model"
-	"github.com/masterhung0112/hk_server/services/httpservice"
-	"github.com/masterhung0112/hk_server/services/imageproxy"
-	"github.com/masterhung0112/hk_server/services/mailservice"
-	"github.com/masterhung0112/hk_server/services/searchengine"
-	"github.com/masterhung0112/hk_server/services/timezones"
-	"github.com/masterhung0112/hk_server/utils"
+	"github.com/masterhung0112/hk_server/v5/einterfaces"
+	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/httpservice"
+	"github.com/masterhung0112/hk_server/v5/services/imageproxy"
+	"github.com/masterhung0112/hk_server/v5/services/searchengine"
+	"github.com/masterhung0112/hk_server/v5/services/timezones"
+	"github.com/masterhung0112/hk_server/v5/shared/i18n"
+	"github.com/masterhung0112/hk_server/v5/shared/mail"
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+	"github.com/masterhung0112/hk_server/v5/shared/templates"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 type App struct {
@@ -31,7 +29,7 @@ type App struct {
 	// a cyclic dependency as bleve tests themselves import testlib.
 	searchEngine *searchengine.Broker
 
-	t              goi18n.TranslateFunc
+	t              i18n.TranslateFunc
 	session        model.Session
 	requestId      string
 	ipAddress      string
@@ -116,6 +114,20 @@ func (a *App) initJobs() {
 	if jobsImportProcessInterface != nil {
 		a.srv.Jobs.ImportProcess = jobsImportProcessInterface(a)
 	}
+	if jobsImportDeleteInterface != nil {
+		a.srv.Jobs.ImportDelete = jobsImportDeleteInterface(a)
+	}
+	if jobsExportDeleteInterface != nil {
+		a.srv.Jobs.ExportDelete = jobsExportDeleteInterface(a)
+	}
+
+	if jobsExportProcessInterface != nil {
+		a.srv.Jobs.ExportProcess = jobsExportProcessInterface(a)
+	}
+
+	if jobsExportProcessInterface != nil {
+		a.srv.Jobs.ExportProcess = jobsExportProcessInterface(a)
+	}
 
 	if jobsActiveUsersInterface != nil {
 		a.srv.Jobs.ActiveUsers = jobsActiveUsersInterface(a)
@@ -133,16 +145,12 @@ func (a *App) TelemetryId() string {
 	return a.Srv().TelemetryId()
 }
 
-func (s *Server) HTMLTemplates() *template.Template {
-	if s.htmlTemplateWatcher != nil {
-		return s.htmlTemplateWatcher.Templates()
-	}
-
-	return nil
+func (s *Server) TemplatesContainer() *templates.Container {
+	return s.htmlTemplateWatcher
 }
 
 func (a *App) Handle404(w http.ResponseWriter, r *http.Request) {
-	ipAddress := utils.GetIpAddress(r, a.Config().ServiceSettings.TrustedProxyIPHeader)
+	ipAddress := utils.GetIPAddress(r, a.Config().ServiceSettings.TrustedProxyIPHeader)
 	mlog.Debug("not found handler triggered", mlog.String("path", r.URL.Path), mlog.Int("code", 404), mlog.String("ip", ipAddress))
 
 	if *a.Config().ServiceSettings.WebserverMode == "disabled" {
@@ -312,7 +320,7 @@ func (a *App) getWarnMetricStatusAndDisplayTextsForId(warnMetricId string, T i18
 				warnMetricDisplayTexts.BotMessageBody = T("api.server.warn_metric.number_of_posts_2M.notification_body")
 			}
 		default:
-			mlog.Error("Invalid metric id", mlog.String("id", warnMetricId))
+			mlog.Debug("Invalid metric id", mlog.String("id", warnMetricId))
 			return nil, nil
 		}
 
@@ -349,7 +357,7 @@ func (a *App) notifyAdminsOfWarnMetricStatus(warnMetricId string, isE0Edition bo
 		}
 	}
 
-	T := utils.GetUserTranslations(sysAdmins[0].Locale)
+	T := i18n.GetUserTranslations(sysAdmins[0].Locale)
 	warnMetricsBot := &model.Bot{
 		Username:    model.BOT_WARN_METRIC_BOT_USERNAME,
 		DisplayName: T("app.system.warn_metric.bot_displayname"),
@@ -363,7 +371,7 @@ func (a *App) notifyAdminsOfWarnMetricStatus(warnMetricId string, isE0Edition bo
 	}
 
 	for _, sysAdmin := range sysAdmins {
-		T := utils.GetUserTranslations(sysAdmin.Locale)
+		T := i18n.GetUserTranslations(sysAdmin.Locale)
 		bot.DisplayName = T("app.system.warn_metric.bot_displayname")
 		bot.Description = T("app.system.warn_metric.bot_description")
 
@@ -448,29 +456,29 @@ func (a *App) NotifyAndSetWarnMetricAck(warnMetricId string, sender *model.User,
 		}
 
 		if !forceAck {
-			if len(*a.Config().EmailSettings.SMTPServer) == 0 {
-				return model.NewAppError("NotifyAndSetWarnMetricAck", "api.email.send_warn_metric_ack.missing_server.app_error", nil, utils.T("api.context.invalid_param.app_error", map[string]interface{}{"Name": "SMTPServer"}), http.StatusInternalServerError)
+			if *a.Config().EmailSettings.SMTPServer == "" {
+				return model.NewAppError("NotifyAndSetWarnMetricAck", "api.email.send_warn_metric_ack.missing_server.app_error", nil, i18n.T("api.context.invalid_param.app_error", map[string]interface{}{"Name": "SMTPServer"}), http.StatusInternalServerError)
 			}
-			T := utils.GetUserTranslations(sender.Locale)
-			bodyPage := a.Srv().EmailService.newEmailTemplate("warn_metric_ack", sender.Locale)
-			bodyPage.Props["ContactNameHeader"] = T("api.templates.warn_metric_ack.body.contact_name_header")
-			bodyPage.Props["ContactNameValue"] = sender.GetFullName()
-			bodyPage.Props["ContactEmailHeader"] = T("api.templates.warn_metric_ack.body.contact_email_header")
-			bodyPage.Props["ContactEmailValue"] = sender.Email
+			T := i18n.GetUserTranslations(sender.Locale)
+			data := a.Srv().EmailService.newEmailTemplateData(sender.Locale)
+			data.Props["ContactNameHeader"] = T("api.templates.warn_metric_ack.body.contact_name_header")
+			data.Props["ContactNameValue"] = sender.GetFullName()
+			data.Props["ContactEmailHeader"] = T("api.templates.warn_metric_ack.body.contact_email_header")
+			data.Props["ContactEmailValue"] = sender.Email
 
 			//same definition as the active users count metric displayed in the SystemConsole Analytics section
 			registeredUsersCount, cerr := a.Srv().Store.User().Count(model.UserCountOptions{})
 			if cerr != nil {
-				mlog.Error("Error retrieving the number of registered users", mlog.Err(cerr))
+				mlog.Warn("Error retrieving the number of registered users", mlog.Err(cerr))
 			} else {
-				bodyPage.Props["RegisteredUsersHeader"] = T("api.templates.warn_metric_ack.body.registered_users_header")
-				bodyPage.Props["RegisteredUsersValue"] = registeredUsersCount
+				data.Props["RegisteredUsersHeader"] = T("api.templates.warn_metric_ack.body.registered_users_header")
+				data.Props["RegisteredUsersValue"] = registeredUsersCount
 			}
-			bodyPage.Props["SiteURLHeader"] = T("api.templates.warn_metric_ack.body.site_url_header")
-			bodyPage.Props["SiteURL"] = a.GetSiteURL()
-			bodyPage.Props["TelemetryIdHeader"] = T("api.templates.warn_metric_ack.body.diagnostic_id_header")
-			bodyPage.Props["TelemetryIdValue"] = a.TelemetryId()
-			bodyPage.Props["Footer"] = T("api.templates.warn_metric_ack.footer")
+			data.Props["SiteURLHeader"] = T("api.templates.warn_metric_ack.body.site_url_header")
+			data.Props["SiteURL"] = a.GetSiteURL()
+			data.Props["TelemetryIdHeader"] = T("api.templates.warn_metric_ack.body.diagnostic_id_header")
+			data.Props["TelemetryIdValue"] = a.TelemetryId()
+			data.Props["Footer"] = T("api.templates.warn_metric_ack.footer")
 
 			warnMetricStatus, warnMetricDisplayTexts := a.getWarnMetricStatusAndDisplayTextsForId(warnMetricId, T, false)
 			if warnMetricStatus == nil {
@@ -478,9 +486,16 @@ func (a *App) NotifyAndSetWarnMetricAck(warnMetricId string, sender *model.User,
 			}
 
 			subject := T("api.templates.warn_metric_ack.subject")
-			bodyPage.Props["Title"] = warnMetricDisplayTexts.EmailBody
+			data.Props["Title"] = warnMetricDisplayTexts.EmailBody
 
-			if err := mailservice.SendMailUsingConfig(model.MM_SUPPORT_ADVISOR_ADDRESS, subject, bodyPage.Render(), a.Config(), false, sender.Email); err != nil {
+			mailConfig := a.Srv().MailServiceConfig()
+
+			body, err := a.Srv().TemplatesContainer().RenderToString("warn_metric_ack", data)
+			if err != nil {
+				return model.NewAppError("NotifyAndSetWarnMetricAck", "api.email.send_warn_metric_ack.failure.app_error", map[string]interface{}{"Error": err.Error()}, "", http.StatusInternalServerError)
+			}
+
+			if err := mail.SendMailUsingConfig(model.MM_SUPPORT_ADVISOR_ADDRESS, subject, body, mailConfig, false, sender.Email); err != nil {
 				return model.NewAppError("NotifyAndSetWarnMetricAck", "api.email.send_warn_metric_ack.failure.app_error", map[string]interface{}{"Error": err.Error()}, "", http.StatusInternalServerError)
 			}
 		}
@@ -653,7 +668,7 @@ func (a *App) SetSession(s *model.Session) {
 	a.session = *s
 }
 
-func (a *App) SetT(t goi18n.TranslateFunc) {
+func (a *App) SetT(t i18n.TranslateFunc) {
 	a.t = t
 }
 func (a *App) SetRequestId(s string) {
@@ -677,7 +692,7 @@ func (a *App) SetContext(c context.Context) {
 func (a *App) SetServer(srv *Server) {
 	a.srv = srv
 }
-func (a *App) GetT() goi18n.TranslateFunc {
+func (a *App) GetT() i18n.TranslateFunc {
 	return a.t
 }
 
