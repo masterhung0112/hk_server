@@ -44,11 +44,11 @@ func (s *UserStoreTS) SetupTest() {
 	}
 }
 
-// func TestUserStoreTS(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &UserStoreTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-// 		suite.Run(t, testSuite)
-// 	})
-// }
+func TestUserStoreTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
 
 func (s *UserStoreTS) cleanupStatusStore() {
 	_, execerr := s.SqlStore().GetMaster().ExecNoTimeout(` DELETE FROM Status `)
@@ -1071,11 +1071,11 @@ type UserStoreGetAllProfilesTS struct {
 	u7 *model.User
 }
 
-// func TestUserStoreGetAllProfilesTS(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetAllProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-// 		suite.Run(t, testSuite)
-// 	})
-// }
+func TestUserStoreGetAllProfilesTS(t *testing.T) {
+	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetAllProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+		suite.Run(t, testSuite)
+	})
+}
 
 func (s *UserStoreGetAllProfilesTS) SetupSuite() {
 	// Clean all user first

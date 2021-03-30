@@ -19,7 +19,7 @@ type PostStoreTestSuite struct {
 }
 
 // func TestPostStoreTestSuite(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &PostStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+// 	sqlstore.StoreTestSuiteWithSqlSupplier(t, &PostStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
 // 		suite.Run(t, testSuite)
 // 	})
 // }
