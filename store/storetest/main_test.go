@@ -15,7 +15,7 @@ func TestMain(m *testing.M) {
 	mainHelper = testlib.NewMainHelperWithOptions(nil)
 	defer mainHelper.Close()
 
-	storetest.InitTest()
+	storetest.InitTestEnv()
 
 	mainHelper.Main(m)
 	storetest.TearDownTest()

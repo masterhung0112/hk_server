@@ -1,6 +1,6 @@
 package storetest
 
-func InitTest() {
+func InitTestEnv() {
 	initStores()
 }
 
