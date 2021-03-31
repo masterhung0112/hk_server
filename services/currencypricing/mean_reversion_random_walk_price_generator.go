@@ -47,6 +47,7 @@ func NewMeanReversionRandomWalkPriceGenerator(currencyPair model.CurrencyPair, i
     halfSpreadPercentage: decimal.NewFromInt(randomValue).Div(power).Div(initial),
     previousMid: initial,
     sourceName: HardCodedSourceName,
+    priceChanges: make(chan model.SpotPriceDto),
   }, nil
 }
 
