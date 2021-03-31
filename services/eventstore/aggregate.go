@@ -1,19 +1,24 @@
 package eventstore
 
 import (
-  "github.com/EventStore/EventStore-Client-Go/messages"
+	"github.com/EventStore/EventStore-Client-Go/messages"
 )
 
+type AggregateEvent interface {
+  ToJson() string
+  EventType() string
+}
+
 type IAggregate interface {
-  Version() int
+  Version() uint64
   Identifier() string
   ApplyEvent(event messages.RecordedEvent)
-  GetPendingEvents() []interface{}
+  GetPendingEvents() []AggregateEvent
   ClearPendingEvents()
 }
 
 type AggregateBase struct {
-  pendingEvents []interface{}
+  pendingEvents []AggregateEvent
   version int64
 }
 
@@ -30,5 +35,5 @@ func (o *AggregateBase) ApplyEvent(event interface{}) {
 }
 
 func (o *AggregateBase) ClearPendingEvents() {
-  o.pendingEvents = []interface{}
+  o.pendingEvents = nil
 }
