@@ -21,9 +21,12 @@ const (
 
 type IEventStoreRepository interface {
   GetById(context context.Context, id string, aggregate IAggregate) error
-  SaveAsync(aggregate IAggregate, extraHeaders ...map[string]string) (int, error)
+  SaveAsync(context context.Context, aggregate IAggregate, extraHeaders map[string]string) (uint64, error)
 }
 
+/**
+ * Implementation
+ */
 type EventStoreRepository struct {
   eventStoreClient client.Client
 }
