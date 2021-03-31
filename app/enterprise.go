@@ -218,3 +218,9 @@ func (a *App) initEnterprise() {
 		})
 	}
 }
+
+var jobsPricingSourceInterface func(*App) tjobs.PricingSourceJobInterface
+
+func RegisterJobsPricingSourceInterface(f func(*App) tjobs.PricingSourceJobInterface) {
+	jobsPricingSourceInterface = f
+}

@@ -27,6 +27,7 @@ const (
 	JOB_TYPE_EXPORT_PROCESS                 = "export_process"
 	JOB_TYPE_EXPORT_DELETE                  = "export_delete"
 	JOB_TYPE_CLOUD                          = "cloud"
+  JOB_TYPE_PRICING_SOURCE                 = "pricing_source"
 
 	JOB_STATUS_PENDING          = "pending"
 	JOB_STATUS_IN_PROGRESS      = "in_progress"

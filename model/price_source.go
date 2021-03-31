@@ -7,19 +7,19 @@ type CurrencyPair struct {
   QuoteCcy string `json:"quote_ccy"`
 }
 
-func (o *CurrencyPair) Symbol() string {
+func (o CurrencyPair) Symbol() string {
   return o.BaseCcy + o.QuoteCcy
 }
 
-func (o *CurrencyPair) ReciprocalSymbol() string {
+func (o CurrencyPair) ReciprocalSymbol() string {
   return o.QuoteCcy + o.BaseCcy
 }
 
-func (o *CurrencyPair) IsReciprocalOf(other *CurrencyPair) bool {
+func (o CurrencyPair) IsReciprocalOf(other *CurrencyPair) bool {
   return o.Symbol() == other.Symbol()
 }
 
-func (o *CurrencyPair) ToJson() string {
+func (o CurrencyPair) ToJson() string {
 	b, _ := json.Marshal(o)
 	return string(b)
 }

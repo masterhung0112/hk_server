@@ -2,16 +2,18 @@ package currencypricing
 
 import (
 	"context"
+	"time"
 
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/shopspring/decimal"
 )
 
 type IPriceGenerator interface {
   CurrencyPair() model.CurrencyPair
-  EffectiveDate() int64
+  EffectiveDate() time.Time
   SourceName() string
-  SampleRate() float64
-  UpdateInitialValue(newValue float64, effectDatae int64, sourceName string)
+  SampleRate() decimal.Decimal
+  UpdateInitialValue(newValue decimal.Decimal, effectDate time.Time, sourceName string)
   UpdateWalkPrice()
   PriceChanges() chan model.SpotPriceDto
 }
