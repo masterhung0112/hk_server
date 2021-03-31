@@ -26,11 +26,11 @@ func (o *CurrencyPair) ToJson() string {
 
 type SpotPriceDto struct {
   Symbol string
-  Bid float64
-  Ask float64
-  Mid float64
+  Bid string
+  Ask string
+  Mid string
   ValueDate int64
-  CreationTimeStamp int64
+  CreationTimestamp int64
 }
 
 type GetSpotStreamRequestDto struct {
