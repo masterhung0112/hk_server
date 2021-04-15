@@ -86,7 +86,7 @@ func (worker *Worker) DoJob(job *model.Job) {
 	}
 
 	// count, err := worker.app.Srv().Store.User().Count(model.UserCountOptions{IncludeDeleted: false})
-  worker.app.Srv().PriceSource.RefreshMarketRates()
+  // worker.app.Srv().PriceSource.RefreshMarketRates()
 
 	// if err != nil {
 	// 	mlog.Error("Worker: Failed to get active user count", mlog.String("worker", worker.name), mlog.String("job_id", job.Id), mlog.String("error", err.Error()))

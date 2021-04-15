@@ -92,6 +92,13 @@ services:
     extends:
         file: build/docker-compose.common.yml
         service: grafana
+  eventstore:
+    image: eventstore/eventstore:release-5.0.9
+    environment:
+    - EVENTSTORE_DB=/db
+    - EVENTSTORE_WRITE_STATS_TO_DB=false
+    networks:
+      - hk-test
 
 networks:
   hk-test:
