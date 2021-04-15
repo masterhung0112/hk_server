@@ -33,6 +33,7 @@ func main() {
 		"prometheus":         9090,
 		"grafana":            3000,
 		"mysql-read-replica": 3306, // FIXME: not recorgnizing the successfully running service on port 3307.
+    "eventstore": 1113,
 	}
 	command := []string{}
 	for _, arg := range os.Args[1:] {

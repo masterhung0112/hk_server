@@ -38,7 +38,7 @@ LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_SKIP_CACHE=${NO
 let PLATFORM_FILES = "./cmd/hkserver/main.go"
 
 // Possible options: mysql, postgres, minio, inbucket, openldap, dejavu,
-let ENABLED_DOCKER_SERVICES = 'mysql postgres inbucket'
+let ENABLED_DOCKER_SERVICES = 'mysql postgres inbucket eventstore'
 // ifeq (,$(findstring minio,$(ENABLED_DOCKER_SERVICES)))
 //   TEMP_DOCKER_SERVICES:=$(TEMP_DOCKER_SERVICES) minio
 // endif
