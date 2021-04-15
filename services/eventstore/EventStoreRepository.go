@@ -33,7 +33,7 @@ type EventStoreRepository struct {
 
 func (o *EventStoreRepository) GetById(context context.Context, id string, aggregate IAggregate) error {
   streamName := fmt.Sprintf("%s%s", aggregate.Identifier, id)
-  mlog.Info("Loading aggretate from Event Store", mlog.String("streamName", streamName))
+  mlog.Debug("Loading aggretate from Event Store", mlog.String("streamName", streamName))
 
   var eventNumber uint64 = 0
   for {
@@ -57,7 +57,7 @@ func (o *EventStoreRepository) GetById(context context.Context, id string, aggre
 
 func (o *EventStoreRepository) SaveAsync(context context.Context, aggregate IAggregate, extraHeaders map[string]string) (uint64, error) {
   streamName := aggregate.Identifier()
-  mlog.Info("Saving aggretate from Event Store", mlog.String("streamName", streamName))
+  mlog.Debug("Saving aggregate from Event Store", mlog.String("streamName", streamName))
 
   pendingEvents := aggregate.GetPendingEvents()
   var originalVersion uint64 = aggregate.Version() - uint64(len(pendingEvents))
