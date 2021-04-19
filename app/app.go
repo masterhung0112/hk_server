@@ -73,7 +73,7 @@ func (a *App) InitServer() {
 		a.initJobs()
 
 		if a.srv.joinCluster && a.srv.Cluster != nil {
-			a.registerAllClusterMessageHandlers()
+			a.registerAppClusterMessageHandlers()
 		}
 
 		a.DoAppMigrations()
@@ -88,13 +88,13 @@ func (a *App) InitServer() {
 				a.srv.ShutDownPlugins()
 			}
 		})
-		if a.Srv().runjobs {
+		if a.Srv().runEssentialJobs {
 			a.Srv().Go(func() {
 				runLicenseExpirationCheckJob(a)
 				runCheckWarnMetricStatusJob(a)
 			})
+			a.srv.runJobs()
 		}
-		a.srv.RunJobs()
 	})
 }
 
@@ -137,8 +137,12 @@ func (a *App) initJobs() {
 		a.srv.Jobs.Cloud = jobsCloudInterface(a.srv)
 	}
 
-	a.srv.Jobs.Workers = a.srv.Jobs.InitWorkers()
-	a.srv.Jobs.Schedulers = a.srv.Jobs.InitSchedulers()
+	if jobsResendInvitationEmailInterface != nil {
+		a.srv.Jobs.ResendInvitationEmails = jobsResendInvitationEmailInterface(a)
+	}
+
+	a.srv.Jobs.InitWorkers()
+	a.srv.Jobs.InitSchedulers()
 }
 
 func (a *App) TelemetryId() string {

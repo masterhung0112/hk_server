@@ -55,7 +55,6 @@ require (
 	github.com/mattermost/gosaml2 v0.3.3
 	github.com/mattermost/ldap v0.0.0-20201202150706-ee0e6284187d
 	github.com/mattermost/logr v1.0.13
-	github.com/mattermost/mattermost-server/v5 v5.33.1 // indirect
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0
 	github.com/mattermost/viper v1.0.4
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
@@ -63,6 +62,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/minio/minio-go/v7 v7.0.7
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
+	github.com/olivere/elastic v6.2.35+incompatible // indirect
 	github.com/oov/psd v0.0.0-20201203182240-dad9002861d9
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pborman/uuid v1.2.1
@@ -71,6 +71,7 @@ require (
 	github.com/reflog/dateconstraints v0.2.1
 	github.com/rs/cors v1.7.0
 	github.com/rudderlabs/analytics-go v3.2.1+incompatible
+	github.com/russellhaering/goxmldsig v1.1.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
 	github.com/sirupsen/logrus v1.7.0
