@@ -51,6 +51,8 @@ func genStore() *mocks.Store {
 	mock.On("UserAccessToken").Return(&mocks.UserAccessTokenStore{})
 	mock.On("UserTermsOfService").Return(&mocks.UserTermsOfServiceStore{})
 	mock.On("Webhook").Return(&mocks.WebhookStore{})
+	mock.On("TrackPoint").Return(&mocks.TrackPointStore{})
+	mock.On("TrackRecord").Return(&mocks.TrackRecordStore{})
 	return mock
 }
 
