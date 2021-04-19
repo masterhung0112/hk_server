@@ -102,7 +102,7 @@ func (o *EventStoreRepository) SaveAsync(context context.Context, aggregate IAgg
   // }
 }
 
-func ToProposedEvent(eventId string, event AggregateEvent, headers map[string]string) (messages.ProposedEvent, error) {
+func ToProposedEvent(eventId string, event EventMessage, headers map[string]string) (messages.ProposedEvent, error) {
     eventUuid, err := uuid.FromString(eventId)
     if err != nil {
       return messages.ProposedEvent{}, err

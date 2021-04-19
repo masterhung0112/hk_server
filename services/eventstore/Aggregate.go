@@ -1,6 +1,6 @@
 package eventstore
 
-type AggregateEvent interface {
+type EventMessage interface {
   ToJson() string
   EventType() string
 }
@@ -8,8 +8,8 @@ type AggregateEvent interface {
 type IAggregateHandler interface {
   Version() uint64
   GetID() string
-  ApplyEvent(event AggregateEvent)
-  GetPendingEvents() []AggregateEvent
+  ApplyEvent(event EventMessage)
+  GetPendingEvents() []EventMessage
   ClearPendingEvents()
   // ID      string
 	// Type    string
@@ -23,7 +23,15 @@ type AggregateBase struct {
   ID      string
 	Type    string
 	Version int
-	Changes []AggregateEvent
+	Changes []EventMessage
+}
+
+func NewAggregateBase(id string) AggregateBase {
+	return AggregateBase{
+		ID:      id,
+		Changes: []EventMessage{},
+		Version: -1,
+	}
 }
 
 // IncrementVersion ads 1 to the current version
@@ -35,7 +43,7 @@ func (o *AggregateBase) GetID() string {
   return o.ID
 }
 
-func (o *AggregateBase) ApplyEvent(aggregate IAggregateHandler, event AggregateEvent, commit bool) {
+func (o *AggregateBase) ApplyEvent(aggregate IAggregateHandler, event EventMessage, commit bool) {
   // apply the event itself
 	aggregate.ApplyEvent(event)
 
@@ -49,5 +57,5 @@ func (o *AggregateBase) ApplyEvent(aggregate IAggregateHandler, event AggregateE
 }
 
 func (o *AggregateBase) ClearPendingEvents() {
-  o.Changes = []AggregateEvent{}
+  o.Changes = []EventMessage{}
 }
