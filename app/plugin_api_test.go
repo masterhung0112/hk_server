@@ -1066,7 +1066,7 @@ func pluginAPIHookTest(t *testing.T, th *TestHelper, fileName string, id string,
 
 func TestBasicAPIPlugins(t *testing.T) {
 	defaultSchema := getDefaultPluginSettingsSchema()
-	testFolder, found := fileutils.FindDir("mattermost-server/app/plugin_api_tests")
+	testFolder, found := fileutils.FindDir("hk_server/app/plugin_api_tests")
 	require.True(t, found, "Cannot read find app folder")
 	dirs, err := ioutil.ReadDir(testFolder)
 	require.NoError(t, err, "Cannot read test folder %v", testFolder)

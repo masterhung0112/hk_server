@@ -18,7 +18,8 @@ func TestListImports(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
 
-	testsDir, _ := fileutils.FindDir("tests")
+	testsDir, found := fileutils.FindDir("tests")
+	require.True(t, found)
 	require.NotEmpty(t, testsDir)
 
 	uploadNewImport := func(c *model.Client4, t *testing.T) string {
