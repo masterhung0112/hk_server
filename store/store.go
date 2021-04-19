@@ -1,3 +1,4 @@
+//go:generate go run layer_generators/main.go
 package store
 
 import (

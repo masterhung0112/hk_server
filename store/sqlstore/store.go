@@ -314,7 +314,7 @@ func setupConnection(connType string, dataSource string, settings *model.SqlSett
 		db.SetMaxOpenConns(*settings.MaxOpenConns)
 	}
 	db.SetConnMaxLifetime(time.Duration(*settings.ConnMaxLifetimeMilliseconds) * time.Millisecond)
-	db.SetConnMaxIdleTime(time.Duration(*settings.ConnMaxIdleTimeMilliseconds) * time.Millisecond)
+	// db.SetConnMaxIdleTime(time.Duration(*settings.ConnMaxIdleTimeMilliseconds) * time.Millisecond)
 
 	var dbmap *gorp.DbMap
 
