@@ -68,7 +68,7 @@ func runBackendTest(t *testing.T, encrypt bool) {
 
 	s3Port := os.Getenv("CI_MINIO_PORT")
 	if s3Port == "" {
-		s3Port = "9000"
+		s3Port = "9901"
 	}
 
 	s3Endpoint := fmt.Sprintf("%s:%s", s3Host, s3Port)
@@ -433,7 +433,7 @@ func BenchmarkS3WriteFile(b *testing.B) {
 		AmazonS3SecretAccessKey: "miniosecretkey",
 		AmazonS3Bucket:          "mattermost-test",
 		AmazonS3Region:          "",
-		AmazonS3Endpoint:        "localhost:9000",
+		AmazonS3Endpoint:        "localhost:9901",
 		AmazonS3PathPrefix:      "",
 		AmazonS3SSL:             false,
 		AmazonS3SSE:             false,
