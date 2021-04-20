@@ -25,6 +25,7 @@ import (
 	"github.com/masterhung0112/hk_server/v5/plugin"
 	"github.com/masterhung0112/hk_server/v5/services/httpservice"
 	"github.com/masterhung0112/hk_server/v5/services/imageproxy"
+	"github.com/masterhung0112/hk_server/v5/services/remotecluster"
 	"github.com/masterhung0112/hk_server/v5/services/searchengine"
 	"github.com/masterhung0112/hk_server/v5/services/timezones"
 	"github.com/masterhung0112/hk_server/v5/shared/filestore"

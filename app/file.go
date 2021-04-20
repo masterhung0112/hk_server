@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -27,6 +26,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	_ "github.com/oov/psd"
+	"github.com/pkg/errors"
 	"github.com/rwcarlsen/goexif/exif"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
