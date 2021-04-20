@@ -23,7 +23,7 @@ type Store struct {
 	BotStore                  mocks.BotStore
 	AuditStore                mocks.AuditStore
 	ClusterDiscoveryStore     mocks.ClusterDiscoveryStore
-  RemoteClusterStore        mocks.RemoteClusterStore
+	RemoteClusterStore        mocks.RemoteClusterStore
 	ComplianceStore           mocks.ComplianceStore
 	SessionStore              mocks.SessionStore
 	OAuthStore                mocks.OAuthStore
@@ -50,7 +50,7 @@ type Store struct {
 	GroupStore                mocks.GroupStore
 	UserTermsOfServiceStore   mocks.UserTermsOfServiceStore
 	LinkMetadataStore         mocks.LinkMetadataStore
-  SharedChannelStore        mocks.SharedChannelStore
+	SharedChannelStore        mocks.SharedChannelStore
 	ProductNoticesStore       mocks.ProductNoticesStore
 	TrackPointStore           mocks.TrackPointStore
 	TrackRecordStore          mocks.TrackRecordStore
@@ -96,7 +96,7 @@ func (s *Store) ChannelMemberHistory() store.ChannelMemberHistoryStore {
 }
 func (s *Store) Group() store.GroupStore                           { return &s.GroupStore }
 func (s *Store) LinkMetadata() store.LinkMetadataStore             { return &s.LinkMetadataStore }
-func (s *Store) SharedChannel() store.SharedChannelStore { return &s.SharedChannelStore }
+func (s *Store) SharedChannel() store.SharedChannelStore           { return &s.SharedChannelStore }
 func (s *Store) TermsOfService() store.TermsOfServiceStore         { return &s.TermsOfServiceStore }
 func (s *Store) UserTermsOfService() store.UserTermsOfServiceStore { return &s.UserTermsOfServiceStore }
 func (s *Store) MarkSystemRanUnitTests()                           { /* do nothing */ }
@@ -125,7 +125,7 @@ func (s *Store) AssertExpectations(t mock.TestingT) bool {
 		&s.BotStore,
 		&s.AuditStore,
 		&s.ClusterDiscoveryStore,
-    &s.RemoteClusterStore,
+		&s.RemoteClusterStore,
 		&s.ComplianceStore,
 		&s.SessionStore,
 		&s.OAuthStore,
@@ -149,7 +149,7 @@ func (s *Store) AssertExpectations(t mock.TestingT) bool {
 		&s.SchemeStore,
 		&s.ThreadStore,
 		&s.ProductNoticesStore,
-    &s.SharedChannelStore,
+		&s.SharedChannelStore,
 		&s.TrackPointStore,
 		&s.TrackRecordStore,
 	)
