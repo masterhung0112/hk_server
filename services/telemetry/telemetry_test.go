@@ -285,7 +285,7 @@ func TestRudderTelemetry(t *testing.T) {
 			}
 		}
 		assert.Equal(t, "analytics-go", actual.Context.Library.Name)
-		assert.Equal(t, "3.0.0", actual.Context.Library.Version)
+		assert.Equal(t, "3.3.0", actual.Context.Library.Version)
 	}
 
 	collectInfo := func(info *[]string) {
@@ -527,4 +527,10 @@ func TestRudderTelemetry(t *testing.T) {
 		assert.Equal(t, "arudderstackplace", config.DataplaneUrl)
 		assert.Equal(t, "abc123", config.RudderKey)
 	})
+}
+
+func TestIsDefaultArray(t *testing.T) {
+	assert.True(t, isDefaultArray([]string{"one", "two"}, []string{"one", "two"}))
+	assert.False(t, isDefaultArray([]string{"one", "two"}, []string{"one", "two", "three"}))
+	assert.False(t, isDefaultArray([]string{"one", "two"}, []string{"one", "three"}))
 }

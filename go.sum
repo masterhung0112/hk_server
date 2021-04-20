@@ -835,10 +835,10 @@ github.com/mattermost/logr v1.0.13 h1:6F/fM3csvH6Oy5sUpJuW7YyZSzZZAhJm5VcgKMxA2P
 github.com/mattermost/logr v1.0.13/go.mod h1:Mt4DPu1NXMe6JxPdwCC0XBoxXmN9eXOIRPoZarU2PXs=
 github.com/mattermost/mattermost-server v1.4.0 h1:bAN0zYgjyhXPy67VTiHLg+bu8mDJ2bhx109BKk2Ddos=
 github.com/mattermost/mattermost-server v5.11.1+incompatible h1:LPzKY0+2Tic/ik67qIg6VrydRCgxNXZQXOeaiJ2rMBY=
-github.com/mattermost/mattermost-server/v5 v5.33.1 h1:S4h8vOowfTOqWqBU2dJes6LOCBqeR5y+J5q9e4tF87E=
-github.com/mattermost/mattermost-server/v5 v5.33.1/go.mod h1:vAnHOs5tgemQwp3b4RE7xsm/zbmUP/5OUtyhSsAcrS4=
-github.com/mattermost/mattermost-server/v5 v5.34.2 h1:5EjIo/UjwksCxbL6nDS7XNRghmqjdf2vH5wUFgg7EAo=
-github.com/mattermost/mattermost-server/v5 v5.34.2/go.mod h1:UGbMK9bMzmqGyQQ3N/3I6FDpTwJsL/wMYaO+4zctzBA=
+github.com/masterhung0112/hk_server/v5/ v5.33.1 h1:S4h8vOowfTOqWqBU2dJes6LOCBqeR5y+J5q9e4tF87E=
+github.com/masterhung0112/hk_server/v5/ v5.33.1/go.mod h1:vAnHOs5tgemQwp3b4RE7xsm/zbmUP/5OUtyhSsAcrS4=
+github.com/masterhung0112/hk_server/v5/ v5.34.2 h1:5EjIo/UjwksCxbL6nDS7XNRghmqjdf2vH5wUFgg7EAo=
+github.com/masterhung0112/hk_server/v5/ v5.34.2/go.mod h1:UGbMK9bMzmqGyQQ3N/3I6FDpTwJsL/wMYaO+4zctzBA=
 github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0 h1:G9tL6JXRBMzjuD1kkBtcnd42kUiT6QDwxfFYu7adM6o=
 github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0/go.mod h1:nV5bfVpT//+B1RPD2JvRnxbkLmJEYXmRaaVl15fsXjs=
 github.com/mattermost/viper v1.0.4 h1:cMYOz4PhguscGSPxrSokUtib5HrG4gCpiUh27wyA3d0=
