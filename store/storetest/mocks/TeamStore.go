@@ -1051,13 +1051,13 @@ func (_m *TeamStore) UpdateMember(member *model.TeamMember) (*model.TeamMember, 
 	return r0, r1
 }
 
-// UpdateMembersRole provides a mock function with given fields: teamID, userIds
-func (_m *TeamStore) UpdateMembersRole(teamID string, userIds []string) error {
-	ret := _m.Called(teamID, userIds)
+// UpdateMembersRole provides a mock function with given fields: teamID, userIDs
+func (_m *TeamStore) UpdateMembersRole(teamID string, userIDs []string) error {
+	ret := _m.Called(teamID, userIDs)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, []string) error); ok {
-		r0 = rf(teamID, userIds)
+		r0 = rf(teamID, userIDs)
 	} else {
 		r0 = ret.Error(0)
 	}

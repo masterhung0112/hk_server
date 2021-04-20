@@ -129,6 +129,13 @@ func (c *Context) CloudKeyRequired() {
 	}
 }
 
+func (c *Context) RemoteClusterTokenRequired() {
+	if license := c.App.Srv().License(); license == nil || !*license.Features.RemoteClusterService || c.App.Session().Props[model.SESSION_PROP_TYPE] != model.SESSION_TYPE_REMOTECLUSTER_TOKEN {
+		c.Err = model.NewAppError("", "api.context.session_expired.app_error", nil, "TokenRequired", http.StatusUnauthorized)
+		return
+	}
+}
+
 func (c *Context) MfaRequired() {
 	// Must be licensed for MFA and have it configured for enforcement
 	if license := c.App.Srv().License(); license == nil || !*license.Features.MFA || !*c.App.Config().ServiceSettings.EnableMultifactorAuthentication || !*c.App.Config().ServiceSettings.EnforceMultifactorAuthentication {
@@ -207,6 +214,18 @@ func (c *Context) SetServerBusyError() {
 	c.Err = NewServerBusyError()
 }
 
+func (c *Context) SetInvalidRemoteIdError(id string) {
+	c.Err = NewInvalidRemoteIdError(id)
+}
+
+func (c *Context) SetInvalidRemoteClusterTokenError() {
+	c.Err = NewInvalidRemoteClusterTokenError()
+}
+
+func (c *Context) SetJSONEncodingError() {
+	c.Err = NewJSONEncodingError()
+}
+
 func (c *Context) SetCommandNotFoundError() {
 	c.Err = model.NewAppError("GetCommand", "store.sql_command.save.get.app_error", nil, "", http.StatusNotFound)
 }
@@ -241,6 +260,21 @@ func NewInvalidUrlParamError(parameter string) *model.AppError {
 }
 func NewServerBusyError() *model.AppError {
 	err := model.NewAppError("Context", "api.context.server_busy.app_error", nil, "", http.StatusServiceUnavailable)
+	return err
+}
+
+func NewInvalidRemoteIdError(parameter string) *model.AppError {
+	err := model.NewAppError("Context", "api.context.remote_id_invalid.app_error", map[string]interface{}{"RemoteId": parameter}, "", http.StatusBadRequest)
+	return err
+}
+
+func NewInvalidRemoteClusterTokenError() *model.AppError {
+	err := model.NewAppError("Context", "api.context.remote_id_invalid.app_error", nil, "", http.StatusUnauthorized)
+	return err
+}
+
+func NewJSONEncodingError() *model.AppError {
+	err := model.NewAppError("Context", "api.context.json_encoding.app_error", nil, "", http.StatusInternalServerError)
 	return err
 }
 

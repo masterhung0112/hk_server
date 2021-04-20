@@ -23,6 +23,7 @@ type Store struct {
 	BotStore                  mocks.BotStore
 	AuditStore                mocks.AuditStore
 	ClusterDiscoveryStore     mocks.ClusterDiscoveryStore
+  RemoteClusterStore        mocks.RemoteClusterStore
 	ComplianceStore           mocks.ComplianceStore
 	SessionStore              mocks.SessionStore
 	OAuthStore                mocks.OAuthStore
@@ -49,6 +50,7 @@ type Store struct {
 	GroupStore                mocks.GroupStore
 	UserTermsOfServiceStore   mocks.UserTermsOfServiceStore
 	LinkMetadataStore         mocks.LinkMetadataStore
+  SharedChannelStore        mocks.SharedChannelStore
 	ProductNoticesStore       mocks.ProductNoticesStore
 	TrackPointStore           mocks.TrackPointStore
 	TrackRecordStore          mocks.TrackRecordStore
@@ -65,6 +67,7 @@ func (s *Store) Bot() store.BotStore                           { return &s.BotSt
 func (s *Store) ProductNotices() store.ProductNoticesStore     { return &s.ProductNoticesStore }
 func (s *Store) Audit() store.AuditStore                       { return &s.AuditStore }
 func (s *Store) ClusterDiscovery() store.ClusterDiscoveryStore { return &s.ClusterDiscoveryStore }
+func (s *Store) RemoteCluster() store.RemoteClusterStore       { return &s.RemoteClusterStore }
 func (s *Store) Compliance() store.ComplianceStore             { return &s.ComplianceStore }
 func (s *Store) Session() store.SessionStore                   { return &s.SessionStore }
 func (s *Store) OAuth() store.OAuthStore                       { return &s.OAuthStore }
@@ -93,6 +96,7 @@ func (s *Store) ChannelMemberHistory() store.ChannelMemberHistoryStore {
 }
 func (s *Store) Group() store.GroupStore                           { return &s.GroupStore }
 func (s *Store) LinkMetadata() store.LinkMetadataStore             { return &s.LinkMetadataStore }
+func (s *Store) SharedChannel() store.SharedChannelStore { return &s.SharedChannelStore }
 func (s *Store) TermsOfService() store.TermsOfServiceStore         { return &s.TermsOfServiceStore }
 func (s *Store) UserTermsOfService() store.UserTermsOfServiceStore { return &s.UserTermsOfServiceStore }
 func (s *Store) MarkSystemRanUnitTests()                           { /* do nothing */ }
@@ -109,6 +113,8 @@ func (s *Store) GetCurrentSchemaVersion() string                   { return "" }
 func (s *Store) CheckIntegrity() <-chan model.IntegrityCheckResult {
 	return make(chan model.IntegrityCheckResult)
 }
+func (s *Store) ReplicaLagAbs() error  { return nil }
+func (s *Store) ReplicaLagTime() error { return nil }
 
 func (s *Store) AssertExpectations(t mock.TestingT) bool {
 	return mock.AssertExpectationsForObjects(t,
@@ -119,6 +125,7 @@ func (s *Store) AssertExpectations(t mock.TestingT) bool {
 		&s.BotStore,
 		&s.AuditStore,
 		&s.ClusterDiscoveryStore,
+    &s.RemoteClusterStore,
 		&s.ComplianceStore,
 		&s.SessionStore,
 		&s.OAuthStore,
@@ -142,6 +149,7 @@ func (s *Store) AssertExpectations(t mock.TestingT) bool {
 		&s.SchemeStore,
 		&s.ThreadStore,
 		&s.ProductNoticesStore,
+    &s.SharedChannelStore,
 		&s.TrackPointStore,
 		&s.TrackRecordStore,
 	)
