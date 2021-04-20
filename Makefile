@@ -63,7 +63,7 @@ GOFLAGS ?= $(GOFLAGS:)
 # We need to export GOBIN to allow it to be set
 # for processes spawned from the Makefile
 export GOBIN ?= $(PWD)/bin
-GO=go
+GO ?= go
 
 LDFLAGS += -X "github.com/masterhung0112/hk_server/v5/model.BuildNumber=$(BUILD_NUMBER)"
 LDFLAGS += -X "github.com/masterhung0112/hk_server/v5/model.BuildDate=$(BUILD_DATE)"

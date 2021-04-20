@@ -718,6 +718,10 @@ func (c *Context) RequireInvoiceId() *Context {
 	return c
 }
 
+func (c *Context) GetRemoteID(r *http.Request) string {
+	return r.Header.Get(model.HEADER_REMOTECLUSTER_ID)
+}
+
 func (c *Context) RequireTrackRecordId() *Context {
 	if c.Err != nil {
 		return c

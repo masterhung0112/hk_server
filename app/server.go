@@ -29,6 +29,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/masterhung0112/hk_server/v5/services/remotecluster"
+	"github.com/masterhung0112/hk_server/v5/services/sharedchannel"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"
 	"golang.org/x/crypto/acme/autocert"

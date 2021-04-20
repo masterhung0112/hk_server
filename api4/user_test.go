@@ -3116,8 +3116,8 @@ func TestAttachDeviceId(t *testing.T) {
 			SiteURL                       string
 			ExpectedSetCookieHeaderRegexp string
 		}{
-			{"no subpath", "http://localhost:8065", "^MMAUTHTOKEN=[a-z0-9]+; Path=/"},
-			{"subpath", "http://localhost:8065/subpath", "^MMAUTHTOKEN=[a-z0-9]+; Path=/subpath"},
+			{"no subpath", "http://localhost:8065", "^HKAUTHTOKEN=[a-z0-9]+; Path=/"},
+			{"subpath", "http://localhost:8065/subpath", "^HKAUTHTOKEN=[a-z0-9]+; Path=/subpath"},
 		}
 
 		for _, tc := range testCases {
@@ -3449,8 +3449,8 @@ func TestLoginCookies(t *testing.T) {
 			SiteURL                       string
 			ExpectedSetCookieHeaderRegexp string
 		}{
-			{"no subpath", "http://localhost:8065", "^MMAUTHTOKEN=[a-z0-9]+; Path=/"},
-			{"subpath", "http://localhost:8065/subpath", "^MMAUTHTOKEN=[a-z0-9]+; Path=/subpath"},
+			{"no subpath", "http://localhost:8065", "^HKAUTHTOKEN=[a-z0-9]+; Path=/"},
+			{"subpath", "http://localhost:8065/subpath", "^HKAUTHTOKEN=[a-z0-9]+; Path=/subpath"},
 		}
 
 		for _, tc := range testCases {

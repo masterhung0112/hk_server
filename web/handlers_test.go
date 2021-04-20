@@ -367,8 +367,8 @@ func TestHandlerServeInvalidToken(t *testing.T) {
 		SiteURL                       string
 		ExpectedSetCookieHeaderRegexp string
 	}{
-		{"no subpath", "http://localhost:8065", "^MMAUTHTOKEN=; Path=/"},
-		{"subpath", "http://localhost:8065/subpath", "^MMAUTHTOKEN=; Path=/subpath"},
+		{"no subpath", "http://localhost:8065", "^HKAUTHTOKEN=; Path=/"},
+		{"subpath", "http://localhost:8065/subpath", "^HKAUTHTOKEN=; Path=/subpath"},
 	}
 
 	for _, tc := range testCases {
