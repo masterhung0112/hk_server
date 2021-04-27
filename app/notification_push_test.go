@@ -11,14 +11,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
 	"github.com/masterhung0112/hk_server/v5/config"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/shared/i18n"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 	"github.com/masterhung0112/hk_server/v5/testlib"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDoesNotifyPropsAllowPushNotification(t *testing.T) {

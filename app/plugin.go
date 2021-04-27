@@ -13,16 +13,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/blang/semver"
+	svg "github.com/h2non/go-is-svg"
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/plugin"
 	"github.com/masterhung0112/hk_server/v5/services/marketplace"
 	"github.com/masterhung0112/hk_server/v5/shared/filestore"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
-
-	"github.com/blang/semver"
-	svg "github.com/h2non/go-is-svg"
-	"github.com/pkg/errors"
 )
 
 const prepackagedPluginsDir = "prepackaged_plugins"
@@ -92,6 +92,13 @@ func (a *App) SyncPluginsActiveState() {
 			pluginEnabled := false
 			if state, ok := config.PluginStates[pluginID]; ok {
 				pluginEnabled = state.Enable
+			}
+
+			// Tie Apps proxy disabled status to the feature flag.
+			if pluginID == "com.mattermost.apps" {
+				if !a.Config().FeatureFlags.AppsEnabled {
+					pluginEnabled = false
+				}
 			}
 
 			if pluginEnabled {
@@ -595,13 +602,13 @@ func (a *App) mergePrepackagedPlugins(remoteMarketplacePlugins map[string]*model
 		// If available in the markteplace, only overwrite if newer.
 		prepackagedVersion, err := semver.Parse(prepackaged.Manifest.Version)
 		if err != nil {
-			return model.NewAppError("mergePrepackagedPlugins", "app.plugin.invalid_version.app_error", nil, "", http.StatusBadRequest)
+			return model.NewAppError("mergePrepackagedPlugins", "app.plugin.invalid_version.app_error", nil, err.Error(), http.StatusBadRequest)
 		}
 
 		marketplacePlugin := remoteMarketplacePlugins[prepackaged.Manifest.Id]
 		marketplaceVersion, err := semver.Parse(marketplacePlugin.Manifest.Version)
 		if err != nil {
-			return model.NewAppError("mergePrepackagedPlugins", "app.plugin.invalid_version.app_error", nil, "", http.StatusBadRequest)
+			return model.NewAppError("mergePrepackagedPlugins", "app.plugin.invalid_version.app_error", nil, err.Error(), http.StatusBadRequest)
 		}
 
 		if prepackagedVersion.GT(marketplaceVersion) {

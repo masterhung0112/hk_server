@@ -119,14 +119,14 @@ func TestMarshalJSON(t *testing.T) {
 		t.Error("Should not encounter an error when attempting to Marshal a GeoPoint to JSON")
 	}
 
-	if string(res) != `{"Lat":40.7486,"Lng":-73.9864}` {
-		t.Error("GeoPoint should correctly Marshal to JSON")
+	if string(res) != `{"lat":40.7486,"lng":-73.9864}` {
+		t.Error("GeoPoint should correctly Marshal to JSON", string(res))
 	}
 }
 
 // Ensures that a GeoPoint can be unmarhalled from JSON
 func TestUnmarshalJSON(t *testing.T) {
-	data := []byte(`{"Lat":40.7486,"Lng":-73.9864}`)
+	data := []byte(`{"lat":40.7486,"lng":-73.9864}`)
 	p := &GeoPoint{}
 	err := p.UnmarshalJSON(data)
 

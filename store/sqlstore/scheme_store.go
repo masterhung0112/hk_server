@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mattermost/gorp"
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/store"
-	"github.com/mattermost/gorp"
-
-	"github.com/pkg/errors"
 )
 
 type SqlSchemeStore struct {
@@ -266,7 +266,7 @@ func (s *SqlSchemeStore) GetByName(schemeName string) (*model.Scheme, error) {
 func (s *SqlSchemeStore) Delete(schemeId string) (*model.Scheme, error) {
 	// Get the scheme
 	var scheme model.Scheme
-	if err := s.GetReplica().SelectOne(&scheme, "SELECT * from Schemes WHERE Id = :Id", map[string]interface{}{"Id": schemeId}); err != nil {
+	if err := s.GetMaster().SelectOne(&scheme, "SELECT * from Schemes WHERE Id = :Id", map[string]interface{}{"Id": schemeId}); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.NewErrNotFound("Scheme", fmt.Sprintf("schemeId=%s", schemeId))
 		}

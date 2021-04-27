@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func TestLRU(t *testing.T) {

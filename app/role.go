@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"net/http"
 	"reflect"
 	"strings"
@@ -35,8 +36,8 @@ func (a *App) GetAllRoles() ([]*model.Role, *model.AppError) {
 	return roles, nil
 }
 
-func (s *Server) GetRoleByName(name string) (*model.Role, *model.AppError) {
-	role, nErr := s.Store.Role().GetByName(name)
+func (s *Server) GetRoleByName(ctx context.Context, name string) (*model.Role, *model.AppError) {
+	role, nErr := s.Store.Role().GetByName(ctx, name)
 	if nErr != nil {
 		var nfErr *store.ErrNotFound
 		switch {
@@ -55,8 +56,8 @@ func (s *Server) GetRoleByName(name string) (*model.Role, *model.AppError) {
 	return role, nil
 }
 
-func (a *App) GetRoleByName(name string) (*model.Role, *model.AppError) {
-	return a.Srv().GetRoleByName(name)
+func (a *App) GetRoleByName(ctx context.Context, name string) (*model.Role, *model.AppError) {
+	return a.Srv().GetRoleByName(ctx, name)
 }
 
 func (a *App) GetRolesByNames(names []string) ([]*model.Role, *model.AppError) {

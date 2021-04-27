@@ -4,8 +4,9 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 // watcher monitors a file for changes

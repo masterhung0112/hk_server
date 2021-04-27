@@ -1,6 +1,7 @@
 package storetest
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -106,32 +107,32 @@ func (s *SchemeStoreTestSuite) TestSchemeStoreSave() {
 	s.Assert().Len(d1.DefaultChannelGuestRole, 26)
 
 	// Check the default roles were created correctly.
-	role1, err := s.Store().Role().GetByName(d1.DefaultTeamAdminRole)
+	role1, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamAdminRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role1.Permissions, []string{"delete_others_posts"})
 	s.Assert().True(role1.SchemeManaged)
 
-	role2, err := s.Store().Role().GetByName(d1.DefaultTeamUserRole)
+	role2, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamUserRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role2.Permissions, []string{"view_team", "add_user_to_team"})
 	s.Assert().True(role2.SchemeManaged)
 
-	role3, err := s.Store().Role().GetByName(d1.DefaultChannelAdminRole)
+	role3, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelAdminRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role3.Permissions, []string{"manage_public_channel_members", "manage_private_channel_members"})
 	s.Assert().True(role3.SchemeManaged)
 
-	role4, err := s.Store().Role().GetByName(d1.DefaultChannelUserRole)
+	role4, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelUserRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role4.Permissions, []string{"read_channel", "create_post"})
 	s.Assert().True(role4.SchemeManaged)
 
-	role5, err := s.Store().Role().GetByName(d1.DefaultTeamGuestRole)
+	role5, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamGuestRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role5.Permissions, []string{"view_team"})
 	s.Assert().True(role5.SchemeManaged)
 
-	role6, err := s.Store().Role().GetByName(d1.DefaultChannelGuestRole)
+	role6, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelGuestRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role6.Permissions, []string{"read_channel", "create_post"})
 	s.Assert().True(role6.SchemeManaged)
@@ -334,32 +335,32 @@ func (s *SchemeStoreTestSuite) TestSchemeStoreDelete() {
 	s.Assert().Len(d1.DefaultChannelGuestRole, 26)
 
 	// Check the default roles were created correctly.
-	role1, err := s.Store().Role().GetByName(d1.DefaultTeamAdminRole)
+	role1, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamAdminRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role1.Permissions, []string{"delete_others_posts"})
 	s.Assert().True(role1.SchemeManaged)
 
-	role2, err := s.Store().Role().GetByName(d1.DefaultTeamUserRole)
+	role2, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamUserRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role2.Permissions, []string{"view_team", "add_user_to_team"})
 	s.Assert().True(role2.SchemeManaged)
 
-	role3, err := s.Store().Role().GetByName(d1.DefaultChannelAdminRole)
+	role3, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelAdminRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role3.Permissions, []string{"manage_public_channel_members", "manage_private_channel_members"})
 	s.Assert().True(role3.SchemeManaged)
 
-	role4, err := s.Store().Role().GetByName(d1.DefaultChannelUserRole)
+	role4, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelUserRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role4.Permissions, []string{"read_channel", "create_post"})
 	s.Assert().True(role4.SchemeManaged)
 
-	role5, err := s.Store().Role().GetByName(d1.DefaultTeamGuestRole)
+	role5, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamGuestRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role5.Permissions, []string{"view_team"})
 	s.Assert().True(role5.SchemeManaged)
 
-	role6, err := s.Store().Role().GetByName(d1.DefaultChannelGuestRole)
+	role6, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelGuestRole)
 	s.Assert().Nil(err)
 	s.Assert().Equal(role6.Permissions, []string{"read_channel", "create_post"})
 	s.Assert().True(role6.SchemeManaged)
@@ -370,27 +371,27 @@ func (s *SchemeStoreTestSuite) TestSchemeStoreDelete() {
 	s.Assert().NotZero(d2.DeleteAt)
 
 	// Check that the roles are deleted too.
-	role7, err := s.Store().Role().GetByName(d1.DefaultTeamAdminRole)
+	role7, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamAdminRole)
 	s.Assert().Nil(err)
 	s.Assert().NotZero(role7.DeleteAt)
 
-	role8, err := s.Store().Role().GetByName(d1.DefaultTeamUserRole)
+	role8, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamUserRole)
 	s.Assert().Nil(err)
 	s.Assert().NotZero(role8.DeleteAt)
 
-	role9, err := s.Store().Role().GetByName(d1.DefaultChannelAdminRole)
+	role9, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelAdminRole)
 	s.Assert().Nil(err)
 	s.Assert().NotZero(role9.DeleteAt)
 
-	role10, err := s.Store().Role().GetByName(d1.DefaultChannelUserRole)
+	role10, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelUserRole)
 	s.Assert().Nil(err)
 	s.Assert().NotZero(role10.DeleteAt)
 
-	role11, err := s.Store().Role().GetByName(d1.DefaultTeamGuestRole)
+	role11, err := s.Store().Role().GetByName(context.Background(), d1.DefaultTeamGuestRole)
 	s.Assert().Nil(err)
 	s.Assert().NotZero(role11.DeleteAt)
 
-	role12, err := s.Store().Role().GetByName(d1.DefaultChannelGuestRole)
+	role12, err := s.Store().Role().GetByName(context.Background(), d1.DefaultChannelGuestRole)
 	s.Assert().Nil(err)
 	s.Assert().NotZero(role12.DeleteAt)
 
@@ -536,10 +537,10 @@ func (s *SchemeStoreTestSuite) TestCountWithoutPermission() {
 
 	getRoles := func(scheme *model.Scheme) (channelUser, channelGuest *model.Role) {
 		var err error
-		channelUser, err = s.Store().Role().GetByName(scheme.DefaultChannelUserRole)
+		channelUser, err = s.Store().Role().GetByName(context.Background(), scheme.DefaultChannelUserRole)
 		s.Require().Nil(err)
 		s.Require().NotNil(channelUser)
-		channelGuest, err = s.Store().Role().GetByName(scheme.DefaultChannelGuestRole)
+		channelGuest, err = s.Store().Role().GetByName(context.Background(), scheme.DefaultChannelGuestRole)
 		s.Require().Nil(err)
 		s.Require().NotNil(channelGuest)
 		return

@@ -607,6 +607,10 @@ func (a *App) UpdatePost(post *model.Post, safeUpdate bool) (*model.Post, *model
 		return nil, err
 	}
 
+	if post.IsRemote() {
+		oldPost.RemoteId = model.NewString(*post.RemoteId)
+	}
+
 	if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
 		var rejectionReason string
 		pluginContext := a.PluginContext()
@@ -725,7 +729,7 @@ func (a *App) GetPostsSince(options model.GetPostsSinceOptions) (*model.PostList
 }
 
 func (a *App) GetSinglePost(postID string) (*model.Post, *model.AppError) {
-	post, err := a.Srv().Store.Post().GetSingle(postID)
+	post, err := a.Srv().Store.Post().GetSingle(postID, false)
 	if err != nil {
 		var nfErr *store.ErrNotFound
 		switch {
@@ -971,7 +975,7 @@ func (a *App) AddCursorIdsForPostList(originalList *model.PostList, afterPost, b
 func (a *App) GetPostsForChannelAroundLastUnread(channelID, userID string, limitBefore, limitAfter int, skipFetchThreads bool, collapsedThreads, collapsedThreadsExtended bool) (*model.PostList, *model.AppError) {
 	var member *model.ChannelMember
 	var err *model.AppError
-	if member, err = a.GetChannelMember(channelID, userID); err != nil {
+	if member, err = a.GetChannelMember(context.Background(), channelID, userID); err != nil {
 		return nil, err
 	} else if member.LastViewedAt == 0 {
 		return model.NewPostList(), nil
@@ -1009,7 +1013,7 @@ func (a *App) GetPostsForChannelAroundLastUnread(channelID, userID string, limit
 }
 
 func (a *App) DeletePost(postID, deleteByID string) (*model.Post, *model.AppError) {
-	post, nErr := a.Srv().Store.Post().GetSingle(postID)
+	post, nErr := a.Srv().Store.Post().GetSingle(postID, false)
 	if nErr != nil {
 		return nil, model.NewAppError("DeletePost", "app.post.get.app_error", nil, nErr.Error(), http.StatusBadRequest)
 	}
@@ -1234,7 +1238,7 @@ func (a *App) GetFileInfosForPostWithMigration(postID string) ([]*model.FileInfo
 
 	pchan := make(chan store.StoreResult, 1)
 	go func() {
-		post, err := a.Srv().Store.Post().GetSingle(postID)
+		post, err := a.Srv().Store.Post().GetSingle(postID, false)
 		pchan <- store.StoreResult{Data: post, NErr: err}
 		close(pchan)
 	}()
@@ -1400,25 +1404,25 @@ func (a *App) countThreadMentions(user *model.User, post *model.Post, teamID str
 
 // countMentionsFromPost returns the number of posts in the post's channel that mention the user after and including the
 // given post.
-func (a *App) countMentionsFromPost(user *model.User, post *model.Post) (int, *model.AppError) {
+func (a *App) countMentionsFromPost(user *model.User, post *model.Post) (int, int, *model.AppError) {
 	channel, err := a.GetChannel(post.ChannelId)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	if channel.Type == model.CHANNEL_DIRECT {
 		// In a DM channel, every post made by the other user is a mention
-		count, nErr := a.Srv().Store.Channel().CountPostsAfter(post.ChannelId, post.CreateAt-1, channel.GetOtherUserIdForDM(user.Id))
+		count, countRoot, nErr := a.Srv().Store.Channel().CountPostsAfter(post.ChannelId, post.CreateAt-1, channel.GetOtherUserIdForDM(user.Id))
 		if nErr != nil {
-			return 0, model.NewAppError("countMentionsFromPost", "app.channel.count_posts_since.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+			return 0, 0, model.NewAppError("countMentionsFromPost", "app.channel.count_posts_since.app_error", nil, nErr.Error(), http.StatusInternalServerError)
 		}
 
-		return count, nil
+		return count, countRoot, nil
 	}
 
-	channelMember, err := a.GetChannelMember(channel.Id, user.Id)
+	channelMember, err := a.GetChannelMember(context.Background(), channel.Id, user.Id)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	keywords := addMentionKeywordsForUser(
@@ -1436,13 +1440,16 @@ func (a *App) countMentionsFromPost(user *model.User, post *model.Post) (int, *m
 
 	thread, err := a.GetPostThread(post.Id, false, false, false, user.Id)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	count := 0
-
+	countRoot := 0
 	if isPostMention(user, post, keywords, thread.Posts, mentionedByThread, checkForCommentMentions) {
 		count += 1
+		if post.RootId == "" {
+			countRoot += 1
+		}
 	}
 
 	page := 0
@@ -1455,12 +1462,15 @@ func (a *App) countMentionsFromPost(user *model.User, post *model.Post) (int, *m
 			PerPage:   perPage,
 		})
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 
 		for _, postID := range postList.Order {
 			if isPostMention(user, postList.Posts[postID], keywords, postList.Posts, mentionedByThread, checkForCommentMentions) {
 				count += 1
+				if postList.Posts[postID].RootId == "" {
+					countRoot += 1
+				}
 			}
 		}
 
@@ -1471,7 +1481,7 @@ func (a *App) countMentionsFromPost(user *model.User, post *model.Post) (int, *m
 		page += 1
 	}
 
-	return count, nil
+	return count, countRoot, nil
 }
 
 func isCommentMention(user *model.User, post *model.Post, otherPosts map[string]*model.Post, mentionedByThread map[string]bool) bool {
