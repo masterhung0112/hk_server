@@ -13,16 +13,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/blang/semver"
+	svg "github.com/h2non/go-is-svg"
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/plugin"
 	"github.com/masterhung0112/hk_server/v5/services/marketplace"
 	"github.com/masterhung0112/hk_server/v5/shared/filestore"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
-
-	"github.com/blang/semver"
-	svg "github.com/h2non/go-is-svg"
-	"github.com/pkg/errors"
 )
 
 const prepackagedPluginsDir = "prepackaged_plugins"

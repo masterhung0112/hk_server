@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
-	"testing"
+	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/config"
 	"github.com/masterhung0112/hk_server/v5/model"
@@ -21,7 +22,6 @@ import (
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 	"github.com/masterhung0112/hk_server/v5/testlib"
 	"github.com/masterhung0112/hk_server/v5/utils"
-	"github.com/stretchr/testify/require"
 )
 
 type TestHelper struct {

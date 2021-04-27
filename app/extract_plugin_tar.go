@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/pkg/errors"
+
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 // extractTarGz takes in an io.Reader containing the bytes for a .tar.gz file and

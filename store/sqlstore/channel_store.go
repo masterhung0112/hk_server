@@ -725,8 +725,8 @@ func (s SqlChannelStore) GetChannelUnread(channelId, userId string) (*model.Chan
 	var unreadChannel model.ChannelUnread
 	err := s.GetReplica().SelectOne(&unreadChannel,
 		`SELECT
-        Channels.TeamId TeamId, Channels.Id ChannelId, (Channels.TotalMsgCount - ChannelMembers.MsgCount) MsgCount, (Channels.TotalMsgCountRoot - ChannelMembers.MsgCountRoot) MsgCountRoot, ChannelMembers.MentionCount MentionCount, ChannelMembers.MentionCountRoot MentionCountRoot, ChannelMembers.NotifyProps NotifyProps
-      FROM
+				Channels.TeamId TeamId, Channels.Id ChannelId, (Channels.TotalMsgCount - ChannelMembers.MsgCount) MsgCount, (Channels.TotalMsgCountRoot - ChannelMembers.MsgCountRoot) MsgCountRoot, ChannelMembers.MentionCount MentionCount, ChannelMembers.MentionCountRoot MentionCountRoot, ChannelMembers.NotifyProps NotifyProps
+			FROM
 				Channels, ChannelMembers
 			WHERE
 				Id = ChannelId
@@ -2101,9 +2101,9 @@ func (s SqlChannelStore) UpdateLastViewedAt(channelIds []string, userId string, 
 		ChannelMembers cm
 	SET
 		MentionCount = 0,
-    MentionCountRoot = 0,
+		MentionCountRoot = 0,
 		MsgCount = greatest(cm.MsgCount, c.TotalMsgCount),
-    MsgCountRoot = greatest(cm.MsgCountRoot, c.TotalMsgCountRoot),
+		MsgCountRoot = greatest(cm.MsgCountRoot, c.TotalMsgCountRoot),
 		LastViewedAt = greatest(cm.LastViewedAt, c.LastPostAt),
 		LastUpdateAt = greatest(cm.LastViewedAt, c.LastPostAt)
 	FROM c
@@ -2156,9 +2156,9 @@ func (s SqlChannelStore) UpdateLastViewedAt(channelIds []string, userId string, 
 			ChannelMembers
 		SET
 			MentionCount = 0,
-      MentionCountRoot = 0,
+			MentionCountRoot = 0,
 			MsgCount = CASE ChannelId ` + msgCountQuery + ` END,
-      MsgCountRoot = CASE ChannelId ` + msgCountQueryRoot + ` END,
+			MsgCountRoot = CASE ChannelId ` + msgCountQueryRoot + ` END,
 			LastViewedAt = CASE ChannelId ` + lastViewedQuery + ` END,
 			LastUpdateAt = LastViewedAt
 		WHERE
@@ -2246,12 +2246,12 @@ func (s SqlChannelStore) UpdateLastViewedAtPost(unreadPost *model.Post, userID s
 	UPDATE
 		ChannelMembers
 	SET
-    MentionCount = :mentions,
-    MentionCountRoot = :mentionsRoot,
-    MsgCount = (SELECT TotalMsgCount FROM Channels WHERE ID = :channelId) - :unreadCount,
-    MsgCountRoot = (SELECT TotalMsgCountRoot FROM Channels WHERE ID = :channelId) - :unreadCountRoot,
-    LastViewedAt = :lastViewedAt,
-    LastUpdateAt = :updatedAt
+		MentionCount = :mentions,
+		MentionCountRoot = :mentionsRoot,
+		MsgCount = (SELECT TotalMsgCount FROM Channels WHERE ID = :channelId) - :unreadCount,
+		MsgCountRoot = (SELECT TotalMsgCountRoot FROM Channels WHERE ID = :channelId) - :unreadCountRoot,
+		LastViewedAt = :lastViewedAt,
+		LastUpdateAt = :updatedAt
 	WHERE
 		UserId = :userId
 		AND ChannelId = :channelId
@@ -2267,7 +2267,7 @@ func (s SqlChannelStore) UpdateLastViewedAtPost(unreadPost *model.Post, userID s
 		cm.UserId UserId,
 		cm.ChannelId ChannelId,
 		cm.MsgCount MsgCount,
-    cm.MsgCountRoot MsgCountRoot,
+		cm.MsgCountRoot MsgCountRoot,
 		cm.MentionCount MentionCount,
 		cm.MentionCountRoot MentionCountRoot,
 		cm.LastViewedAt LastViewedAt,
@@ -2310,7 +2310,7 @@ func (s SqlChannelStore) IncrementMentionCount(channelId string, userId string, 
 			ChannelMembers
 		SET
 			MentionCount = MentionCount + 1,
-      MentionCountRoot = MentionCountRoot + :RootInc,
+			MentionCountRoot = MentionCountRoot + :RootInc,
 			LastUpdateAt = :LastUpdateAt
 		WHERE
 			UserId = :UserId

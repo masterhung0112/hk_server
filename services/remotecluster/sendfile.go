@@ -55,17 +55,6 @@ func (rcs *Service) SendFile(ctx context.Context, us *model.UploadSession, fi *m
 
 // sendFile is called when a sendFileTask is popped from the send channel.
 func (rcs *Service) sendFile(task sendFileTask) {
-	// Ensure a panic from the callback does not exit the goroutine.
-	defer func() {
-		if r := recover(); r != nil {
-			rcs.server.GetLogger().Log(mlog.LvlRemoteClusterServiceError, "Remote Cluster sendFile panic",
-				mlog.String("remote", task.rc.DisplayName),
-				mlog.String("uploadId", task.us.Id),
-				mlog.Any("panic", r),
-			)
-		}
-	}()
-
 	fi, err := rcs.sendFileToRemote(SendTimeout, task)
 	var response Response
 

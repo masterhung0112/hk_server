@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
 )
 
 func TestGetJob(t *testing.T) {
@@ -95,7 +96,8 @@ func TestSessionHasPermissionToCreateJob(t *testing.T) {
 		assert.Equal(t, testCase.PermissionRequired.Id, permissionRequired.Id)
 	}
 
-	role, _ := th.App.GetRoleByName(context.Background(), model.SYSTEM_READ_ONLY_ADMIN_ROLE_ID)
+	ctx := sqlstore.WithMaster(context.Background())
+	role, _ := th.App.GetRoleByName(ctx, model.SYSTEM_READ_ONLY_ADMIN_ROLE_ID)
 
 	role.Permissions = append(role.Permissions, model.PERMISSION_CREATE_POST_BLEVE_INDEXES_JOB.Id)
 
@@ -180,7 +182,8 @@ func TestSessionHasPermissionToReadJob(t *testing.T) {
 		assert.Equal(t, testCase.PermissionRequired.Id, permissionRequired.Id)
 	}
 
-	role, _ := th.App.GetRoleByName(context.Background(), model.SYSTEM_MANAGER_ROLE_ID)
+	ctx := sqlstore.WithMaster(context.Background())
+	role, _ := th.App.GetRoleByName(ctx, model.SYSTEM_MANAGER_ROLE_ID)
 
 	role.Permissions = append(role.Permissions, model.PERMISSION_READ_DATA_RETENTION_JOB.Id)
 
