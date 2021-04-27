@@ -11,9 +11,10 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/services/httpservice"
-	"github.com/pkg/errors"
 )
 
 // Client is the programmatic interface to the marketplace server API.

@@ -71,7 +71,7 @@ require (
 	github.com/prometheus/client_golang v1.9.0
 	github.com/reflog/dateconstraints v0.2.1
 	github.com/rs/cors v1.7.0
-	github.com/rudderlabs/analytics-go v3.2.1+incompatible
+	github.com/rudderlabs/analytics-go v3.3.1+incompatible
 	github.com/russellhaering/goxmldsig v1.1.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
@@ -83,6 +83,7 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/throttled/throttled v2.2.5+incompatible
+	github.com/tidwall/gjson v1.7.5 // indirect
 	github.com/tinylib/msgp v1.1.5
 	github.com/tylerb/graceful v1.2.15
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
