@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -458,7 +459,7 @@ func (th *TestHelper) CreateScheme() (*model.Scheme, []*model.Role) {
 
 	var roles []*model.Role
 	for _, roleName := range roleNames {
-		role, err := th.App.GetRoleByName(roleName)
+		role, err := th.App.GetRoleByName(context.Background(), roleName)
 		if err != nil {
 			panic(err)
 		}
@@ -603,7 +604,7 @@ func (*TestHelper) ResetEmojisMigration() {
 }
 
 func (th *TestHelper) CheckTeamCount(t *testing.T, expected int64) {
-	teamCount, err := th.App.Srv().Store.Team().AnalyticsTeamCount(false)
+	teamCount, err := th.App.Srv().Store.Team().AnalyticsTeamCount(nil)
 	require.NoError(t, err, "Failed to get team count.")
 	require.Equalf(t, teamCount, expected, "Unexpected number of teams. Expected: %v, found: %v", expected, teamCount)
 }
@@ -649,7 +650,7 @@ func (th *TestHelper) SetupPluginAPI() *PluginAPI {
 func (th *TestHelper) RemovePermissionFromRole(permission string, roleName string) {
 	utils.DisableDebugLogForTest()
 
-	role, err1 := th.App.GetRoleByName(roleName)
+	role, err1 := th.App.GetRoleByName(context.Background(), roleName)
 	if err1 != nil {
 		utils.EnableDebugLogForTest()
 		panic(err1)
@@ -681,7 +682,7 @@ func (th *TestHelper) RemovePermissionFromRole(permission string, roleName strin
 func (th *TestHelper) AddPermissionToRole(permission string, roleName string) {
 	utils.DisableDebugLogForTest()
 
-	role, err1 := th.App.GetRoleByName(roleName)
+	role, err1 := th.App.GetRoleByName(context.Background(), roleName)
 	if err1 != nil {
 		utils.EnableDebugLogForTest()
 		panic(err1)
@@ -703,4 +704,17 @@ func (th *TestHelper) AddPermissionToRole(permission string, roleName string) {
 	}
 
 	utils.EnableDebugLogForTest()
+}
+
+// This function is copy of storetest/NewTestId
+// NewTestId is used for testing as a replacement for model.NewId(). It is a [A-Z0-9] string 26
+// characters long. It replaces every odd character with a digit.
+func NewTestId() string {
+	newId := []byte(model.NewId())
+
+	for i := 1; i < len(newId); i = i + 2 {
+		newId[i] = 48 + newId[i-1]%10
+	}
+
+	return string(newId)
 }

@@ -4,6 +4,7 @@
 package app
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -94,7 +95,7 @@ func TestSessionHasPermissionToCreateJob(t *testing.T) {
 		assert.Equal(t, testCase.PermissionRequired.Id, permissionRequired.Id)
 	}
 
-	role, _ := th.App.GetRoleByName(model.SYSTEM_READ_ONLY_ADMIN_ROLE_ID)
+	role, _ := th.App.GetRoleByName(context.Background(), model.SYSTEM_READ_ONLY_ADMIN_ROLE_ID)
 
 	role.Permissions = append(role.Permissions, model.PERMISSION_CREATE_POST_BLEVE_INDEXES_JOB.Id)
 
@@ -179,7 +180,7 @@ func TestSessionHasPermissionToReadJob(t *testing.T) {
 		assert.Equal(t, testCase.PermissionRequired.Id, permissionRequired.Id)
 	}
 
-	role, _ := th.App.GetRoleByName(model.SYSTEM_MANAGER_ROLE_ID)
+	role, _ := th.App.GetRoleByName(context.Background(), model.SYSTEM_MANAGER_ROLE_ID)
 
 	role.Permissions = append(role.Permissions, model.PERMISSION_READ_DATA_RETENTION_JOB.Id)
 

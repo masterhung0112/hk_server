@@ -20,7 +20,7 @@ type Store struct {
 	ChannelStore              mocks.ChannelStore
 	PostStore                 mocks.PostStore
 	UserStore                 mocks.UserStore
-  RetentionPolicyStore      mocks.RetentionPolicyStore
+	RetentionPolicyStore      mocks.RetentionPolicyStore
 	BotStore                  mocks.BotStore
 	AuditStore                mocks.AuditStore
 	ClusterDiscoveryStore     mocks.ClusterDiscoveryStore

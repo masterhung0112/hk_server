@@ -8,8 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
 // Test race condition when shutting down advanced logging. This test must run with the -race flag in order to verify
