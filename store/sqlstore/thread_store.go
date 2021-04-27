@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
+
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/masterhung0112/hk_server/v5/utils"
-	"github.com/pkg/errors"
-
-	sq "github.com/Masterminds/squirrel"
 )
 
 type SqlThreadStore struct {
@@ -139,11 +140,12 @@ func (s *SqlThreadStore) GetThreadsForUser(userId, teamId string, opts model.Get
 	threadsChan := make(chan store.StoreResult, 1)
 	go func() {
 		repliesQuery, repliesQueryArgs, _ := s.getQueryBuilder().
-			Select("COUNT(Posts.Id)").
+			Select("COUNT(DISTINCT(Posts.RootId))").
 			From("Posts").
-			LeftJoin("ThreadMemberships ON Posts.Id = ThreadMemberships.PostId").
+			LeftJoin("ThreadMemberships ON Posts.RootId = ThreadMemberships.PostId").
 			LeftJoin("Channels ON Posts.ChannelId = Channels.Id").
 			Where(fetchConditions).
+			Where(sq.NotEq{"Posts.UserId": userId}).
 			Where("Posts.UpdateAt >= ThreadMemberships.LastViewed").ToSql()
 
 		totalUnreadThreads, err := s.GetMaster().SelectInt(repliesQuery, repliesQueryArgs...)
@@ -316,7 +318,7 @@ func (s *SqlThreadStore) GetThreadForUser(userId, teamId, threadId string, exten
 		model.Post
 	}
 
-	unreadRepliesQuery := "SELECT COUNT(Posts.Id) From Posts Where Posts.RootId=ThreadMemberships.PostId AND Posts.UpdateAt >= ThreadMemberships.LastViewed AND Posts.DeleteAt=0"
+	unreadRepliesQuery := "SELECT COUNT(Posts.Id) From Posts Where Posts.RootId=ThreadMemberships.PostId AND Posts.UpdateAt >= ThreadMemberships.LastViewed AND Posts.DeleteAt=0 AND Posts.UserId != ?"
 	fetchConditions := sq.And{
 		sq.Or{sq.Eq{"Channels.TeamId": teamId}, sq.Eq{"Channels.TeamId": ""}},
 		sq.Eq{"ThreadMemberships.UserId": userId},
@@ -327,7 +329,7 @@ func (s *SqlThreadStore) GetThreadForUser(userId, teamId, threadId string, exten
 	query, args, _ := s.getQueryBuilder().
 		Select("Threads.*, Posts.*, ThreadMemberships.LastViewed as LastViewedAt, ThreadMemberships.UnreadMentions as UnreadMentions, ThreadMemberships.Following").
 		From("Threads").
-		Column(sq.Alias(sq.Expr(unreadRepliesQuery), "UnreadReplies")).
+		Column(sq.Alias(sq.Expr(unreadRepliesQuery, userId), "UnreadReplies")).
 		LeftJoin("Posts ON Posts.Id = Threads.PostId").
 		LeftJoin("Channels ON Posts.ChannelId = Channels.Id").
 		LeftJoin("ThreadMemberships ON ThreadMemberships.PostId = Threads.PostId").
@@ -469,7 +471,7 @@ func (s *SqlThreadStore) DeleteMembershipForUser(userId string, postId string) e
 	return nil
 }
 
-func (s *SqlThreadStore) MaintainMembership(userId, postId string, following, incrementMentions, updateFollowing, updateViewedTimestamp bool) (*model.ThreadMembership, error) {
+func (s *SqlThreadStore) MaintainMembership(userId, postId string, following, incrementMentions, updateFollowing, updateViewedTimestamp, updateParticipants bool) (*model.ThreadMembership, error) {
 	membership, err := s.GetMembershipForUser(userId, postId)
 	now := utils.MillisFromTime(time.Now())
 	// if memebership exists, update it if:
@@ -515,13 +517,15 @@ func (s *SqlThreadStore) MaintainMembership(userId, postId string, following, in
 		return nil, err
 	}
 
-	thread, err := s.Get(postId)
-	if err != nil {
-		return nil, err
-	}
-	if !thread.Participants.Contains(userId) {
-		thread.Participants = append(thread.Participants, userId)
-		_, err = s.Update(thread)
+	if updateParticipants {
+		thread, err2 := s.Get(postId)
+		if err2 != nil {
+			return nil, err2
+		}
+		if !thread.Participants.Contains(userId) {
+			thread.Participants = append(thread.Participants, userId)
+			_, err = s.Update(thread)
+		}
 	}
 	return membership, err
 }
