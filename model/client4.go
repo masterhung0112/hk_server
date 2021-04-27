@@ -6313,3 +6313,16 @@ func (c *Client4) GetRemoteClusterInfo(remoteID string) (RemoteClusterInfo, *Res
 
 	return rci, BuildResponse(r)
 }
+
+func (c *Client4) GetAncillaryPermissions(subsectionPermissions []string) ([]string, *Response) {
+	var returnedPermissions []string
+	url := fmt.Sprintf("%s/ancillary?subsection_permissions=%s", c.GetPermissionsRoute(), strings.Join(subsectionPermissions, ","))
+	r, appErr := c.DoApiGet(url, "")
+	if appErr != nil {
+		return returnedPermissions, BuildErrorResponse(r, appErr)
+	}
+	defer closeBody(r)
+
+	json.NewDecoder(r.Body).Decode(&returnedPermissions)
+	return returnedPermissions, BuildResponse(r)
+}
