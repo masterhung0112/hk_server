@@ -9,7 +9,7 @@ import (
 // Ensures that the library can detect if a GeoPoint is in a GeoPolygon.
 // Uses Brunei and the capital of Brunei as a set of test points.
 func TestPointInPolygon(t *testing.T) {
-	brunei, err := polygonFromFile("test/data/brunei.json")
+	brunei, err := polygonFromFile("testdata/brunei.json")
 	if err != nil {
 		t.Error("brunei json file failed to parse: ", err)
 	}
@@ -23,7 +23,7 @@ func TestPointInPolygon(t *testing.T) {
 // Ensures that the GeoPolygon logic can correctly identify if a GeoPolygon does not contain a GeoPoint.
 // Uses Brunei, Seattle, and a GeoPoint directly outside of Brunei limits as test points.
 func TestPointNotInPolygon(t *testing.T) {
-	brunei, err := polygonFromFile("test/data/brunei.json")
+	brunei, err := polygonFromFile("testdata/brunei.json")
 	if err != nil {
 		t.Error("brunei json file failed to parse: ", err)
 	}
@@ -45,12 +45,12 @@ func TestPointNotInPolygon(t *testing.T) {
 // Ensures that a GeoPoint can be contained in a complex GeoPolygon (e.g. a donut)
 // This particular GeoPolygon has a hole in it.
 func TestPointInPolygonWithHole(t *testing.T) {
-	nsw, err := polygonFromFile("test/data/nsw.json")
+	nsw, err := polygonFromFile("testdata/nsw.json")
 	if err != nil {
 		t.Error("nsw json file failed to parse: ", err)
 	}
 
-	act, err := polygonFromFile("test/data/act.json")
+	act, err := polygonFromFile("testdata/act.json")
 	if err != nil {
 		t.Error("act json file failed to parse: ", err)
 	}
@@ -101,7 +101,7 @@ func TestEquatorGreenwichContains(t *testing.T) {
 	point3 := NewPoint(0.1, -0.1)
 	point4 := NewPoint(-0.1, -0.1)
 	point5 := NewPoint(-0.1, 0.1)
-	GeoPolygon, err := polygonFromFile("test/data/equator_greenwich.json")
+	GeoPolygon, err := polygonFromFile("testdata/equator_greenwich.json")
 
 	if err != nil {
 		t.Errorf("error parsing GeoPolygon: %v", err)

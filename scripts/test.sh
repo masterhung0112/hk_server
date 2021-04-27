@@ -19,8 +19,8 @@ find . -type d -name data -not -path './vendor/*' -not -path './data' | xargs rm
 $GO test $GOFLAGS -run=$TESTS $TESTFLAGS -v -timeout=20m -covermode=count -coverpkg=$PACKAGES_COMMA -exec $DIR/test-xprog.sh $PACKAGES 2>&1 > >( tee output )
 EXIT_STATUS=$?
 
-cat output | $GOBIN/go-junit-report > report.xml
-rm output
+cat output | go-junit-report > report.xml
+#rm output
 find . -name 'cprofile*.out' -exec sh -c 'tail -n +2 "{}" >> cover.out ; rm "{}"' \;
 rm -f config/*.crt
 rm -f config/*.key

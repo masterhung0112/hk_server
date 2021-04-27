@@ -23,7 +23,7 @@ var ErrNotEnabled = Error{errors.New("imageproxy.ImageProxy: image proxy not ena
 // using MakeImageProxy which requires a configService and an HTTPService provided by the server.
 type ImageProxy struct {
 	ConfigService    configservice.ConfigService
-	configListenerId string
+	configListenerID string
 
 	HTTPService httpservice.HTTPService
 
@@ -56,7 +56,7 @@ func MakeImageProxy(configService configservice.ConfigService, httpService https
 	siteURL, _ := url.Parse(*configService.Config().ServiceSettings.SiteURL)
 	proxy.siteURL = siteURL
 
-	proxy.configListenerId = proxy.ConfigService.AddConfigListener(proxy.OnConfigChange)
+	proxy.configListenerID = proxy.ConfigService.AddConfigListener(proxy.OnConfigChange)
 
 	config := proxy.ConfigService.Config()
 	proxy.backend = proxy.makeBackend(*config.ImageProxySettings.Enable, *config.ImageProxySettings.ImageProxyType)
@@ -83,7 +83,7 @@ func (proxy *ImageProxy) Close() {
 	proxy.lock.Lock()
 	defer proxy.lock.Unlock()
 
-	proxy.ConfigService.RemoveConfigListener(proxy.configListenerId)
+	proxy.ConfigService.RemoveConfigListener(proxy.configListenerID)
 }
 
 func (proxy *ImageProxy) OnConfigChange(oldConfig, newConfig *model.Config) {
@@ -149,7 +149,7 @@ func (proxy *ImageProxy) GetProxiedImageURL(imageURL string) string {
 		return parsedURL.String()
 	}
 
-	return proxy.siteURL.String() + "/api/v1/image?url=" + url.QueryEscape(parsedURL.String())
+	return proxy.siteURL.String() + "/api/v4/image?url=" + url.QueryEscape(parsedURL.String())
 }
 
 // GetUnproxiedImageURL takes the URL of an image on the image proxy and returns the original URL of the image.
@@ -158,7 +158,7 @@ func (proxy *ImageProxy) GetUnproxiedImageURL(proxiedURL string) string {
 }
 
 func getUnproxiedImageURL(proxiedURL, siteURL string) string {
-	if !strings.HasPrefix(proxiedURL, siteURL+"/api/v1/image?url=") {
+	if !strings.HasPrefix(proxiedURL, siteURL+"/api/v4/image?url=") {
 		return proxiedURL
 	}
 

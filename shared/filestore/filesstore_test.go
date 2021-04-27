@@ -68,7 +68,7 @@ func runBackendTest(t *testing.T, encrypt bool) {
 
 	s3Port := os.Getenv("CI_MINIO_PORT")
 	if s3Port == "" {
-		s3Port = "9000"
+		s3Port = "9901"
 	}
 
 	s3Endpoint := fmt.Sprintf("%s:%s", s3Host, s3Port)
@@ -94,7 +94,13 @@ func (s *FileBackendTestSuite) SetupTest() {
 	s.backend = backend
 
 	// This is needed to create the bucket if it doesn't exist.
-	s.Nil(s.backend.TestConnection())
+	err = s.backend.TestConnection()
+	if _, ok := err.(*S3FileBackendNoBucketError); ok {
+		s3Backend := s.backend.(*S3FileBackend)
+		s.NoError(s3Backend.MakeBucket())
+	} else {
+		s.NoError(err)
+	}
 }
 
 func (s *FileBackendTestSuite) TestConnection() {
@@ -350,7 +356,7 @@ func (s *FileBackendTestSuite) TestAppendFile() {
 		read, err := s.backend.ReadFile(path)
 		s.Nil(err)
 		s.EqualValues(len(b)+len(b2), len(read))
-		s.EqualValues(append(b, b2...), read)
+		s.True(bytes.Equal(append(b, b2...), read))
 
 		b3 := make([]byte, 1024)
 		for i := range b3 {
@@ -364,7 +370,7 @@ func (s *FileBackendTestSuite) TestAppendFile() {
 		read, err = s.backend.ReadFile(path)
 		s.Nil(err)
 		s.EqualValues(len(b)+len(b2)+len(b3), len(read))
-		s.EqualValues(append(append(b, b2...), b3...), read)
+		s.True(bytes.Equal(append(append(b, b2...), b3...), read))
 	})
 }
 
@@ -433,7 +439,7 @@ func BenchmarkS3WriteFile(b *testing.B) {
 		AmazonS3SecretAccessKey: "miniosecretkey",
 		AmazonS3Bucket:          "mattermost-test",
 		AmazonS3Region:          "",
-		AmazonS3Endpoint:        "localhost:9000",
+		AmazonS3Endpoint:        "localhost:9901",
 		AmazonS3PathPrefix:      "",
 		AmazonS3SSL:             false,
 		AmazonS3SSE:             false,

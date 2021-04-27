@@ -2529,7 +2529,7 @@ func (s *UserStoreTS) TestUserUnreadCount() {
 	// Post one message with mention to open channel
 	_, nErr = s.Store().Post().Save(&p1)
 	s.Require().Nil(nErr)
-	nErr = s.Store().Channel().IncrementMentionCount(c1.Id, u2.Id, false)
+	nErr = s.Store().Channel().IncrementMentionCount(c1.Id, u2.Id, false, false)
 	s.Require().Nil(nErr)
 
 	// Post 2 messages without mention to direct channel
@@ -2540,7 +2540,7 @@ func (s *UserStoreTS) TestUserUnreadCount() {
 
 	_, nErr = s.Store().Post().Save(&p2)
 	s.Require().Nil(nErr)
-	nErr = s.Store().Channel().IncrementMentionCount(c2.Id, u2.Id, false)
+	nErr = s.Store().Channel().IncrementMentionCount(c2.Id, u2.Id, false, false)
 	s.Require().Nil(nErr)
 
 	p3 := model.Post{}
@@ -2550,7 +2550,7 @@ func (s *UserStoreTS) TestUserUnreadCount() {
 	_, nErr = s.Store().Post().Save(&p3)
 	s.Require().Nil(nErr)
 
-	nErr = s.Store().Channel().IncrementMentionCount(c2.Id, u2.Id, false)
+	nErr = s.Store().Channel().IncrementMentionCount(c2.Id, u2.Id, false, false)
 	s.Require().Nil(nErr)
 
 	badge, unreadCountErr := s.Store().User().GetUnreadCount(u2.Id)
@@ -4205,7 +4205,7 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedChannelMember.SchemeGuest)
 		s.Require().True(updatedChannelMember.SchemeUser)
@@ -4250,7 +4250,7 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedChannelMember.SchemeGuest)
 		s.Require().True(updatedChannelMember.SchemeUser)
@@ -4346,7 +4346,7 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedChannelMember.SchemeGuest)
 		s.Require().True(updatedChannelMember.SchemeUser)
@@ -4391,7 +4391,7 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedChannelMember.SchemeGuest)
 		s.Require().True(updatedChannelMember.SchemeUser)
@@ -4457,7 +4457,7 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 		s.Require().False(updatedTeamMember.SchemeGuest)
 		s.Require().True(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user1.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user1.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(updatedChannelMember.SchemeGuest)
 		s.Require().True(updatedChannelMember.SchemeUser)
@@ -4471,7 +4471,7 @@ func (s *UserStoreTS) TestPromoteGuestToUser() {
 		s.Require().True(notUpdatedTeamMember.SchemeGuest)
 		s.Require().False(notUpdatedTeamMember.SchemeUser)
 
-		notUpdatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user2.Id)
+		notUpdatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user2.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(notUpdatedChannelMember.SchemeGuest)
 		s.Require().False(notUpdatedChannelMember.SchemeUser)
@@ -4518,7 +4518,7 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedChannelMember.SchemeGuest)
 		s.Require().False(updatedChannelMember.SchemeUser)
@@ -4561,7 +4561,7 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedChannelMember.SchemeGuest)
 		s.Require().False(updatedChannelMember.SchemeUser)
@@ -4651,7 +4651,7 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedChannelMember.SchemeGuest)
 		s.Require().False(updatedChannelMember.SchemeUser)
@@ -4694,7 +4694,7 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedChannelMember.SchemeGuest)
 		s.Require().False(updatedChannelMember.SchemeUser)
@@ -4758,7 +4758,7 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().True(updatedTeamMember.SchemeGuest)
 		s.Require().False(updatedTeamMember.SchemeUser)
 
-		updatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user1.Id)
+		updatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user1.Id)
 		s.Require().Nil(nErr)
 		s.Require().True(updatedChannelMember.SchemeGuest)
 		s.Require().False(updatedChannelMember.SchemeUser)
@@ -4772,7 +4772,7 @@ func (s *UserStoreTS) TestDemoteUserToGuest() {
 		s.Require().False(notUpdatedTeamMember.SchemeGuest)
 		s.Require().True(notUpdatedTeamMember.SchemeUser)
 
-		notUpdatedChannelMember, nErr := s.Store().Channel().GetMember(channel.Id, user2.Id)
+		notUpdatedChannelMember, nErr := s.Store().Channel().GetMember(context.Background(), channel.Id, user2.Id)
 		s.Require().Nil(nErr)
 		s.Require().False(notUpdatedChannelMember.SchemeGuest)
 		s.Require().True(notUpdatedChannelMember.SchemeUser)

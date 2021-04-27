@@ -1,6 +1,7 @@
 package storetest
 
 import (
+	"context"
 	"errors"
 	"sort"
 	"strconv"
@@ -812,7 +813,7 @@ func (s *ChannelStoreTestSuite) TestMemberStore() {
 	c1t3, _ := s.Store().Channel().Get(c1.Id, false)
 	s.Assert().EqualValues(0, c1t3.ExtraUpdateAt, "ExtraUpdateAt should be 0")
 
-	member, _ := s.Store().Channel().GetMember(o1.ChannelId, o1.UserId)
+	member, _ := s.Store().Channel().GetMember(context.Background(), o1.ChannelId, o1.UserId)
 	s.Require().Equal(o1.ChannelId, member.ChannelId, "should have go member")
 
 	_, nErr = s.Store().Channel().SaveMember(&o1)
@@ -3927,19 +3928,19 @@ func (s *ChannelStoreTestSuite) TestCountPostsAfter() {
 		})
 		s.Require().Nil(err)
 
-		count, err := s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, "")
+		count, _, err := s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(3, count)
 
-		count, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, "")
+		count, _, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(2, count)
 
-		count, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, userId1)
+		count, _, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, userId1)
 		s.Require().Nil(err)
 		s.Assert().Equal(2, count)
 
-		count, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, userId1)
+		count, _, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, userId1)
 		s.Require().Nil(err)
 		s.Assert().Equal(1, count)
 	})
@@ -3964,11 +3965,11 @@ func (s *ChannelStoreTestSuite) TestCountPostsAfter() {
 		})
 		s.Require().Nil(err)
 
-		count, err := s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, "")
+		count, _, err := s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(1, count)
 
-		count, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, "")
+		count, _, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(0, count)
 	})
@@ -4025,19 +4026,19 @@ func (s *ChannelStoreTestSuite) TestCountPostsAfter() {
 		})
 		s.Require().Nil(err)
 
-		count, err := s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, "")
+		count, _, err := s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt-1, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(3, count)
 
-		count, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, "")
+		count, _, err = s.Store().Channel().CountPostsAfter(channelId, p1.CreateAt, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(2, count)
 
-		count, err = s.Store().Channel().CountPostsAfter(channelId, p5.CreateAt-1, "")
+		count, _, err = s.Store().Channel().CountPostsAfter(channelId, p5.CreateAt-1, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(2, count)
 
-		count, err = s.Store().Channel().CountPostsAfter(channelId, p5.CreateAt, "")
+		count, _, err = s.Store().Channel().CountPostsAfter(channelId, p5.CreateAt, "")
 		s.Require().Nil(err)
 		s.Assert().Equal(1, count)
 	})
@@ -4087,13 +4088,13 @@ func (s *ChannelStoreTestSuite) TestStoreUpdateLastViewedAt() {
 	s.Require().Nil(err, "failed to update ", err)
 	s.Require().Equal(o2.LastPostAt, times[o2.Id], "last viewed at time incorrect")
 
-	rm1, err := s.Store().Channel().GetMember(m1.ChannelId, m1.UserId)
+	rm1, err := s.Store().Channel().GetMember(context.Background(), m1.ChannelId, m1.UserId)
 	s.Assert().Nil(err)
 	s.Assert().Equal(o1.LastPostAt, rm1.LastViewedAt)
 	s.Assert().Equal(o1.LastPostAt, rm1.LastUpdateAt)
 	s.Assert().Equal(o1.TotalMsgCount, rm1.MsgCount)
 
-	rm2, err := s.Store().Channel().GetMember(m2.ChannelId, m2.UserId)
+	rm2, err := s.Store().Channel().GetMember(context.Background(), m2.ChannelId, m2.UserId)
 	s.Assert().Nil(err)
 	s.Assert().Equal(o2.LastPostAt, rm2.LastViewedAt)
 	s.Assert().Equal(o2.LastPostAt, rm2.LastUpdateAt)
@@ -4120,16 +4121,16 @@ func (s *ChannelStoreTestSuite) TestStoreIncrementMentionCount() {
 	_, err := s.Store().Channel().SaveMember(&m1)
 	s.Require().Nil(err)
 
-	err = s.Store().Channel().IncrementMentionCount(m1.ChannelId, m1.UserId, false)
+	err = s.Store().Channel().IncrementMentionCount(m1.ChannelId, m1.UserId, false, false)
 	s.Require().Nil(err, "failed to update")
 
-	err = s.Store().Channel().IncrementMentionCount(m1.ChannelId, "missing id", false)
+	err = s.Store().Channel().IncrementMentionCount(m1.ChannelId, "missing id", false, false)
 	s.Require().Nil(err, "failed to update")
 
-	err = s.Store().Channel().IncrementMentionCount("missing id", m1.UserId, false)
+	err = s.Store().Channel().IncrementMentionCount("missing id", m1.UserId, false, false)
 	s.Require().Nil(err, "failed to update")
 
-	err = s.Store().Channel().IncrementMentionCount("missing id", "missing id", false)
+	err = s.Store().Channel().IncrementMentionCount("missing id", "missing id", false, false)
 	s.Require().Nil(err, "failed to update")
 }
 
@@ -4199,18 +4200,18 @@ func (s *ChannelStoreTestSuite) TestGetMember() {
 	_, err = s.Store().Channel().SaveMember(m2)
 	s.Require().Nil(err)
 
-	_, err = s.Store().Channel().GetMember(model.NewId(), userId)
+	_, err = s.Store().Channel().GetMember(context.Background(), model.NewId(), userId)
 	s.Require().NotNil(err, "should've failed to get member for non-existent channel")
 
-	_, err = s.Store().Channel().GetMember(c1.Id, model.NewId())
+	_, err = s.Store().Channel().GetMember(context.Background(), c1.Id, model.NewId())
 	s.Require().NotNil(err, "should've failed to get member for non-existent user")
 
-	member, err := s.Store().Channel().GetMember(c1.Id, userId)
+	member, err := s.Store().Channel().GetMember(context.Background(), c1.Id, userId)
 	s.Require().Nil(err, "shouldn't have errored when getting member", err)
 	s.Require().Equal(c1.Id, member.ChannelId, "should've gotten member of channel 1")
 	s.Require().Equal(userId, member.UserId, "should've have gotten member for user")
 
-	member, err = s.Store().Channel().GetMember(c2.Id, userId)
+	member, err = s.Store().Channel().GetMember(context.Background(), c2.Id, userId)
 	s.Require().Nil(err, "should'nt have errored when getting member", err)
 	s.Require().Equal(c2.Id, member.ChannelId, "should've gotten member of channel 2")
 	s.Require().Equal(userId, member.UserId, "should've gotten member for user")
@@ -4407,7 +4408,7 @@ func (s *ChannelStoreTestSuite) TestGetMemberCountsByGroup() {
 	s.Require().Nil(nErr)
 
 	s.T().Run("empty slice for channel with no groups", func(t *testing.T) {
-		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(c1.Id, false)
+		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(context.Background(), c1.Id, false)
 		expectedMemberCounts := []*model.ChannelMemberCountByGroup{}
 		s.Require().Nil(nErr)
 		s.Require().Equal(expectedMemberCounts, memberCounts)
@@ -4417,7 +4418,7 @@ func (s *ChannelStoreTestSuite) TestGetMemberCountsByGroup() {
 	s.Require().Nil(err)
 
 	s.T().Run("returns memberCountsByGroup without timezones", func(t *testing.T) {
-		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(c1.Id, false)
+		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(context.Background(), c1.Id, false)
 		expectedMemberCounts := []*model.ChannelMemberCountByGroup{
 			{
 				GroupId:                     g1.Id,
@@ -4430,7 +4431,7 @@ func (s *ChannelStoreTestSuite) TestGetMemberCountsByGroup() {
 	})
 
 	s.T().Run("returns memberCountsByGroup with timezones when no timezones set", func(t *testing.T) {
-		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(c1.Id, true)
+		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(context.Background(), c1.Id, true)
 		expectedMemberCounts := []*model.ChannelMemberCountByGroup{
 			{
 				GroupId:                     g1.Id,
@@ -4533,7 +4534,7 @@ func (s *ChannelStoreTestSuite) TestGetMemberCountsByGroup() {
 	}
 
 	s.T().Run("returns memberCountsByGroup for multiple groups with lots of users without timezones", func(t *testing.T) {
-		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(c1.Id, false)
+		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(context.Background(), c1.Id, false)
 		expectedMemberCounts := []*model.ChannelMemberCountByGroup{
 			{
 				GroupId:                     g1.Id,
@@ -4556,7 +4557,7 @@ func (s *ChannelStoreTestSuite) TestGetMemberCountsByGroup() {
 	})
 
 	s.T().Run("returns memberCountsByGroup for multiple groups with lots of users with timezones", func(t *testing.T) {
-		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(c1.Id, true)
+		memberCounts, nErr = s.Store().Channel().GetMemberCountsByGroup(context.Background(), c1.Id, true)
 		expectedMemberCounts := []*model.ChannelMemberCountByGroup{
 			{
 				GroupId:                     g1.Id,
@@ -6038,21 +6039,21 @@ func (s *ChannelStoreTestSuite) TestStoreMigrateChannelMembers() {
 
 	s.Store().Channel().ClearCaches()
 
-	cm1b, err := s.Store().Channel().GetMember(cm1.ChannelId, cm1.UserId)
+	cm1b, err := s.Store().Channel().GetMember(context.Background(), cm1.ChannelId, cm1.UserId)
 	s.Assert().Nil(err)
 	s.Assert().Equal("", cm1b.ExplicitRoles)
 	s.Assert().False(cm1b.SchemeGuest)
 	s.Assert().True(cm1b.SchemeUser)
 	s.Assert().True(cm1b.SchemeAdmin)
 
-	cm2b, err := s.Store().Channel().GetMember(cm2.ChannelId, cm2.UserId)
+	cm2b, err := s.Store().Channel().GetMember(context.Background(), cm2.ChannelId, cm2.UserId)
 	s.Assert().Nil(err)
 	s.Assert().Equal("", cm2b.ExplicitRoles)
 	s.Assert().False(cm1b.SchemeGuest)
 	s.Assert().True(cm2b.SchemeUser)
 	s.Assert().False(cm2b.SchemeAdmin)
 
-	cm3b, err := s.Store().Channel().GetMember(cm3.ChannelId, cm3.UserId)
+	cm3b, err := s.Store().Channel().GetMember(context.Background(), cm3.ChannelId, cm3.UserId)
 	s.Assert().Nil(err)
 	s.Assert().Equal("something_else", cm3b.ExplicitRoles)
 	s.Assert().False(cm1b.SchemeGuest)
@@ -6148,19 +6149,19 @@ func (s *ChannelStoreTestSuite) TestStoreClearAllCustomRoleAssignments() {
 
 	s.Require().Nil(s.Store().Channel().ClearAllCustomRoleAssignments())
 
-	member, err := s.Store().Channel().GetMember(m1.ChannelId, m1.UserId)
+	member, err := s.Store().Channel().GetMember(context.Background(), m1.ChannelId, m1.UserId)
 	s.Require().Nil(err)
 	s.Assert().Equal(m1.ExplicitRoles, member.Roles)
 
-	member, err = s.Store().Channel().GetMember(m2.ChannelId, m2.UserId)
+	member, err = s.Store().Channel().GetMember(context.Background(), m2.ChannelId, m2.UserId)
 	s.Require().Nil(err)
 	s.Assert().Equal("channel_user channel_admin", member.Roles)
 
-	member, err = s.Store().Channel().GetMember(m3.ChannelId, m3.UserId)
+	member, err = s.Store().Channel().GetMember(context.Background(), m3.ChannelId, m3.UserId)
 	s.Require().Nil(err)
 	s.Assert().Equal(m3.ExplicitRoles, member.Roles)
 
-	member, err = s.Store().Channel().GetMember(m4.ChannelId, m4.UserId)
+	member, err = s.Store().Channel().GetMember(context.Background(), m4.ChannelId, m4.UserId)
 	s.Require().Nil(err)
 	s.Assert().Equal("", member.Roles)
 }

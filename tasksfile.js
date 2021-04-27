@@ -26,14 +26,14 @@ let GOBIN = process.env.GOBIN || `${process.env.GOPATH}/bin`
 let GO =  process.env.GO || 'go'
 
 let LDFLAGS = process.env.LDFLAGS || ''
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/model.BuildNumber=${BUILD_NUMBER}'`
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/model.BuildDate=${BUILD_DATE}'`
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/model.BuildHash=${BUILD_HASH}'`
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/model.BuildHashEnterprise=${BUILD_HASH_ENTERPRISE}'`
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/model.BuildEnterpriseReady=${BUILD_ENTERPRISE_READY}'`
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_JSON_URL=${NOTICES_JSON_URL}'`
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_JSON_FETCH_FREQUENCY_SECONDS=${NOTICES_FETCH_SECS}'`
-LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/app.NOTICES_SKIP_CACHE=${NOTICES_SKIP_CACHE}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/model.BuildNumber=${BUILD_NUMBER}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/model.BuildDate=${BUILD_DATE}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/model.BuildHash=${BUILD_HASH}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/model.BuildHashEnterprise=${BUILD_HASH_ENTERPRISE}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/model.BuildEnterpriseReady=${BUILD_ENTERPRISE_READY}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/app.NOTICES_JSON_URL=${NOTICES_JSON_URL}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/app.NOTICES_JSON_FETCH_FREQUENCY_SECONDS=${NOTICES_FETCH_SECS}'`
+LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/app.NOTICES_SKIP_CACHE=${NOTICES_SKIP_CACHE}'`
 
 let PLATFORM_FILES = "./cmd/hkserver/main.go"
 

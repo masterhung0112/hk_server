@@ -20,6 +20,7 @@ func genStore() *mocks.Store {
 	mock.On("Channel").Return(&mocks.ChannelStore{})
 	mock.On("ChannelMemberHistory").Return(&mocks.ChannelMemberHistoryStore{})
 	mock.On("ClusterDiscovery").Return(&mocks.ClusterDiscoveryStore{})
+	mock.On("RemoteCluster").Return(&mocks.RemoteClusterStore{})
 	mock.On("Command").Return(&mocks.CommandStore{})
 	mock.On("CommandWebhook").Return(&mocks.CommandWebhookStore{})
 	mock.On("Compliance").Return(&mocks.ComplianceStore{})
@@ -30,6 +31,7 @@ func genStore() *mocks.Store {
 	mock.On("Job").Return(&mocks.JobStore{})
 	mock.On("License").Return(&mocks.LicenseStore{})
 	mock.On("LinkMetadata").Return(&mocks.LinkMetadataStore{})
+	mock.On("SharedChannel").Return(&mocks.SharedChannelStore{})
 	mock.On("OAuth").Return(&mocks.OAuthStore{})
 	mock.On("Plugin").Return(&mocks.PluginStore{})
 	mock.On("Post").Return(&mocks.PostStore{})
@@ -37,6 +39,7 @@ func genStore() *mocks.Store {
 	mock.On("Preference").Return(&mocks.PreferenceStore{})
 	mock.On("ProductNotices").Return(&mocks.ProductNoticesStore{})
 	mock.On("Reaction").Return(&mocks.ReactionStore{})
+	mock.On("RetentionPolicy").Return(&mocks.RetentionPolicyStore{})
 	mock.On("Role").Return(&mocks.RoleStore{})
 	mock.On("Scheme").Return(&mocks.SchemeStore{})
 	mock.On("Session").Return(&mocks.SessionStore{})
@@ -49,6 +52,8 @@ func genStore() *mocks.Store {
 	mock.On("UserAccessToken").Return(&mocks.UserAccessTokenStore{})
 	mock.On("UserTermsOfService").Return(&mocks.UserTermsOfServiceStore{})
 	mock.On("Webhook").Return(&mocks.WebhookStore{})
+	mock.On("TrackPoint").Return(&mocks.TrackPointStore{})
+	mock.On("TrackRecord").Return(&mocks.TrackRecordStore{})
 	return mock
 }
 

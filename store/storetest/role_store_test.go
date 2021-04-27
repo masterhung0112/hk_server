@@ -1,6 +1,7 @@
 package storetest
 
 import (
+	"context"
 	"testing"
 
 	"github.com/masterhung0112/hk_server/v5/model"
@@ -168,7 +169,7 @@ func (s *RoleStoreTestSuite) TestRoleStoreGetByName() {
 	s.Require().Len(d1.Id, 26)
 
 	// Get a valid role
-	d2, err := s.Store().Role().GetByName(d1.Name)
+	d2, err := s.Store().Role().GetByName(context.Background(), d1.Name)
 	s.Require().Nil(err)
 	s.Require().Equal(d1.Id, d2.Id)
 	s.Require().Equal(r1.Name, d2.Name)
@@ -178,6 +179,6 @@ func (s *RoleStoreTestSuite) TestRoleStoreGetByName() {
 	s.Require().Equal(r1.SchemeManaged, d2.SchemeManaged)
 
 	// Get an invalid role
-	_, err = s.Store().Role().GetByName(model.NewId())
+	_, err = s.Store().Role().GetByName(context.Background(), model.NewId())
 	s.Require().NotNil(err)
 }

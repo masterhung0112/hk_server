@@ -55,7 +55,7 @@ func (s *PostStoreTestSuite) TestPostStoreSaveMultiple_SaveCorrectlyNewSetOfPost
 	s.Require().Nil(err)
 	s.Require().Equal(-1, errIdx)
 	for _, post := range newPosts {
-		storedPost, err := s.Store().Post().GetSingle(post.Id)
+		storedPost, err := s.Store().Post().GetSingle(post.Id, false)
 		s.Nil(err)
 		s.Equal(post.ChannelId, storedPost.ChannelId)
 		s.Equal(post.Message, storedPost.Message)
@@ -110,13 +110,13 @@ func (s *PostStoreTestSuite) TestPostStoreSaveMultiple_SaveMixed() {
 	s.Require().Error(err)
 	s.Require().Equal(1, errIdx)
 	s.Require().Nil(newPosts)
-	storedPost, err := s.Store().Post().GetSingle(p3.Id)
+	storedPost, err := s.Store().Post().GetSingle(p3.Id, false)
 	s.NoError(err)
 	s.Equal(p3.ChannelId, storedPost.ChannelId)
 	s.Equal(p3.Message, storedPost.Message)
 	s.Equal(p3.UserId, storedPost.UserId)
 
-	storedPost, err = s.Store().Post().GetSingle(p4.Id)
+	storedPost, err = s.Store().Post().GetSingle(p4.Id, false)
 	s.Error(err)
 	s.Nil(storedPost)
 }
@@ -137,7 +137,7 @@ func (s *PostStoreTestSuite) TestPostStoreSaveMultiple_UpdateReplyWithUpdateAt()
 	_, _, err := s.Store().Post().SaveMultiple([]*model.Post{&rootPost, &replyPost})
 	s.Require().Nil(err)
 
-	rrootPost, err := s.Store().Post().GetSingle(rootPost.Id)
+	rrootPost, err := s.Store().Post().GetSingle(rootPost.Id, false)
 	s.Require().Nil(err)
 	s.Equal(rrootPost.UpdateAt, rootPost.UpdateAt)
 
@@ -156,7 +156,7 @@ func (s *PostStoreTestSuite) TestPostStoreSaveMultiple_UpdateReplyWithUpdateAt()
 	_, _, err = s.Store().Post().SaveMultiple([]*model.Post{&replyPost2, &replyPost3})
 	s.Require().Nil(err)
 
-	rrootPost2, err := s.Store().Post().GetSingle(rootPost.Id)
+	rrootPost2, err := s.Store().Post().GetSingle(rootPost.Id, false)
 	s.Require().Nil(err)
 	s.Greater(rrootPost2.UpdateAt, rrootPost.UpdateAt)
 }
@@ -276,7 +276,7 @@ func (s *PostStoreTestSuite) TestPostStoreSavePost_UpdateReplyUpdateRoot() {
 	_, err = s.Store().Post().Save(&replyPost)
 	s.Require().NoError(err)
 
-	rrootPost, err := s.Store().Post().GetSingle(rootPost.Id)
+	rrootPost, err := s.Store().Post().GetSingle(rootPost.Id, false)
 	s.Require().NoError(err)
 	s.Greater(rrootPost.UpdateAt, rootPost.UpdateAt)
 }
@@ -347,11 +347,11 @@ func (s *PostStoreTestSuite) TestPostStoreGetSingle() {
 	o1, err := s.Store().Post().Save(o1)
 	s.Require().Nil(err)
 
-	post, err := s.Store().Post().GetSingle(o1.Id)
+	post, err := s.Store().Post().GetSingle(o1.Id, false)
 	s.Require().Nil(err)
 	s.Require().Equal(post.CreateAt, o1.CreateAt, "invalid returned post")
 
-	_, err = s.Store().Post().GetSingle("123")
+	_, err = s.Store().Post().GetSingle("123", false)
 	s.Require().NotNil(err, "Missing id should have failed")
 }
 

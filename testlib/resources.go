@@ -87,7 +87,8 @@ func getTestResourcesToSetup() []testResourceDetails {
 	var found bool
 
 	var testResourcesToSetup = []testResourceDetails{
-		// {root, "hk_server", resourceTypeFolder, actionSymlink},
+		{root, "hk_server", resourceTypeFolder, actionSymlink},
+		{"go.mod", "go.mod", resourceTypeFile, actionSymlink},
 		{"testlib/testdata", "testlib/testdata", resourceTypeFolder, actionSymlink},
 		{"i18n", "i18n", resourceTypeFolder, actionSymlink},
 		{"templates", "templates", resourceTypeFolder, actionSymlink},
