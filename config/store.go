@@ -6,9 +6,10 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/utils/jsonutils"
-	"github.com/pkg/errors"
 )
 
 var (
