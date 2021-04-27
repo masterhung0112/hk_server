@@ -5,6 +5,7 @@ package sqlstore
 
 import (
 	sq "github.com/Masterminds/squirrel"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/store"
@@ -243,9 +244,9 @@ func (s *SqlReactionStore) saveReactionAndUpdatePost(transaction *gorp.Transacti
 			`INSERT INTO
 				Reactions
         (UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
-        VALUES
-          (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
-        ON DUPLICATE KEY UPDATE
+      VALUES
+        (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
+      ON DUPLICATE KEY UPDATE
           UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
 			return err
 		}
@@ -254,10 +255,10 @@ func (s *SqlReactionStore) saveReactionAndUpdatePost(transaction *gorp.Transacti
 			`INSERT INTO
 				Reactions
         (UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
-        VALUES
-          (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
-        ON CONFLICT (UserId, PostId, EmojiName)
-          DO UPDATE SET UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
+      VALUES
+        (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
+      ON CONFLICT (UserId, PostId, EmojiName)
+        DO UPDATE SET UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
 			return err
 		}
 	}
