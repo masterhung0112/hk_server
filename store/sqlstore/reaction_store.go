@@ -243,22 +243,22 @@ func (s *SqlReactionStore) saveReactionAndUpdatePost(transaction *gorp.Transacti
 		if _, err := transaction.Exec(
 			`INSERT INTO
 				Reactions
-        (UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
-      VALUES
-        (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
-      ON DUPLICATE KEY UPDATE
-          UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
+				(UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
+			VALUES
+				(:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
+			ON DUPLICATE KEY UPDATE
+				UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
 			return err
 		}
 	} else if s.DriverName() == model.DATABASE_DRIVER_POSTGRES {
 		if _, err := transaction.Exec(
 			`INSERT INTO
 				Reactions
-        (UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
-      VALUES
-        (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
-      ON CONFLICT (UserId, PostId, EmojiName)
-        DO UPDATE SET UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
+				(UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
+			VALUES
+				(:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
+			ON CONFLICT (UserId, PostId, EmojiName)
+				DO UPDATE SET UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
 			return err
 		}
 	}
@@ -279,8 +279,8 @@ func deleteReactionAndUpdatePost(transaction *gorp.Transaction, reaction *model.
 	if _, err := transaction.Exec(
 		`UPDATE
 			Reactions
-		SET
-      UpdateAt = :UpdateAt, DeleteAt = :DeleteAt, RemoteId = :RemoteId
+      SET
+			UpdateAt = :UpdateAt, DeleteAt = :DeleteAt, RemoteId = :RemoteId
 		WHERE
 			PostId = :PostId AND
 			UserId = :UserId AND

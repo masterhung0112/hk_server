@@ -109,6 +109,12 @@ function app_layers() {
 }
 help(app_layers, 'Extract interface from App struct')
 
+function store_layers() {
+  sh(`${GO} generate ${GOFLAGS} ./store`, { nopipe: true })
+
+}
+help(store_layers, 'Generate layers for the store')
+
 cli({
   start_docker,
   start_server,
@@ -117,4 +123,5 @@ cli({
   store_mocks,
   einterfaces_mocks,
   app_layers,
+  store_layers,
 })

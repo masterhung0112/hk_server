@@ -530,14 +530,15 @@ func TestOAuthComplete_ErrorMessages(t *testing.T) {
 	th := Setup(t).InitBasic()
 	defer th.TearDown()
 	c := &Context{
-		App: th.App,
+		App:        th.App,
+		AppContext: &request.Context{},
 		Params: &Params{
 			Service: "gitlab",
 		},
 	}
 
 	translationFunc := i18n.GetUserTranslations("en")
-	c.App.SetT(translationFunc)
+	c.AppContext.SetT(translationFunc)
 	buffer := &bytes.Buffer{}
 	c.Logger = mlog.NewTestingLogger(t, buffer)
 	th.App.UpdateConfig(func(cfg *model.Config) { *cfg.GitLabSettings.Enable = true })
@@ -614,6 +615,10 @@ func (m *MattermostTestProvider) GetSSOSettings(config *model.Config, service st
 
 func (m *MattermostTestProvider) GetUserFromIdToken(token string) (*model.User, error) {
 	return nil, nil
+}
+
+func (m *MattermostTestProvider) IsSameUser(dbUser, oauthUser *model.User) bool {
+	return dbUser.AuthData == oauthUser.AuthData
 }
 
 func GenerateTestAppName() string {
