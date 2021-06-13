@@ -17,8 +17,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	_ "image/gif"
-	_ "image/jpeg"
 	"image/png"
 	"io"
 	"io/ioutil"
@@ -28,9 +26,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/disintegration/imaging"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
+	"github.com/masterhung0112/hk_server/v5/app/imaging"
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/einterfaces"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/plugin"
@@ -52,7 +51,7 @@ const (
 	ImageProfilePixelDimension = 128
 )
 
-func (a *App) CreateUserWithToken(user *model.User, token *model.Token) (*model.User, *model.AppError) {
+func (a *App) CreateUserWithToken(c *request.Context, user *model.User, token *model.Token) (*model.User, *model.AppError) {
 	if err := a.IsUserSignUpAllowed(); err != nil {
 		return nil, err
 	}
@@ -90,15 +89,15 @@ func (a *App) CreateUserWithToken(user *model.User, token *model.Token) (*model.
 	var ruser *model.User
 	var err *model.AppError
 	if token.Type == TokenTypeTeamInvitation {
-		ruser, err = a.CreateUser(user)
+		ruser, err = a.CreateUser(c, user)
 	} else {
-		ruser, err = a.CreateGuest(user)
+		ruser, err = a.CreateGuest(c, user)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := a.JoinUserToTeam(team, ruser, ""); err != nil {
+	if _, err := a.JoinUserToTeam(c, team, ruser, ""); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +105,7 @@ func (a *App) CreateUserWithToken(user *model.User, token *model.Token) (*model.
 
 	if token.Type == TokenTypeGuestInvitation {
 		for _, channel := range channels {
-			_, err := a.AddChannelMember(ruser.Id, channel, ChannelMemberOpts{})
+			_, err := a.AddChannelMember(c, ruser.Id, channel, ChannelMemberOpts{})
 			if err != nil {
 				mlog.Warn("Failed to add channel member", mlog.Err(err))
 			}
@@ -120,7 +119,7 @@ func (a *App) CreateUserWithToken(user *model.User, token *model.Token) (*model.
 	return ruser, nil
 }
 
-func (a *App) CreateUserWithInviteId(user *model.User, inviteId, redirect string) (*model.User, *model.AppError) {
+func (a *App) CreateUserWithInviteId(c *request.Context, user *model.User, inviteId, redirect string) (*model.User, *model.AppError) {
 	if err := a.IsUserSignUpAllowed(); err != nil {
 		return nil, err
 	}
@@ -146,12 +145,12 @@ func (a *App) CreateUserWithInviteId(user *model.User, inviteId, redirect string
 
 	user.EmailVerified = false
 
-	ruser, err := a.CreateUser(user)
+	ruser, err := a.CreateUser(c, user)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := a.JoinUserToTeam(team, ruser, ""); err != nil {
+	if _, err := a.JoinUserToTeam(c, team, ruser, ""); err != nil {
 		return nil, err
 	}
 
@@ -164,8 +163,8 @@ func (a *App) CreateUserWithInviteId(user *model.User, inviteId, redirect string
 	return ruser, nil
 }
 
-func (a *App) CreateUserAsAdmin(user *model.User, redirect string) (*model.User, *model.AppError) {
-	ruser, err := a.CreateUser(user)
+func (a *App) CreateUserAsAdmin(c *request.Context, user *model.User, redirect string) (*model.User, *model.AppError) {
+	ruser, err := a.CreateUser(c, user)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +176,7 @@ func (a *App) CreateUserAsAdmin(user *model.User, redirect string) (*model.User,
 	return ruser, nil
 }
 
-func (a *App) CreateUserFromSignup(user *model.User, redirect string) (*model.User, *model.AppError) {
+func (a *App) CreateUserFromSignup(c *request.Context, user *model.User, redirect string) (*model.User, *model.AppError) {
 	if err := a.IsUserSignUpAllowed(); err != nil {
 		return nil, err
 	}
@@ -189,7 +188,7 @@ func (a *App) CreateUserFromSignup(user *model.User, redirect string) (*model.Us
 
 	user.EmailVerified = false
 
-	ruser, err := a.CreateUser(user)
+	ruser, err := a.CreateUser(c, user)
 	if err != nil {
 		return nil, err
 	}
@@ -234,98 +233,59 @@ func (a *App) IsFirstUserAccount() bool {
 
 // CreateUser creates a user and sets several fields of the returned User struct to
 // their zero values.
-func (a *App) CreateUser(user *model.User) (*model.User, *model.AppError) {
-	return a.createUserOrGuest(user, false)
+func (a *App) CreateUser(c *request.Context, user *model.User) (*model.User, *model.AppError) {
+	return a.createUserOrGuest(c, user, false)
 }
 
 // CreateGuest creates a guest and sets several fields of the returned User struct to
 // their zero values.
-func (a *App) CreateGuest(user *model.User) (*model.User, *model.AppError) {
-	return a.createUserOrGuest(user, true)
+func (a *App) CreateGuest(c *request.Context, user *model.User) (*model.User, *model.AppError) {
+	return a.createUserOrGuest(c, user, true)
 }
 
-func (a *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *model.AppError) {
-	user.Roles = model.SYSTEM_USER_ROLE_ID
-	if guest {
-		user.Roles = model.SYSTEM_GUEST_ROLE_ID
-	}
-
-	if !user.IsLDAPUser() && !user.IsSAMLUser() && !user.IsGuest() && !CheckUserDomain(user, *a.Config().TeamSettings.RestrictCreationToDomains) {
-		return nil, model.NewAppError("CreateUser", "api.user.create_user.accepted_domain.app_error", nil, "", http.StatusBadRequest)
-	}
-
-	if !user.IsLDAPUser() && !user.IsSAMLUser() && user.IsGuest() && !CheckUserDomain(user, *a.Config().GuestAccountsSettings.RestrictCreationToDomains) {
-		return nil, model.NewAppError("CreateUser", "api.user.create_user.accepted_domain.app_error", nil, "", http.StatusBadRequest)
-	}
-
-	// Below is a special case where the first user in the entire
-	// system is granted the system_admin role
-	count, err := a.Srv().Store.User().Count(model.UserCountOptions{IncludeDeleted: true})
-	if err != nil {
-		return nil, model.NewAppError("createUserOrGuest", "app.user.get_total_users_count.app_error", nil, err.Error(), http.StatusInternalServerError)
-	}
-	if count <= 0 {
-		user.Roles = model.SYSTEM_ADMIN_ROLE_ID + " " + model.SYSTEM_USER_ROLE_ID
-	}
-
-	if _, ok := i18n.GetSupportedLocales()[user.Locale]; !ok {
-		user.Locale = *a.Config().LocalizationSettings.DefaultClientLocale
-	}
-
-	ruser, appErr := a.createUser(user)
-	if appErr != nil {
-		return nil, appErr
-	}
-	// This message goes to everyone, so the teamID, channelID and userID are irrelevant
-	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_NEW_USER, "", "", "", nil)
-	message.Add("user_id", ruser.Id)
-	a.Publish(message)
-
-	if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
-		a.Srv().Go(func() {
-			pluginContext := a.PluginContext()
-			pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
-				hooks.UserHasBeenCreated(pluginContext, user)
-				return true
-			}, plugin.UserHasBeenCreatedID)
-		})
-	}
-
-	return ruser, nil
-}
-
-func (a *App) createUser(user *model.User) (*model.User, *model.AppError) {
-	user.MakeNonNil()
-
-	if err := a.IsPasswordValid(user.Password); user.AuthService == "" && err != nil {
-		return nil, err
-	}
-
-	ruser, nErr := a.Srv().Store.User().Save(user)
+func (a *App) createUserOrGuest(c *request.Context, user *model.User, guest bool) (*model.User, *model.AppError) {
+	ruser, nErr := a.srv.userService.CreateUser(user, users.UserCreateOptions{Guest: guest})
 	if nErr != nil {
 		var appErr *model.AppError
 		var invErr *store.ErrInvalidInput
+		var nfErr *users.ErrInvalidPassword
 		switch {
 		case errors.As(nErr, &appErr):
 			return nil, appErr
+		case errors.Is(nErr, users.AcceptedDomainError):
+			return nil, model.NewAppError("createUserOrGuest", "api.user.create_user.accepted_domain.app_error", nil, "", http.StatusBadRequest)
+		case errors.As(nErr, &nfErr):
+			return nil, model.NewAppError("createUserOrGuest", "api.user.check_user_password.invalid.app_error", nil, "", http.StatusBadRequest)
+		case errors.Is(nErr, users.UserCountError):
+			return nil, model.NewAppError("createUserOrGuest", "app.user.get_total_users_count.app_error", nil, nErr.Error(), http.StatusInternalServerError)
 		case errors.As(nErr, &invErr):
 			switch invErr.Field {
 			case "email":
-				return nil, model.NewAppError("createUser", "app.user.save.email_exists.app_error", nil, invErr.Error(), http.StatusBadRequest)
+				return nil, model.NewAppError("createUserOrGuest", "app.user.save.email_exists.app_error", nil, invErr.Error(), http.StatusBadRequest)
 			case "username":
-				return nil, model.NewAppError("createUser", "app.user.save.username_exists.app_error", nil, invErr.Error(), http.StatusBadRequest)
+				return nil, model.NewAppError("createUserOrGuest", "app.user.save.username_exists.app_error", nil, invErr.Error(), http.StatusBadRequest)
 			default:
-				return nil, model.NewAppError("createUser", "app.user.save.existing.app_error", nil, invErr.Error(), http.StatusBadRequest)
+				return nil, model.NewAppError("createUserOrGuest", "app.user.save.existing.app_error", nil, invErr.Error(), http.StatusBadRequest)
 			}
 		default:
-			return nil, model.NewAppError("createUser", "app.user.save.app_error", nil, nErr.Error(), http.StatusInternalServerError)
+			return nil, model.NewAppError("createUserOrGuest", "app.user.save.app_error", nil, nErr.Error(), http.StatusInternalServerError)
 		}
 	}
 
 	if user.EmailVerified {
-		if err := a.VerifyUserEmail(ruser.Id, user.Email); err != nil {
-			mlog.Warn("Failed to set email verified", mlog.Err(err))
+		a.InvalidateCacheForUser(ruser.Id)
+
+		nUser, err := a.srv.userService.GetUser(ruser.Id)
+		if err != nil {
+			var nfErr *store.ErrNotFound
+			switch {
+			case errors.As(err, &nfErr):
+				return nil, model.NewAppError("createUserOrGuest", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
+			default:
+				return nil, model.NewAppError("createUserOrGuest", "app.user.get.app_error", nil, err.Error(), http.StatusInternalServerError)
+			}
 		}
+		a.sendUpdatedUserEvent(*nUser)
 	}
 
 	pref := model.Preference{UserId: ruser.Id, Category: model.PREFERENCE_CATEGORY_TUTORIAL_STEPS, Name: ruser.Id, Value: "0"}
@@ -334,14 +294,25 @@ func (a *App) createUser(user *model.User) (*model.User, *model.AppError) {
 	}
 
 	go a.UpdateViewedProductNoticesForNewUser(ruser.Id)
-	ruser.Sanitize(map[string]bool{})
 
-	// Determine whether to send the created user a welcome email
-	ruser.DisableWelcomeEmail = user.DisableWelcomeEmail
+	// This message goes to everyone, so the teamID, channelID and userID are irrelevant
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_NEW_USER, "", "", "", nil)
+	message.Add("user_id", ruser.Id)
+	a.Publish(message)
+
+	if pluginsEnvironment := a.GetPluginsEnvironment(); pluginsEnvironment != nil {
+		a.Srv().Go(func() {
+			pluginContext := pluginContext(c)
+			pluginsEnvironment.RunMultiPluginHook(func(hooks plugin.Hooks) bool {
+				hooks.UserHasBeenCreated(pluginContext, user)
+				return true
+			}, plugin.UserHasBeenCreatedID)
+		})
+	}
 	return ruser, nil
 }
 
-func (a *App) CreateOAuthUser(service string, userData io.Reader, teamID string, tokenUser *model.User) (*model.User, *model.AppError) {
+func (a *App) CreateOAuthUser(c *request.Context, service string, userData io.Reader, teamID string, tokenUser *model.User) (*model.User, *model.AppError) {
 	if !*a.Config().TeamSettings.EnableUserCreation {
 		return nil, model.NewAppError("CreateOAuthUser", "api.user.create_user.disabled.app_error", nil, "", http.StatusNotImplemented)
 	}
@@ -361,7 +332,7 @@ func (a *App) CreateOAuthUser(service string, userData io.Reader, teamID string,
 	found := true
 	count := 0
 	for found {
-		if found = a.IsUsernameTaken(user.Username); found {
+		if found = a.srv.userService.IsUsernameTaken(user.Username); found {
 			user.Username = user.Username + strconv.Itoa(count)
 			count++
 		}
@@ -377,18 +348,25 @@ func (a *App) CreateOAuthUser(service string, userData io.Reader, teamID string,
 		if userByEmail.AuthService == "" {
 			return nil, model.NewAppError("CreateOAuthUser", "api.user.create_oauth_user.already_attached.app_error", map[string]interface{}{"Service": service, "Auth": model.USER_AUTH_SERVICE_EMAIL}, "email="+user.Email, http.StatusBadRequest)
 		}
-		return nil, model.NewAppError("CreateOAuthUser", "api.user.create_oauth_user.already_attached.app_error", map[string]interface{}{"Service": service, "Auth": userByEmail.AuthService}, "email="+user.Email, http.StatusBadRequest)
+		if provider.IsSameUser(userByEmail, user) {
+			if _, err := a.Srv().Store.User().UpdateAuthData(userByEmail.Id, user.AuthService, user.AuthData, "", false); err != nil {
+				// if the user is not updated, write a warning to the log, but don't prevent user login
+				mlog.Warn("Error attempting to update user AuthData", mlog.Err(err))
+			}
+			return userByEmail, nil
+		}
+		return nil, model.NewAppError("CreateOAuthUser", "api.user.create_oauth_user.already_attached.app_error", map[string]interface{}{"Service": service, "Auth": userByEmail.AuthService}, "email="+user.Email+" authData="+*user.AuthData, http.StatusBadRequest)
 	}
 
 	user.EmailVerified = true
 
-	ruser, err := a.CreateUser(user)
+	ruser, err := a.CreateUser(c, user)
 	if err != nil {
 		return nil, err
 	}
 
 	if teamID != "" {
-		err = a.AddUserToTeamByTeamId(teamID, user)
+		err = a.AddUserToTeamByTeamId(c, teamID, user)
 		if err != nil {
 			return nil, err
 		}
@@ -424,28 +402,15 @@ func CheckUserDomain(user *model.User, domains string) bool {
 	return CheckEmailDomain(user.Email, domains)
 }
 
-// IsUsernameTaken checks if the username is already used by another user. Return false if the username is invalid.
-func (a *App) IsUsernameTaken(name string) bool {
-	if !model.IsValidUsername(name) {
-		return false
-	}
-
-	if _, err := a.Srv().Store.User().GetByUsername(name); err != nil {
-		return false
-	}
-
-	return true
-}
-
 func (a *App) GetUser(userID string) (*model.User, *model.AppError) {
-	user, err := a.Srv().Store.User().Get(context.Background(), userID)
+	user, err := a.srv.userService.GetUser(userID)
 	if err != nil {
 		var nfErr *store.ErrNotFound
 		switch {
 		case errors.As(err, &nfErr):
 			return nil, model.NewAppError("GetUser", MissingAccountError, nil, nfErr.Error(), http.StatusNotFound)
 		default:
-			return nil, model.NewAppError("GetUser", "app.user.get.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return nil, model.NewAppError("GetUser", "app.user.get_by_username.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 	}
 
@@ -453,7 +418,7 @@ func (a *App) GetUser(userID string) (*model.User, *model.AppError) {
 }
 
 func (a *App) GetUserByUsername(username string) (*model.User, *model.AppError) {
-	result, err := a.Srv().Store.User().GetByUsername(username)
+	result, err := a.srv.userService.GetUserByUsername(username)
 	if err != nil {
 		var nfErr *store.ErrNotFound
 		switch {
@@ -467,7 +432,7 @@ func (a *App) GetUserByUsername(username string) (*model.User, *model.AppError) 
 }
 
 func (a *App) GetUserByEmail(email string) (*model.User, *model.AppError) {
-	user, err := a.Srv().Store.User().GetByEmail(email)
+	user, err := a.srv.userService.GetUserByEmail(email)
 	if err != nil {
 		var nfErr *store.ErrNotFound
 		switch {
@@ -481,7 +446,7 @@ func (a *App) GetUserByEmail(email string) (*model.User, *model.AppError) {
 }
 
 func (a *App) GetUserByAuth(authData *string, authService string) (*model.User, *model.AppError) {
-	user, err := a.Srv().Store.User().GetByAuth(authData, authService)
+	user, err := a.srv.userService.GetUserByAuth(authData, authService)
 	if err != nil {
 		var invErr *store.ErrInvalidInput
 		var nfErr *store.ErrNotFound
@@ -499,7 +464,7 @@ func (a *App) GetUserByAuth(authData *string, authService string) (*model.User, 
 }
 
 func (a *App) GetUsers(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
-	users, err := a.Srv().Store.User().GetAllProfiles(options)
+	users, err := a.srv.userService.GetUsers(options)
 	if err != nil {
 		return nil, model.NewAppError("GetUsers", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
@@ -508,20 +473,20 @@ func (a *App) GetUsers(options *model.UserGetOptions) ([]*model.User, *model.App
 }
 
 func (a *App) GetUsersPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError) {
-	users, err := a.GetUsers(options)
+	users, err := a.srv.userService.GetUsersPage(options, asAdmin)
 	if err != nil {
-		return nil, err
+		return nil, model.NewAppError("GetUsersPage", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
-	return a.sanitizeProfiles(users, asAdmin), nil
+	return users, nil
 }
 
 func (a *App) GetUsersEtag(restrictionsHash string) string {
-	return fmt.Sprintf("%v.%v.%v.%v", a.Srv().Store.User().GetEtagForAllProfiles(), a.Config().PrivacySettings.ShowFullName, a.Config().PrivacySettings.ShowEmailAddress, restrictionsHash)
+	return a.srv.userService.GetUsersEtag(restrictionsHash)
 }
 
 func (a *App) GetUsersInTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
-	users, err := a.Srv().Store.User().GetProfiles(options)
+	users, err := a.srv.userService.GetUsersInTeam(options)
 	if err != nil {
 		return nil, model.NewAppError("GetUsersInTeam", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
@@ -530,7 +495,7 @@ func (a *App) GetUsersInTeam(options *model.UserGetOptions) ([]*model.User, *mod
 }
 
 func (a *App) GetUsersNotInTeam(teamID string, groupConstrained bool, offset int, limit int, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError) {
-	users, err := a.Srv().Store.User().GetProfilesNotInTeam(teamID, groupConstrained, offset, limit, viewRestrictions)
+	users, err := a.srv.userService.GetUsersNotInTeam(teamID, groupConstrained, offset, limit, viewRestrictions)
 	if err != nil {
 		return nil, model.NewAppError("GetUsersNotInTeam", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
@@ -539,29 +504,29 @@ func (a *App) GetUsersNotInTeam(teamID string, groupConstrained bool, offset int
 }
 
 func (a *App) GetUsersInTeamPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError) {
-	users, err := a.GetUsersInTeam(options)
+	users, err := a.srv.userService.GetUsersInTeamPage(options, asAdmin)
 	if err != nil {
-		return nil, err
+		return nil, model.NewAppError("GetUsersInTeamPage", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return a.sanitizeProfiles(users, asAdmin), nil
 }
 
 func (a *App) GetUsersNotInTeamPage(teamID string, groupConstrained bool, page int, perPage int, asAdmin bool, viewRestrictions *model.ViewUsersRestrictions) ([]*model.User, *model.AppError) {
-	users, err := a.GetUsersNotInTeam(teamID, groupConstrained, page*perPage, perPage, viewRestrictions)
+	users, err := a.srv.userService.GetUsersNotInTeamPage(teamID, groupConstrained, page*perPage, perPage, asAdmin, viewRestrictions)
 	if err != nil {
-		return nil, err
+		return nil, model.NewAppError("GetUsersNotInTeamPage", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return a.sanitizeProfiles(users, asAdmin), nil
 }
 
 func (a *App) GetUsersInTeamEtag(teamID string, restrictionsHash string) string {
-	return fmt.Sprintf("%v.%v.%v.%v", a.Srv().Store.User().GetEtagForProfiles(teamID), a.Config().PrivacySettings.ShowFullName, a.Config().PrivacySettings.ShowEmailAddress, restrictionsHash)
+	return a.srv.userService.GetUsersInTeamEtag(teamID, restrictionsHash)
 }
 
 func (a *App) GetUsersNotInTeamEtag(teamID string, restrictionsHash string) string {
-	return fmt.Sprintf("%v.%v.%v.%v", a.Srv().Store.User().GetEtagForProfilesNotInTeam(teamID), a.Config().PrivacySettings.ShowFullName, a.Config().PrivacySettings.ShowEmailAddress, restrictionsHash)
+	return a.srv.userService.GetUsersNotInTeamEtag(teamID, restrictionsHash)
 }
 
 func (a *App) GetUsersInChannel(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
@@ -649,16 +614,16 @@ func (a *App) GetUsersNotInChannelPage(teamID string, channelID string, groupCon
 }
 
 func (a *App) GetUsersWithoutTeamPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError) {
-	users, err := a.GetUsersWithoutTeam(options)
+	users, err := a.srv.userService.GetUsersWithoutTeamPage(options, asAdmin)
 	if err != nil {
-		return nil, err
+		return nil, model.NewAppError("GetUsersWithoutTeamPage", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return a.sanitizeProfiles(users, asAdmin), nil
 }
 
 func (a *App) GetUsersWithoutTeam(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
-	users, err := a.Srv().Store.User().GetProfilesWithoutTeam(options)
+	users, err := a.srv.userService.GetUsersWithoutTeam(options)
 	if err != nil {
 		return nil, model.NewAppError("GetUsersWithoutTeam", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
@@ -687,18 +652,16 @@ func (a *App) GetChannelGroupUsers(channelID string) ([]*model.User, *model.AppE
 }
 
 func (a *App) GetUsersByIds(userIDs []string, options *store.UserGetByIdsOpts) ([]*model.User, *model.AppError) {
-	allowFromCache := options.ViewRestrictions == nil
-
-	users, err := a.Srv().Store.User().GetProfileByIds(context.Background(), userIDs, options, allowFromCache)
+	users, err := a.srv.userService.GetUsersByIds(userIDs, options)
 	if err != nil {
 		return nil, model.NewAppError("GetUsersByIds", "app.user.get_profiles.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
-	return a.sanitizeProfiles(users, options.IsAdmin), nil
+	return users, nil
 }
 
-func (a *App) GetUsersByGroupChannelIds(channelIDs []string, asAdmin bool) (map[string][]*model.User, *model.AppError) {
-	usersByChannelId, err := a.Srv().Store.User().GetProfileByGroupChannelIdsForUser(a.Session().UserId, channelIDs)
+func (a *App) GetUsersByGroupChannelIds(c *request.Context, channelIDs []string, asAdmin bool) (map[string][]*model.User, *model.AppError) {
+	usersByChannelId, err := a.Srv().Store.User().GetProfileByGroupChannelIdsForUser(c.Session().UserId, channelIDs)
 	if err != nil {
 		return nil, model.NewAppError("GetUsersByGroupChannelIds", "app.user.get_profile_by_group_channel_ids_for_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
@@ -877,48 +840,11 @@ func getFont(initialFont string) (*truetype.Font, error) {
 }
 
 func (a *App) GetProfileImage(user *model.User) ([]byte, bool, *model.AppError) {
-	if *a.Config().FileSettings.DriverName == "" {
-		img, appErr := a.GetDefaultProfileImage(user)
-		if appErr != nil {
-			return nil, false, appErr
-		}
-		return img, false, nil
-	}
-
-	path := "users/" + user.Id + "/profile.png"
-
-	data, err := a.ReadFile(path)
-	if err != nil {
-		img, appErr := a.GetDefaultProfileImage(user)
-		if appErr != nil {
-			return nil, false, appErr
-		}
-
-		if user.LastPictureUpdate == 0 {
-			if _, err := a.WriteFile(bytes.NewReader(img), path); err != nil {
-				return nil, false, err
-			}
-		}
-		return img, true, nil
-	}
-
-	return data, false, nil
+	return a.srv.GetProfileImage(user)
 }
 
 func (a *App) GetDefaultProfileImage(user *model.User) ([]byte, *model.AppError) {
-	var img []byte
-	var appErr *model.AppError
-
-	if user.IsBot {
-		img = model.BotDefaultImage
-		appErr = nil
-	} else {
-		img, appErr = CreateProfileImage(user.Username, user.Id, *a.Config().FileSettings.InitialFont)
-	}
-	if appErr != nil {
-		return nil, appErr
-	}
-	return img, nil
+	return a.srv.GetDefaultProfileImage(user)
 }
 
 func (a *App) SetDefaultProfileImage(user *model.User) *model.AppError {
@@ -965,39 +891,29 @@ func (a *App) SetProfileImage(userID string, imageData *multipart.FileHeader) *m
 }
 
 func (a *App) SetProfileImageFromMultiPartFile(userID string, file multipart.File) *model.AppError {
-	// Decode image config first to check dimensions before loading the whole thing into memory later on
-	config, _, err := image.DecodeConfig(file)
-	if err != nil {
-		return model.NewAppError("SetProfileImage", "api.user.upload_profile_user.decode_config.app_error", nil, err.Error(), http.StatusBadRequest)
+	if limitErr := checkImageLimits(file); limitErr != nil {
+		return model.NewAppError("SetProfileImage", "api.user.upload_profile_user.check_image_limits.app_error", nil, "", http.StatusBadRequest)
 	}
-	// This casting is done to prevent overflow on 32 bit systems (not needed
-	// in 64 bits systems because images can't have more than 32 bits height or
-	// width)
-	if int64(config.Width)*int64(config.Height) > model.MaxImageSize {
-		return model.NewAppError("SetProfileImage", "api.user.upload_profile_user.too_large.app_error", nil, "", http.StatusBadRequest)
-	}
-
-	file.Seek(0, 0)
 
 	return a.SetProfileImageFromFile(userID, file)
 }
 
 func (a *App) AdjustImage(file io.Reader) (*bytes.Buffer, *model.AppError) {
 	// Decode image into Image object
-	img, _, err := image.Decode(file)
+	img, _, err := a.srv.imgDecoder.Decode(file)
 	if err != nil {
 		return nil, model.NewAppError("SetProfileImage", "api.user.upload_profile_user.decode.app_error", nil, err.Error(), http.StatusBadRequest)
 	}
 
-	orientation, _ := getImageOrientation(file)
-	img = makeImageUpright(img, orientation)
+	orientation, _ := imaging.GetImageOrientation(file)
+	img = imaging.MakeImageUpright(img, orientation)
 
 	// Scale profile image
 	profileWidthAndHeight := 128
-	img = imaging.Fill(img, profileWidthAndHeight, profileWidthAndHeight, imaging.Center, imaging.Lanczos)
+	img = imaging.FillCenter(img, profileWidthAndHeight, profileWidthAndHeight)
 
 	buf := new(bytes.Buffer)
-	err = png.Encode(buf, img)
+	err = a.srv.imgEncoder.EncodePNG(buf, img)
 	if err != nil {
 		return nil, model.NewAppError("SetProfileImage", "api.user.upload_profile_user.encode.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
@@ -1019,6 +935,7 @@ func (a *App) SetProfileImageFromFile(userID string, file io.Reader) *model.AppE
 		mlog.Warn("Error with updating last picture update", mlog.Err(err))
 	}
 	a.invalidateUserCacheAndPublish(userID)
+	a.onUserProfileChange(userID)
 
 	return nil
 }
@@ -1051,7 +968,7 @@ func (a *App) UpdatePasswordAsUser(userID, currentPassword, newPassword string) 
 	return a.UpdatePasswordSendEmail(user, newPassword, T("api.user.update_password.menu"))
 }
 
-func (a *App) userDeactivated(userID string) *model.AppError {
+func (a *App) userDeactivated(c *request.Context, userID string) *model.AppError {
 	if err := a.RevokeAllSessions(userID); err != nil {
 		return err
 	}
@@ -1067,11 +984,11 @@ func (a *App) userDeactivated(userID string) *model.AppError {
 	// bots the user owns. Only notify once, when the user is the owner, not the
 	// owners bots
 	if !user.IsBot {
-		a.notifySysadminsBotOwnerDeactivated(userID)
+		a.notifySysadminsBotOwnerDeactivated(c, userID)
 	}
 
 	if *a.Config().ServiceSettings.DisableBotsWhenOwnerIsDeactivated {
-		a.disableUserBots(userID)
+		a.disableUserBots(c, userID)
 	}
 
 	return nil
@@ -1097,7 +1014,7 @@ func (a *App) invalidateUserChannelMembersCaches(userID string) *model.AppError 
 	return nil
 }
 
-func (a *App) UpdateActive(user *model.User, active bool) (*model.User, *model.AppError) {
+func (a *App) UpdateActive(c *request.Context, user *model.User, active bool) (*model.User, *model.AppError) {
 	user.UpdateAt = model.GetMillis()
 	if active {
 		user.DeleteAt = 0
@@ -1121,7 +1038,7 @@ func (a *App) UpdateActive(user *model.User, active bool) (*model.User, *model.A
 	ruser := userUpdate.New
 
 	if !active {
-		if err := a.userDeactivated(ruser.Id); err != nil {
+		if err := a.userDeactivated(c, ruser.Id); err != nil {
 			return nil, err
 		}
 	}
@@ -1134,14 +1051,14 @@ func (a *App) UpdateActive(user *model.User, active bool) (*model.User, *model.A
 	return ruser, nil
 }
 
-func (a *App) DeactivateGuests() *model.AppError {
+func (a *App) DeactivateGuests(c *request.Context) *model.AppError {
 	userIDs, err := a.Srv().Store.User().DeactivateGuests()
 	if err != nil {
 		return model.NewAppError("DeactivateGuests", "app.user.update_active_for_multiple_users.updating.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	for _, userID := range userIDs {
-		if err := a.userDeactivated(userID); err != nil {
+		if err := a.userDeactivated(c, userID); err != nil {
 			return err
 		}
 	}
@@ -1155,6 +1072,7 @@ func (a *App) DeactivateGuests() *model.AppError {
 	return nil
 }
 
+// TODO: migrate this after the user service implementation is completed
 func (a *App) GetSanitizeOptions(asAdmin bool) map[string]bool {
 	options := a.Config().GetSanitizeOptions()
 	if asAdmin {
@@ -1349,17 +1267,18 @@ func (a *App) UpdateUser(user *model.User, sendNotifications bool) (*model.User,
 	}
 
 	a.InvalidateCacheForUser(user.Id)
+	a.onUserProfileChange(user.Id)
 
 	return userUpdate.New, nil
 }
 
-func (a *App) UpdateUserActive(userID string, active bool) *model.AppError {
+func (a *App) UpdateUserActive(c *request.Context, userID string, active bool) *model.AppError {
 	user, err := a.GetUser(userID)
 
 	if err != nil {
 		return err
 	}
-	if _, err = a.UpdateActive(user, active); err != nil {
+	if _, err = a.UpdateActive(c, user, active); err != nil {
 		return err
 	}
 
@@ -1642,13 +1561,13 @@ func (a *App) UpdateUserRolesWithUser(user *model.User, newRoles string, sendWeb
 	return ruser, nil
 }
 
-func (a *App) PermanentDeleteUser(user *model.User) *model.AppError {
+func (a *App) PermanentDeleteUser(c *request.Context, user *model.User) *model.AppError {
 	mlog.Warn("Attempting to permanently delete account", mlog.String("user_id", user.Id), mlog.String("user_email", user.Email))
 	if user.IsInRole(model.SYSTEM_ADMIN_ROLE_ID) {
 		mlog.Warn("You are deleting a user that is a system administrator.  You may need to set another account as the system administrator using the command line tools.", mlog.String("user_email", user.Email))
 	}
 
-	if _, err := a.UpdateActive(user, false); err != nil {
+	if _, err := a.UpdateActive(c, user, false); err != nil {
 		return err
 	}
 
@@ -1755,13 +1674,13 @@ func (a *App) PermanentDeleteUser(user *model.User) *model.AppError {
 	return nil
 }
 
-func (a *App) PermanentDeleteAllUsers() *model.AppError {
+func (a *App) PermanentDeleteAllUsers(c *request.Context) *model.AppError {
 	users, err := a.Srv().Store.User().GetAll()
 	if err != nil {
 		return model.NewAppError("PermanentDeleteAllUsers", "app.user.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 	for _, user := range users {
-		a.PermanentDeleteUser(user)
+		a.PermanentDeleteUser(c, user)
 	}
 
 	return nil
@@ -2218,7 +2137,7 @@ func (a *App) GetViewUsersRestrictions(userID string) (*model.ViewUsersRestricti
 
 // PromoteGuestToUser Convert user's roles and all his mermbership's roles from
 // guest roles to regular user roles.
-func (a *App) PromoteGuestToUser(user *model.User, requestorId string) *model.AppError {
+func (a *App) PromoteGuestToUser(c *request.Context, user *model.User, requestorId string) *model.AppError {
 	nErr := a.Srv().Store.User().PromoteGuestToUser(user.Id)
 	a.InvalidateCacheForUser(user.Id)
 	if nErr != nil {
@@ -2231,7 +2150,7 @@ func (a *App) PromoteGuestToUser(user *model.User, requestorId string) *model.Ap
 
 	for _, team := range userTeams {
 		// Soft error if there is an issue joining the default channels
-		if err := a.JoinDefaultChannels(team.Id, user, false, requestorId); err != nil {
+		if err := a.JoinDefaultChannels(c, team.Id, user, false, requestorId); err != nil {
 			mlog.Warn("Failed to join default channels", mlog.String("user_id", user.Id), mlog.String("team_id", team.Id), mlog.String("requestor_id", requestorId), mlog.Err(err))
 		}
 	}
@@ -2430,13 +2349,18 @@ func (a *App) UpdateThreadsReadForUser(userID, teamID string) *model.AppError {
 }
 
 func (a *App) UpdateThreadFollowForUser(userID, teamID, threadID string, state bool) *model.AppError {
-	_, err := a.Srv().Store.Thread().MaintainMembership(userID, threadID, state, false, true, false, false)
+	_, err := a.Srv().Store.Thread().MaintainMembership(userID, threadID, state, false, true, state, false)
+	if err != nil {
+		return model.NewAppError("UpdateThreadFollowForUser", "app.user.update_thread_follow_for_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}
+	thread, err := a.Srv().Store.Thread().Get(threadID)
 	if err != nil {
 		return model.NewAppError("UpdateThreadFollowForUser", "app.user.update_thread_follow_for_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}
 	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_THREAD_FOLLOW_CHANGED, teamID, "", userID, nil)
 	message.Add("thread_id", threadID)
 	message.Add("state", state)
+	message.Add("reply_count", thread.ReplyCount)
 	a.Publish(message)
 	return nil
 }

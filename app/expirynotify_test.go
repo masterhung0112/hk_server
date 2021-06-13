@@ -8,8 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/v5/model"
 )
 
 func TestNotifySessionsExpired(t *testing.T) {

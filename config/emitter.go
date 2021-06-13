@@ -10,6 +10,9 @@ import (
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
+// Listener is a callback function invoked when the configuration changes.
+type Listener func(oldCfg, newCfg *model.Config)
+
 // emitter enables threadsafe registration and broadcasting to configuration listeners
 type emitter struct {
 	listeners sync.Map

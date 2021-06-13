@@ -3233,7 +3233,7 @@ func (s SqlChannelStore) GetChannelMembersForExport(userId string, teamId string
 			ChannelMembers.LastViewedAt,
 			ChannelMembers.MsgCount,
 			ChannelMembers.MentionCount,
-      ChannelMembers.MentionCountRoot,
+			ChannelMembers.MentionCountRoot,
 			ChannelMembers.NotifyProps,
 			ChannelMembers.LastUpdateAt,
 			ChannelMembers.SchemeUser,

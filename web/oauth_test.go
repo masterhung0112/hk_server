@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/einterfaces"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/shared/i18n"
@@ -725,7 +726,7 @@ func (th *TestHelper) RestoreDefaultRolePermissions(data map[string][]string) {
 // func (th *TestHelper) RemovePermissionFromRole(permission string, roleName string) {
 // 	utils.DisableDebugLogForTest()
 
-// 	role, err1 := th.App.GetRoleByName(context.Background(), roleName)
+// 	role, err1 := th.App.GetRoleByName(roleName)
 // 	if err1 != nil {
 // 		utils.EnableDebugLogForTest()
 // 		panic(err1)

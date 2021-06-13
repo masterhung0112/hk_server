@@ -3,7 +3,9 @@
 
 package model
 
-import "github.com/masterhung0112/hk_server/v5/shared/mlog"
+import (
+	"github.com/masterhung0112/hk_server/v5/shared/mlog"
+)
 
 type BundleInfo struct {
 	Path string

@@ -8,6 +8,7 @@ import (
 	filestore "github.com/masterhung0112/hk_server/v5/shared/filestore"
 	mock "github.com/stretchr/testify/mock"
 
+	request "github.com/masterhung0112/hk_server/v5/app/request"
 	model "github.com/masterhung0112/hk_server/v5/model"
 )
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/einterfaces"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/services/httpservice"

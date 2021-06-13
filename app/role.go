@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"reflect"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/masterhung0112/hk_server/v5/utils"
-	"github.com/pkg/errors"
 )
 
 func (a *App) GetRole(id string) (*model.Role, *model.AppError) {
@@ -24,16 +24,12 @@ func (a *App) GetRole(id string) (*model.Role, *model.AppError) {
 		}
 	}
 
-	return role, nil
-}
-
-func (a *App) GetAllRoles() ([]*model.Role, *model.AppError) {
-	roles, err := a.Srv().Store.Role().GetAll()
-	if err != nil {
-		return nil, model.NewAppError("GetAllRoles", "app.role.get_all.app_error", nil, err.Error(), http.StatusInternalServerError)
+	appErr := a.Srv().mergeChannelHigherScopedPermissions([]*model.Role{role})
+	if appErr != nil {
+		return nil, appErr
 	}
 
-	return roles, nil
+	return role, nil
 }
 
 func (s *Server) GetRoleByName(ctx context.Context, name string) (*model.Role, *model.AppError) {

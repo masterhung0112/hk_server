@@ -8,12 +8,12 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/scrypt"
 )
 

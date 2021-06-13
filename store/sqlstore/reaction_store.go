@@ -143,7 +143,7 @@ func (s *SqlReactionStore) BulkGetForPosts(postIds []string) ([]*model.Reaction,
 				CreateAt,
 				COALESCE(UpdateAt, CreateAt) As UpdateAt,
 				COALESCE(DeleteAt, 0) As DeleteAt,
-        RemoteId
+				RemoteId
 			FROM
 				Reactions
 			WHERE
@@ -279,7 +279,7 @@ func deleteReactionAndUpdatePost(transaction *gorp.Transaction, reaction *model.
 	if _, err := transaction.Exec(
 		`UPDATE
 			Reactions
-      SET
+		SET
 			UpdateAt = :UpdateAt, DeleteAt = :DeleteAt, RemoteId = :RemoteId
 		WHERE
 			PostId = :PostId AND

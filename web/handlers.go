@@ -18,6 +18,7 @@ import (
 
 	"github.com/masterhung0112/hk_server/v5/app"
 	app_opentracing "github.com/masterhung0112/hk_server/v5/app/opentracing"
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/services/tracing"
 	"github.com/masterhung0112/hk_server/v5/shared/i18n"

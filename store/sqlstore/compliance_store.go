@@ -150,7 +150,7 @@ func (s SqlComplianceStore) ComplianceExport(job *model.Compliance, cursor model
 			Channels,
 			Users,
 			Posts
-    LEFT JOIN
+		LEFT JOIN
 			Bots ON Bots.UserId = Posts.UserId
 		WHERE
 			Teams.Id = Channels.TeamId
@@ -212,7 +212,7 @@ func (s SqlComplianceStore) ComplianceExport(job *model.Compliance, cursor model
 			Channels,
 			Users,
 			Posts
-    LEFT JOIN
+		LEFT JOIN
 			Bots ON Bots.UserId = Posts.UserId
 		WHERE
 			Channels.TeamId = ''

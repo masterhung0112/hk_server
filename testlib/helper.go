@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package testlib
 
 import (
@@ -156,7 +159,7 @@ func (h *MainHelper) setupResources() {
 // In the worst case, only an optimization is lost.
 //
 // Re-generate the files with:
-// pg_dump -a -h localhost -U hkuser -d <> --no-comments --inserts -t roles -t systems
+// pg_dump -a -h localhost -U mmuser -d <> --no-comments --inserts -t roles -t systems
 // mysqldump -u root -p <> --no-create-info --extended-insert=FALSE Systems Roles
 // And keep only the permission related rows in the systems table output.
 func (h *MainHelper) PreloadMigrations() {
@@ -170,8 +173,7 @@ func (h *MainHelper) PreloadMigrations() {
 		if basePath != "" {
 			finalPath = filepath.Join(basePath, relPath, "postgres_migration_warmup.sql")
 		} else {
-			// finalPath = filepath.Join(h.testResourcePath, relPath, "postgres_migration_warmup.sql")
-			finalPath = filepath.Join("hk_server", relPath, "postgres_migration_warmup.sql")
+			finalPath = filepath.Join("mattermost-server", relPath, "postgres_migration_warmup.sql")
 		}
 		buf, err = ioutil.ReadFile(finalPath)
 		if err != nil {
@@ -182,8 +184,7 @@ func (h *MainHelper) PreloadMigrations() {
 		if basePath != "" {
 			finalPath = filepath.Join(basePath, relPath, "mysql_migration_warmup.sql")
 		} else {
-			// finalPath = filepath.Join(h.testResourcePath, relPath, "mysql_migration_warmup.sql")
-			finalPath = filepath.Join("hk_server", relPath, "mysql_migration_warmup.sql")
+			finalPath = filepath.Join("mattermost-server", relPath, "mysql_migration_warmup.sql")
 		}
 		buf, err = ioutil.ReadFile(finalPath)
 		if err != nil {

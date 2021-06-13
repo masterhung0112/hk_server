@@ -18,7 +18,7 @@ func (s *Server) setupFeatureFlags() {
 	splitConfigured := splitKey != ""
 	syncFeatureFlags := splitConfigured && s.IsLeader()
 
-	s.configStore.PersistFeatures(splitConfigured)
+	s.configStore.SetReadOnlyFF(!splitConfigured)
 
 	if syncFeatureFlags {
 		if err := s.startFeatureFlagUpdateJob(); err != nil {
@@ -68,7 +68,7 @@ func (s *Server) startFeatureFlagUpdateJob() error {
 		attributes["group_id"] = groupId
 	}
 
-	synchronizer, err := config.NewFeatureFlagSynchronizer(config.FeatureFlagSyncParams{
+	synchronizer, err := featureflag.NewSynchronizer(featureflag.SyncParams{
 		ServerID:   s.TelemetryId(),
 		SplitKey:   *s.Config().ServiceSettings.SplitKey,
 		Log:        log,
