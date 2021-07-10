@@ -165,7 +165,7 @@ func (h *MainHelper) setupResources() {
 func (h *MainHelper) PreloadMigrations() {
 	var buf []byte
 	var err error
-	basePath := os.Getenv("MM_SERVER_PATH")
+	basePath := os.Getenv("HK_SERVER_PATH")
 	relPath := "testlib/testdata"
 	switch *h.Settings.DriverName {
 	case model.DATABASE_DRIVER_POSTGRES:
@@ -173,7 +173,8 @@ func (h *MainHelper) PreloadMigrations() {
 		if basePath != "" {
 			finalPath = filepath.Join(basePath, relPath, "postgres_migration_warmup.sql")
 		} else {
-			finalPath = filepath.Join("hk_server", relPath, "postgres_migration_warmup.sql")
+			// finalPath = filepath.Join("hk_server", relPath, "postgres_migration_warmup.sql")
+      finalPath = filepath.Join(relPath, "postgres_migration_warmup.sql")
 		}
 		buf, err = ioutil.ReadFile(finalPath)
 		if err != nil {

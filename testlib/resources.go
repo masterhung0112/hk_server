@@ -49,7 +49,7 @@ func getCommonBaseSearchPaths() []string {
 	}
 
 	// this enables the server to be used in tests from a different repository
-	if mmPath := os.Getenv("MM_SERVER_PATH"); mmPath != "" {
+	if mmPath := os.Getenv("HK_SERVER_PATH"); mmPath != "" {
 		paths = append(paths, mmPath)
 	}
 
