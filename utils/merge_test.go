@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/v5/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 // Test merging maps alone. This isolates the complexity of merging maps from merging maps recursively in

@@ -660,7 +660,7 @@ func (s SqlSharedChannelStore) UpdateUserLastSyncAt(userID string, channelID str
 			SharedChannelUsers AS scu
 		SET
 			LastSyncAt = GREATEST(Users.UpdateAt, Users.LastPictureUpdate)
-		FROM
+		FROM 
 			Users
 		WHERE
 			Users.Id = scu.UserId AND scu.UserId = :UserId AND scu.ChannelId = :ChannelId AND scu.RemoteId = :RemoteId
@@ -743,7 +743,7 @@ func (s SqlSharedChannelStore) UpsertAttachment(attachment *model.SharedChannelA
 				(Id, FileId, RemoteId, CreateAt, LastSyncAt)
 			VALUES
 				(:Id, :FileId, :RemoteId, :CreateAt, :LastSyncAt)
-			ON CONFLICT (Id)
+			ON CONFLICT (Id) 
 				DO UPDATE SET LastSyncAt = :LastSyncAt`, params); err != nil {
 			return "", err
 		}

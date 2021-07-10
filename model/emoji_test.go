@@ -50,6 +50,8 @@ func TestEmojiIsValid(t *testing.T) {
 	emoji.Name = "name-"
 	require.Nil(t, emoji.IsValid())
 
+	emoji.Name = "name+"
+	require.Nil(t, emoji.IsValid())
 	emoji.Name = "name_"
 	require.Nil(t, emoji.IsValid())
 

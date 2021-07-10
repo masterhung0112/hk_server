@@ -16,7 +16,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/users"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/masterhung0112/hk_server/v5/utils"
@@ -506,10 +508,12 @@ func (a *App) importUser(data *UserImportData, dryRun bool) *model.AppError {
 				return model.NewAppError("importUser", "app.user.save.app_error", nil, nErr.Error(), http.StatusInternalServerError)
 			}
 		}
+
 		pref := model.Preference{UserId: savedUser.Id, Category: model.PREFERENCE_CATEGORY_TUTORIAL_STEPS, Name: savedUser.Id, Value: "0"}
 		if err := a.Srv().Store.Preference().Save(&model.Preferences{pref}); err != nil {
 			mlog.Warn("Encountered error saving tutorial preference", mlog.Err(err))
 		}
+
 	} else {
 		var appErr *model.AppError
 		if hasUserChanged {

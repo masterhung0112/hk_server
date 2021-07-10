@@ -6,7 +6,7 @@ package api4
 import (
 	"net/http"
 
-	"github.com/NYTimes/gziphandler"
+	"github.com/mattermost/gziphandler"
 
 	"github.com/masterhung0112/hk_server/v5/web"
 )

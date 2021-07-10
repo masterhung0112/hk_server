@@ -1,11 +1,11 @@
-package config_test
+package config
 
 import (
 	"fmt"
 	"testing"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/masterhung0112/hk_server/v5/config"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetClientConfig(t *testing.T) {
