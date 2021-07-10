@@ -60,8 +60,9 @@ function start_docker() {
   } else {
     console.log('Starting docker containers')
   }
-  //TODO: Open
-  sh(`${GO} run ./build/docker-compose-generator/main.go ${ENABLED_DOCKER_SERVICES} | docker-compose -f docker-compose.makefile.yml -f /dev/stdin run --rm start_dependencies`, { nopipe: true })
+
+  sh(`${GO} run ./build/docker-compose-generator/main.go ${ENABLED_DOCKER_SERVICES} > enabled_services.yml`, { nopipe: true })
+  sh(`docker-compose -f docker-compose.makefile.yml -f enabled_services.yml run --rm start_dependencies`, { nopipe: true })
 
   // if ($(findstring openldap,$(ENABLED_DOCKER_SERVICES))) {
     // sh(`cat tests/${LDAP_DATA}-data.ldif | docker-compose -f docker-compose.makefile.yml exec -T openldap bash -c 'ldapadd -x -D "cn=admin,dc=mm,dc=test,dc=com" -w mostest || true'`, { nopipe: true })
@@ -85,6 +86,7 @@ function test_data() {
 help(test_data, 'Add test data to the local instance')
 
 function start_server() {
+  sh(`${GO} version`, { nopipe: true })
   sh(`${GO} run ./cmd/hkserver/main.go`, { nopipe: true })
 }
 help(start_server, 'Start server instance')
