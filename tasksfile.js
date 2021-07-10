@@ -117,10 +117,15 @@ function store_layers() {
 }
 help(store_layers, 'Generate layers for the store')
 
+function test_folder(_, package_name) {
+  sh(`${GO} test github.com/masterhung0112/hk_server/v5/${package_name}`, { nopipe: true })
+}
+
 cli({
   start_docker,
   start_server,
   test_data,
+  test_folder,
 
   store_mocks,
   einterfaces_mocks,
