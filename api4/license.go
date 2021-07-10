@@ -12,8 +12,8 @@ import (
 	"net/http"
 
 	"github.com/masterhung0112/hk_server/v5/audit"
-	"github.com/masterhung0112/hk_server/v5/audit"
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/utils"
 )
 
 func (api *API) InitLicense() {

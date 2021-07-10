@@ -8,7 +8,7 @@ import (
 
 	"github.com/masterhung0112/hk_server/v5/app"
 	"github.com/masterhung0112/hk_server/v5/model"
-	"github.com/masterhung0112/hk_server/v5/services/configservice"
+	"github.com/masterhung0112/hk_server/v5/web"
 )
 
 type Routes struct {

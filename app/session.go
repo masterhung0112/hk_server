@@ -9,9 +9,9 @@ import (
 
 	"github.com/masterhung0112/hk_server/v5/audit"
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/services/users"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/store"
-	"github.com/masterhung0112/hk_server/v5/store/sqlstore"
 )
 
 func (a *App) CreateSession(session *model.Session) (*model.Session, *model.AppError) {

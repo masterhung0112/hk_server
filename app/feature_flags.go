@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/masterhung0112/hk_server/v5/config"
+	"github.com/masterhung0112/hk_server/v5/app/featureflag"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 )
 
