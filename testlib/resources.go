@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 
 	"github.com/pkg/errors"
 
@@ -28,7 +29,7 @@ const (
 	actionSymlink
 )
 
-const root = "___mattermost-server"
+const root = "___hk_server"
 
 type testResourceDetails struct {
 	src     string
@@ -86,8 +87,9 @@ func getTestResourcesToSetup() []testResourceDetails {
 	var found bool
 
 	var testResourcesToSetup = []testResourceDetails{
-		{root, "mattermost-server", resourceTypeFolder, actionSymlink},
+		{root, "hk_server", resourceTypeFolder, actionSymlink},
 		{"go.mod", "go.mod", resourceTypeFile, actionSymlink},
+    {"testlib/testdata", "testlib/testdata", resourceTypeFolder, actionSymlink},
 		{"i18n", "i18n", resourceTypeFolder, actionSymlink},
 		{"templates", "templates", resourceTypeFolder, actionSymlink},
 		{"tests", "tests", resourceTypeFolder, actionSymlink},
@@ -162,10 +164,12 @@ func SetupTestResources() (string, error) {
 	for _, testResource := range testResourcesToSetup {
 		resourceDestInTemp = filepath.Join(tempDir, testResource.dest)
 
-		if testResource.action == actionCopy {
+    // For Windows, we cannot symlink, so we forcely copy the file
+		if testResource.action == actionCopy || runtime.GOOS == "windows" {
 			if testResource.resType == resourceTypeFile {
-				if err = CopyFile(testResource.src, resourceDestInTemp); err != nil {
-					return "", err
+				err = utils.CopyFile(testResource.src, resourceDestInTemp)
+				if err != nil {
+					return "", errors.Wrapf(err, "failed to copy file %s to %s", testResource.src, resourceDestInTemp)
 				}
 			} else if testResource.resType == resourceTypeFolder {
 				err = utils.CopyDir(testResource.src, resourceDestInTemp)
