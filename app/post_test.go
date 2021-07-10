@@ -20,8 +20,8 @@ import (
 	"github.com/masterhung0112/hk_server/v5/services/imageproxy"
 	"github.com/masterhung0112/hk_server/v5/services/searchengine/mocks"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	storemocks "github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
+	"github.com/masterhung0112/hk_server/v5/store/storetest/mockstore"
 	"github.com/masterhung0112/hk_server/v5/testlib"
 )
 
@@ -603,7 +603,7 @@ func TestMaxPostSize(t *testing.T) {
 		t.Run(testCase.Description, func(t *testing.T) {
 			t.Parallel()
 
-			mockStore := &storetest.Store{}
+			mockStore := &mockstore.Store{}
 			defer mockStore.AssertExpectations(t)
 
 			mockStore.PostStore.On("GetMaxPostSize").Return(testCase.StoreMaxPostSize)

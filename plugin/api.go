@@ -886,7 +886,7 @@ type API interface {
 
 	// PublishWebSocketEvent sends an event to WebSocket connections.
 	// event is the type and will be prepended with "custom_<pluginid>_".
-	// payload is the data sent with the event. Interface values must be primitive Go types or mattermost-server/model types.
+	// payload is the data sent with the event. Interface values must be primitive Go types or hk_server/model types.
 	// broadcast determines to which users to send the event.
 	//
 	// Minimum server version: 5.2

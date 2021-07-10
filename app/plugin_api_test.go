@@ -69,7 +69,7 @@ func setDefaultPluginConfig(th *TestHelper, pluginID string) {
 	})
 }
 
-func setupMultiPluginApiTest(t *testing.T, pluginCodes []string, pluginManifests []string, pluginIDs []string, app *App, c *request.Context) string {
+func setupMultiPluginApiTest(t *testing.T, pluginCodes []string, pluginManifests []string, pluginIDs []string, asMain bool, app *App, c *request.Context) string {
 	pluginDir, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -92,7 +92,7 @@ func setupMultiPluginApiTest(t *testing.T, pluginCodes []string, pluginManifests
 		return app.NewPluginAPI(c, manifest)
 	}
 
-	env, err := plugin.NewEnvironment(newPluginAPI, pluginDir, webappPluginDir, app.Log(), nil)
+	env, err := plugin.NewEnvironment(newPluginAPI, NewDriverImpl(app.srv), pluginDir, webappPluginDir, app.Log(), nil)
 	require.NoError(t, err)
 
 	require.Equal(t, len(pluginCodes), len(pluginIDs))
@@ -100,7 +100,11 @@ func setupMultiPluginApiTest(t *testing.T, pluginCodes []string, pluginManifests
 
 	for i, pluginID := range pluginIDs {
 		backend := filepath.Join(pluginDir, pluginID, "backend.exe")
-		utils.CompileGo(t, pluginCodes[i], backend)
+		if asMain {
+			utils.CompileGo(t, pluginCodes[i], backend)
+		} else {
+			utils.CompileGoTest(t, pluginCodes[i], backend)
+		}
 
 		ioutil.WriteFile(filepath.Join(pluginDir, pluginID, "plugin.json"), []byte(pluginManifests[i]), 0600)
 		manifest, activated, reterr := env.Activate(pluginID)
@@ -121,7 +125,10 @@ func setupMultiPluginApiTest(t *testing.T, pluginCodes []string, pluginManifests
 }
 
 func setupPluginApiTest(t *testing.T, pluginCode string, pluginManifest string, pluginID string, app *App, c *request.Context) string {
-	return setupMultiPluginApiTest(t, []string{pluginCode}, []string{pluginManifest}, []string{pluginID}, app, c)
+	asMain := pluginID != "test_db_driver"
+	return setupMultiPluginApiTest(t,
+		[]string{pluginCode}, []string{pluginManifest}, []string{pluginID},
+		asMain, app, c)
 }
 
 func TestPublicFilesPathConfiguration(t *testing.T) {
@@ -674,7 +681,7 @@ func TestPluginAPILoadPluginConfiguration(t *testing.T) {
 		cfg.PluginSettings.Plugins["testloadpluginconfig"] = pluginJson
 	})
 
-	testFolder, found := fileutils.FindDir("mattermost-server/app/plugin_api_tests")
+	testFolder, found := fileutils.FindDir("hk_server/app/plugin_api_tests")
 	require.True(t, found, "Cannot find tests folder")
 	fullPath := path.Join(testFolder, "manual.test_load_configuration_plugin", "main.go")
 
@@ -710,7 +717,7 @@ func TestPluginAPILoadPluginConfigurationDefaults(t *testing.T) {
 		cfg.PluginSettings.Plugins["testloadpluginconfig"] = pluginJson
 	})
 
-	testFolder, found := fileutils.FindDir("mattermost-server/app/plugin_api_tests")
+	testFolder, found := fileutils.FindDir("hk_server/app/plugin_api_tests")
 	require.True(t, found, "Cannot find tests folder")
 	fullPath := path.Join(testFolder, "manual.test_load_configuration_defaults_plugin", "main.go")
 
@@ -766,7 +773,7 @@ func TestPluginAPIGetPlugins(t *testing.T) {
 	defer os.RemoveAll(pluginDir)
 	defer os.RemoveAll(webappPluginDir)
 
-	env, err := plugin.NewEnvironment(th.NewPluginAPI, pluginDir, webappPluginDir, th.App.Log(), nil)
+	env, err := plugin.NewEnvironment(th.NewPluginAPI, NewDriverImpl(th.Server), pluginDir, webappPluginDir, th.App.Log(), nil)
 	require.NoError(t, err)
 
 	pluginIDs := []string{"pluginid1", "pluginid2", "pluginid3"}
@@ -854,7 +861,7 @@ func TestInstallPlugin(t *testing.T) {
 			return app.NewPluginAPI(c, manifest)
 		}
 
-		env, err := plugin.NewEnvironment(newPluginAPI, pluginDir, webappPluginDir, app.Log(), nil)
+		env, err := plugin.NewEnvironment(newPluginAPI, NewDriverImpl(app.srv), pluginDir, webappPluginDir, app.Log(), nil)
 		require.NoError(t, err)
 
 		app.SetPluginsEnvironment(env)
@@ -1053,6 +1060,7 @@ func pluginAPIHookTest(t *testing.T, th *TestHelper, fileName string, id string,
 	if settingsSchema != "" {
 		schema = settingsSchema
 	}
+	th.App.srv.sqlStore = th.GetSqlStore()
 	setupPluginApiTest(t, code,
 		fmt.Sprintf(`{"id": "%v", "backend": {"executable": "backend.exe"}, "settings_schema": %v}`, id, schema),
 		id, th.App, th.Context)
@@ -1075,7 +1083,7 @@ func pluginAPIHookTest(t *testing.T, th *TestHelper, fileName string, id string,
 
 func TestBasicAPIPlugins(t *testing.T) {
 	defaultSchema := getDefaultPluginSettingsSchema()
-	testFolder, found := fileutils.FindDir("mattermost-server/app/plugin_api_tests")
+	testFolder, found := fileutils.FindDir("hk_server/app/plugin_api_tests")
 	require.True(t, found, "Cannot read find app folder")
 	dirs, err := ioutil.ReadDir(testFolder)
 	require.NoError(t, err, "Cannot read test folder %v", testFolder)
@@ -1481,6 +1489,7 @@ func TestInterpluginPluginHTTP(t *testing.T) {
 			"testplugininterserver",
 			"testplugininterclient",
 		},
+		true,
 		th.App,
 		th.Context,
 	)
@@ -1505,7 +1514,7 @@ func TestApiMetrics(t *testing.T) {
 		defer os.RemoveAll(pluginDir)
 		defer os.RemoveAll(webappPluginDir)
 
-		env, err := plugin.NewEnvironment(th.NewPluginAPI, pluginDir, webappPluginDir, th.App.Log(), metricsMock)
+		env, err := plugin.NewEnvironment(th.NewPluginAPI, NewDriverImpl(th.Server), pluginDir, webappPluginDir, th.App.Log(), metricsMock)
 		require.NoError(t, err)
 
 		th.App.SetPluginsEnvironment(env)
@@ -1619,7 +1628,7 @@ func TestPluginHTTPConnHijack(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
 
-	testFolder, found := fileutils.FindDir("mattermost-server/app/plugin_api_tests")
+	testFolder, found := fileutils.FindDir("hk_server/app/plugin_api_tests")
 	require.True(t, found, "Cannot find tests folder")
 	fullPath := path.Join(testFolder, "manual.test_http_hijack_plugin", "main.go")
 
@@ -1654,7 +1663,7 @@ func TestPluginHTTPUpgradeWebSocket(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
 
-	testFolder, found := fileutils.FindDir("mattermost-server/app/plugin_api_tests")
+	testFolder, found := fileutils.FindDir("hk_server/app/plugin_api_tests")
 	require.True(t, found, "Cannot find tests folder")
 	fullPath := path.Join(testFolder, "manual.test_http_upgrade_websocket_plugin", "main.go")
 

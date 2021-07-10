@@ -45,7 +45,7 @@ type webConnCheckMessage struct {
 // user connections.
 type Hub struct {
 	// connectionCount should be kept first.
-	// See https://github.com/mattermost/mattermost-server/pull/7281
+	// See https://github.com/mattermost/hk_server/pull/7281
 	connectionCount int64
 	app             *App
 	connectionIndex int

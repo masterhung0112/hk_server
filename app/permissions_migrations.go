@@ -902,7 +902,7 @@ func (a *App) getAddAuthenticationSubsectionPermissions() (permissionsMap, error
 	return transformations, nil
 }
 
-// This migration fixes https://github.com/mattermost/mattermost-server/issues/17642 where this particular ancillary permission was forgotten during the initial migrations
+// This migration fixes https://github.com/mattermost/hk_server/issues/17642 where this particular ancillary permission was forgotten during the initial migrations
 func (a *App) getAddTestEmailAncillaryPermission() (permissionsMap, error) {
 	transformations := []permissionTransformation{}
 
