@@ -13,13 +13,12 @@ import (
 	"github.com/masterhung0112/hk_server/v5/services/timezones"
 	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/masterhung0112/hk_server/v5/utils"
-	"github.com/stretchr/testify/suite"
 )
 
-type ChannelStoreTestSuite struct {
-	suite.Suite
-	StoreTestSuite
-}
+// type ChannelStoreTestSuite struct {
+// 	suite.Suite
+// 	StoreTestSuite
+// }
 
 func (s *ChannelStoreTestSuite) SetupTest() {
 	createDefaultRoles(s.Store())

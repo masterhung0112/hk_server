@@ -6,10 +6,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type TrackPointStoreTestSuite struct {
-	suite.Suite
-	StoreTestSuite
-}
+// type TrackPointStoreTestSuite struct {
+// 	suite.Suite
+// 	StoreTestSuite
+// }
 
 func TestTrackPointStoreTestSuite(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &TrackPointStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {

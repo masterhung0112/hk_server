@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type RoleStoreTestSuite struct {
-	suite.Suite
-	StoreTestSuite
-}
+// type RoleStoreTestSuite struct {
+// 	suite.Suite
+// 	StoreTestSuite
+// }
 
 func TestRoleStoreTestSuite(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &RoleStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {

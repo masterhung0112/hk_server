@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type PostStoreTestSuite struct {
-	suite.Suite
-	StoreTestSuite
-}
+// type PostStoreTestSuite struct {
+// 	suite.Suite
+// 	StoreTestSuite
+// }
 
 func TestPostStoreTestSuite(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &PostStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {

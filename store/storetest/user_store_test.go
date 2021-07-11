@@ -29,10 +29,10 @@ func sanitized(user *model.User) *model.User {
 	return clonedUser
 }
 
-type UserStoreTS struct {
-	suite.Suite
-	StoreTestSuite
-}
+// type UserStoreTS struct {
+// 	suite.Suite
+// 	StoreTestSuite
+// }
 
 func (s *UserStoreTS) SetupTest() {
 	users, err := s.Store().User().GetAll()
@@ -1058,18 +1058,18 @@ func (s *UserStoreTS) TestGetProfilesByUsernames() {
 	})
 }
 
-type UserStoreGetAllProfilesTS struct {
-	suite.Suite
-	StoreTestSuite
+// type UserStoreGetAllProfilesTS struct {
+// 	suite.Suite
+// 	StoreTestSuite
 
-	u1 *model.User
-	u2 *model.User
-	u3 *model.User
-	u4 *model.User
-	u5 *model.User
-	u6 *model.User
-	u7 *model.User
-}
+// 	u1 *model.User
+// 	u2 *model.User
+// 	u3 *model.User
+// 	u4 *model.User
+// 	u5 *model.User
+// 	u6 *model.User
+// 	u7 *model.User
+// }
 
 func TestUserStoreGetAllProfilesTS(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetAllProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
@@ -1284,19 +1284,19 @@ func (s *UserStoreGetAllProfilesTS) TestTryToFilterToActiveAndInactive() {
 	}, actual)
 }
 
-type UserStoreGetProfilesTS struct {
-	suite.Suite
-	StoreTestSuite
+// type UserStoreGetProfilesTS struct {
+// 	suite.Suite
+// 	StoreTestSuite
 
-	u1     *model.User
-	u2     *model.User
-	u3     *model.User
-	u4     *model.User
-	u5     *model.User
-	u6     *model.User
-	u7     *model.User
-	teamId string
-}
+// 	u1     *model.User
+// 	u2     *model.User
+// 	u3     *model.User
+// 	u4     *model.User
+// 	u5     *model.User
+// 	u6     *model.User
+// 	u7     *model.User
+// 	teamId string
+// }
 
 func TestUserStoreGetProfilesTS(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
@@ -1487,19 +1487,19 @@ func (s *UserStoreGetProfilesTS) TestFilterToActiveAndInactive() {
 	}, actual)
 }
 
-type UserStoreGetProfilesByIdsTS struct {
-	suite.Suite
-	StoreTestSuite
+// type UserStoreGetProfilesByIdsTS struct {
+// 	suite.Suite
+// 	StoreTestSuite
 
-	u1     *model.User
-	u2     *model.User
-	u3     *model.User
-	u4     *model.User
-	u5     *model.User
-	u6     *model.User
-	u7     *model.User
-	teamId string
-}
+// 	u1     *model.User
+// 	u2     *model.User
+// 	u3     *model.User
+// 	u4     *model.User
+// 	u5     *model.User
+// 	u6     *model.User
+// 	u7     *model.User
+// 	teamId string
+// }
 
 func TestUserStoreGetProfilesByIdsTS(t *testing.T) {
 	StoreTestSuiteWithSqlSupplier(t, &UserStoreGetProfilesByIdsTS{}, func(t *testing.T, testSuite StoreTestBaseSuite) {

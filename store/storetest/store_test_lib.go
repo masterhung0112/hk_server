@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -561,4 +562,10 @@ func StoreTestSuiteWithSqlSupplier(t *testing.T, testSuite StoreTestBaseSuite, e
 			executeFunc(t, testSuite)
 		})
 	}
+}
+
+func StoreTestSuiteExecute(t *testing.T, testSuite StoreTestBaseSuite, store store.Store, sqlStore SqlStore) {
+	testSuite.SetStore(store)
+	testSuite.SetSqlStore(sqlStore)
+	suite.Run(t, testSuite)
 }
