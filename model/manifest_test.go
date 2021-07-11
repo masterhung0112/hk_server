@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -420,6 +421,9 @@ func TestFindManifest_FolderPermission(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("skipping test while running as root: can't effectively remove permissions")
 	}
+  if runtime.GOOS == "windows" {
+    t.Skip("Skip this test in windows")
+  }
 
 	for _, tc := range []string{"plugin.yaml", "plugin.json"} {
 		dir, err := ioutil.TempDir("", "mm-plugin-test")
