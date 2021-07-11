@@ -280,6 +280,9 @@ func TestGenerateSupportPacket(t *testing.T) {
 func TestGetNotificationsLog(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
+  if runtime.GOOS == "windows" {
+    t.Skip("Skip this test in windows")
+  }
 
 	// Disable notifications file to get an error
 	th.App.UpdateConfig(func(cfg *model.Config) {
@@ -318,6 +321,9 @@ func TestGetNotificationsLog(t *testing.T) {
 func TestGetMattermostLog(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
+  if runtime.GOOS == "windows" {
+    t.Skip("Skip this test in windows")
+  }
 
 	// disable mattermost log file setting in config so we should get an warning
 	th.App.UpdateConfig(func(cfg *model.Config) {

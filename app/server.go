@@ -22,6 +22,7 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/getsentry/sentry-go"
