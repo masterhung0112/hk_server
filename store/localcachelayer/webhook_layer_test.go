@@ -10,13 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/model"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 )
 
-func TestWebhookStore(t *testing.T) {
-	StoreTest(t, storetest.TestWebhookStore)
-}
+// func TestWebhookStore(t *testing.T) {
+// 	StoreTest(t, storetest.TestWebhookStore)
+// }
 
 func TestWebhookStoreCache(t *testing.T) {
 	fakeWebhook := model.IncomingWebhook{Id: "123"}

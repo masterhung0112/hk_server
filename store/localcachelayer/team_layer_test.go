@@ -9,13 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 )
 
-func TestTeamStore(t *testing.T) {
-	StoreTest(t, storetest.TestTeamStore)
-}
+// func TestTeamStore(t *testing.T) {
+// 	StoreTest(t, storetest.TestTeamStore)
+// }
 
 func TestTeamStoreCache(t *testing.T) {
 	fakeUserId := "123"

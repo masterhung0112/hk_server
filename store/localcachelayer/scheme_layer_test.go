@@ -10,13 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/model"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 )
 
-func TestSchemeStore(t *testing.T) {
-	StoreTest(t, storetest.TestSchemeStore)
-}
+// func TestSchemeStore(t *testing.T) {
+// 	StoreTest(t, storetest.TestSchemeStore)
+// }
 
 func TestSchemeStoreCache(t *testing.T) {
 	fakeScheme := model.Scheme{Id: "123", Name: "scheme-name"}

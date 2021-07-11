@@ -10,13 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/model"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 )
 
-func TestReactionStore(t *testing.T) {
-	StoreTestWithSqlStore(t, storetest.TestReactionStore)
-}
+// func TestReactionStore(t *testing.T) {
+// 	StoreTestWithSqlStore(t, storetest.TestReactionStore)
+// }
 
 func TestReactionStoreCache(t *testing.T) {
 	fakeReaction := model.Reaction{PostId: "123"}

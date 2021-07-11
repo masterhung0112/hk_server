@@ -11,13 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/model"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 )
 
-func TestPostStore(t *testing.T) {
-	StoreTestWithSqlStore(t, storetest.TestPostStore)
-}
+// func TestPostStore(t *testing.T) {
+// 	StoreTestWithSqlStore(t, storetest.TestPostStore)
+// }
 
 func TestPostStoreLastPostTimeCache(t *testing.T) {
 	var fakeLastTime int64 = 1

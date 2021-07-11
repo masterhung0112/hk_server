@@ -10,13 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/model"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
 )
 
-func TestFileInfoStore(t *testing.T) {
-	StoreTest(t, storetest.TestFileInfoStore)
-}
+// func TestFileInfoStore(t *testing.T) {
+// 	StoreTest(t, storetest.TestFileInfoStore)
+// }
 
 func TestFileInfoStoreCache(t *testing.T) {
 	fakeFileInfo := model.FileInfo{PostId: "123"}
