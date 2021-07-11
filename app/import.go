@@ -41,7 +41,7 @@ func rewriteAttachmentPaths(files *[]AttachmentImportData, basePath string) {
 	}
 	for _, f := range *files {
 		if f.Path != nil {
-			*f.Path = filepath.Join(basePath, *f.Path)
+			*f.Path = filepath.ToSlash(filepath.Join(basePath, *f.Path))
 		}
 	}
 }
@@ -66,11 +66,11 @@ func rewriteFilePaths(line *LineImportData, basePath string) {
 		}
 	case "user":
 		if line.User.ProfileImage != nil {
-			*line.User.ProfileImage = filepath.Join(basePath, *line.User.ProfileImage)
+			*line.User.ProfileImage = filepath.ToSlash(filepath.Join(basePath, *line.User.ProfileImage))
 		}
 	case "emoji":
 		if line.Emoji.Image != nil {
-			*line.Emoji.Image = filepath.Join(basePath, *line.Emoji.Image)
+			*line.Emoji.Image = filepath.ToSlash(filepath.Join(basePath, *line.Emoji.Image))
 		}
 	}
 }

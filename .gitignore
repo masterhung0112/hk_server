@@ -122,3 +122,4 @@ config/config.json
 output
 
 enabled_services.yml
+test_log.txt

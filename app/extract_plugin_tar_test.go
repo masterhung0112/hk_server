@@ -24,6 +24,7 @@ func assertDirectoryContents(t *testing.T, dir string, expectedFiles []string) {
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		require.NoError(t, err)
 		file := strings.TrimPrefix(path, dir)
+    file = filepath.ToSlash(file)
 		file = strings.TrimPrefix(file, "/")
 		files = append(files, file)
 		return nil
