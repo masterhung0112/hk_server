@@ -489,7 +489,7 @@ func TestPluginSync(t *testing.T) {
 
 				s3Port := os.Getenv("CI_MINIO_PORT")
 				if s3Port == "" {
-					s3Port = "9000"
+					s3Port = "9901"
 				}
 
 				s3Endpoint := fmt.Sprintf("%s:%s", s3Host, s3Port)
