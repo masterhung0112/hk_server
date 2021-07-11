@@ -12,13 +12,13 @@ import (
 	"github.com/masterhung0112/hk_server/v5/jobs"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/services/searchengine/bleveengine"
-	"github.com/masterhung0112/hk_server/v5/store/storetest"
+	"github.com/masterhung0112/hk_server/v5/store/storetest/mockstore"
 	"github.com/masterhung0112/hk_server/v5/utils/testutils"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBleveIndexer(t *testing.T) {
-	mockStore := &storetest.Store{}
+	mockStore := &mockstore.Store{}
 	defer mockStore.AssertExpectations(t)
 
 	t.Run("Call GetOldestEntityCreationTime for the first indexing call", func(t *testing.T) {
