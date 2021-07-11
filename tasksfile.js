@@ -118,7 +118,7 @@ function store_layers() {
 help(store_layers, 'Generate layers for the store')
 
 function test_folder(_, package_name) {
-  sh(`${GO} test -timeout 25m github.com/masterhung0112/hk_server/v5/${package_name} > test_log.txt`, { nopipe: true })
+  sh(`${GO} test -timeout 60m github.com/masterhung0112/hk_server/v5/${package_name} > test_log.txt`, { nopipe: true })
 }
 
 cli({

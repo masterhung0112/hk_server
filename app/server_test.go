@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -244,6 +245,9 @@ func TestDatabaseTypeAndMattermostVersion(t *testing.T) {
 func TestGenerateSupportPacket(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()
+  if runtime.GOOS == "windows" {
+    t.Skip("Skip this test in windows")
+  }
 
 	d1 := []byte("hello\ngo\n")
 	err := ioutil.WriteFile("mattermost.log", d1, 0777)

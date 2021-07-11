@@ -31,7 +31,6 @@ type UserStoreTS struct {
 	StoreTestSuite
 }
 
-
 type UserStoreGetAllProfilesTS struct {
 	suite.Suite
 	StoreTestSuite
