@@ -69,7 +69,11 @@ func findDir(dir string) (string, bool) {
 			return "./", false
 		}
 
-		return path.Dir(srcPath), true
+    rootAbs, err := filepath.Abs(filepath.Dir(srcPath))
+    if err != nil {
+      return "./", false
+    }
+		return rootAbs, true
 	}
 
 	found := fileutils.FindPath(dir, getCommonBaseSearchPaths(), func(fileInfo os.FileInfo) bool {
