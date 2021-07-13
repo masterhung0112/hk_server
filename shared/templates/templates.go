@@ -33,7 +33,7 @@ type Data struct {
 
 func GetTemplateDirectory() (string, bool) {
 	templatesDir := "templates"
-	if mattermostPath := os.Getenv("MM_SERVER_PATH"); mattermostPath != "" {
+	if mattermostPath := os.Getenv("HK_SERVER_PATH"); mattermostPath != "" {
 		templatesDir = filepath.Join(mattermostPath, templatesDir)
 	}
 

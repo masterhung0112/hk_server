@@ -7,11 +7,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
 
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/store"
-	"github.com/mattermost/gorp"
 )
 
 type SqlUserAccessTokenStore struct {
@@ -33,7 +33,6 @@ func newSqlUserAccessTokenStore(sqlStore *SqlStore) store.UserAccessTokenStore {
 }
 
 func (s SqlUserAccessTokenStore) createIndexesIfNotExists() {
-	s.CreateIndexIfNotExists("idx_user_access_tokens_token", "UserAccessTokens", "Token")
 	s.CreateIndexIfNotExists("idx_user_access_tokens_user_id", "UserAccessTokens", "UserId")
 }
 

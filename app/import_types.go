@@ -1,6 +1,7 @@
 package app
 
 import (
+	"archive/zip"
 	"github.com/masterhung0112/hk_server/v5/model"
 )
 
@@ -192,7 +193,8 @@ type LineImportWorkerError struct {
 }
 
 type AttachmentImportData struct {
-	Path *string `json:"path"`
+	Path *string   `json:"path"`
+	Data *zip.File `json:"-"`
 }
 
 type ComparablePreference struct {

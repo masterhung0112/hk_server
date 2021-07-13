@@ -189,7 +189,7 @@ func (b *S3FileBackend) MakeBucket() error {
 
 // Caller must close the first return value
 func (b *S3FileBackend) Reader(path string) (ReadCloseSeeker, error) {
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 	minioObject, err := b.client.GetObject(context.Background(), b.bucket, path, s3.GetObjectOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to open file %s", path)
@@ -199,7 +199,7 @@ func (b *S3FileBackend) Reader(path string) (ReadCloseSeeker, error) {
 }
 
 func (b *S3FileBackend) ReadFile(path string) ([]byte, error) {
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 	minioObject, err := b.client.GetObject(context.Background(), b.bucket, path, s3.GetObjectOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to open file %s", path)
@@ -214,7 +214,7 @@ func (b *S3FileBackend) ReadFile(path string) ([]byte, error) {
 }
 
 func (b *S3FileBackend) FileExists(path string) (bool, error) {
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 
 	_, err := b.client.StatObject(context.Background(), b.bucket, path, s3.StatObjectOptions{})
 	if err == nil {
@@ -230,7 +230,7 @@ func (b *S3FileBackend) FileExists(path string) (bool, error) {
 }
 
 func (b *S3FileBackend) FileSize(path string) (int64, error) {
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 
 	info, err := b.client.StatObject(context.Background(), b.bucket, path, s3.StatObjectOptions{})
 	if err != nil {
@@ -241,7 +241,7 @@ func (b *S3FileBackend) FileSize(path string) (int64, error) {
 }
 
 func (b *S3FileBackend) FileModTime(path string) (time.Time, error) {
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 
 	info, err := b.client.StatObject(context.Background(), b.bucket, path, s3.StatObjectOptions{})
 	if err != nil {
@@ -252,8 +252,8 @@ func (b *S3FileBackend) FileModTime(path string) (time.Time, error) {
 }
 
 func (b *S3FileBackend) CopyFile(oldPath, newPath string) error {
-	oldPath = filepath.Join(b.pathPrefix, oldPath)
-	newPath = filepath.Join(b.pathPrefix, newPath)
+	oldPath = filepath.ToSlash(filepath.Join(b.pathPrefix, oldPath))
+	newPath = filepath.ToSlash(filepath.Join(b.pathPrefix, newPath))
 	srcOpts := s3.CopySrcOptions{
 		Bucket:     b.bucket,
 		Object:     oldPath,
@@ -271,8 +271,8 @@ func (b *S3FileBackend) CopyFile(oldPath, newPath string) error {
 }
 
 func (b *S3FileBackend) MoveFile(oldPath, newPath string) error {
-	oldPath = filepath.Join(b.pathPrefix, oldPath)
-	newPath = filepath.Join(b.pathPrefix, newPath)
+	oldPath = filepath.ToSlash(filepath.Join(b.pathPrefix, oldPath))
+	newPath = filepath.ToSlash(filepath.Join(b.pathPrefix, newPath))
 	srcOpts := s3.CopySrcOptions{
 		Bucket:     b.bucket,
 		Object:     oldPath,
@@ -297,7 +297,7 @@ func (b *S3FileBackend) MoveFile(oldPath, newPath string) error {
 
 func (b *S3FileBackend) WriteFile(fr io.Reader, path string) (int64, error) {
 	var contentType string
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 	if ext := filepath.Ext(path); isFileExtImage(ext) {
 		contentType = getImageMimeType(ext)
 	} else {
@@ -314,7 +314,7 @@ func (b *S3FileBackend) WriteFile(fr io.Reader, path string) (int64, error) {
 }
 
 func (b *S3FileBackend) AppendFile(fr io.Reader, path string) (int64, error) {
-	fp := filepath.Join(b.pathPrefix, path)
+	fp := filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 	if _, err := b.client.StatObject(context.Background(), b.bucket, fp, s3.StatObjectOptions{}); err != nil {
 		return 0, errors.Wrapf(err, "unable to find the file %s to append the data", path)
 	}
@@ -356,7 +356,7 @@ func (b *S3FileBackend) AppendFile(fr io.Reader, path string) (int64, error) {
 }
 
 func (b *S3FileBackend) RemoveFile(path string) error {
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 	if err := b.client.RemoveObject(context.Background(), b.bucket, path, s3.RemoveObjectOptions{}); err != nil {
 		return errors.Wrapf(err, "unable to remove the file %s", path)
 	}
@@ -385,7 +385,7 @@ func getPathsFromObjectInfos(in <-chan s3.ObjectInfo) <-chan s3.ObjectInfo {
 }
 
 func (b *S3FileBackend) ListDirectory(path string) ([]string, error) {
-	path = filepath.Join(b.pathPrefix, path)
+	path = filepath.ToSlash(filepath.Join(b.pathPrefix, path))
 	if !strings.HasSuffix(path, "/") && path != "" {
 		// s3Clnt returns only the path itself when "/" is not present
 		// appending "/" to make it consistent across all filestores
@@ -414,7 +414,7 @@ func (b *S3FileBackend) ListDirectory(path string) ([]string, error) {
 
 func (b *S3FileBackend) RemoveDirectory(path string) error {
 	opts := s3.ListObjectsOptions{
-		Prefix:    filepath.Join(b.pathPrefix, path),
+		Prefix:    filepath.ToSlash(filepath.Join(b.pathPrefix, path)),
 		Recursive: true,
 	}
 	list := b.client.ListObjects(context.Background(), b.bucket, opts)

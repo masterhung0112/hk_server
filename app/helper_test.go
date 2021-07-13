@@ -11,10 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/config"
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/masterhung0112/hk_server/v5/store/localcachelayer"
@@ -26,6 +29,7 @@ import (
 
 type TestHelper struct {
 	App          *App
+	Context      *request.Context
 	Server       *Server
 	BasicTeam    *model.Team
 	BasicUser    *model.User
@@ -82,6 +86,7 @@ func setupTestHelper(dbStore store.Store, enterprise bool, includeCacheLayer boo
 
 	th := &TestHelper{
 		App:               New(ServerConnector(s)),
+		Context:           &request.Context{},
 		Server:            s,
 		LogBuffer:         buffer,
 		IncludeCacheLayer: includeCacheLayer,
@@ -115,6 +120,8 @@ func setupTestHelper(dbStore store.Store, enterprise bool, includeCacheLayer boo
 
 	if enterprise {
 		th.App.Srv().SetLicense(model.NewTestLicense())
+		th.App.Srv().Jobs.InitWorkers()
+		th.App.Srv().Jobs.InitSchedulers()
 	} else {
 		th.App.Srv().SetLicense(nil)
 	}
@@ -122,8 +129,6 @@ func setupTestHelper(dbStore store.Store, enterprise bool, includeCacheLayer boo
 	if th.tempWorkspace == "" {
 		th.tempWorkspace = tempWorkspace
 	}
-
-	th.App.InitServer()
 
 	return th
 }
@@ -154,8 +159,14 @@ func SetupWithoutPreloadMigrations(tb testing.TB) *TestHelper {
 func SetupWithStoreMock(tb testing.TB) *TestHelper {
 	mockStore := testlib.GetMockStoreForSetupFunctions()
 	th := setupTestHelper(mockStore, false, false, tb)
+	statusMock := mocks.StatusStore{}
+	statusMock.On("UpdateExpiredDNDStatuses").Return([]*model.Status{}, nil)
+	statusMock.On("Get", "user1").Return(&model.Status{UserId: "user1", Status: model.STATUS_ONLINE}, nil)
+	statusMock.On("UpdateLastActivityAt", "user1", mock.Anything).Return(nil)
+	statusMock.On("SaveOrUpdate", mock.AnythingOfType("*model.Status")).Return(nil)
 	emptyMockStore := mocks.Store{}
 	emptyMockStore.On("Close").Return(nil)
+	emptyMockStore.On("Status").Return(&statusMock)
 	th.App.Srv().Store = &emptyMockStore
 	return th
 }
@@ -163,8 +174,14 @@ func SetupWithStoreMock(tb testing.TB) *TestHelper {
 func SetupEnterpriseWithStoreMock(tb testing.TB) *TestHelper {
 	mockStore := testlib.GetMockStoreForSetupFunctions()
 	th := setupTestHelper(mockStore, true, false, tb)
+	statusMock := mocks.StatusStore{}
+	statusMock.On("UpdateExpiredDNDStatuses").Return([]*model.Status{}, nil)
+	statusMock.On("Get", "user1").Return(&model.Status{UserId: "user1", Status: model.STATUS_ONLINE}, nil)
+	statusMock.On("UpdateLastActivityAt", "user1", mock.Anything).Return(nil)
+	statusMock.On("SaveOrUpdate", mock.AnythingOfType("*model.Status")).Return(nil)
 	emptyMockStore := mocks.Store{}
 	emptyMockStore.On("Close").Return(nil)
+	emptyMockStore.On("Status").Return(&statusMock)
 	th.App.Srv().Store = &emptyMockStore
 	return th
 }
@@ -222,7 +239,7 @@ func (th *TestHelper) CreateTeam() *model.Team {
 
 	utils.DisableDebugLogForTest()
 	var err *model.AppError
-	if team, err = th.App.CreateTeam(team); err != nil {
+	if team, err = th.App.CreateTeam(th.Context, team); err != nil {
 		panic(err)
 	}
 	utils.EnableDebugLogForTest()
@@ -251,11 +268,11 @@ func (th *TestHelper) CreateUserOrGuest(guest bool) *model.User {
 	utils.DisableDebugLogForTest()
 	var err *model.AppError
 	if guest {
-		if user, err = th.App.CreateGuest(user); err != nil {
+		if user, err = th.App.CreateGuest(th.Context, user); err != nil {
 			panic(err)
 		}
 	} else {
-		if user, err = th.App.CreateUser(user); err != nil {
+		if user, err = th.App.CreateUser(th.Context, user); err != nil {
 			panic(err)
 		}
 	}
@@ -273,7 +290,7 @@ func (th *TestHelper) CreateBot() *model.Bot {
 		OwnerId:     th.BasicUser.Id,
 	}
 
-	bot, err := th.App.CreateBot(bot)
+	bot, err := th.App.CreateBot(th.Context, bot)
 	if err != nil {
 		panic(err)
 	}
@@ -313,7 +330,7 @@ func (th *TestHelper) createChannel(team *model.Team, channelType string, option
 
 	utils.DisableDebugLogForTest()
 	var appErr *model.AppError
-	if channel, appErr = th.App.CreateChannel(channel, true); appErr != nil {
+	if channel, appErr = th.App.CreateChannel(th.Context, channel, true); appErr != nil {
 		panic(appErr)
 	}
 
@@ -341,7 +358,7 @@ func (th *TestHelper) CreateDmChannel(user *model.User) *model.Channel {
 	utils.DisableDebugLogForTest()
 	var err *model.AppError
 	var channel *model.Channel
-	if channel, err = th.App.GetOrCreateDirectChannel(th.BasicUser.Id, user.Id); err != nil {
+	if channel, err = th.App.GetOrCreateDirectChannel(th.Context, th.BasicUser.Id, user.Id); err != nil {
 		panic(err)
 	}
 	utils.EnableDebugLogForTest()
@@ -371,7 +388,7 @@ func (th *TestHelper) CreatePost(channel *model.Channel) *model.Post {
 
 	utils.DisableDebugLogForTest()
 	var err *model.AppError
-	if post, err = th.App.CreatePost(post, channel, false, true); err != nil {
+	if post, err = th.App.CreatePost(th.Context, post, channel, false, true); err != nil {
 		panic(err)
 	}
 	utils.EnableDebugLogForTest()
@@ -388,7 +405,7 @@ func (th *TestHelper) CreateMessagePost(channel *model.Channel, message string) 
 
 	utils.DisableDebugLogForTest()
 	var err *model.AppError
-	if post, err = th.App.CreatePost(post, channel, false, true); err != nil {
+	if post, err = th.App.CreatePost(th.Context, post, channel, false, true); err != nil {
 		panic(err)
 	}
 	utils.EnableDebugLogForTest()
@@ -398,7 +415,7 @@ func (th *TestHelper) CreateMessagePost(channel *model.Channel, message string) 
 func (th *TestHelper) LinkUserToTeam(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	_, err := th.App.JoinUserToTeam(team, user, "")
+	_, err := th.App.JoinUserToTeam(th.Context, team, user, "")
 	if err != nil {
 		panic(err)
 	}
@@ -409,7 +426,7 @@ func (th *TestHelper) LinkUserToTeam(user *model.User, team *model.Team) {
 func (th *TestHelper) RemoveUserFromTeam(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	err := th.App.RemoveUserFromTeam(team.Id, user.Id, "")
+	err := th.App.RemoveUserFromTeam(th.Context, team.Id, user.Id, "")
 	if err != nil {
 		panic(err)
 	}
@@ -509,7 +526,7 @@ func (th *TestHelper) CreateEmoji() *model.Emoji {
 func (th *TestHelper) AddReactionToPost(post *model.Post, user *model.User, emojiName string) *model.Reaction {
 	utils.DisableDebugLogForTest()
 
-	reaction, err := th.App.SaveReactionForPost(&model.Reaction{
+	reaction, err := th.App.SaveReactionForPost(th.Context, &model.Reaction{
 		UserId:    user.Id,
 		PostId:    post.Id,
 		EmojiName: emojiName,
@@ -561,7 +578,7 @@ func (th *TestHelper) ConfigureInbucketMail() {
 	}
 	inbucket_port := os.Getenv("CI_INBUCKET_SMTP_PORT")
 	if inbucket_port == "" {
-		inbucket_port = "20025"
+		inbucket_port = "10025"
 	}
 	th.App.UpdateConfig(func(cfg *model.Config) {
 		*cfg.EmailSettings.SMTPServer = inbucket_host
@@ -644,7 +661,7 @@ func (th *TestHelper) SetupPluginAPI() *PluginAPI {
 		Id: "pluginid",
 	}
 
-	return NewPluginAPI(th.App, manifest)
+	return NewPluginAPI(th.App, th.Context, manifest)
 }
 
 func (th *TestHelper) RemovePermissionFromRole(permission string, roleName string) {
@@ -717,4 +734,8 @@ func NewTestId() string {
 	}
 
 	return string(newId)
+}
+
+func (th *TestHelper) NewPluginAPI(manifest *model.Manifest) plugin.API {
+	return th.App.NewPluginAPI(th.Context, manifest)
 }

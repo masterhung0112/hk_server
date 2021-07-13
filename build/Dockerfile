@@ -1,9 +1,10 @@
 FROM alpine:3.12
+# Some ENV variables
 
 ENV PATH="/hkserver/bin:${PATH}"
 ARG PUID=2000
 ARG PGID=2000
-ARG MM_PACKAGE="https://releases.mattermost.com/5.33.1/mattermost-5.33.1-linux-amd64.tar.gz?src=docker"
+ARG MM_PACKAGE="https://releases.mattermost.com/5.35.2/mattermost-5.35.2-linux-amd64.tar.gz?src=docker"
 
 
 # Install some needed packages
@@ -17,6 +18,9 @@ RUN apk add --no-cache \
   netcat-openbsd \
   xmlsec-dev \
   tzdata \
+  wv \
+  poppler-utils \
+  tidyhtml \
   && rm -rf /tmp/*
 
 # Get Server
@@ -31,7 +35,7 @@ USER hkserver
 
 #Healthcheck to make sure container is ready
 HEALTHCHECK --interval=30s --timeout=10s \
-  CMD curl -f http://localhost:8065/api/v1/system/ping || exit 1
+  CMD curl -f http://localhost:8065/api/v4/system/ping || exit 1
 
 # Configure entrypoint and command
 COPY entrypoint.sh /

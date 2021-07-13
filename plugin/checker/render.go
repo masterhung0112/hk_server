@@ -25,5 +25,7 @@ func renderWithFilePosition(fset *token.FileSet, pos token.Pos, msg string) stri
 		filename = fpos.Filename
 	}
 
+	filename = filepath.ToSlash(filename)
+
 	return fmt.Sprintf("%s:%d:%d: %s", filename, fpos.Line, fpos.Column, msg)
 }

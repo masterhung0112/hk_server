@@ -3,9 +3,7 @@
 
 package interfaces
 
-import (
-	"github.com/masterhung0112/hk_server/v5/model"
-)
+import "github.com/masterhung0112/hk_server/v5/model"
 
 type ExportDeleteInterface interface {
 	MakeWorker() model.Worker

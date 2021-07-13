@@ -19,8 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/app"
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/config"
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/masterhung0112/hk_server/v5/plugin/plugintest/mock"
 	"github.com/masterhung0112/hk_server/v5/services/searchengine"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/store"
@@ -37,6 +39,7 @@ type TestHelper struct {
 	Server      *app.Server
 	ConfigStore *config.Store
 
+	Context              *request.Context
 	Client               *model.Client4
 	BasicUser            *model.User
 	BasicUser2           *model.User
@@ -68,7 +71,8 @@ func SetMainHelper(mh *testlib.MainHelper) {
 	mainHelper = mh
 }
 
-func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, enterprise bool, includeCache bool, updateConfig func(*model.Config)) *TestHelper {
+func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, enterprise bool, includeCache bool,
+	updateConfig func(*model.Config), options []app.Option) *TestHelper {
 	tempWorkspace, err := ioutil.TempDir("", "apptest")
 	if err != nil {
 		panic(err)
@@ -98,7 +102,6 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 		panic(err)
 	}
 
-	var options []app.Option
 	options = append(options, app.ConfigStore(configStore))
 	if includeCache {
 		// Adds the cache layer to the test store
@@ -123,6 +126,11 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 		Server:            s,
 		ConfigStore:       configStore,
 		IncludeCacheLayer: includeCache,
+		Context:           &request.Context{},
+	}
+
+	if s.SearchEngine != nil && s.SearchEngine.BleveEngine != nil && searchEngine != nil {
+		searchEngine.BleveEngine = s.SearchEngine.BleveEngine
 	}
 
 	if searchEngine != nil {
@@ -154,13 +162,15 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 		panic(err)
 	}
 
-	Init(th.Server, th.Server.AppOptions, th.App.Srv().Router)
-	InitLocal(th.Server, th.Server.AppOptions, th.App.Srv().LocalRouter)
-	web.New(th.Server, th.Server.AppOptions, th.App.Srv().Router)
+	Init(th.App, th.App.Srv().Router)
+	InitLocal(th.App, th.App.Srv().LocalRouter)
+	web.New(th.App, th.App.Srv().Router)
 	wsapi.Init(th.App.Srv())
 
 	if enterprise {
 		th.App.Srv().SetLicense(model.NewTestLicense())
+		th.App.Srv().Jobs.InitWorkers()
+		th.App.Srv().Jobs.InitSchedulers()
 	} else {
 		th.App.Srv().SetLicense(nil)
 	}
@@ -185,8 +195,6 @@ func setupTestHelper(dbStore store.Store, searchEngine *searchengine.Broker, ent
 		th.tempWorkspace = tempWorkspace
 	}
 
-	th.App.InitServer()
-
 	return th
 }
 
@@ -204,7 +212,7 @@ func SetupEnterprise(tb testing.TB) *TestHelper {
 	dbStore.MarkSystemRanUnitTests()
 	mainHelper.PreloadMigrations()
 	searchEngine := mainHelper.GetSearchEngine()
-	th := setupTestHelper(dbStore, searchEngine, true, true, nil)
+	th := setupTestHelper(dbStore, searchEngine, true, true, nil, nil)
 	th.InitLogin()
 	return th
 }
@@ -223,7 +231,7 @@ func Setup(tb testing.TB) *TestHelper {
 	dbStore.MarkSystemRanUnitTests()
 	mainHelper.PreloadMigrations()
 	searchEngine := mainHelper.GetSearchEngine()
-	th := setupTestHelper(dbStore, searchEngine, false, true, nil)
+	th := setupTestHelper(dbStore, searchEngine, false, true, nil, nil)
 	th.InitLogin()
 	return th
 }
@@ -241,32 +249,69 @@ func SetupConfig(tb testing.TB, updateConfig func(cfg *model.Config)) *TestHelpe
 	dbStore.DropAllTables()
 	dbStore.MarkSystemRanUnitTests()
 	searchEngine := mainHelper.GetSearchEngine()
-	th := setupTestHelper(dbStore, searchEngine, false, true, updateConfig)
+	th := setupTestHelper(dbStore, searchEngine, false, true, updateConfig, nil)
 	th.InitLogin()
 	return th
 }
 
 func SetupConfigWithStoreMock(tb testing.TB, updateConfig func(cfg *model.Config)) *TestHelper {
-	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, false, false, updateConfig)
+	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, false, false, updateConfig, nil)
+	statusMock := mocks.StatusStore{}
+	statusMock.On("UpdateExpiredDNDStatuses").Return([]*model.Status{}, nil)
+	statusMock.On("Get", "user1").Return(&model.Status{UserId: "user1", Status: model.STATUS_ONLINE}, nil)
+	statusMock.On("UpdateLastActivityAt", "user1", mock.Anything).Return(nil)
+	statusMock.On("SaveOrUpdate", mock.AnythingOfType("*model.Status")).Return(nil)
 	emptyMockStore := mocks.Store{}
 	emptyMockStore.On("Close").Return(nil)
+	emptyMockStore.On("Status").Return(&statusMock)
 	th.App.Srv().Store = &emptyMockStore
 	return th
 }
 
 func SetupWithStoreMock(tb testing.TB) *TestHelper {
-	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, false, false, nil)
+	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, false, false, nil, nil)
+	statusMock := mocks.StatusStore{}
+	statusMock.On("UpdateExpiredDNDStatuses").Return([]*model.Status{}, nil)
+	statusMock.On("Get", "user1").Return(&model.Status{UserId: "user1", Status: model.STATUS_ONLINE}, nil)
+	statusMock.On("UpdateLastActivityAt", "user1", mock.Anything).Return(nil)
+	statusMock.On("SaveOrUpdate", mock.AnythingOfType("*model.Status")).Return(nil)
 	emptyMockStore := mocks.Store{}
 	emptyMockStore.On("Close").Return(nil)
+	emptyMockStore.On("Status").Return(&statusMock)
 	th.App.Srv().Store = &emptyMockStore
 	return th
 }
 
 func SetupEnterpriseWithStoreMock(tb testing.TB) *TestHelper {
-	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, true, false, nil)
+	th := setupTestHelper(testlib.GetMockStoreForSetupFunctions(), nil, true, false, nil, nil)
+	statusMock := mocks.StatusStore{}
+	statusMock.On("UpdateExpiredDNDStatuses").Return([]*model.Status{}, nil)
+	statusMock.On("Get", "user1").Return(&model.Status{UserId: "user1", Status: model.STATUS_ONLINE}, nil)
+	statusMock.On("UpdateLastActivityAt", "user1", mock.Anything).Return(nil)
+	statusMock.On("SaveOrUpdate", mock.AnythingOfType("*model.Status")).Return(nil)
 	emptyMockStore := mocks.Store{}
 	emptyMockStore.On("Close").Return(nil)
+	emptyMockStore.On("Status").Return(&statusMock)
 	th.App.Srv().Store = &emptyMockStore
+	return th
+}
+
+func SetupWithServerOptions(tb testing.TB, options []app.Option) *TestHelper {
+	if testing.Short() {
+		tb.SkipNow()
+	}
+
+	if mainHelper == nil {
+		tb.SkipNow()
+	}
+
+	dbStore := mainHelper.GetStore()
+	dbStore.DropAllTables()
+	dbStore.MarkSystemRanUnitTests()
+	mainHelper.PreloadMigrations()
+	searchEngine := mainHelper.GetSearchEngine()
+	th := setupTestHelper(dbStore, searchEngine, false, true, nil, options)
+	th.InitLogin()
 	return th
 }
 
@@ -523,7 +568,7 @@ func (th *TestHelper) CreateUserWithAuth(authService string) *model.User {
 		EmailVerified: true,
 		AuthService:   authService,
 	}
-	user, err := th.App.CreateUser(user)
+	user, err := th.App.CreateUser(th.Context, user)
 	if err != nil {
 		panic(err)
 	}
@@ -692,7 +737,7 @@ func (th *TestHelper) CreateDmChannel(user *model.User) *model.Channel {
 	utils.DisableDebugLogForTest()
 	var err *model.AppError
 	var channel *model.Channel
-	if channel, err = th.App.GetOrCreateDirectChannel(th.BasicUser.Id, user.Id); err != nil {
+	if channel, err = th.App.GetOrCreateDirectChannel(th.Context, th.BasicUser.Id, user.Id); err != nil {
 		panic(err)
 	}
 	utils.EnableDebugLogForTest()
@@ -767,7 +812,7 @@ func (th *TestHelper) LoginSystemAdminWithClient(client *model.Client4) {
 func (th *TestHelper) UpdateActiveUser(user *model.User, active bool) {
 	utils.DisableDebugLogForTest()
 
-	_, err := th.App.UpdateActive(user, active)
+	_, err := th.App.UpdateActive(th.Context, user, active)
 	if err != nil {
 		panic(err)
 	}
@@ -778,7 +823,7 @@ func (th *TestHelper) UpdateActiveUser(user *model.User, active bool) {
 func (th *TestHelper) LinkUserToTeam(user *model.User, team *model.Team) {
 	utils.DisableDebugLogForTest()
 
-	_, err := th.App.JoinUserToTeam(team, user, "")
+	_, err := th.App.JoinUserToTeam(th.Context, team, user, "")
 	if err != nil {
 		panic(err)
 	}
@@ -838,9 +883,9 @@ func (th *TestHelper) TestForSystemAdminAndLocal(t *testing.T, f func(*testing.T
 		f(t, th.SystemAdminClient)
 	})
 
-	// t.Run(testName+"LocalClient", func(t *testing.T) {
-	// 	f(t, th.LocalClient)
-	// })
+	t.Run(testName+"LocalClient", func(t *testing.T) {
+		f(t, th.LocalClient)
+	})
 }
 
 // TestForAllClients runs a test function for all the clients
@@ -859,9 +904,9 @@ func (th *TestHelper) TestForAllClients(t *testing.T, f func(*testing.T, *model.
 		f(t, th.SystemAdminClient)
 	})
 
-	// t.Run(testName+"LocalClient", func(t *testing.T) {
-	// 	f(t, th.LocalClient)
-	// })
+	t.Run(testName+"LocalClient", func(t *testing.T) {
+		f(t, th.LocalClient)
+	})
 }
 
 func GenerateTestUsername() string {

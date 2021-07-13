@@ -5,13 +5,12 @@ package app
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/masterhung0112/hk_server/v5/model"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestDownloadFromURL(t *testing.T) {

@@ -143,7 +143,7 @@ func (s *SqlReactionStore) BulkGetForPosts(postIds []string) ([]*model.Reaction,
 				CreateAt,
 				COALESCE(UpdateAt, CreateAt) As UpdateAt,
 				COALESCE(DeleteAt, 0) As DeleteAt,
-        RemoteId
+				RemoteId
 			FROM
 				Reactions
 			WHERE
@@ -209,6 +209,26 @@ func (s *SqlReactionStore) DeleteAllWithEmojiName(emojiName string) error {
 	return nil
 }
 
+// DeleteOrphanedRows removes entries from Reactions when a corresponding post no longer exists.
+func (s *SqlReactionStore) DeleteOrphanedRows(limit int) (deleted int64, err error) {
+	// We need the extra level of nesting to deal with MySQL's locking
+	const query = `
+	DELETE FROM Reactions WHERE PostId IN (
+		SELECT * FROM (
+			SELECT PostId FROM Reactions
+			LEFT JOIN Posts ON Reactions.PostId = Posts.Id
+			WHERE Posts.Id IS NULL
+			LIMIT :Limit
+		) AS A
+	)`
+	props := map[string]interface{}{"Limit": limit}
+	result, err := s.GetMaster().Exec(query, props)
+	if err != nil {
+		return
+	}
+	deleted, err = result.RowsAffected()
+	return
+}
 func (s *SqlReactionStore) PermanentDeleteBatch(endTime int64, limit int64) (int64, error) {
 	var query string
 	if s.DriverName() == "postgres" {
@@ -243,22 +263,22 @@ func (s *SqlReactionStore) saveReactionAndUpdatePost(transaction *gorp.Transacti
 		if _, err := transaction.Exec(
 			`INSERT INTO
 				Reactions
-        (UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
-      VALUES
-        (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
-      ON DUPLICATE KEY UPDATE
-          UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
+				(UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
+			VALUES
+				(:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
+			ON DUPLICATE KEY UPDATE
+				UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
 			return err
 		}
 	} else if s.DriverName() == model.DATABASE_DRIVER_POSTGRES {
 		if _, err := transaction.Exec(
 			`INSERT INTO
 				Reactions
-        (UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
-      VALUES
-        (:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
-      ON CONFLICT (UserId, PostId, EmojiName)
-        DO UPDATE SET UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
+				(UserId, PostId, EmojiName, CreateAt, UpdateAt, DeleteAt, RemoteId)
+			VALUES
+				(:UserId, :PostId, :EmojiName, :CreateAt, :UpdateAt, 0, :RemoteId)
+			ON CONFLICT (UserId, PostId, EmojiName) 
+				DO UPDATE SET UpdateAt = :UpdateAt, DeleteAt = 0, RemoteId = :RemoteId`, params); err != nil {
 			return err
 		}
 	}
@@ -279,8 +299,8 @@ func deleteReactionAndUpdatePost(transaction *gorp.Transaction, reaction *model.
 	if _, err := transaction.Exec(
 		`UPDATE
 			Reactions
-		SET
-      UpdateAt = :UpdateAt, DeleteAt = :DeleteAt, RemoteId = :RemoteId
+		SET 
+			UpdateAt = :UpdateAt, DeleteAt = :DeleteAt, RemoteId = :RemoteId
 		WHERE
 			PostId = :PostId AND
 			UserId = :UserId AND

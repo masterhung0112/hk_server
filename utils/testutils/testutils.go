@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/masterhung0112/hk_server/v5/utils"
+
 	"github.com/masterhung0112/hk_server/v5/utils/fileutils"
 )
 
@@ -71,4 +73,8 @@ func GetInterface(port int) string {
 		return ""
 	}
 	return string(out)
+}
+
+func ResetLicenseValidator() {
+	utils.LicenseValidator = &utils.LicenseValidatorImpl{}
 }

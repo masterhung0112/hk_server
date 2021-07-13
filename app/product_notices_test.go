@@ -12,9 +12,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/masterhung0112/hk_server/v5/app/request"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/store/storetest/mocks"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNoticeValidation(t *testing.T) {
@@ -717,7 +719,7 @@ func TestNoticeFetch(t *testing.T) {
 	require.Nil(t, appErr)
 
 	// get them for specified user
-	messages, appErr := th.App.GetProductNotices(th.BasicUser.Id, th.BasicTeam.Id, model.NoticeClientType_All, "1.2.3", "en")
+	messages, appErr := th.App.GetProductNotices(&request.Context{}, th.BasicUser.Id, th.BasicTeam.Id, model.NoticeClientType_All, "1.2.3", "en")
 	require.Nil(t, appErr)
 	require.Len(t, messages, 1)
 
@@ -726,7 +728,7 @@ func TestNoticeFetch(t *testing.T) {
 	require.Nil(t, appErr)
 
 	// get them again, see that none are returned
-	messages, appErr = th.App.GetProductNotices(th.BasicUser.Id, th.BasicTeam.Id, model.NoticeClientType_All, "1.2.3", "en")
+	messages, appErr = th.App.GetProductNotices(&request.Context{}, th.BasicUser.Id, th.BasicTeam.Id, model.NoticeClientType_All, "1.2.3", "en")
 	require.Nil(t, appErr)
 	require.Len(t, messages, 0)
 
@@ -745,7 +747,7 @@ func TestNoticeFetch(t *testing.T) {
 	require.Nil(t, appErr)
 
 	// get them again, since conditions don't match we should be zero
-	messages, appErr = th.App.GetProductNotices(th.BasicUser.Id, th.BasicTeam.Id, model.NoticeClientType_All, "1.2.3", "en")
+	messages, appErr = th.App.GetProductNotices(&request.Context{}, th.BasicUser.Id, th.BasicTeam.Id, model.NoticeClientType_All, "1.2.3", "en")
 	require.Nil(t, appErr)
 	require.Len(t, messages, 0)
 

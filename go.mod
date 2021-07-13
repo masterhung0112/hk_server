@@ -13,7 +13,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/advancedlogic/GoOse v0.0.0-20200830213114-1225d531e0ad // indirect
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
-	github.com/aws/aws-sdk-go v1.37.18
+	github.com/aws/aws-sdk-go v1.38.2
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blevesearch/bleve v1.0.14
 	github.com/btcsuite/btcd v0.21.0-beta
@@ -38,9 +38,9 @@ require (
 	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c
-	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
+	github.com/hako/durafmt v0.0.0-20210316092057-3a2c319c1acd
 	github.com/hashicorp/go-hclog v0.15.0
-	github.com/hashicorp/go-multierror v1.1.0
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-plugin v1.4.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/memberlist v0.2.2
@@ -50,10 +50,12 @@ require (
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/ledongthuc/pdf v0.0.0-20200323191019-23c5852adbd2
 	github.com/levigross/exp-html v0.0.0-20120902181939-8df60c69a8f5 // indirect
-	github.com/lib/pq v1.9.0
+	github.com/lib/pq v1.10.0
+	github.com/magefile/mage v1.10.0 // indirect
 	github.com/mattermost/go-i18n v1.11.0
 	github.com/mattermost/gorp v2.0.1-0.20200527092429-d62b7b9cadfc+incompatible
 	github.com/mattermost/gosaml2 v0.3.3
+	github.com/mattermost/gziphandler v0.0.1
 	github.com/mattermost/ldap v0.0.0-20201202150706-ee0e6284187d
 	github.com/mattermost/logr v1.0.13
 	github.com/mattermost/rsc v0.0.0-20160330161541-bbaefb05eaa0
@@ -68,14 +70,14 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.9.0
+	github.com/prometheus/client_golang v1.10.0
 	github.com/reflog/dateconstraints v0.2.1
 	github.com/rs/cors v1.7.0
 	github.com/rudderlabs/analytics-go v3.3.1+incompatible
 	github.com/russellhaering/goxmldsig v1.1.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
-	github.com/sirupsen/logrus v1.8.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/splitio/go-client/v6 v6.0.2
@@ -88,15 +90,16 @@ require (
 	github.com/tylerb/graceful v1.2.15
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.4.0+incompatible
-	github.com/vmihailenco/msgpack/v5 v5.2.0
+	github.com/vmihailenco/msgpack/v5 v5.3.0
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	github.com/wiggin77/merror v1.0.3
 	github.com/wiggin77/srslog v1.0.1
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
+	github.com/yuin/goldmark v1.2.1
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
-	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
+	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/text v0.3.5
 	golang.org/x/tools v0.1.0
@@ -104,5 +107,6 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/olivere/elastic.v6 v6.2.35
 	gopkg.in/yaml.v2 v2.4.0
+	gotest.tools v2.2.0+incompatible
 	willnorris.com/go/imageproxy v0.10.0
 )

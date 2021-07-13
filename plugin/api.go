@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	plugin "github.com/hashicorp/go-plugin"
+
 	"github.com/masterhung0112/hk_server/v5/model"
 )
 
@@ -84,14 +85,14 @@ type API interface {
 	// Minimum server version: 5.10
 	GetBundlePath() (string, error)
 
-	// GetLicense returns the current license used by the HungKnow server . Returns nil if
+	// GetLicense returns the current license used by the Mattermost server. Returns nil if
 	// the server does not have a license.
 	//
 	// @tag Server
 	// Minimum server version: 5.10
 	GetLicense() *model.License
 
-	// GetServerVersion return the current HungKnow server  version
+	// GetServerVersion return the current Mattermost server version
 	//
 	// @tag Server
 	// Minimum server version: 5.4
@@ -227,6 +228,12 @@ type API interface {
 	// @tag User
 	// Minimum server version: 5.2
 	UpdateUserStatus(userID, status string) (*model.Status, *model.AppError)
+
+	// SetUserStatusTimedDND will set a user's status to dnd for given time until the user,
+	// or another integration/plugin, sets it back to online.
+	// @tag User
+	// Minimum server version: 5.35
+	SetUserStatusTimedDND(userId string, endtime int64) (*model.Status, *model.AppError)
 
 	// UpdateUserActive deactivates or reactivates an user.
 	//
@@ -442,6 +449,24 @@ type API interface {
 	// @tag Channel
 	// Minimum server version: 5.6
 	SearchChannels(teamID string, term string) ([]*model.Channel, *model.AppError)
+
+	// CreateChannelSidebarCategory creates a new sidebar category for a set of channels.
+	//
+	// @tag ChannelSidebar
+	// Minimum server version: 5.37
+	CreateChannelSidebarCategory(userID, teamID string, newCategory *model.SidebarCategoryWithChannels) (*model.SidebarCategoryWithChannels, *model.AppError)
+
+	// GetChannelSidebarCategories returns sidebar categories.
+	//
+	// @tag ChannelSidebar
+	// Minimum server version: 5.37
+	GetChannelSidebarCategories(userID, teamID string) (*model.OrderedSidebarCategories, *model.AppError)
+
+	// UpdateChannelSidebarCategories updates the channel sidebar categories.
+	//
+	// @tag ChannelSidebar
+	// Minimum server version: 5.37
+	UpdateChannelSidebarCategories(userID, teamID string, categories []*model.SidebarCategoryWithChannels) ([]*model.SidebarCategoryWithChannels, *model.AppError)
 
 	// SearchUsers returns a list of users based on some search criteria.
 	//
@@ -861,7 +886,7 @@ type API interface {
 
 	// PublishWebSocketEvent sends an event to WebSocket connections.
 	// event is the type and will be prepended with "custom_<pluginid>_".
-	// payload is the data sent with the event. Interface values must be primitive Go types or mattermost-server/model types.
+	// payload is the data sent with the event. Interface values must be primitive Go types or hk_server/model types.
 	// broadcast determines to which users to send the event.
 	//
 	// Minimum server version: 5.2
@@ -887,7 +912,7 @@ type API interface {
 	// Minimum server version: 5.3
 	HasPermissionToChannel(userID, channelId string, permission *model.Permission) bool
 
-	// LogDebug writes a log message to the HungKnow server  log file.
+	// LogDebug writes a log message to the Mattermost server log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
@@ -895,7 +920,7 @@ type API interface {
 	// Minimum server version: 5.2
 	LogDebug(msg string, keyValuePairs ...interface{})
 
-	// LogInfo writes a log message to the HungKnow server  log file.
+	// LogInfo writes a log message to the Mattermost server log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
@@ -903,7 +928,7 @@ type API interface {
 	// Minimum server version: 5.2
 	LogInfo(msg string, keyValuePairs ...interface{})
 
-	// LogError writes a log message to the HungKnow server  log file.
+	// LogError writes a log message to the Mattermost server log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
@@ -911,7 +936,7 @@ type API interface {
 	// Minimum server version: 5.2
 	LogError(msg string, keyValuePairs ...interface{})
 
-	// LogWarn writes a log message to the HungKnow server  log file.
+	// LogWarn writes a log message to the Mattermost server log file.
 	// Appropriate context such as the plugin name will already be added as fields so plugins
 	// do not need to add that info.
 	//
@@ -1037,8 +1062,8 @@ type API interface {
 
 	// UpdateCommand updates a single command (commandID) with the information provided in the
 	// updatedCmd model.Command struct. The following fields in the command cannot be updated:
-	// Id, Token, CreateAt, DeleteAt, and PluginId. If updatedCmd.teamID is blank, it
-	// will be set to commandID's teamID.
+	// Id, Token, CreateAt, DeleteAt, and PluginId. If updatedCmd.TeamId is blank, it
+	// will be set to commandID's TeamId.
 	//
 	// @tag SlashCommand
 	// Minimum server version: 5.28
@@ -1049,6 +1074,21 @@ type API interface {
 	// @tag SlashCommand
 	// Minimum server version: 5.28
 	DeleteCommand(commandID string) error
+
+	// PublishPluginClusterEvent broadcasts a plugin event to all other running instances of
+	// the calling plugin that are present in the cluster.
+	//
+	// This method is used to allow plugin communication in a High-Availability cluster.
+	// The receiving side should implement the OnPluginClusterEvent hook
+	// to receive events sent through this method.
+	//
+	// Minimum server version: 5.36
+	PublishPluginClusterEvent(ev model.PluginClusterEvent, opts model.PluginClusterEventSendOptions) error
+
+	// RequestTrialLicense requests a trial license and installs it in the server
+	//
+	// Minimum server version: 5.36
+	RequestTrialLicense(requesterID string, users int, termsAccepted bool, receiveEmailsAccepted bool) *model.AppError
 }
 
 var handshake = plugin.HandshakeConfig{

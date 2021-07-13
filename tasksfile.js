@@ -38,7 +38,7 @@ LDFLAGS += ` -X 'github.com/masterhung0112/hk_server/v5/app.NOTICES_SKIP_CACHE=$
 let PLATFORM_FILES = "./cmd/hkserver/main.go"
 
 // Possible options: mysql, postgres, minio, inbucket, openldap, dejavu,
-let ENABLED_DOCKER_SERVICES = 'mysql postgres inbucket'
+let ENABLED_DOCKER_SERVICES = 'mysql postgres inbucket minio'
 // ifeq (,$(findstring minio,$(ENABLED_DOCKER_SERVICES)))
 //   TEMP_DOCKER_SERVICES:=$(TEMP_DOCKER_SERVICES) minio
 // endif
@@ -60,8 +60,9 @@ function start_docker() {
   } else {
     console.log('Starting docker containers')
   }
-  //TODO: Open
-  sh(`${GO} run ./build/docker-compose-generator/main.go ${ENABLED_DOCKER_SERVICES} | docker-compose -f docker-compose.makefile.yml -f /dev/stdin run --rm start_dependencies`, { nopipe: true })
+
+  sh(`${GO} run ./build/docker-compose-generator/main.go ${ENABLED_DOCKER_SERVICES} > enabled_services.yml`, { nopipe: true })
+  sh(`docker-compose -f docker-compose.makefile.yml -f enabled_services.yml run --rm start_dependencies`, { nopipe: true })
 
   // if ($(findstring openldap,$(ENABLED_DOCKER_SERVICES))) {
     // sh(`cat tests/${LDAP_DATA}-data.ldif | docker-compose -f docker-compose.makefile.yml exec -T openldap bash -c 'ldapadd -x -D "cn=admin,dc=mm,dc=test,dc=com" -w mostest || true'`, { nopipe: true })
@@ -85,6 +86,7 @@ function test_data() {
 help(test_data, 'Add test data to the local instance')
 
 function start_server() {
+  sh(`${GO} version`, { nopipe: true })
   sh(`${GO} run ./cmd/hkserver/main.go`, { nopipe: true })
 }
 help(start_server, 'Start server instance')
@@ -109,12 +111,24 @@ function app_layers() {
 }
 help(app_layers, 'Extract interface from App struct')
 
+function store_layers() {
+  sh(`${GO} generate ${GOFLAGS} ./store`, { nopipe: true })
+
+}
+help(store_layers, 'Generate layers for the store')
+
+function test_folder(_, package_name) {
+  sh(`${GO} test -timeout 60m github.com/masterhung0112/hk_server/v5/${package_name} > test_log.txt`, { nopipe: true })
+}
+
 cli({
   start_docker,
   start_server,
   test_data,
+  test_folder,
 
   store_mocks,
   einterfaces_mocks,
   app_layers,
+  store_layers,
 })

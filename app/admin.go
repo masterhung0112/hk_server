@@ -1,3 +1,6 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 package app
 
 import (
@@ -165,7 +168,7 @@ func (s *Server) InvalidateAllCaches() *model.AppError {
 
 func (s *Server) InvalidateAllCachesSkipSend() {
 	mlog.Info("Purging all caches")
-	s.sessionCache.Purge()
+	s.userService.ClearAllUsersSessionCacheLocal()
 	s.statusCache.Purge()
 	s.Store.Team().ClearCaches()
 	s.Store.Channel().ClearCaches()

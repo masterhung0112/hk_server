@@ -198,7 +198,7 @@ func (b *LocalFileBackend) ListDirectory(path string) ([]string, error) {
 		return nil, errors.Wrapf(err, "unable to list the directory %s", path)
 	}
 	for _, fileInfo := range fileInfos {
-		paths = append(paths, filepath.Join(path, fileInfo.Name()))
+		paths = append(paths, filepath.ToSlash(filepath.Join(path, fileInfo.Name())))
 	}
 	return paths, nil
 }

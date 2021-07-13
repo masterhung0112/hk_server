@@ -33,4 +33,6 @@ import (
 
 	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
 	_ "github.com/masterhung0112/hk_server/v5/jobs/export_delete"
+	// This is a placeholder so this package can be imported in Team Edition when it will be otherwise empty.
+	_ "github.com/masterhung0112/hk_server/v5/jobs/resend_invitation_email"
 )

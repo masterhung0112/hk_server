@@ -13,21 +13,20 @@ import (
 	"github.com/masterhung0112/hk_server/v5/services/timezones"
 	"github.com/masterhung0112/hk_server/v5/store"
 	"github.com/masterhung0112/hk_server/v5/utils"
-	"github.com/stretchr/testify/suite"
 )
 
-type ChannelStoreTestSuite struct {
-	suite.Suite
-	StoreTestSuite
-}
+// type ChannelStoreTestSuite struct {
+// 	suite.Suite
+// 	StoreTestSuite
+// }
 
 func (s *ChannelStoreTestSuite) SetupTest() {
 	createDefaultRoles(s.Store())
 }
 
 // func TestChannelStoreTestSuite(t *testing.T) {
-// 	StoreTestSuiteWithSqlSupplier(t, &ChannelStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
-// 		suite.Run(t, testSuite)
+// 	StoreTestSuiteWithSqlSupplier(&ChannelStoreTestSuite{}, func(t *testing.T, testSuite StoreTestBaseSuite) {
+// 		suite.Run(testSuite)
 // 	})
 // }
 
@@ -2880,13 +2879,13 @@ func (s *ChannelStoreTestSuite) TestUpdateMultipleMembers() {
 
 func (s *ChannelStoreTestSuite) TestRemoveMember() {
 	u1, err := s.Store().User().Save(&model.User{Username: model.NewId(), Email: MakeEmail()})
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	u2, err := s.Store().User().Save(&model.User{Username: model.NewId(), Email: MakeEmail()})
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	u3, err := s.Store().User().Save(&model.User{Username: model.NewId(), Email: MakeEmail()})
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	u4, err := s.Store().User().Save(&model.User{Username: model.NewId(), Email: MakeEmail()})
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	channelID := model.NewId()
 	defaultNotifyProps := model.GetDefaultChannelNotifyProps()
 	m1 := &model.ChannelMember{ChannelId: channelID, UserId: u1.Id, NotifyProps: defaultNotifyProps}
@@ -2894,23 +2893,23 @@ func (s *ChannelStoreTestSuite) TestRemoveMember() {
 	m3 := &model.ChannelMember{ChannelId: channelID, UserId: u3.Id, NotifyProps: defaultNotifyProps}
 	m4 := &model.ChannelMember{ChannelId: channelID, UserId: u4.Id, NotifyProps: defaultNotifyProps}
 	_, nErr := s.Store().Channel().SaveMultipleMembers([]*model.ChannelMember{m1, m2, m3, m4})
-	s.Require().Nil(nErr)
+	s.Require().NoError(nErr)
 
 	s.T().Run("remove member from not existing channel", func(t *testing.T) {
 		nErr = s.Store().Channel().RemoveMember("not-existing-channel", u1.Id)
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		var membersCount int64
 		membersCount, nErr = s.Store().Channel().GetMemberCount(channelID, false)
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		s.Require().Equal(int64(4), membersCount)
 	})
 
 	s.T().Run("remove not existing member from an existing channel", func(t *testing.T) {
 		nErr = s.Store().Channel().RemoveMember(channelID, model.NewId())
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		var membersCount int64
 		membersCount, nErr = s.Store().Channel().GetMemberCount(channelID, false)
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		s.Require().Equal(int64(4), membersCount)
 	})
 
@@ -2941,23 +2940,23 @@ func (s *ChannelStoreTestSuite) TestRemoveMembers() {
 	m3 := &model.ChannelMember{ChannelId: channelID, UserId: u3.Id, NotifyProps: defaultNotifyProps}
 	m4 := &model.ChannelMember{ChannelId: channelID, UserId: u4.Id, NotifyProps: defaultNotifyProps}
 	_, nErr := s.Store().Channel().SaveMultipleMembers([]*model.ChannelMember{m1, m2, m3, m4})
-	s.Require().Nil(nErr)
+	s.Require().NoError(nErr)
 
 	s.T().Run("remove members from not existing channel", func(t *testing.T) {
 		nErr = s.Store().Channel().RemoveMembers("not-existing-channel", []string{u1.Id, u2.Id, u3.Id, u4.Id})
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		var membersCount int64
 		membersCount, nErr = s.Store().Channel().GetMemberCount(channelID, false)
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		s.Require().Equal(int64(4), membersCount)
 	})
 
 	s.T().Run("remove not existing members from an existing channel", func(t *testing.T) {
 		nErr = s.Store().Channel().RemoveMembers(channelID, []string{model.NewId(), model.NewId()})
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		var membersCount int64
 		membersCount, nErr = s.Store().Channel().GetMemberCount(channelID, false)
-		s.Require().Nil(nErr)
+		s.Require().NoError(nErr)
 		s.Require().Equal(int64(4), membersCount)
 	})
 
@@ -6657,7 +6656,7 @@ func (s *ChannelStoreTestSuite) TestStoreExportAllDirectChannelsDeletedChannel()
 	s.Require().Nil(nErr, "channel should have been deleted")
 
 	d1, nErr := s.Store().Channel().GetAllDirectChannelsForExportAfter(10000, strings.Repeat("0", 26))
-	s.Assert().Nil(nErr)
+	s.Assert().NoError(nErr)
 
 	s.Assert().Equal(0, len(d1))
 
@@ -6714,24 +6713,24 @@ func (s *ChannelStoreTestSuite) TestStoreGetChannelsBatchForIndexing() {
 	c6.Name = "zz" + model.NewId() + "b"
 	c6.Type = model.CHANNEL_OPEN
 	_, nErr = s.Store().Channel().Save(c6, -1)
-	s.Require().Nil(nErr)
+	s.Require().NoError(nErr)
 
 	endTime := c6.CreateAt
 
 	// First and last channel should be outside the range
 	channels, err := s.Store().Channel().GetChannelsBatchForIndexing(startTime, endTime, 1000)
-	s.Assert().Nil(err)
+	s.Assert().NoError(err)
 	s.Assert().ElementsMatch([]*model.Channel{c2, c3, c5}, channels)
 
 	// Update the endTime, last channel should be in
 	endTime = model.GetMillis()
 	channels, err = s.Store().Channel().GetChannelsBatchForIndexing(startTime, endTime, 1000)
-	s.Assert().Nil(err)
+	s.Assert().NoError(err)
 	s.Assert().ElementsMatch([]*model.Channel{c2, c3, c5, c6}, channels)
 
 	// Testing the limit
 	channels, err = s.Store().Channel().GetChannelsBatchForIndexing(startTime, endTime, 2)
-	s.Assert().Nil(err)
+	s.Assert().NoError(err)
 	s.Assert().ElementsMatch([]*model.Channel{c2, c3}, channels)
 }
 
@@ -6751,7 +6750,7 @@ func (s *ChannelStoreTestSuite) TestGroupSyncedChannelCount() {
 		Name:        model.NewId(),
 		Type:        model.CHANNEL_PRIVATE,
 	}, 999)
-	s.Require().Nil(nErr)
+	s.Require().NoError(nErr)
 	s.Require().False(channel2.IsGroupConstrained())
 	defer s.Store().Channel().PermanentDelete(channel2.Id)
 
@@ -6761,10 +6760,67 @@ func (s *ChannelStoreTestSuite) TestGroupSyncedChannelCount() {
 
 	channel2.GroupConstrained = model.NewBool(true)
 	channel2, err := s.Store().Channel().Update(channel2)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	s.Require().True(channel2.IsGroupConstrained())
 
-	countAfter, appErr := s.Store().Channel().GroupSyncedChannelCount()
-	s.Require().Nil(appErr)
+	countAfter, err := s.Store().Channel().GroupSyncedChannelCount()
+	s.Require().NoError(err)
 	s.Require().GreaterOrEqual(countAfter, count+1)
+}
+
+func (s *ChannelStoreTestSuite) TestSetShared() {
+	channel := &model.Channel{
+		TeamId:      model.NewId(),
+		DisplayName: "test_share_flag",
+		Name:        "test_share_flag",
+		Type:        model.CHANNEL_OPEN,
+	}
+	channelSaved, err := s.Store().Channel().Save(channel, 999)
+	s.Require().NoError(err)
+
+	s.T().Run("Check default", func(t *testing.T) {
+		s.Assert().False(channelSaved.IsShared())
+	})
+
+	s.T().Run("Set Shared flag", func(t *testing.T) {
+		err := s.Store().Channel().SetShared(channelSaved.Id, true)
+		s.Require().NoError(err)
+
+		channelMod, err := s.Store().Channel().Get(channelSaved.Id, false)
+		s.Require().NoError(err)
+
+		s.Assert().True(channelMod.IsShared())
+	})
+
+	s.T().Run("Set Shared for invalid id", func(t *testing.T) {
+		err := s.Store().Channel().SetShared(model.NewId(), true)
+		s.Require().Error(err)
+	})
+}
+
+func (s *ChannelStoreTestSuite) TestGetTeamForChannel() {
+	team, err := s.Store().Team().Save(&model.Team{
+		Name:        "myteam",
+		DisplayName: "DisplayName",
+		Email:       MakeEmail(),
+		Type:        model.TEAM_OPEN,
+	})
+	s.Require().NoError(err)
+
+	channel := &model.Channel{
+		TeamId:      team.Id,
+		DisplayName: "test_share_flag",
+		Name:        "test_share_flag",
+		Type:        model.CHANNEL_OPEN,
+	}
+	channelSaved, err := s.Store().Channel().Save(channel, 999)
+	s.Require().NoError(err)
+
+	got, err := s.Store().Channel().GetTeamForChannel(channelSaved.Id)
+	s.Require().NoError(err)
+	s.Assert().Equal(team.Id, got.Id)
+
+	_, err = s.Store().Channel().GetTeamForChannel("notfound")
+	var nfErr *store.ErrNotFound
+	s.Require().True(errors.As(err, &nfErr))
 }

@@ -24,6 +24,7 @@ func assertDirectoryContents(t *testing.T, dir string, expectedFiles []string) {
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		require.NoError(t, err)
 		file := strings.TrimPrefix(path, dir)
+		file = filepath.ToSlash(file)
 		file = strings.TrimPrefix(file, "/")
 		files = append(files, file)
 		return nil
@@ -70,6 +71,24 @@ func TestExtractTarGz(t *testing.T) {
 		archive := makeArchive(t, nil)
 		err := extractTarGz(&archive, "")
 		require.Error(t, err)
+	})
+
+	t.Run("huge tar", func(t *testing.T) {
+		files := make([]*tar.Header, 0, 10000)
+		for i := 0; i < 10000; i++ {
+			files = append(files, &tar.Header{
+				Name:     fmt.Sprintf("%d.txt", i),
+				Typeflag: tar.TypeReg,
+			})
+		}
+
+		dst, err := ioutil.TempDir("", "TestExtractTarGz")
+		require.NoError(t, err)
+		defer os.RemoveAll(dst)
+
+		archive := makeArchive(t, files)
+		err = extractTarGz(&archive, dst)
+		require.NoError(t, err)
 	})
 
 	testCases := []struct {

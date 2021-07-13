@@ -9,9 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/masterhung0112/hk_server/v5/services/cache"
-
 	"github.com/cespare/xxhash/v2"
+	"github.com/masterhung0112/hk_server/v5/services/cache"
 )
 
 const (

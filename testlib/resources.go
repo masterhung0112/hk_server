@@ -49,7 +49,7 @@ func getCommonBaseSearchPaths() []string {
 	}
 
 	// this enables the server to be used in tests from a different repository
-	if mmPath := os.Getenv("MM_SERVER_PATH"); mmPath != "" {
+	if mmPath := os.Getenv("HK_SERVER_PATH"); mmPath != "" {
 		paths = append(paths, mmPath)
 	}
 
@@ -69,7 +69,11 @@ func findDir(dir string) (string, bool) {
 			return "./", false
 		}
 
-		return path.Dir(srcPath), true
+		rootAbs, err := filepath.Abs(filepath.Dir(srcPath))
+		if err != nil {
+			return "./", false
+		}
+		return rootAbs, true
 	}
 
 	found := fileutils.FindPath(dir, getCommonBaseSearchPaths(), func(fileInfo os.FileInfo) bool {
@@ -166,7 +170,6 @@ func SetupTestResources() (string, error) {
 
 		// For Windows, we cannot symlink, so we forcely copy the file
 		if testResource.action == actionCopy || runtime.GOOS == "windows" {
-			// fmt.Printf("Copy %s to %s\n", testResource.src, resourceDestInTemp)
 			if testResource.resType == resourceTypeFile {
 				err = utils.CopyFile(testResource.src, resourceDestInTemp)
 				if err != nil {

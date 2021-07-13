@@ -1,7 +1,9 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -10,6 +12,11 @@ import (
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/utils"
 )
+
+// marshalConfig converts the given configuration into JSON bytes for persistence.
+func marshalConfig(cfg *model.Config) ([]byte, error) {
+	return json.MarshalIndent(cfg, "", "    ")
+}
 
 // desanitize replaces fake settings with their actual values.
 func desanitize(actual, target *model.Config) {
@@ -188,18 +195,9 @@ func stripPassword(dsn, schema string) string {
 	return prefix + dsn[:i+1] + dsn[j:]
 }
 
-func IsJsonMap(data string) bool {
+func isJSONMap(data string) bool {
 	var m map[string]interface{}
 	return json.Unmarshal([]byte(data), &m) == nil
-}
-
-func JSONToLogTargetCfg(data []byte) (mlog.LogTargetCfg, error) {
-	cfg := make(mlog.LogTargetCfg)
-	err := json.Unmarshal(data, &cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cfg, nil
 }
 
 func GetValueByPath(path []string, obj interface{}) (interface{}, bool) {
@@ -245,4 +243,16 @@ func GetValueByPath(path []string, obj interface{}) (interface{}, bool) {
 		}
 	}
 	return nil, false
+}
+
+func equal(oldCfg, newCfg *model.Config) (bool, error) {
+	oldCfgBytes, err := json.Marshal(oldCfg)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal old config: %w", err)
+	}
+	newCfgBytes, err := json.Marshal(newCfg)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal new config: %w", err)
+	}
+	return !bytes.Equal(oldCfgBytes, newCfgBytes), nil
 }
