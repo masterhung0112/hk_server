@@ -174,7 +174,7 @@ func (h *MainHelper) PreloadMigrations() {
 			finalPath = filepath.Join(basePath, relPath, "postgres_migration_warmup.sql")
 		} else {
 			// finalPath = filepath.Join("hk_server", relPath, "postgres_migration_warmup.sql")
-      finalPath = filepath.Join(relPath, "postgres_migration_warmup.sql")
+			finalPath = filepath.Join(relPath, "postgres_migration_warmup.sql")
 		}
 		buf, err = ioutil.ReadFile(finalPath)
 		if err != nil {

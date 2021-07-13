@@ -26,7 +26,6 @@ import (
 	"github.com/masterhung0112/hk_server/v5/utils/testutils"
 )
 
-
 func TestCreateOAuthUser(t *testing.T) {
 	th := Setup(t).InitBasic()
 	defer th.TearDown()

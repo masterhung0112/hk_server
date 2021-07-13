@@ -2462,6 +2462,7 @@ func (a *App) isCRTEnabledForUser(userID string) bool {
 	}
 	return threadsEnabled
 }
+
 // MarkChanelAsUnreadFromPost will take a post and set the channel as unread from that one.
 func (a *App) MarkChannelAsUnreadFromPost(postID string, userID string, collapsedThreadsSupported, followThread bool) (*model.ChannelUnreadAt, *model.AppError) {
 	if !collapsedThreadsSupported || !a.isCRTEnabledForUser(userID) {

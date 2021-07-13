@@ -39,17 +39,17 @@ func (p *MyPlugin) MessageWillBePosted(_ *plugin.Context, _ *model.Post) (*model
 
 		// Testing with a handful of stores
 		// storetest.TestPostStore(p.t, store, store)
-    storetest.StoreTestSuiteExecute(p.t, &storetest.PostStoreTestSuite{}, store, store)
-    storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreTS{}, store, store)
-    storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreGetAllProfilesTS{}, store, store)
-    storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreGetProfilesTS{}, store, store)
-    storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreGetProfilesByIdsTS{}, store, store)
+		storetest.StoreTestSuiteExecute(p.t, &storetest.PostStoreTestSuite{}, store, store)
+		storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreTS{}, store, store)
+		storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreGetAllProfilesTS{}, store, store)
+		storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreGetProfilesTS{}, store, store)
+		storetest.StoreTestSuiteExecute(p.t, &storetest.UserStoreGetProfilesByIdsTS{}, store, store)
 
 		// storetest.TestUserStore(p.t, store, store)
 		// storetest.TestTeamStore(p.t, store)
-    storetest.StoreTestSuiteExecute(p.t, &storetest.TeamStoreTestSuite{}, store, store)
+		storetest.StoreTestSuiteExecute(p.t, &storetest.TeamStoreTestSuite{}, store, store)
 		// storetest.TestChannelStore(p.t, store, store)
-    storetest.StoreTestSuiteExecute(p.t, &storetest.ChannelStoreTestSuite{}, store, store)
+		storetest.StoreTestSuiteExecute(p.t, &storetest.ChannelStoreTestSuite{}, store, store)
 		// storetest.TestBotStore(p.t, store, store)
 
 		store.GetMaster().Db.Close()

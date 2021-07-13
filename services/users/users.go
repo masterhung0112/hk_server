@@ -15,12 +15,10 @@ import (
 	"github.com/masterhung0112/hk_server/v5/store"
 )
 
-
 type UserCreateOptions struct {
 	Guest      bool
 	FromImport bool
 }
-
 
 // CreateUser creates a user
 func (us *UserService) CreateUser(user *model.User, opts UserCreateOptions) (*model.User, error) {

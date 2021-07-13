@@ -204,8 +204,8 @@ type Server struct {
 	featureFlagStop              chan struct{}
 	featureFlagStopped           chan struct{}
 	featureFlagSynchronizerMutex sync.Mutex
-	imgDecoder *imaging.Decoder
-	imgEncoder *imaging.Encoder
+	imgDecoder                   *imaging.Decoder
+	imgEncoder                   *imaging.Encoder
 
 	dndTaskMut sync.Mutex
 	dndTask    *model.ScheduledTask
@@ -1825,7 +1825,6 @@ func (s *Server) doLicenseExpirationCheck() {
 		mlog.Debug("License cannot be found.")
 		return
 	}
-
 
 	users, err := s.Store.User().GetSystemAdminProfiles()
 	if err != nil {

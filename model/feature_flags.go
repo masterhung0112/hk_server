@@ -29,7 +29,7 @@ type FeatureFlags struct {
 	PluginIncidentManagement string `plugin_id:"com.mattermost.plugin-incident-management"`
 	PluginApps               string `plugin_id:"com.mattermost.apps"`
 
-	PluginFocalboard         string `plugin_id:"focalboard"`
+	PluginFocalboard string `plugin_id:"focalboard"`
 
 	// Control support for custom data retention policies
 	CustomDataRetentionEnabled bool

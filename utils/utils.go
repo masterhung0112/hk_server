@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/masterhung0112/hk_server/v5/model"
+	"github.com/pkg/errors"
 )
 
 func StringInSlice(a string, slice []string) bool {

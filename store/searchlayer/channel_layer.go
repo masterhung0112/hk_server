@@ -6,11 +6,11 @@ package searchlayer
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/services/searchengine"
 	"github.com/masterhung0112/hk_server/v5/shared/mlog"
 	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/pkg/errors"
 )
 
 type SearchChannelStore struct {

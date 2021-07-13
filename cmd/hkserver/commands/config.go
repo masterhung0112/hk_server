@@ -495,7 +495,6 @@ func configResetCmdF(command *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to set config")
 	}
 
-
 	return nil
 }
 

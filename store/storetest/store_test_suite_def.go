@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-
 type PostStoreTestSuite struct {
 	suite.Suite
 	StoreTestSuite

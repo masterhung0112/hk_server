@@ -26,7 +26,6 @@ func (a *App) CreateSession(session *model.Session) (*model.Session, *model.AppE
 		}
 	}
 
-
 	return session, nil
 }
 
@@ -220,7 +219,6 @@ func (a *App) RevokeSession(session *model.Session) *model.AppError {
 			return model.NewAppError("RevokeSession", "app.session.remove.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 	}
-
 
 	return nil
 }

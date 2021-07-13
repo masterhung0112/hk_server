@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"github.com/masterhung0112/hk_server/v5/config"
 )

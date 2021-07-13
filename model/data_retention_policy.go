@@ -73,6 +73,7 @@ type RetentionPolicyCursor struct {
 	TeamPoliciesDone    bool
 	GlobalPoliciesDone  bool
 }
+
 func (rp *GlobalRetentionPolicy) ToJson() []byte {
 	b, _ := json.Marshal(rp)
 	return b

@@ -2547,8 +2547,6 @@ func TestSetChannelUnread(t *testing.T) {
 	})
 }
 
-
-
 func TestSetPostUnreadWithoutCollapsedThreads(t *testing.T) {
 	os.Setenv("MM_FEATUREFLAGS_COLLAPSEDTHREADS", "true")
 	defer os.Unsetenv("MM_FEATUREFLAGS_COLLAPSEDTHREADS")

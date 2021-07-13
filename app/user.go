@@ -192,7 +192,6 @@ func (a *App) IsUserSignUpAllowed() *model.AppError {
 	return nil
 }
 
-
 func (a *App) IsFirstUserAccount() bool {
 	return a.srv.userService.IsFirstUserAccount()
 }
