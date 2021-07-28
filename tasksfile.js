@@ -1,4 +1,6 @@
 const { sh, cli, help  } = require('tasksfile')
+var shell = require('shelljs');
+shell.config.silent = false
 
 let IS_CI = process.env.IS_CI || false
 
@@ -51,6 +53,9 @@ let ENABLED_DOCKER_SERVICES = 'mysql postgres inbucket minio'
 //   endif
 // endif
 // let ENABLED_DOCKER_SERVICES = `${ENABLED_DOCKER_SERVICES} ${TEMP_DOCKER_SERVICES}`
+
+let DIST_ROOT = "dist"
+let DIST_PATH = `${DIST_ROOT}/hkserver`
 
 function start_docker() {
   if (IS_CI == false) {
@@ -121,6 +126,55 @@ function test_folder(_, package_name) {
   sh(`${GO} test -timeout 60m github.com/masterhung0112/hk_server/v5/${package_name} > test_log.txt`, { nopipe: true })
 }
 
+function build_window() {
+  shell.mkdir('-p', `${GOBIN}/hk_windows_amd64`)
+  shell.exec(`${GO} build -o ${GOBIN}/hk_windows_amd64 ${GOFLAGS} -trimpath -ldflags "${LDFLAGS}" ./...`, {
+    silent: false,
+    env: {
+      ...process.env,
+      GOOS: 'windows',
+      GOARCH: 'amd64'
+    }
+   })
+}
+
+function build_linux() {
+  shell.mkdir('-p', `${GOBIN}/hk_linux_amd64`)
+  shell.exec(`${GO} build -o ${GOBIN}/hk_linux_amd64 ${GOFLAGS} -trimpath -ldflags "${LDFLAGS}" ./...`, {
+    silent: false,
+    env: {
+      ...process.env,
+      GOOS: 'linux',
+      GOARCH: 'amd64'
+    }
+   })
+}
+
+function package_docker_image() {
+  // Remove any old files
+  shell.rm('-Rf', `${DIST_ROOT}`)
+
+  // Create needed directories
+  shell.mkdir('-p', `${DIST_PATH}/bin`)
+  shell.mkdir('-p', `${DIST_PATH}/logs`)
+  shell.mkdir('-p', `${DIST_PATH}/prepackaged_plugins`)
+
+  // Resource directories
+  shell.mkdir('-p', `${DIST_PATH}/config`)
+  shell.exec(`go run ./scripts/config_generator`, {
+    env: {
+      ...process.env,
+      OUTPUT_CONFIG: `${shell.pwd()}/${DIST_PATH}/config/config.json`
+    }
+  })
+  shell.cp('-RL', 'fonts', `${DIST_PATH}`)
+  shell.cp('-RL', 'templates', `${DIST_PATH}`)
+  shell.rm('-rf', [`${DIST_PATH}/templates/*.mjml`, `${DIST_PATH}/templates/partials/`])
+  shell.cp('-RL', 'i18n', `${DIST_PATH}`)
+
+  shell.cp('-R', `${GOBIN}/hk_linux_amd64/hkserver`, `${DIST_PATH}/bin`)
+}
+
 cli({
   start_docker,
   start_server,
@@ -131,4 +185,9 @@ cli({
   einterfaces_mocks,
   app_layers,
   store_layers,
+
+  build_window,
+  build_linux,
+
+  package_docker_image,
 })
