@@ -192,7 +192,10 @@ func (_m *API) CreateChannelSidebarCategory(userID string, teamID string, newCat
 
 	return r0, r1
 }
+<<<<<<< HEAD
+=======
 
+>>>>>>> master
 // CreateCommand provides a mock function with given fields: cmd
 func (_m *API) CreateCommand(cmd *model.Command) (*model.Command, error) {
 	ret := _m.Called(cmd)
@@ -3131,7 +3134,10 @@ func (_m *API) SetUserStatusTimedDND(userId string, endtime int64) (*model.Statu
 
 	return r0, r1
 }
+<<<<<<< HEAD
+=======
 
+>>>>>>> master
 // UnregisterCommand provides a mock function with given fields: teamID, trigger
 func (_m *API) UnregisterCommand(teamID string, trigger string) error {
 	ret := _m.Called(teamID, trigger)
