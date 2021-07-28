@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/stretchr/testify/require"
 
 	"github.com/masterhung0112/hk_server/v5/model"
 )

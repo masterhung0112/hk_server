@@ -23,6 +23,7 @@ const (
 	BillingSchemePerSeat = BillingScheme("per_seat")
 	BillingSchemeFlatFee = BillingScheme("flat_fee")
 )
+
 // Product model represents a product on the cloud system.
 type Product struct {
 	ID            string        `json:"id"`

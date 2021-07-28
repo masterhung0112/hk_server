@@ -11,10 +11,10 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
-	"github.com/mattermost/gorp"
 	"github.com/masterhung0112/hk_server/v5/einterfaces"
 	"github.com/masterhung0112/hk_server/v5/model"
 	"github.com/masterhung0112/hk_server/v5/store"
+	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
 )
 

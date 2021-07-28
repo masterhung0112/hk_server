@@ -93,7 +93,7 @@ func getTestResourcesToSetup() []testResourceDetails {
 	var testResourcesToSetup = []testResourceDetails{
 		{root, "hk_server", resourceTypeFolder, actionSymlink},
 		{"go.mod", "go.mod", resourceTypeFile, actionSymlink},
-    {"testlib/testdata", "testlib/testdata", resourceTypeFolder, actionSymlink},
+		{"testlib/testdata", "testlib/testdata", resourceTypeFolder, actionSymlink},
 		{"i18n", "i18n", resourceTypeFolder, actionSymlink},
 		{"templates", "templates", resourceTypeFolder, actionSymlink},
 		{"tests", "tests", resourceTypeFolder, actionSymlink},
@@ -168,7 +168,7 @@ func SetupTestResources() (string, error) {
 	for _, testResource := range testResourcesToSetup {
 		resourceDestInTemp = filepath.Join(tempDir, testResource.dest)
 
-    // For Windows, we cannot symlink, so we forcely copy the file
+		// For Windows, we cannot symlink, so we forcely copy the file
 		if testResource.action == actionCopy || runtime.GOOS == "windows" {
 			if testResource.resType == resourceTypeFile {
 				err = utils.CopyFile(testResource.src, resourceDestInTemp)
