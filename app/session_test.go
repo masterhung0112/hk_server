@@ -15,7 +15,6 @@ import (
 	"github.com/masterhung0112/hk_server/v5/model"
 )
 
-
 func TestGetSessionIdleTimeoutInMinutes(t *testing.T) {
 	th := Setup(t)
 	defer th.TearDown()

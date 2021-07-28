@@ -105,7 +105,6 @@ func runServer(configStore *config.Store, interruptChan chan os.Signal) error {
 		return serverErr
 	}
 
-
 	// If we allow testing then listen for manual testing URL hits
 	if *server.Config().ServiceSettings.EnableTesting {
 		manualtesting.Init(api)

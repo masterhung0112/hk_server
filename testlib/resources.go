@@ -69,10 +69,10 @@ func findDir(dir string) (string, bool) {
 			return "./", false
 		}
 
-    rootAbs, err := filepath.Abs(filepath.Dir(srcPath))
-    if err != nil {
-      return "./", false
-    }
+		rootAbs, err := filepath.Abs(filepath.Dir(srcPath))
+		if err != nil {
+			return "./", false
+		}
 		return rootAbs, true
 	}
 
