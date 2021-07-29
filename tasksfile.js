@@ -175,6 +175,10 @@ function package_docker_image() {
   shell.cp('-R', `${GOBIN}/hk_linux_amd64/hkserver`, `${DIST_PATH}/bin`)
 }
 
+function build_docker_image() {
+  shell.exec('docker build -f ./build/Dockerfile -t hkserver:latest .')
+}
+
 cli({
   start_docker,
   start_server,
@@ -190,4 +194,5 @@ cli({
   build_linux,
 
   package_docker_image,
+  build_docker_image,
 })
