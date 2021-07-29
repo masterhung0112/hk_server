@@ -32,7 +32,7 @@ steps:
     - '-c'
     - |
       mkdir -p bin/;
-      ssh -4 -fNTM -o StrictHostKeyChecking=no -L 3306:127.0.0.1:3306 -L 20025:127.0.0.1:20025 -L 20080:127.0.0.1:20080 -L 20110:127.0.0.1:20110 -L 9000:127.0.0.1:9000 -L 5432:127.0.0.1:5432 -i ./build/kunai_id_rsa kunai@global.kunai.tv && \
+      ssh -4 -fNTM -o StrictHostKeyChecking=no -L 3306:127.0.0.1:3306 -L 10025:127.0.0.1:10025 -L 10080:127.0.0.1:10080 -L 10110:127.0.0.1:10110 -L 9000:127.0.0.1:9000 -L 5432:127.0.0.1:5432 -i ./build/kunai_id_rsa kunai@global.kunai.tv && \
       make test-server-ci;
       ps aux | grep '[s]sh.*-f' | awk '{ print $2; }' | xargs -r kill -INT
   #volumes:

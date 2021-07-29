@@ -28,9 +28,9 @@ services:
     restart: 'no'
     container_name: hungknow-inbucket
     ports:
-      - "20025:10025"
-      - "20080:10080"
-      - "20110:10110"
+      - "10025:10025"
+      - "10080:10080"
+      - "10110:10110"
     extends:
         file: build/docker-compose.common.yml
         service: inbucket
