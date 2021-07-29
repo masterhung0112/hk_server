@@ -1,4 +1,4 @@
-version: "3"
+version: "2.4"
 
 services:
   postgres:
@@ -15,13 +15,10 @@ services:
     volumes:
       - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
     environment:
-      # timezone inside container
-      - TZ
-
-      # necessay Postgres options/variables
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-      - POSTGRES_DB
+      POSTGRES_USER: hkuser
+      POSTGRES_PASSWORD: mostest
+      POSTGRES_DB: hungknow
+      TZ:
 
   hkserver:
     depends_on:
@@ -36,16 +33,16 @@ services:
     tmpfs:
       - /tmp
     volumes:
-      - ${HUNGKNOW_CONFIG_PATH}:/hungknow/config:rw
-      - ${HUNGKNOW_DATA_PATH}:/hungknow/data:rw
-      - ${HUNGKNOW_LOGS_PATH}:/hungknow/logs:rw
-      - ${HUNGKNOW_PLUGINS_PATH}:/hungknow/plugins:rw
-      - ${HUNGKNOW_CLIENT_PLUGINS_PATH}:/hungknow/client-plugins:rw
+      - ${HUNGKNOW_CONFIG_PATH}:/hkserver/config:rw
+      - ${HUNGKNOW_DATA_PATH}:/hkserver/data:rw
+      - ${HUNGKNOW_LOGS_PATH}:/hkserver/logs:rw
+      - ${HUNGKNOW_PLUGINS_PATH}:/hkserver/plugins:rw
+      - ${HUNGKNOW_CLIENT_PLUGINS_PATH}:/hkserver/client-plugins:rw
     environment:
       # timezone inside container
       - TZ
 
-      # necessary Mattermost options/variables (see env.example)
+      # necessary HungKnow server options/variables (see env.example)
       - HK_SQLSETTINGS_DRIVERNAME
       - HK_SQLSETTINGS_DATASOURCE
 

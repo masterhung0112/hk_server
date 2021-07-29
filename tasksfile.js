@@ -192,6 +192,16 @@ function push_docker_image(_, tag) {
   }
 }
 
+function create_deploy_folders() {
+  shell.mkdir('-p', './deploy/volumes/db/var/lib/postgresql/data')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/config')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/data')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/logs')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/plugins')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/client-plugins')
+  shell.mkdir('-p', './deploy/volumes/web/cert')
+}
+
 cli({
   start_docker,
   start_server,
@@ -209,4 +219,6 @@ cli({
   package_docker_image,
   build_docker_image,
   push_docker_image,
+
+  create_deploy_folders,
 })

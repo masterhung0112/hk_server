@@ -128,3 +128,4 @@ test_log.txt
 /cmd/hkserver/data
 
 /.env
+/deploy/volumes
