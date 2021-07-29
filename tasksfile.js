@@ -2,6 +2,8 @@ const { sh, cli, help  } = require('tasksfile')
 var shell = require('shelljs');
 shell.config.silent = false
 
+require('dotenv').config()
+
 let IS_CI = process.env.IS_CI || false
 
 // Disable entirely the use of docker
@@ -175,8 +177,19 @@ function package_docker_image() {
   shell.cp('-R', `${GOBIN}/hk_linux_amd64/hkserver`, `${DIST_PATH}/bin`)
 }
 
-function build_docker_image() {
-  shell.exec('docker build -f ./build/Dockerfile -t hkserver:latest .')
+function build_docker_image(_, tag) {
+  shell.exec(`docker build -f ./build/Dockerfile -t hungknow/chat-server:${tag} .`)
+}
+
+function push_docker_image(_, tag) {
+  if (process.env.DOCKER_PASSWORD == '' || process.env.DOCKER_USERNAME == '') {
+    console.error('DOCKER_USERNAME and DOCKER_PASSWORD are required in env file')
+    return
+  }
+  const loginResult = shell.exec(`docker login --username ${process.env.DOCKER_USERNAME} --password ${process.env.DOCKER_PASSWORD}`)
+  if (loginResult.code === 0) {
+    shell.exec(`docker push hungknow/chat-server:${tag}`)
+  }
 }
 
 cli({
@@ -195,4 +208,5 @@ cli({
 
   package_docker_image,
   build_docker_image,
+  push_docker_image,
 })

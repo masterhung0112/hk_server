@@ -1,0 +1,53 @@
+version: "3"
+
+services:
+  postgres:
+    container_name: postgres_hungknow
+    image: postgres:${POSTGRES_IMAGE_TAG}
+    restart: ${RESTART_POLICY}
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    volumes:
+      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
+    environment:
+      # timezone inside container
+      - TZ
+
+      # necessay Postgres options/variables
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+
+  hkserver:
+    depends_on:
+      - postgres
+    container_name: hkserver
+    image: hungknow/${HUNGKNOW_IMAGE}:${HUNGKNOW_IMAGE_TAG}
+    restart: ${RESTART_POLICY}
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ${HUNGKNOW_CONFIG_PATH}:/hungknow/config:rw
+      - ${HUNGKNOW_DATA_PATH}:/hungknow/data:rw
+      - ${HUNGKNOW_LOGS_PATH}:/hungknow/logs:rw
+      - ${HUNGKNOW_PLUGINS_PATH}:/hungknow/plugins:rw
+      - ${HUNGKNOW_CLIENT_PLUGINS_PATH}:/hungknow/client-plugins:rw
+    environment:
+      # timezone inside container
+      - TZ
+
+      # necessary Mattermost options/variables (see env.example)
+      - HK_SQLSETTINGS_DRIVERNAME
+      - HK_SQLSETTINGS_DATASOURCE
+
+      # additional settings
+      - HK_SERVICESETTINGS_SITEURL
