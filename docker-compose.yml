@@ -4,7 +4,7 @@ services:
     restart: 'no'
     container_name: hungknow-mysql
     ports:
-      - "7306:3306"
+      - "3306:3306"
     extends:
         file: build/docker-compose.common.yml
         service: mysql
@@ -12,7 +12,7 @@ services:
     restart: 'no'
     container_name: hungknow-postgres
     ports:
-      - "7432:5432"
+      - "5432:5432"
     extends:
         file: build/docker-compose.common.yml
         service: postgres
@@ -20,7 +20,7 @@ services:
     restart: 'no'
     container_name: hungknow-minio
     ports:
-      - "9901:9000"
+      - "9000:9000"
     extends:
         file: build/docker-compose.common.yml
         service: minio

@@ -30,7 +30,7 @@ up()
         --net ${COMPOSE_PROJECT_NAME}_mm-test \
         --env-file=dotenv/test.env
         -e GOPATH="/go" \
-        -e MM_SQLSETTINGS_DATASOURCE="postgres://hkuser:mostest@postgres:7432/hungknow_test?sslmode=disable&connect_timeout=10" \
+        -e MM_SQLSETTINGS_DATASOURCE="postgres://hkuser:mostest@postgres:5432/hungknow_test?sslmode=disable&connect_timeout=10" \
         -e MM_SQLSETTINGS_DRIVERNAME=postgres
         mattermost/mattermost-build-server:20201119_golang-1.15.5 bash
 }

@@ -126,3 +126,5 @@ test_log.txt
 
 /client
 /cmd/hkserver/data
+
+/.env
