@@ -38,7 +38,6 @@ HEALTHCHECK --interval=30s --timeout=10s \
 # Copy client
 COPY build/sample_client/ /hkserver/client
 
-
 # Configure entrypoint and command
 COPY build/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
