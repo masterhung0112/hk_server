@@ -1,28 +1,33 @@
 version: "2.4"
 
 services:
-  postgres:
-    container_name: postgres_hungknow
-    image: postgres:${POSTGRES_IMAGE_TAG}
+  mysql:
+    container_name: hkmysql
+    image: mysql:${MYSQL_IMAGE_TAG}
     restart: ${RESTART_POLICY}
-    security_opt:
-      - no-new-privileges:true
-    pids_limit: 100
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/run/postgresql
+    # security_opt:
+    #   - no-new-privileges:true
+    # pids_limit: 100
+    # read_only: true
+    # tmpfs:
+    #   - /tmp
     volumes:
-      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
+      - mysql-data:/var/lib/mysql
     environment:
-      POSTGRES_USER: hkuser
-      POSTGRES_PASSWORD: mostest
-      POSTGRES_DB: hungknow
-      TZ:
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_ROOT_PASSWORD: roottest
+      MYSQL_PASSWORD: mostest
+      MYSQL_USER: hkuser
+      MYSQL_DATABASE: hungknow
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   hkserver:
     depends_on:
-      - postgres
+      mysql:
+        condition: service_healthy
     container_name: hkserver
     image: hungknow/${HUNGKNOW_IMAGE}:${HUNGKNOW_IMAGE_TAG}
     restart: ${RESTART_POLICY}
@@ -30,8 +35,8 @@ services:
       - no-new-privileges:true
     pids_limit: 200
     read_only: true
-    tmpfs:
-      - /tmp
+    # tmpfs:
+    #   - /tmp
     volumes:
       - ${HUNGKNOW_CONFIG_PATH}:/hkserver/config:rw
       - ${HUNGKNOW_DATA_PATH}:/hkserver/data:rw
@@ -43,8 +48,16 @@ services:
       - TZ
 
       # necessary HungKnow server options/variables (see env.example)
-      - HK_SQLSETTINGS_DRIVERNAME
-      - HK_SQLSETTINGS_DATASOURCE
+      - MM_SQLSETTINGS_DRIVERNAME
+      - MM_SQLSETTINGS_DATASOURCE
 
       # additional settings
-      - HK_SERVICESETTINGS_SITEURL
+      - MM_SERVICESETTINGS_SITEURL
+
+volumes:
+  mysql-data:
+
+# networks:
+#   default:
+#     external: true
+#     name: hk-network
