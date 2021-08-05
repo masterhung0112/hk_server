@@ -59,5 +59,4 @@ volumes:
 
 networks:
   default:
-    external: true
     name: hk-network

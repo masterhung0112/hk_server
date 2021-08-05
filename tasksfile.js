@@ -1,3 +1,4 @@
+const path = require('path')
 const { sh, cli, help  } = require('tasksfile')
 var shell = require('shelljs');
 shell.config.silent = false
@@ -202,6 +203,20 @@ function create_deploy_folders() {
   shell.mkdir('-p', './deploy/volumes/web/cert')
 }
 
+function issue_cert_standalone(_, domain, output) {
+  if (!output) {
+    shell.mkdir('-p', './deploy/volumes/web/cert/etc/letsencrypt')
+    shell.mkdir('-p', './deploy/volumes/web/cert/lib/letsencrypt')
+    output = path.resolve('./deploy/volumes/web/cert')
+  }
+
+  sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --standalone -d "${domain}"`, {nopipe: true})
+}
+
+function authenticator_to_webroot(_, domain, output) {
+
+}
+
 cli({
   start_docker,
   start_server,
@@ -221,4 +236,5 @@ cli({
   push_docker_image,
 
   create_deploy_folders,
+  issue_cert_standalone,
 })
