@@ -182,6 +182,14 @@ function build_docker_image(_, tag) {
   shell.exec(`docker build -f ./build/Dockerfile -t hungknow/chat-server:${tag} .`)
 }
 
+function build_docker_nginx_data_image(_, tag) {
+  shell.exec(`docker build -f ./deploy/Dockerfile.nginxdata -t hungknow/nginxdata:${tag} .`)
+}
+
+function docker_webapp(_, action) {
+  shell.exec(`docker-compose -f deploy/docker-compose.minimum.yml -f deploy/docker-compose.with-webapp.yml ${action}`)
+}
+
 function push_docker_image(_, tag) {
   if (process.env.DOCKER_PASSWORD == '' || process.env.DOCKER_USERNAME == '') {
     console.error('DOCKER_USERNAME and DOCKER_PASSWORD are required in env file')
@@ -234,6 +242,9 @@ cli({
   package_docker_image,
   build_docker_image,
   push_docker_image,
+  build_docker_nginx_data_image,
+
+  docker_webapp,
 
   create_deploy_folders,
   issue_cert_standalone,
