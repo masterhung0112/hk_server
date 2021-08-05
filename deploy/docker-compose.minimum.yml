@@ -5,8 +5,8 @@ services:
     container_name: hkmysql
     image: mysql:${MYSQL_IMAGE_TAG}
     restart: ${RESTART_POLICY}
-    # security_opt:
-    #   - no-new-privileges:true
+    security_opt:
+      - no-new-privileges:true
     # pids_limit: 100
     # read_only: true
     # tmpfs:
@@ -14,11 +14,11 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     environment:
-      MYSQL_ROOT_HOST: "%"
-      MYSQL_ROOT_PASSWORD: roottest
-      MYSQL_PASSWORD: mostest
-      MYSQL_USER: hkuser
-      MYSQL_DATABASE: hungknow
+      - MYSQL_ROOT_HOST:"%"
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_PASSWORD
+      - MYSQL_USER
+      - MYSQL_DATABASE
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s
@@ -57,7 +57,7 @@ services:
 volumes:
   mysql-data:
 
-# networks:
-#   default:
-#     external: true
-#     name: hk-network
+networks:
+  default:
+    external: true
+    name: hk-network
