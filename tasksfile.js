@@ -186,6 +186,10 @@ function build_docker_nginx_data_image(_, tag) {
   shell.exec(`docker build -f ./deploy/Dockerfile.nginxdata -t hungknow/nginxdata:${tag} .`)
 }
 
+function build_docker_hkserverchatdata_image(_, tag) {
+  shell.exec(`docker build -f ./deploy/Dockerfile.hkserverchatdata -t hungknow/hkserverchatdata:${tag} .`)
+}
+
 function docker_webapp(_, action) {
   shell.exec(`docker-compose -f deploy/docker-compose.minimum.yml -f deploy/docker-compose.with-webapp.yml ${action}`)
 }
@@ -199,6 +203,22 @@ function push_docker_image(_, tag) {
   if (loginResult.code === 0) {
     shell.exec(`docker push hungknow/chat-server:${tag}`)
   }
+}
+
+function push_docker_hkserverchatdata_image(_, tag) {
+  shell.exec(`docker push hungknow/hkserverchatdata:${tag}`)
+}
+
+function push_docker_nginxdata_image(_, tag) {
+  shell.exec(`docker push hungknow/nginxdata:${tag}`)
+}
+
+function deploy_on_ecs() {
+  shell.exec('docker compose -f .\docker-compose.minimum.yml -f .\docker-compose.with-webapp.yml up -d')
+}
+
+function ecs_deploy() {
+  'ecs-cli --project-name hkserver --cluster-config hkserver --ecs-profile stably-hungbn --region ap-south-1 --launch-type FARGATE'
 }
 
 function create_deploy_folders() {
@@ -243,6 +263,9 @@ cli({
   build_docker_image,
   push_docker_image,
   build_docker_nginx_data_image,
+  build_docker_hkserverchatdata_image,
+  push_docker_hkserverchatdata_image,
+  push_docker_nginxdata_image,
 
   docker_webapp,
 

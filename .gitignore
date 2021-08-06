@@ -129,3 +129,5 @@ test_log.txt
 
 /.env
 /deploy/volumes
+
+docker-compose.ecs-local*.yml

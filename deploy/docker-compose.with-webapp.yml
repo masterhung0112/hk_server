@@ -22,12 +22,12 @@ services:
       - /var/log/nginx
     volumes_from:
       - nginx-data:ro
-    # volumes:
+    volumes:
     #   - ${NGINX_CONFIG_PATH}:/etc/nginx/conf.d:ro
     #   - ${NGINX_DHPARAMS_FILE}:/dhparams4096.pem
     #   - ${CERT_PATH}:/cert.pem:ro
     #   - ${KEY_PATH}:/key.pem:ro
-    #   - shared-webroot:/usr/share/nginx/html
+      - shared-webroot:/usr/share/nginx/html
     environment:
       # timezone inside container
       - TZ

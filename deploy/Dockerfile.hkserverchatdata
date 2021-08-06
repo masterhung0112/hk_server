@@ -1,0 +1,9 @@
+FROM alpine:3.14
+
+RUN mkdir -p /app/hkserver/{config,data,logs,plugins,client-plugins}
+
+VOLUME /app/hkserver/config
+VOLUME /app/hkserver/data
+VOLUME /app/hkserver/logs
+VOLUME /app/hkserver/plugins
+VOLUME /app/hkserver/client-plugins

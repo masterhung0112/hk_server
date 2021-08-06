@@ -24,6 +24,10 @@ services:
       timeout: 20s
       retries: 10
 
+  hkserverchatdata:
+        image: hungknow/hkserverchatdata:0.01
+        container_name: hkserverchatdata
+
   hkserver:
     depends_on:
       mysql:
@@ -37,12 +41,14 @@ services:
     read_only: true
     # tmpfs:
     #   - /tmp
-    volumes:
-      - ${HUNGKNOW_CONFIG_PATH}:/hkserver/config:rw
-      - ${HUNGKNOW_DATA_PATH}:/hkserver/data:rw
-      - ${HUNGKNOW_LOGS_PATH}:/hkserver/logs:rw
-      - ${HUNGKNOW_PLUGINS_PATH}:/hkserver/plugins:rw
-      - ${HUNGKNOW_CLIENT_PLUGINS_PATH}:/hkserver/client-plugins:rw
+    # volumes:
+    #   - ${HUNGKNOW_CONFIG_PATH}:/hkserver/config:rw
+    #   - ${HUNGKNOW_DATA_PATH}:/hkserver/data:rw
+    #   - ${HUNGKNOW_LOGS_PATH}:/hkserver/logs:rw
+    #   - ${HUNGKNOW_PLUGINS_PATH}:/hkserver/plugins:rw
+    #   - ${HUNGKNOW_CLIENT_PLUGINS_PATH}:/hkserver/client-plugins:rw
+    volumes_from:
+      - hkserverchatdata:rw
     environment:
       # timezone inside container
       - TZ

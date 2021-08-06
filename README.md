@@ -4,6 +4,17 @@ Install:
 tdm-gcc
 https://jmeubank.github.io/tdm-gcc/download/
 
+# Deploy locally
+
+```
+yarn task docker_webapp up -d
+```
+
+Stop
+```
+yarn task docker_webapp stop
+```
+
 # Publish image to docker repository
 
 In .env, make sure that you set value for DOCKER_USERNAME and DOCKER_PASSWORD

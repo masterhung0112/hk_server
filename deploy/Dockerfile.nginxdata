@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM alpine:3.14
 
 ARG CERT_PATH=deploy/nginx/cert/cert.pem
 ARG KEY_PATH=deploy/nginx/cert/key-no-password.pem
