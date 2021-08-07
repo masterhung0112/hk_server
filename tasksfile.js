@@ -240,15 +240,15 @@ function create_deploy_folders() {
 
 function issue_cert_standalone(_, domain, output) {
   if (!output) {
-    shell.mkdir('-p', './deploy/volumes/web/cert/etc/letsencrypt/live')
-    shell.mkdir('-p', './deploy/volumes/web/cert/lib/letsencrypt/live')
+    shell.mkdir('-p', './deploy/volumes/web/cert/etc/letsencrypt')
+    shell.mkdir('-p', './deploy/volumes/web/cert/lib/letsencrypt')
     output = path.resolve('./deploy/volumes/web/cert')
   }
 
   // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --standalone -d "${domain}"`, {nopipe: true})
   // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --webroot -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
   // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt/live:/etc/letsencrypt/live" -v "${output}/lib/letsencrypt/live:/var/lib/letsencrypt/live" certbot/certbot certonly --manual --preferred-challenges=dns -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
-  sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt/live:/etc/letsencrypt/live" -v "${output}/lib/letsencrypt/live:/var/lib/letsencrypt/live" --env-file ./aws.env certbot/dns-route53 certonly --dns-route53 -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
+  sh(`docker run -it --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" --env-file ./aws.env certbot/dns-route53 certonly --dns-route53 -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
 }
 
 function authenticator_to_webroot(_, domain, output) {
