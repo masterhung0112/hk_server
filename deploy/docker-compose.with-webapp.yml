@@ -4,11 +4,13 @@ services:
   nginx-data:
     image: hungknow/nginxdata:0.01
     container_name: hknginxdata
+    volumes:
+      - ${NGINX_CONFIG_PATH}:/etc/nginx/conf.d:rw
 
   nginx:
     depends_on:
-      - hkserver
-      - hkwebapp
+      hkserver:
+        condition: service_healthy
     container_name: hknginx
     image: nginx:${NGINX_IMAGE_TAG}
     restart: ${RESTART_POLICY}
@@ -41,6 +43,10 @@ services:
     restart: ${RESTART_POLICY}
     ports:
       - 3000:3000
+    # healthcheck:
+    #   test: ["CMD", "curl", "--fail", "http://localhost:3000"]
+    #   timeout: 3s
+    #   retries: 5
 
 # Shared volume for Let's Encrypt certificate renewal with a webroot
 volumes:

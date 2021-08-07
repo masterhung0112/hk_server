@@ -9,8 +9,8 @@ services:
       - no-new-privileges:true
     # pids_limit: 100
     # read_only: true
-    # tmpfs:
-    #   - /tmp
+    tmpfs:
+      - /tmp
     volumes:
       - mysql-data:/var/lib/mysql
     environment:
@@ -23,6 +23,9 @@ services:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
+    # https://stackoverflow.com/questions/55559386/how-to-fix-mbind-operation-not-permitted-in-mysql-error-log
+    cap_add:
+      - SYS_NICE
 
   hkserverchatdata:
         image: hungknow/hkserverchatdata:0.01
@@ -39,8 +42,8 @@ services:
       - no-new-privileges:true
     pids_limit: 200
     read_only: true
-    # tmpfs:
-    #   - /tmp
+    tmpfs:
+      - /tmp
     # volumes:
     #   - ${HUNGKNOW_CONFIG_PATH}:/hkserver/config:rw
     #   - ${HUNGKNOW_DATA_PATH}:/hkserver/data:rw
@@ -59,6 +62,10 @@ services:
 
       # additional settings
       - MM_SERVICESETTINGS_SITEURL
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8065"]
+      timeout: 3s
+      retries: 10
 
 volumes:
   mysql-data:

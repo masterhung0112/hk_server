@@ -131,3 +131,4 @@ test_log.txt
 /deploy/volumes
 
 docker-compose.ecs-local*.yml
+aws.env

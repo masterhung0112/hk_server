@@ -232,6 +232,13 @@
           "readOnly": false
         }
       ],
+      "mountPoints": [
+        {
+          "sourceVolume": "hknginx-shared-webroot",
+          "containerPath": "/usr/share/nginx/html",
+          "readOnly": false
+        }
+      ],
       "image": "nginx:alpine",
       "name": "hknginx"
     },
@@ -291,6 +298,13 @@
         "sourcePath": null
       },
       "dockerVolumeConfiguration": null
+    },
+    {
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-5a44448b",
+        "transitEncryption": "ENABLED"
+      },
+      "name": "hknginx-shared-webroot"
     }
   ]
 }

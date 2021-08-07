@@ -190,8 +190,15 @@ function build_docker_hkserverchatdata_image(_, tag) {
   shell.exec(`docker build -f ./deploy/Dockerfile.hkserverchatdata -t hungknow/hkserverchatdata:${tag} .`)
 }
 
-function docker_webapp(_, action) {
-  shell.exec(`docker-compose -f deploy/docker-compose.minimum.yml -f deploy/docker-compose.with-webapp.yml ${action}`)
+function docker_webapp(options, ...rest) {
+  argumentStr = ''
+  for (var i=0; i < rest.length; i++) {
+    argumentStr += rest[i] + ' ';
+  }
+  for (const [key] of Object.entries(options)) {
+    argumentStr += '-' + key + ' ';
+  }
+  sh(`docker-compose -f deploy/docker-compose.minimum.yml -f deploy/docker-compose.with-webapp.yml ${argumentStr}`, { nopipe: true })
 }
 
 function push_docker_image(_, tag) {
@@ -233,12 +240,15 @@ function create_deploy_folders() {
 
 function issue_cert_standalone(_, domain, output) {
   if (!output) {
-    shell.mkdir('-p', './deploy/volumes/web/cert/etc/letsencrypt')
-    shell.mkdir('-p', './deploy/volumes/web/cert/lib/letsencrypt')
+    shell.mkdir('-p', './deploy/volumes/web/cert/etc/letsencrypt/live')
+    shell.mkdir('-p', './deploy/volumes/web/cert/lib/letsencrypt/live')
     output = path.resolve('./deploy/volumes/web/cert')
   }
 
-  sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --standalone -d "${domain}"`, {nopipe: true})
+  // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --standalone -d "${domain}"`, {nopipe: true})
+  // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --webroot -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
+  // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt/live:/etc/letsencrypt/live" -v "${output}/lib/letsencrypt/live:/var/lib/letsencrypt/live" certbot/certbot certonly --manual --preferred-challenges=dns -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
+  sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt/live:/etc/letsencrypt/live" -v "${output}/lib/letsencrypt/live:/var/lib/letsencrypt/live" --env-file ./aws.env certbot/dns-route53 certonly --dns-route53 -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
 }
 
 function authenticator_to_webroot(_, domain, output) {
