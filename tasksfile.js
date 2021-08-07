@@ -262,9 +262,11 @@ cli({
   package_docker_image,
   build_docker_image,
   push_docker_image,
-  build_docker_nginx_data_image,
+
   build_docker_hkserverchatdata_image,
   push_docker_hkserverchatdata_image,
+
+  build_docker_nginx_data_image,
   push_docker_nginxdata_image,
 
   docker_webapp,

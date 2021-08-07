@@ -8,7 +8,7 @@ RUN mkdir -p /etc/nginx/conf.d/
 RUN mkdir -p /config
 #COPY content /usr/share/nginx/html
 
-COPY deploy/nginx/conf.d/ /etc/nginx/conf.d/
+COPY deploy/nginx/conf.d-ecs/ /etc/nginx/conf.d/
 COPY $CERT_PATH /config/cert.pem
 COPY $KEY_PATH /config/key.pem
 COPY $DHPARAMS_FILE /config/dhparams4096.pem
