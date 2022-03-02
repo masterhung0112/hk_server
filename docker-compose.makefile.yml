@@ -4,7 +4,7 @@ services:
     restart: 'no'
     container_name: hkserver-mysql
     ports:
-      - "7306:3306"
+      - "3306:3306"
     extends:
         file: build/docker-compose.common.yml
         service: mysql
@@ -12,7 +12,7 @@ services:
     restart: 'no'
     container_name: mattermost-mysql-read-replica
     ports:
-      - "7307:3306"
+      - "3307:3306"
     extends:
         file: build/docker-compose.common.yml
         service: mysql-read-replica
@@ -20,7 +20,7 @@ services:
     restart: 'no'
     container_name: hkserver-postgres
     ports:
-      - "7432:5432"
+      - "5432:5432"
     extends:
         file: build/docker-compose.common.yml
         service: postgres
@@ -28,7 +28,7 @@ services:
     restart: 'no'
     container_name: hkserver-minio
     ports:
-      - "9901:9000"
+      - "9000:9000"
     extends:
         file: build/docker-compose.common.yml
         service: minio
@@ -36,9 +36,9 @@ services:
     restart: 'no'
     container_name: hkserver-inbucket
     ports:
-      - "20025:10025"
-      - "20080:10080"
-      - "20110:10110"
+      - "10025:10025"
+      - "10080:10080"
+      - "10110:10110"
     extends:
         file: build/docker-compose.common.yml
         service: inbucket

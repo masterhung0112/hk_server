@@ -1,0 +1,75 @@
+version: "2.4"
+
+services:
+  mysql:
+    container_name: hkmysql
+    image: mysql:${MYSQL_IMAGE_TAG}
+    restart: ${RESTART_POLICY}
+    security_opt:
+      - no-new-privileges:true
+    # pids_limit: 100
+    # read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_HOST:"%"
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_PASSWORD
+      - MYSQL_USER
+      - MYSQL_DATABASE
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    # https://stackoverflow.com/questions/55559386/how-to-fix-mbind-operation-not-permitted-in-mysql-error-log
+    cap_add:
+      - SYS_NICE
+
+  hkserverchatdata:
+        image: hungknow/hkserverchatdata:0.01
+        container_name: hkserverchatdata
+
+  hkserver:
+    depends_on:
+      mysql:
+        condition: service_healthy
+    container_name: hkserver
+    image: hungknow/${HUNGKNOW_IMAGE}:${HUNGKNOW_IMAGE_TAG}
+    restart: ${RESTART_POLICY}
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    read_only: true
+    tmpfs:
+      - /tmp
+    # volumes:
+    #   - ${HUNGKNOW_CONFIG_PATH}:/hkserver/config:rw
+    #   - ${HUNGKNOW_DATA_PATH}:/hkserver/data:rw
+    #   - ${HUNGKNOW_LOGS_PATH}:/hkserver/logs:rw
+    #   - ${HUNGKNOW_PLUGINS_PATH}:/hkserver/plugins:rw
+    #   - ${HUNGKNOW_CLIENT_PLUGINS_PATH}:/hkserver/client-plugins:rw
+    volumes_from:
+      - hkserverchatdata:rw
+    environment:
+      # timezone inside container
+      - TZ
+
+      # necessary HungKnow server options/variables (see env.example)
+      - MM_SQLSETTINGS_DRIVERNAME
+      - MM_SQLSETTINGS_DATASOURCE
+
+      # additional settings
+      - MM_SERVICESETTINGS_SITEURL
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8065"]
+      timeout: 3s
+      retries: 10
+
+volumes:
+  mysql-data:
+
+networks:
+  default:
+    name: hk-network

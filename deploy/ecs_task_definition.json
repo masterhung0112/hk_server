@@ -1,0 +1,346 @@
+{
+  "ipcMode": null,
+  "executionRoleArn": "arn:aws:iam::475910951137:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": null,
+        "options": {
+          "awslogs-group": "tutorial",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "awslogs-hkserver"
+        }
+      },
+      "entryPoint": null,
+      "portMappings": [
+        {
+          "hostPort": 3306,
+          "protocol": "tcp",
+          "containerPort": 3306
+        }
+      ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 256,
+      "environment": [
+        {
+          "name": "MYSQL_DATABASE",
+          "value": "hungknow"
+        },
+        {
+          "name": "MYSQL_PASSWORD",
+          "value": "mostest"
+        },
+        {
+          "name": "MYSQL_ROOT_HOST",
+          "value": "%"
+        },
+        {
+          "name": "MYSQL_ROOT_PASSWORD",
+          "value": "roottest"
+        },
+        {
+          "name": "MYSQL_USER",
+          "value": "hkuser"
+        }
+      ],
+      "mountPoints": [
+        {
+          "readOnly": false,
+          "containerPath": "/var/lib/mysql",
+          "sourceVolume": "mysqldata"
+        }
+      ],
+      "memory": 512,
+      "image": "mysql:8.0",
+      "healthCheck": {
+        "retries": 10,
+        "command": [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost || exit 1"
+        ],
+        "timeout": 20,
+        "interval": 50
+      },
+      "essential": true,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": false,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": false,
+      "name": "hkmysql"
+    },
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": null,
+      "entryPoint": null,
+      "portMappings": [],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 0,
+      "environment": [],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "dnsServers": null,
+      "mountPoints": [],
+      "workingDirectory": null,
+      "secrets": null,
+      "dockerSecurityOptions": null,
+      "memory": null,
+      "memoryReservation": null,
+      "volumesFrom": [],
+      "stopTimeout": null,
+      "image": "hungknow/hkserverchatdata:0.01",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": null,
+      "disableNetworking": null,
+      "interactive": null,
+      "healthCheck": null,
+      "essential": false,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": null,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": null,
+      "name": "hkserverchatdata"
+    },
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": null,
+        "options": {
+          "awslogs-group": "tutorial",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "awslogs-hkserverchat"
+        }
+      },
+      "entryPoint": null,
+      "portMappings": [
+        {
+          "hostPort": 8065,
+          "protocol": "tcp",
+          "containerPort": 8065
+        }
+      ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 256,
+      "environment": [
+        {
+          "name": "MM_SERVICESETTINGS_SITEURL",
+          "value": "https://hungknow.tk"
+        },
+        {
+          "name": "MM_SQLSETTINGS_DATASOURCE",
+          "value": "hkuser:mostest@tcp(localhost:3306)/hungknow?charset=utf8mb4,utf8&readTimeout=30s"
+        },
+        {
+          "name": "MM_SQLSETTINGS_DRIVERNAME",
+          "value": "mysql"
+        },
+        {
+          "name": "TZ",
+          "value": "UTC"
+        }
+      ],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "dnsServers": null,
+      "mountPoints": [],
+      "workingDirectory": null,
+      "secrets": null,
+      "dockerSecurityOptions": null,
+      "memory": 256,
+      "memoryReservation": null,
+      "volumesFrom": [
+        {
+          "sourceContainer": "hkserverchatdata",
+          "readOnly": false
+        }
+      ],
+      "stopTimeout": null,
+      "image": "hungknow/chat-server:0.01",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": [
+          {
+            "containerName": "hkmysql",
+            "condition": "HEALTHY"
+          }
+      ],
+      "disableNetworking": false,
+      "interactive": null,
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl --fail http://localhost:8065"
+        ],
+        "retries": 3,
+        "timeout": 5,
+        "interval": 5,
+        "startPeriod": 5
+      },
+      "essential": true,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": false,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": false,
+      "name": "hkserver"
+    },
+    {
+      "dependsOn": [
+        {
+          "containerName": "hkserver",
+          "condition": "HEALTHY"
+        },
+        {
+          "containerName": "hkwebapp",
+          "condition": "HEALTHY"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "tutorial",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "awslogs-hknginx"
+        }
+      },
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "protocol": "tcp",
+          "containerPort": 80
+        },
+        {
+          "hostPort": 443,
+          "protocol": "tcp",
+          "containerPort": 443
+        }
+      ],
+      "cpu": 128,
+      "memory": 128,
+      "volumesFrom": [
+        {
+          "sourceContainer": "hknginxdata",
+          "readOnly": false
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "hknginx-shared-webroot",
+          "containerPath": "/usr/share/nginx/html",
+          "readOnly": false
+        }
+      ],
+      "image": "nginx:alpine",
+      "name": "hknginx",
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl --fail http://localhost"
+        ],
+        "retries": 3,
+        "timeout": 5,
+        "interval": 5
+      }
+    },
+    {
+      "image": "hungknow/nginxdata:0.01",
+      "name": "hknginxdata",
+      "essential": false
+    },
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "tutorial",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "awslogs-webapp"
+        }
+      },
+      "portMappings": [
+        {
+          "hostPort": 3000,
+          "protocol": "tcp",
+          "containerPort": 3000
+        }
+      ],
+      "cpu": 128,
+      "memory": 128,
+      "image": "hungknow/webapp:0.01",
+      "name": "hkwebapp",
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl --fail http://localhost:3000"
+        ],
+        "retries": 3,
+        "timeout": 5,
+        "interval": 5
+      },
+      "environment": [
+        {
+          "name": "TZ",
+          "value": "UTC"
+        }
+      ]
+    }
+  ],
+  "placementConstraints": [],
+  "memory": "2048",
+  "taskRoleArn": null,
+  "family": "hk-ecs",
+  "pidMode": null,
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "networkMode": "awsvpc",
+  "cpu": "1024",
+  "inferenceAccelerators": null,
+  "proxyConfiguration": null,
+  "volumes": [
+    {
+      "fsxWindowsFileServerVolumeConfiguration": null,
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-049f9ed5",
+        "authorizationConfig": {
+          "iam": "DISABLED",
+          "accessPointId": null
+        },
+        "transitEncryption": "ENABLED",
+        "rootDirectory": "/"
+      },
+      "name": "mysqldata",
+      "host": {
+        "sourcePath": null
+      },
+      "dockerVolumeConfiguration": null
+    },
+    {
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-5a44448b",
+        "transitEncryption": "ENABLED"
+      },
+      "name": "hknginx-shared-webroot"
+    }
+  ]
+}

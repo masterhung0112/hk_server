@@ -31,6 +31,20 @@
       "username": "hkuser",
       "password": "mostest",
       "database": "hungknow_test"
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default"
+      },
+      "previewLimit": 50,
+      "server": "65.0.130.11",
+      "port": 3306,
+      "driver": "MySQL",
+      "name": "ECS-Mysql",
+      "username": "hkuser",
+      "password": "mostest",
+      "database": "hungknow",
+      "connectString": "hkuser:mostest@65.0.130.11:3306/hungknow?allowPublicKeyRetrieval=true"
     }
   ]
 }

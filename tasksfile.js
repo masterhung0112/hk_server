@@ -1,6 +1,9 @@
+const path = require('path')
 const { sh, cli, help  } = require('tasksfile')
 var shell = require('shelljs');
 shell.config.silent = false
+
+require('dotenv').config()
 
 let IS_CI = process.env.IS_CI || false
 
@@ -175,6 +178,83 @@ function package_docker_image() {
   shell.cp('-R', `${GOBIN}/hk_linux_amd64/hkserver`, `${DIST_PATH}/bin`)
 }
 
+function build_docker_image(_, tag) {
+  shell.exec(`docker build -f ./build/Dockerfile -t hungknow/chat-server:${tag} .`)
+}
+
+function build_docker_nginx_data_image(_, tag) {
+  shell.exec(`docker build -f ./deploy/Dockerfile.nginxdata -t hungknow/nginxdata:${tag} .`)
+}
+
+function build_docker_hkserverchatdata_image(_, tag) {
+  shell.exec(`docker build -f ./deploy/Dockerfile.hkserverchatdata -t hungknow/hkserverchatdata:${tag} .`)
+}
+
+function docker_webapp(options, ...rest) {
+  argumentStr = ''
+  for (var i=0; i < rest.length; i++) {
+    argumentStr += rest[i] + ' ';
+  }
+  for (const [key] of Object.entries(options)) {
+    argumentStr += '-' + key + ' ';
+  }
+  sh(`docker-compose -f deploy/docker-compose.minimum.yml -f deploy/docker-compose.with-webapp.yml ${argumentStr}`, { nopipe: true })
+}
+
+function push_docker_image(_, tag) {
+  if (process.env.DOCKER_PASSWORD == '' || process.env.DOCKER_USERNAME == '') {
+    console.error('DOCKER_USERNAME and DOCKER_PASSWORD are required in env file')
+    return
+  }
+  const loginResult = shell.exec(`docker login --username ${process.env.DOCKER_USERNAME} --password ${process.env.DOCKER_PASSWORD}`)
+  if (loginResult.code === 0) {
+    shell.exec(`docker push hungknow/chat-server:${tag}`)
+  }
+}
+
+function push_docker_hkserverchatdata_image(_, tag) {
+  shell.exec(`docker push hungknow/hkserverchatdata:${tag}`)
+}
+
+function push_docker_nginxdata_image(_, tag) {
+  shell.exec(`docker push hungknow/nginxdata:${tag}`)
+}
+
+function deploy_on_ecs() {
+  shell.exec('docker compose -f .\docker-compose.minimum.yml -f .\docker-compose.with-webapp.yml up -d')
+}
+
+function ecs_deploy() {
+  'ecs-cli --project-name hkserver --cluster-config hkserver --ecs-profile stably-hungbn --region ap-south-1 --launch-type FARGATE'
+}
+
+function create_deploy_folders() {
+  shell.mkdir('-p', './deploy/volumes/db/var/lib/postgresql/data')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/config')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/data')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/logs')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/plugins')
+  shell.mkdir('-p', './deploy/volumes/app/hkserver/client-plugins')
+  shell.mkdir('-p', './deploy/volumes/web/cert')
+}
+
+function issue_cert_standalone(_, domain, output) {
+  if (!output) {
+    shell.mkdir('-p', './deploy/volumes/web/cert/etc/letsencrypt')
+    shell.mkdir('-p', './deploy/volumes/web/cert/lib/letsencrypt')
+    output = path.resolve('./deploy/volumes/web/cert')
+  }
+
+  // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --standalone -d "${domain}"`, {nopipe: true})
+  // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" certbot/certbot certonly --webroot -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
+  // sh(`docker run -it --rm --name certbot -p 80:80 -v "${output}/etc/letsencrypt/live:/etc/letsencrypt/live" -v "${output}/lib/letsencrypt/live:/var/lib/letsencrypt/live" certbot/certbot certonly --manual --preferred-challenges=dns -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
+  sh(`docker run -it --name certbot -p 80:80 -v "${output}/etc/letsencrypt:/etc/letsencrypt" -v "${output}/lib/letsencrypt:/var/lib/letsencrypt" --env-file ./aws.env certbot/dns-route53 certonly --dns-route53 -d "${domain}" --agree-tos --email hungknowledge@gmail.com`, {nopipe: true})
+}
+
+function authenticator_to_webroot(_, domain, output) {
+
+}
+
 cli({
   start_docker,
   start_server,
@@ -190,4 +270,17 @@ cli({
   build_linux,
 
   package_docker_image,
+  build_docker_image,
+  push_docker_image,
+
+  build_docker_hkserverchatdata_image,
+  push_docker_hkserverchatdata_image,
+
+  build_docker_nginx_data_image,
+  push_docker_nginxdata_image,
+
+  docker_webapp,
+
+  create_deploy_folders,
+  issue_cert_standalone,
 })

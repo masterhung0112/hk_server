@@ -114,7 +114,7 @@ const (
 	TEAM_SETTINGS_DEFAULT_CUSTOM_DESCRIPTION_TEXT  = ""
 	TEAM_SETTINGS_DEFAULT_USER_STATUS_AWAY_TIMEOUT = 300
 
-	SQL_SETTINGS_DEFAULT_DATA_SOURCE = "postgres://hkuser:mostest@localhost:7432/hungknow?sslmode=disable&connect_timeout=10"
+	SQL_SETTINGS_DEFAULT_DATA_SOURCE = "postgres://hkuser:mostest@localhost:5432/hungknow?sslmode=disable&connect_timeout=10"
 
 	FILE_SETTINGS_DEFAULT_DIRECTORY = "./data/"
 
@@ -1621,7 +1621,7 @@ func (s *EmailSettings) SetDefaults(isUpdate bool) {
 	}
 
 	if s.SMTPPort == nil || *s.SMTPPort == "" {
-		s.SMTPPort = NewString("20025")
+		s.SMTPPort = NewString("10025")
 	}
 
 	if s.SMTPServerTimeout == nil || *s.SMTPServerTimeout == 0 {

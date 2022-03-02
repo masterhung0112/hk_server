@@ -1,0 +1,20 @@
+FROM alpine:3.14
+
+ARG CERT_PATH=deploy/nginx/cert/cert.pem
+ARG KEY_PATH=deploy/nginx/cert/key-no-password.pem
+ARG DHPARAMS_FILE=deploy/nginx/dhparams4096.pem
+
+RUN mkdir -p /etc/nginx/conf.d/
+RUN mkdir -p /config
+#COPY content /usr/share/nginx/html
+
+COPY deploy/nginx/conf.d-ecs/ /etc/nginx/conf.d/
+COPY $CERT_PATH /config/cert.pem
+COPY $KEY_PATH /config/key.pem
+COPY $DHPARAMS_FILE /config/dhparams4096.pem
+
+#VOLUME /usr/share/nginx/html
+VOLUME /etc/nginx/conf.d
+VOLUME /config
+# VOLUME /key.pem
+# VOLUME /dhparams4096.pem
